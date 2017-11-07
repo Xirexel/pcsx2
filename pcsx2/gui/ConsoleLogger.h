@@ -19,6 +19,12 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <stdio.h>
+
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
+#endif
 
 static const bool EnableThreadedLoggingTest = false; //true;
 

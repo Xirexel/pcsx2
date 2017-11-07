@@ -76,7 +76,7 @@ extern ConsoleLogSource_Threading pxConLog_Thread;
 #endif
 
 #if PCSX2_THREAD_LOCAL
-#define DeclareTls(x) thread_local x
+#define DeclareTls(x) __threadlocal x
 #else
 #define DeclareTls(x) x
 #endif
