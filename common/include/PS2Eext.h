@@ -43,16 +43,15 @@
 
 #endif
 
+#include <PluginCompatibility.h>
 //#include "PS2Edefs.h"
 
 #if !defined(_MSC_VER) || !defined(UNICODE)
 static void SysMessage(const char *fmt, ...);
 static void __forceinline PluginNullConfigure(std::string desc, s32 &log);
-static void __forceinline PluginNullAbout(const char *aboutText);
 #else
 static void SysMessage(const wchar_t *fmt, ...);
 static void __forceinline PluginNullConfigure(std::wstring desc, s32 &log);
-static void __forceinline PluginNullAbout(const wchar_t *aboutText);
 #endif
 
 enum FileMode {
@@ -67,7 +66,7 @@ struct PluginLog
 
     bool Open(std::string logname)
     {
-        LogFile = fopen(logname.c_str(), "w");
+        LogFile = px_fopen(logname, "w");
 
         if (LogFile) {
             setvbuf(LogFile, NULL, _IONBF, 0);
@@ -163,9 +162,9 @@ struct PluginConf
     bool Open(std::string name, FileMode mode = READ_FILE)
     {
         if (mode == READ_FILE) {
-            ConfFile = fopen(name.c_str(), "r");
+            ConfFile = px_fopen(name, "r");
         } else {
-            ConfFile = fopen(name.c_str(), "w");
+            ConfFile = px_fopen(name, "w");
         }
 
         if (ConfFile == NULL)
@@ -257,11 +256,6 @@ static void __forceinline PluginNullConfigure(std::string desc, int &log)
     gtk_widget_destroy(dialog);
 }
 
-static void __forceinline PluginNullAbout(const char *aboutText)
-{
-    SysMessage(aboutText);
-}
-
 #define ENTRY_POINT /* We don't need no stinkin' entry point! */
 
 
@@ -299,11 +293,6 @@ static void __forceinline PluginNullConfigure(std::string desc, int &log)
     SysMessage("This space is intentionally left blank.");
 }
 
-static void __forceinline PluginNullAbout(const char *aboutText)
-{
-    SysMessage(aboutText);
-}
-
 #define ENTRY_POINT /* We don't need no stinkin' entry point! */ // TODO OSX WTF is this anyway?
 
 
@@ -331,10 +320,6 @@ static void __forceinline PluginNullConfigure(std::string desc, s32 &log)
     SysMessage("This space is intentionally left blank.");
 }
 
-static void __forceinline PluginNullAbout(const char *aboutText)
-{
-    SysMessage(aboutText);
-}
 #else
 
 static void __forceinline SysMessage(const wchar_t *fmt, ...)
@@ -353,11 +338,6 @@ static void __forceinline PluginNullConfigure(std::string desc, s32 &log)
 	and a check box that says "Logging", checked if log !=0, and set log to
 	1 if it is checked on return, and 0 if it isn't. */
     SysMessage(L"This space is intentionally left blank.");
-}
-
-static void __forceinline PluginNullAbout(const wchar_t *aboutText)
-{
-    SysMessage(aboutText);
 }
 
 #endif

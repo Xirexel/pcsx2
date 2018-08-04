@@ -12,12 +12,10 @@ set(USBnullFinalFlags "")
 
 # USBnull sources
 set(USBnullSources
-	Config.cpp
 	USB.cpp)
 
 # USBnull headers
 set(USBnullHeaders
-	Config.h
 	USB.h)
 
 # USBnull Linux sources
@@ -30,14 +28,12 @@ set(USBnullLinuxHeaders
 
 # USBnull Windows sources
 set(USBnullWindowsSources
-	Windows/Config.cpp
 	Windows/USBnull.def
-	Windows/USBnull.rc
-	Windows/Win32.cpp)
+)
 
 # USBnull Windows headers
 set(USBnullWindowsHeaders
-	Windows/resource.h)
+)
 
 set(USBnullFinalSources
 	${USBnullSources}

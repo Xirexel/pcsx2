@@ -246,25 +246,14 @@ bool GSC_Spartan(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
-		if(g_crc_region == CRC::EU &&fi.TME && fi.FBP == 0x02000 && fi.FPSM == PSM_PSMCT32 && fi.TBP0 == 0x00000 && fi.TPSM == PSM_PSMCT32)
+		if(fi.TME)
 		{
-			skip = 107;
-		}
-		if(g_crc_region == CRC::JP && fi.TME && fi.FBP == 0x02180 && fi.FPSM == PSM_PSMCT32 && fi.TBP0 == 0x2180 && fi.TPSM == PSM_PSMCT32)
-		{
-			skip = 3;
-		}
-		else
-		{
-			if(fi.TME)
+			// depth textures (bully, mgs3s1 intro, Front Mission 5)
+			if( (fi.TPSM == PSM_PSMZ32 || fi.TPSM == PSM_PSMZ24 || fi.TPSM == PSM_PSMZ16 || fi.TPSM == PSM_PSMZ16S) ||
+				// General, often problematic post processing
+				(GSUtil::HasSharedBits(fi.FBP, fi.FPSM, fi.TBP0, fi.TPSM)) )
 			{
-				// depth textures (bully, mgs3s1 intro, Front Mission 5)
-				if( (fi.TPSM == PSM_PSMZ32 || fi.TPSM == PSM_PSMZ24 || fi.TPSM == PSM_PSMZ16 || fi.TPSM == PSM_PSMZ16S) ||
-					// General, often problematic post processing
-					(GSUtil::HasSharedBits(fi.FBP, fi.FPSM, fi.TBP0, fi.TPSM)) )
-				{
-					skip = 1;
-				}
+				skip = 2;
 			}
 		}
 	}
@@ -756,19 +745,21 @@ bool GSC_Kunoichi(const GSFrameInfo& fi, int& skip)
 	{
 		if(!fi.TME && (fi.FBP == 0x0 || fi.FBP == 0x00700 || fi.FBP == 0x00800) && fi.FPSM == PSM_PSMCT32 && fi.FBMSK == 0x00FFFFFF)
 		{
+			// Removes depth effects(shadows) not rendered correctly on all renders.
 			skip = 3;
 		}
 		if(fi.TME && (fi.FBP ==0x0700 || fi.FBP==0) && fi.TBP0==0x0e00 && fi.TPSM ==0  && fi.FBMSK == 0)
 		{
 			skip = 1;
 		}
-		if(fi.TME)
+		if(Aggressive && fi.TME)
 		{
 			// depth textures (bully, mgs3s1 intro, Front Mission 5)
-			if( (fi.TPSM == PSM_PSMZ32 || fi.TPSM == PSM_PSMZ24 || fi.TPSM == PSM_PSMZ16 || fi.TPSM == PSM_PSMZ16S) ||
+			if((fi.TPSM == PSM_PSMZ32 || fi.TPSM == PSM_PSMZ24 || fi.TPSM == PSM_PSMZ16 || fi.TPSM == PSM_PSMZ16S) ||
 				// General, often problematic post processing
 				(GSUtil::HasSharedBits(fi.FBP, fi.FPSM, fi.TBP0, fi.TPSM)) )
 			{
+				// Removes burning air effect, the effect causes major slowdowns.
 				skip = 1;
 			}
 		}
@@ -878,37 +869,6 @@ bool GSC_ZettaiZetsumeiToshi2(const GSFrameInfo& fi, int& skip)
 			{
 				skip = 2; //
 			}
-
-	}
-
-	return true;
-}
-
-bool GSC_ShinOnimusha(const GSFrameInfo& fi, int& skip)
-{
-	if(skip == 0)
-	{
-
-		if(fi.TME && fi.FBP == 0x001000 && (fi.TBP0 ==0 || fi.TBP0 == 0x0800) && fi.TPSM == PSM_PSMT8H && fi.FBMSK == 0x00FFFFFF)
-		{
-			skip = 0;
-		}
-		else if(fi.TPSM == PSM_PSMCT24 && fi.TME && fi.FBP == 0x01000) // || fi.FBP == 0x00000
-		{
-			skip = 28; //28 30 56 64
-		}
-		else if(fi.FBP && fi.TPSM == PSM_PSMT8H && fi.FBMSK == 0xFFFFFF)
-		{
-			skip = 0; //24 33 40 9
-		}
-		else if(fi.TPSM == PSM_PSMT8H && fi.FBMSK == 0xFF000000)
-		{
-			skip = 1;
-		}
-		else if(fi.TME && (fi.TBP0 ==0x1400 || fi.TBP0 ==0x1000 ||fi.TBP0 == 0x1200) && (fi.TPSM == PSM_PSMCT32 || fi.TPSM == PSM_PSMCT24))
-		{
-			skip = 1;
-		}
 
 	}
 
@@ -2033,6 +1993,35 @@ bool GSC_ResidentEvil4(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
+bool GSC_ShinOnimusha(const GSFrameInfo& fi, int& skip)
+{
+	if(Aggressive && skip == 0)
+	{
+		if(fi.TME && fi.FBP == 0x001000 && (fi.TBP0 ==0 || fi.TBP0 == 0x0800) && fi.TPSM == PSM_PSMT8H && fi.FBMSK == 0x00FFFFFF)
+		{
+			skip = 0;
+		}
+		else if(fi.TPSM == PSM_PSMCT24 && fi.TME && fi.FBP == 0x01000) // || fi.FBP == 0x00000
+		{
+			skip = 28; //28 30 56 64
+		}
+		else if(fi.FBP && fi.TPSM == PSM_PSMT8H && fi.FBMSK == 0xFFFFFF)
+		{
+			skip = 0; //24 33 40 9
+		}
+		else if(fi.TPSM == PSM_PSMT8H && fi.FBMSK == 0xFF000000)
+		{
+			skip = 1;
+		}
+		else if(fi.TME && (fi.TBP0 ==0x1400 || fi.TBP0 ==0x1000 ||fi.TBP0 == 0x1200) && (fi.TPSM == PSM_PSMCT32 || fi.TPSM == PSM_PSMCT24))
+		{
+			skip = 1;
+		}
+	}
+
+	return true;
+}
+
 bool GSC_SimpsonsGame(const GSFrameInfo& fi, int& skip)
 {
 	if(Aggressive && skip == 0)
@@ -2224,7 +2213,6 @@ void GSState::SetupCrcHack()
 		lut[CRC::SakuraTaisen] = GSC_SakuraTaisen;
 		lut[CRC::SakuraWarsSoLongMyLove] = GSC_SakuraWarsSoLongMyLove;
 		lut[CRC::ShadowofRome] = GSC_ShadowofRome;
-		lut[CRC::ShinOnimusha] = GSC_ShinOnimusha;
 		lut[CRC::Simple2000Vol114] = GSC_Simple2000Vol114;
 		lut[CRC::Spartan] = GSC_Spartan;
 		lut[CRC::StarWarsForceUnleashed] = GSC_StarWarsForceUnleashed;
@@ -2269,6 +2257,7 @@ void GSState::SetupCrcHack()
 		lut[CRC::FFX] = GSC_FFXGames;
 		lut[CRC::FFXII] = GSC_FFXGames;
 		lut[CRC::ResidentEvil4] = GSC_ResidentEvil4;
+		lut[CRC::ShinOnimusha] = GSC_ShinOnimusha;
 		lut[CRC::SimpsonsGame] = GSC_SimpsonsGame;
 		lut[CRC::SMTDDS1] = GSC_SMTNocturneDDS<0x203BA820>;
 		lut[CRC::SMTDDS2] = GSC_SMTNocturneDDS<0x20435BF0>;

@@ -12,12 +12,10 @@ set(FWnullFinalFlags "")
 
 # FWnull sources
 set(FWnullSources
-	Config.cpp
 	FW.cpp)
 
 # FWnull headers
 set(FWnullHeaders
-	Config.h
 	FW.h)
 
 # FWnull Linux sources
@@ -30,14 +28,12 @@ set(FWnullLinuxHeaders
 
 # FWnull Windows sources
 set(FWnullWindowsSources
-	Windows/Config.cpp
 	Windows/FireWireNull.def
-	Windows/FireWireNul.rc
-	Windows/Win32.cpp)
+)
 
 # FWnull Windows headers
 set(FWnullWindowsHeaders
-	Windows/resource.h)
+)
 
 set(FWnullFinalSources
 	${FWnullSources}
