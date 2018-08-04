@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\windows">
+      <UniqueIdentifier>{8c8e2092-925e-4c49-867d-fefb197108ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Extend">
+      <UniqueIdentifier>{11128385-9d75-42f6-be6c-bed299631c1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Extend\Threading">
+      <UniqueIdentifier>{ed72c48f-12bc-43ca-9991-b94dae1bf2ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Extend\Utilities">
+      <UniqueIdentifier>{c9c8e782-54c2-4d6c-9543-ec6500185906}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Extend\Windows">
+      <UniqueIdentifier>{06986a83-e8ff-4b32-b4b4-625b00abaa6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Pcsx2">
+      <UniqueIdentifier>{f61321a1-b490-47f5-ba9c-bb90d7eca903}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Pcsx2\CDVD">
+      <UniqueIdentifier>{b9bf02ff-5f6b-4c79-86c2-7cff67f8565d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Pcsx2\CDVD\IsoFS">
+      <UniqueIdentifier>{9ca2c254-39f2-4951-8fd5-ff530c1a16f4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CDVD.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CDVD.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SecondStubSource.cpp">
+      <Filter>Source Files\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\CDVD\CDVDisoReader.cpp">
+      <Filter>Source Files\Pcsx2\CDVD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\CDVD\ChunksCache.cpp">
+      <Filter>Source Files\Pcsx2\CDVD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\CDVD\CompressedFileReader.cpp">
+      <Filter>Source Files\Pcsx2\CDVD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PCSX2Lib\Extend\AppConfig.cpp">
+      <Filter>Source Files\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\CDVD\BlockdumpFileReader.cpp">
+      <Filter>Source Files\Pcsx2\CDVD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\CDVD\CsoFileReader.cpp">
+      <Filter>Source Files\Pcsx2\CDVD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\windows\FlatFileReaderWindows.cpp">
+      <Filter>Source Files\Extend\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\CDVD\GzippedFileReader.cpp">
+      <Filter>Source Files\Pcsx2\CDVD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\CDVD\InputIsoFile.cpp">
+      <Filter>Source Files\Pcsx2\CDVD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\MultipartFileReader.cpp">
+      <Filter>Source Files\Pcsx2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PCSX2Lib\Extend\Pcsx2Config.cpp">
+      <Filter>Source Files\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="Extend.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\CDVD\IsoFS\IsoFile.cpp">
+      <Filter>Source Files\Pcsx2\CDVD\IsoFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pcsx2\CDVD\IsoFS\IsoFS.cpp">
+      <Filter>Source Files\Pcsx2\CDVD\IsoFS</Filter>
+    </ClCompile>
+    <ClCompile Include="Elfheader.cpp">
+      <Filter>Source Files\Extend</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="CDVD.def">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

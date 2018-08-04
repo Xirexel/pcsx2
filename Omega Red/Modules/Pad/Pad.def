@@ -1,0 +1,5 @@
+LIBRARY "Pad"
+EXPORTS
+	getAPI			PRIVATE
+	execute			PRIVATE
+	releaseString	PRIVATE

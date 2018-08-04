@@ -1,0 +1,313 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Extend.cpp" />
+    <ClCompile Include="Extend\AppConfig.cpp" />
+    <ClCompile Include="Extend\CDVD\CDVD.cpp" />
+    <ClCompile Include="Extend\CDVD\OutputIsoFile.cpp" />
+    <ClCompile Include="Extend\DebugTools\DebugInterface.cpp" />
+    <ClCompile Include="Extend\GS.cpp" />
+    <ClCompile Include="Extend\Interface.cpp" />
+    <ClCompile Include="Extend\MTGS.cpp" />
+    <ClCompile Include="Extend\MTVU.cpp" />
+    <ClCompile Include="Extend\Patch.cpp" />
+    <ClCompile Include="Extend\Pcsx2App.cpp" />
+    <ClCompile Include="Extend\Pcsx2Config.cpp" />
+    <ClCompile Include="Extend\ps2\BiosTools.cpp" />
+    <ClCompile Include="Extend\R3000AInterpreter.cpp" />
+    <ClCompile Include="Extend\Sio.cpp" />
+    <ClCompile Include="Extend\System\SysCoreThread.cpp" />
+    <ClCompile Include="Extend\System\SysThreadBase.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\pcsx2\Counters.cpp" />
+    <ClCompile Include="..\..\pcsx2\Elfheader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iCore-32.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iR5900-32.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iR5900Arit.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iR5900AritImm.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iR5900Branch.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iR5900Jump.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iR5900LoadStore.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iR5900Move.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iR5900MultDiv.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iR5900Shift.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\iR5900Templates.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ix86-32\recVTLB.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\pcsx2\x86\BaseblockEx.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\iCOP0.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\iCore.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\iFPU.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\iFPUd.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\iMisc.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\iMMI.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\iR3000A.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\iR3000Atables.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\iR5900Misc.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\ir5900tables.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\iVU1micro.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\microVU.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\newVif_Dynarec.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\newVif_Unpack.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\newVif_UnpackSSE.cpp" />
+    <ClCompile Include="..\..\pcsx2\x86\sVU_Lower.cpp">
+      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\pcsx2\x86\sVU_Micro.cpp">
+      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\pcsx2\x86\sVU_Upper.cpp">
+      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\pcsx2\x86\sVU_zerorec.cpp">
+      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\pcsx2\windows\FlatFileReaderWindows.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\pcsx2\ps2\LegacyDmac.cpp" />
+    <ClCompile Include="..\..\pcsx2\ps2\pgif.cpp" />
+    <ClCompile Include="..\..\pcsx2\ps2\Iop\PsxBios.cpp" />
+    <ClCompile Include="..\..\pcsx2\ps2\Iop\IopHwRead.cpp" />
+    <ClCompile Include="..\..\pcsx2\ps2\Iop\IopHwWrite.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\pcsx2\IPU\IPUdma.cpp" />
+    <ClCompile Include="..\..\pcsx2\Ipu\IPU.cpp" />
+    <ClCompile Include="..\..\pcsx2\Ipu\IPU_Fifo.cpp" />
+    <ClCompile Include="..\..\pcsx2\Ipu\yuv2rgb.cpp" />
+    <ClCompile Include="..\..\pcsx2\Ipu\mpeg2lib\Idct.cpp" />
+    <ClCompile Include="..\..\pcsx2\Ipu\mpeg2lib\Mpeg.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\pcsx2\DebugTools\Breakpoints.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\DisassemblyManager.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\DisR3000A.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\DisR5900asm.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\DisVU0Micro.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\DisVU1Micro.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\ExpressionParser.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\MIPSAnalyst.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\MipsAssembler.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\MipsAssemblerTables.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\MipsStackWalk.cpp" />
+    <ClCompile Include="..\..\pcsx2\DebugTools\SymbolMap.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\pcsx2\CDVD\CdRom.cpp" />
+    <ClCompile Include="..\..\pcsx2\CDVD\CDVDaccess.cpp" />
+    <ClCompile Include="..\..\pcsx2\CDVD\IsoFS\IsoFile.cpp" />
+    <ClCompile Include="..\..\pcsx2\CDVD\IsoFS\IsoFS.cpp" />
+    <ClCompile Include="..\..\pcsx2\CDVD\IsoFS\IsoFSCDVD.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\pcsx2\Cache.cpp" />
+    <ClCompile Include="..\..\pcsx2\COP0.cpp" />
+    <ClCompile Include="..\..\pcsx2\COP2.cpp" />
+    <ClCompile Include="..\..\pcsx2\Dump.cpp" />
+    <ClCompile Include="..\..\pcsx2\FiFo.cpp" />
+    <ClCompile Include="..\..\pcsx2\FPU.cpp" />
+    <ClCompile Include="..\..\pcsx2\Gif.cpp" />
+    <ClCompile Include="..\..\pcsx2\Gif_Logger.cpp" />
+    <ClCompile Include="..\..\pcsx2\Gif_Unit.cpp" />
+    <ClCompile Include="..\..\pcsx2\GSState.cpp" />
+    <ClCompile Include="..\..\pcsx2\Hw.cpp" />
+    <ClCompile Include="..\..\pcsx2\HwRead.cpp" />
+    <ClCompile Include="..\..\pcsx2\HwWrite.cpp" />
+    <ClCompile Include="..\..\pcsx2\Interpreter.cpp" />
+    <ClCompile Include="..\..\pcsx2\IopBios.cpp" />
+    <ClCompile Include="..\..\pcsx2\IopCounters.cpp" />
+    <ClCompile Include="..\..\pcsx2\IopDma.cpp" />
+    <ClCompile Include="..\..\pcsx2\IopGte.cpp" />
+    <ClCompile Include="..\..\pcsx2\IopHw.cpp" />
+    <ClCompile Include="..\..\pcsx2\IopIrq.cpp" />
+    <ClCompile Include="..\..\pcsx2\IopMem.cpp" />
+    <ClCompile Include="..\..\pcsx2\IopSio2.cpp" />
+    <ClCompile Include="..\..\pcsx2\Mdec.cpp" />
+    <ClCompile Include="..\..\pcsx2\Memory.cpp" />
+    <ClCompile Include="..\..\pcsx2\MMI.cpp" />
+    <ClCompile Include="..\..\pcsx2\Patch_Memory.cpp" />
+    <ClCompile Include="..\..\pcsx2\R3000A.cpp" />
+    <ClCompile Include="..\..\pcsx2\R3000AOpcodeTables.cpp" />
+    <ClCompile Include="..\..\pcsx2\R5900.cpp" />
+    <ClCompile Include="..\..\pcsx2\R5900OpcodeImpl.cpp" />
+    <ClCompile Include="..\..\pcsx2\R5900OpcodeTables.cpp" />
+    <ClCompile Include="..\..\pcsx2\SaveState.cpp" />
+    <ClCompile Include="..\..\pcsx2\Sif.cpp" />
+    <ClCompile Include="..\..\pcsx2\Sif0.cpp" />
+    <ClCompile Include="..\..\pcsx2\Sif1.cpp" />
+    <ClCompile Include="..\..\pcsx2\sif2.cpp" />
+    <ClCompile Include="..\..\pcsx2\SourceLog.cpp" />
+    <ClCompile Include="..\..\pcsx2\SPR.cpp" />
+    <ClCompile Include="..\..\pcsx2\System.cpp" />
+    <ClCompile Include="..\..\pcsx2\Vif.cpp" />
+    <ClCompile Include="..\..\pcsx2\Vif_Codes.cpp" />
+    <ClCompile Include="..\..\pcsx2\Vif_Transfer.cpp" />
+    <ClCompile Include="..\..\pcsx2\Vif_Unpack.cpp" />
+    <ClCompile Include="..\..\pcsx2\Vif0_Dma.cpp" />
+    <ClCompile Include="..\..\pcsx2\Vif1_Dma.cpp" />
+    <ClCompile Include="..\..\pcsx2\Vif1_MFIFO.cpp" />
+    <ClCompile Include="..\..\pcsx2\vtlb.cpp" />
+    <ClCompile Include="..\..\pcsx2\VU0.cpp" />
+    <ClCompile Include="..\..\pcsx2\VU0micro.cpp" />
+    <ClCompile Include="..\..\pcsx2\VU0microInterp.cpp" />
+    <ClCompile Include="..\..\pcsx2\VU1micro.cpp" />
+    <ClCompile Include="..\..\pcsx2\VU1microInterp.cpp" />
+    <ClCompile Include="..\..\pcsx2\VUflags.cpp" />
+    <ClCompile Include="..\..\pcsx2\VUmicro.cpp" />
+    <ClCompile Include="..\..\pcsx2\VUmicroMem.cpp" />
+    <ClCompile Include="..\..\pcsx2\VUops.cpp" />
+    <ClCompile Include="..\..\pcsx2\PrecompiledHeader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common\PugiXML\PugiXML.vcxproj">
+      <Project>{7331057d-d230-4588-a016-493824c12a40}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Common\Utilities\utilities.vcxproj">
+      <Project>{6265c852-bce0-4cdb-a21f-5d7a69c72f96}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Emitters\x86emitter\x86emitter.vcxproj">
+      <Project>{cf923b1c-b4eb-4558-9fe5-a4fa1bfc4e35}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ExportDef.h" />
+    <ClInclude Include="Extend\AppConfig.h" />
+    <ClInclude Include="Extend\Extend.h" />
+    <ClInclude Include="Extend\Pcsx2App.h" />
+    <ClInclude Include="i18n.h" />
+    <ClInclude Include="Interface.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PCSX2Lib.def" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{EB9A58F7-4C35-41FB-91F3-46B3EF309100}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>PCSX2Lib</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir>$(PlatformName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir>$(PlatformName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PCSX2LIB_EXPORTS;_M_X86;PCSX2_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>.\Extend;$(SolutionDir)..\pcsx2\x86;$(SolutionDir)..\pcsx2;.\;..\Common\pthreads4w\include;$(SolutionDir)..\3rdparty;$(SolutionDir)\3rdparty\soundtouch\;..\Common\Framework;$(SolutionDir)..\pcsx2\System;.\Defs;..\Emitters</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <StructMemberAlignment>16Bytes</StructMemberAlignment>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>PCSX2Lib.def</ModuleDefinitionFile>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
+      <LargeAddressAware>true</LargeAddressAware>
+      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>"$(SolutionDir)..\common\vsprops\preBuild.cmd"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PCSX2LIB_EXPORTS;_M_X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>.\Extend;$(SolutionDir)..\pcsx2\x86;$(SolutionDir)..\pcsx2;.\;..\Common\pthreads4w\include;$(SolutionDir)..\3rdparty;$(SolutionDir)\3rdparty\soundtouch\;..\Common\Framework;$(SolutionDir)..\pcsx2\System;.\Defs;..\Emitters</AdditionalIncludeDirectories>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <StructMemberAlignment>16Bytes</StructMemberAlignment>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>PCSX2Lib.def</ModuleDefinitionFile>
+      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>"$(SolutionDir)..\common\vsprops\preBuild.cmd"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Manifest Include="PCSX2Lib.manifest" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

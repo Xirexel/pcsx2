@@ -1,0 +1,152 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Devel|Win32">
+      <Configuration>Devel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Devel|x64">
+      <Configuration>Devel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6265C852-BCE0-4CDB-A21F-5D7A69C72F96}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization Condition="$(Configuration.Contains(Release))">true</WholeProgramOptimization>
+    <UseDebugLibraries Condition="$(Configuration.Contains(Debug))">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="!$(Configuration.Contains(Debug))">false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="..\..\..\common\vsprops\CommonLibrary.props" />
+    <Import Project="..\..\..\common\vsprops\pthreads.props" />
+    <Import Condition="$(Configuration.Contains(Debug))" Project="..\..\..\common\vsprops\CodeGen_Debug.props" />
+    <Import Condition="$(Configuration.Contains(Devel))" Project="..\..\..\common\vsprops\CodeGen_Devel.props" />
+    <Import Condition="$(Configuration.Contains(Release))" Project="..\..\..\common\vsprops\CodeGen_Release.props" />
+    <Import Condition="!$(Configuration.Contains(Release))" Project="..\..\..\common\vsprops\IncrementalLinking.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(PlatformName)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(PlatformName)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\pthreads4w\include;..\Framework;..\Framework\Utilities;..\..\Emitters;.\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">__WXMSW__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\pthreads4w\include;..\Framework;..\Framework\Utilities;..\..\Emitters;.\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">__WXMSW__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\common\src\Utilities\AlignedMalloc.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\src\Utilities\Console.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\Exceptions.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\FastFormatString.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\HashTools.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\VirtualMemory.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\x86\MemcpyFast.cpp">
+      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\src\Utilities\Perf.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\PrecompiledHeader.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\src\Utilities\Linux\LnxHostSys.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\src\Utilities\Linux\LnxMisc.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\src\Utilities\Linux\LnxThreads.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\src\Utilities\Windows\WinHostSys.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\Windows\WinMisc.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\Windows\WinThreads.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\RwMutex.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\Semaphore.cpp" />
+    <ClCompile Include="..\..\..\common\src\Utilities\ThreadTools.cpp" />
+    <ClCompile Include="Mutex.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\common\include\Utilities\EventSource.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\common\include\Utilities\EmbeddedImage.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\ScopedAlloc.h" />
+    <ClInclude Include="..\..\..\common\src\Utilities\ThreadingInternal.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\Assertions.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\CheckedStaticBox.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\Console.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\Dependencies.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\EventSource.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\Exceptions.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\FixedPointTypes.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\General.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\HashMap.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\MathUtils.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\MakeUnique.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\MemcpyFast.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\Path.h" />
+    <ClInclude Include="..\..\..\common\src\Utilities\PrecompiledHeader.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\pxCheckBox.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\pxEvents.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\pxRadioPanel.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\pxStaticText.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\RedtapeWindows.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\SafeArray.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\StringHelpers.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\wxAppWithHelpers.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\wxBaseTools.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\wxGuiTools.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\Threading.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\PersistentThread.h" />
+    <ClInclude Include="..\..\..\common\include\Utilities\RwMutex.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Framework\Framework.vcxproj">
+      <Project>{86dd23c9-168a-42f7-b6f3-5547d80e1886}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\pthreads4w\build\pthreads4w.vcxproj">
+      <Project>{0fae817d-9a32-4830-857e-81da57246e16}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

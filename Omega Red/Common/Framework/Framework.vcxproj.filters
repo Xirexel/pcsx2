@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\wx">
+      <UniqueIdentifier>{94ca5ce2-320e-4a18-8fbb-fbdf993d2cef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\wx">
+      <UniqueIdentifier>{322f6086-b929-41b9-b2d1-6725b74c7dc2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\wx\msw">
+      <UniqueIdentifier>{98cef632-d797-4a8e-ad4d-b66b27883856}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utilities">
+      <UniqueIdentifier>{75ce925b-a5fe-4b36-ae4b-9b255045e4f0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="wx\datetime.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\ffile.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\filefn.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\filename.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\wfstream.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\dir.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\log.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\stdpaths.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\longlong.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\string.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\PathUtils.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\file.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="wx\thread.cpp">
+      <Filter>Source Files\wx</Filter>
+    </ClCompile>
+    <ClCompile Include="Stub.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="wx\app.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\apptrait.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\crt.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\datetime.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\defs.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\dir.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\dynlib.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\ffile.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\file.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\fileconf.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\filefn.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\filename.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\intl.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\log.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\longlong.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\stdpaths.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\string.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\textfile.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\thread.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\timespan.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\tokenzr.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\txtstrm.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\wfstream.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\wx.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\zipstrm.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\msw\wrapwin.h">
+      <Filter>Header Files\wx\msw</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\stopwatch.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+    <ClInclude Include="wx\gdicmn.h">
+      <Filter>Header Files\wx</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

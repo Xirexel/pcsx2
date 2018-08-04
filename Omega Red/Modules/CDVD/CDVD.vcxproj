@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{0B7751F1-C2D0-4124-950D-8BD9D1DE64C3}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>CDVD</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir>$(PlatformName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir>$(PlatformName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;CDVD_EXPORTS;__WXMSW__;PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>.\;$(SolutionDir)..\pcsx2;$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\3rdparty;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;$(SolutionDir)Common\Framework;$(SolutionDir)..\3rdparty\pthreads4w\include;$(SolutionDir)Emitters</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <ModuleDefinitionFile>CDVD.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Winmm.lib;Comctl32.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;CDVD_EXPORTS;PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>.\;$(SolutionDir)..\pcsx2;$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\3rdparty;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;$(SolutionDir)Common\Framework;$(SolutionDir)..\3rdparty\pthreads4w\include;$(SolutionDir)Emitters</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ModuleDefinitionFile>CDVD.def</ModuleDefinitionFile>
+      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalDependencies>Winmm.lib;Comctl32.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CDVD.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\pcsx2\CDVD\IsoFS\IsoFile.cpp" />
+    <ClCompile Include="..\..\..\pcsx2\CDVD\IsoFS\IsoFS.cpp" />
+    <ClCompile Include="..\..\PCSX2Lib\Extend\AppConfig.cpp" />
+    <ClCompile Include="..\..\PCSX2Lib\Extend\Pcsx2Config.cpp" />
+    <ClCompile Include="..\..\..\pcsx2\CDVD\BlockdumpFileReader.cpp" />
+    <ClCompile Include="..\..\..\pcsx2\CDVD\CDVDisoReader.cpp" />
+    <ClCompile Include="..\..\..\pcsx2\CDVD\ChunksCache.cpp" />
+    <ClCompile Include="..\..\..\pcsx2\CDVD\CompressedFileReader.cpp" />
+    <ClCompile Include="..\..\..\pcsx2\CDVD\CsoFileReader.cpp" />
+    <ClCompile Include="..\..\..\pcsx2\CDVD\GzippedFileReader.cpp" />
+    <ClCompile Include="..\..\..\pcsx2\CDVD\InputIsoFile.cpp" />
+    <ClCompile Include="..\..\..\pcsx2\MultipartFileReader.cpp" />
+    <ClCompile Include="..\..\..\pcsx2\windows\FlatFileReaderWindows.cpp" />
+    <ClCompile Include="CDVD.cpp" />
+    <ClCompile Include="Elfheader.cpp" />
+    <ClCompile Include="Extend.cpp" />
+    <ClCompile Include="Interface.cpp" />
+    <ClCompile Include="SecondStubSource.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="CDVD.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\Framework\Framework.vcxproj">
+      <Project>{86dd23c9-168a-42f7-b6f3-5547d80e1886}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\PugiXML\PugiXML.vcxproj">
+      <Project>{7331057d-d230-4588-a016-493824c12a40}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\Utilities\utilities.vcxproj">
+      <Project>{6265c852-bce0-4cdb-a21f-5d7a69c72f96}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\zlib\zlib.vcxproj">
+      <Project>{e5fe1e52-6785-4f5b-8303-7b18121def21}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,97 @@
+LIBRARY "PCSX2Lib"
+EXPORTS
+
+;	Init functions:
+	DetectCpuAndUserModeFunc
+	AllocateCoreStuffsFunc
+	ApplySettingsFunc
+
+;	EE Core thread controls:
+	SysThreadBase_ResumeFunc
+	SysThreadBase_SuspendFunc
+	SysThreadBase_ResetFunc
+	SysThreadBase_CancelFunc
+
+	
+;	MTGS thread controls:
+	MTGS_ResumeFunc
+	MTGS_WaitForOpenFunc
+	MTGS_IsSelfFunc
+	MTGS_SuspendFunc
+	MTGS_CancelFunc
+	MTGS_FreezeFunc
+	MTGS_WaitGSFunc
+	
+;	MTVU thread controls:
+	MTVU_CancelFunc
+	vu1Thread_WaitVUFunc
+	
+;	Plugin managment:
+	openPlugin_SPU2Func
+	openPlugin_DEV9Func
+	openPlugin_USBFunc
+	openPlugin_FWFunc	
+	setPluginsInitCallback
+	setPluginsCloseCallback
+	setPluginsShutdownCallback
+	setPluginsOpenCallback
+	setPluginsAreLoadedCallback
+	resetCallbacksFunc
+	setGS			
+	setPAD			
+	setSPU2			
+	setCDVD	
+	setMcd		
+	setUSB			
+	setFW			
+	setDEV9		
+	
+;	Patches managment:
+	setUI_EnableSysActionsCallback
+	ForgetLoadedPatchesFunc
+	inifile_commandFunc
+	setLoadAllPatchesAndStuffCallback
+	setSioSetGameSerialFunc
+	getGameStartedFunc
+	getGameLoadingFunc
+	getElfCRCFunc
+	VTLB_Alloc_PpmapFinc
+	releaseWCHARStringFunc
+	getSysGetBiosDiscIDFunc
+	gsUpdateFrequencyCallFunc
+	getSysGetDiscIDFunc
+	
+;	BIOS managment:
+	setLoadBIOSCallbackCallback
+	setCDVDNVMCallback
+	setCDVDGetMechaVerCallback
+	
+;	Saving managment:
+	getFreezeInternalsFunc
+	getEmotionMemoryFunc
+	getIopMemoryFunc
+	getHwRegsFunc
+	getIopHwRegsFunc
+	getScratchpadFunc
+	getVU0memFunc
+	getVU1memFunc
+	getVU0progFunc
+	getVU1progFunc
+	getFreezeOutFunc
+	setDoFreezeCallback
+	
+;	Loading managment:
+	setFreezeInFunc	
+	setFreezeInternalsFunc
+	setEmotionMemoryFunc
+	setIopMemoryFunc
+	setHwRegsFunc
+	setIopHwRegsFunc
+	setScratchpadFunc
+	setVU0memFunc
+	setVU1memFunc
+	setVU0progFunc
+	setVU1progFunc
+	
+;	Elf file managment:
+	PCSX2_Hle_SetElfPathFunc

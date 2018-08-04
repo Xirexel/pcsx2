@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{86DD23C9-168A-42F7-B6F3-5547D80E1886}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Framework</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="..\..\..\common\vsprops\CommonLibrary.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(PlatformName)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(PlatformName)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;__VISUALC__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;__VISUALC__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir);</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Stub.cpp" />
+    <ClCompile Include="Utilities\PathUtils.cpp" />
+    <ClCompile Include="wx\datetime.cpp" />
+    <ClCompile Include="wx\dir.cpp" />
+    <ClCompile Include="wx\ffile.cpp" />
+    <ClCompile Include="wx\file.cpp" />
+    <ClCompile Include="wx\filefn.cpp" />
+    <ClCompile Include="wx\filename.cpp" />
+    <ClCompile Include="wx\log.cpp" />
+    <ClCompile Include="wx\longlong.cpp" />
+    <ClCompile Include="wx\stdpaths.cpp" />
+    <ClCompile Include="wx\string.cpp" />
+    <ClCompile Include="wx\thread.cpp" />
+    <ClCompile Include="wx\wfstream.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="wx\app.h" />
+    <ClInclude Include="wx\apptrait.h" />
+    <ClInclude Include="wx\crt.h" />
+    <ClInclude Include="wx\datetime.h" />
+    <ClInclude Include="wx\defs.h" />
+    <ClInclude Include="wx\dir.h" />
+    <ClInclude Include="wx\dynlib.h" />
+    <ClInclude Include="wx\ffile.h" />
+    <ClInclude Include="wx\file.h" />
+    <ClInclude Include="wx\fileconf.h" />
+    <ClInclude Include="wx\filefn.h" />
+    <ClInclude Include="wx\filename.h" />
+    <ClInclude Include="wx\gdicmn.h" />
+    <ClInclude Include="wx\intl.h" />
+    <ClInclude Include="wx\log.h" />
+    <ClInclude Include="wx\longlong.h" />
+    <ClInclude Include="wx\msw\wrapwin.h" />
+    <ClInclude Include="wx\stdpaths.h" />
+    <ClInclude Include="wx\stopwatch.h" />
+    <ClInclude Include="wx\string.h" />
+    <ClInclude Include="wx\textfile.h" />
+    <ClInclude Include="wx\thread.h" />
+    <ClInclude Include="wx\timespan.h" />
+    <ClInclude Include="wx\tokenzr.h" />
+    <ClInclude Include="wx\txtstrm.h" />
+    <ClInclude Include="wx\wfstream.h" />
+    <ClInclude Include="wx\wx.h" />
+    <ClInclude Include="wx\zipstrm.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

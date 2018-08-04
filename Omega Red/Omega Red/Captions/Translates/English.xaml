@@ -1,0 +1,54 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <sys:String x:Key="MainName">Omega Red PS2 emulator</sys:String>
+    <sys:String x:Key="ControlTitle">Config</sys:String>
+    <sys:String x:Key="MediaTitle">Records</sys:String>
+    <sys:String x:Key="DisplayModeTitle">Display mode:</sys:String>
+    <sys:String x:Key="ControlModeTitle">Control mode:</sys:String>
+    <sys:String x:Key="TopmostTitle">Set on top all windows</sys:String>
+    <sys:String x:Key="CompressionQualityTitle">Video compression quality:</sys:String>
+    <sys:String x:Key="DisableWideScreenTitle">Turn off widescreen mode</sys:String>
+    <sys:String x:Key="LanguageTitle">Current language:</sys:String>
+    <sys:String x:Key="CaptureManagerTitle">Powered by CaptureManager SDK</sys:String>
+    <sys:String x:Key="YesTitle">Confirm</sys:String>
+    <sys:String x:Key="NoTitle">Cancel</sys:String>
+    <sys:String xml:space="preserve" x:Key="VersionTitle">Version: </sys:String>
+    <sys:String xml:space="preserve" x:Key="DurationTitle">Duration: </sys:String>
+    <sys:String xml:space="preserve" x:Key="LastDateTitle">Last writing date: </sys:String>
+    <sys:String xml:space="preserve" x:Key="DateTitle">Date: </sys:String>
+    <sys:String xml:space="preserve" x:Key="ZoneTitle">Region: </sys:String>
+    <sys:String xml:space="preserve" x:Key="TypeTitle">Platform: </sys:String>
+    <sys:String x:Key="PadControlTypeTitle">Pad type:</sys:String>
+    <sys:String x:Key="ConfigTitle">General config</sys:String>
+    <sys:String x:Key="PadTitle">Pad</sys:String>
+    <sys:String x:Key="BIOSTitle">BIOS</sys:String>
+    <sys:String x:Key="MemoryCardTitle">Memory card</sys:String>
+    <sys:String x:Key="ISOTitle">Game disk</sys:String>
+    <sys:String xml:space="preserve" x:Key="TypeISOTitle">File type: </sys:String>
+    <sys:String xml:space="preserve" x:Key="DiscRegionTypeTitle">Region: </sys:String>
+    <sys:String xml:space="preserve" x:Key="GameDiscTypeTitle">Disk type: </sys:String>
+    <sys:String xml:space="preserve" x:Key="WideScreenTitle">Widescreen format</sys:String>
+    <sys:String x:Key="SlotTitle">Saving</sys:String>
+    <sys:String x:Key="AutosaveTitle">Autosaving</sys:String>
+    <sys:String x:Key="ScreenshotsTitle">Captured screens</sys:String>
+    <sys:String x:Key="VideoTitle">Captured videos</sys:String>
+    <sys:String xml:space="preserve" x:Key="TimeLineTitle">Tileline: </sys:String>
+    <sys:String xml:space="preserve" x:Key="ModuleBeforeTitle">Module </sys:String>
+    <sys:String xml:space="preserve" x:Key="ModuleAfterTitle"> loading.</sys:String>
+    <sys:String x:Key="ModuleIsLoadedTitle">is finished.</sys:String>
+    <sys:String x:Key="ModuleIsNotLoadedTitle">is not finished.</sys:String>
+    <sys:String x:Key="StartingTitle">Launching...</sys:String>
+    <sys:String x:Key="TouchPadTitle">Touch pad</sys:String>
+    <sys:String x:Key="GamePadTitle">Game pad</sys:String>
+    <sys:String x:Key="DisplayModeWindowTitle">Regular</sys:String>
+    <sys:String x:Key="DisplayModeFullTitle">Fullscreen</sys:String>
+    <sys:String x:Key="ControlModeButtonTitle">Button</sys:String>
+    <sys:String x:Key="ControlModeTouchTitle">Touch</sys:String>
+    <sys:String x:Key="NoneInitilizedTitle">Not initialized</sys:String>
+    <sys:String x:Key="InitilizedTitle">Initialized</sys:String>
+    <sys:String x:Key="StoppedTitle">Stopped</sys:String>
+    <sys:String x:Key="PausedTitle">Paused</sys:String>
+
+</ResourceDictionary>

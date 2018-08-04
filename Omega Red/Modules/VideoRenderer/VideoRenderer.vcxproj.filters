@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\GS">
+      <UniqueIdentifier>{e91d5d84-7063-4293-b964-c6d2746dbec2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GS\Extend">
+      <UniqueIdentifier>{5560e190-71ab-4f43-8085-3c9c514dbc19}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSAlignedClass.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSBlock.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSClut.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSCodeBuffer.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSCrc.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSDevice.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSDevice11.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSDeviceDX.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSDirtyRect.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSDrawingContext.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSDump.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSdx.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSFunctionMap.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSLocalMemory.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSPerfMon.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSRenderer.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSRendererDX.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSRendererDX11.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSRendererHW.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSSetting.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSState.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSTables.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSTexture.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSTexture11.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSTextureCache.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSTextureCache11.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSTextureFX11.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSTextureSW.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSUtil.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSVector.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\GSVertexTrace.cpp">
+      <Filter>Source Files\GS</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoRendererControl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GS\Extend\GSWndStub.cpp">
+      <Filter>Source Files\GS\Extend</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GS\GSdx.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="VideoRenderer.def">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

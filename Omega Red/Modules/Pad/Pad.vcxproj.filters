@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\LilyPad">
+      <UniqueIdentifier>{877eaedf-6704-4619-a7b4-aab865a3d293}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\LilyPad">
+      <UniqueIdentifier>{065297b8-79bb-4cb7-bffa-ead998fcfc52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\LilyPad\InputAPIs">
+      <UniqueIdentifier>{c81e434a-c06b-4844-a095-63c63fb2ca62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\LilyPad\Input">
+      <UniqueIdentifier>{075ca1a0-f5fc-4819-b59e-0d66f88eb5c0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LilyPad\LilyPad.h">
+      <Filter>Header Files\LilyPad</Filter>
+    </ClInclude>
+    <ClInclude Include="Pad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PadControl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LilyPad\LilyPad.cpp">
+      <Filter>Source Files\LilyPad</Filter>
+    </ClCompile>
+    <ClCompile Include="Pad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LilyPad\Config.cpp">
+      <Filter>Source Files\LilyPad</Filter>
+    </ClCompile>
+    <ClCompile Include="LilyPad\KeyboardQueue.cpp">
+      <Filter>Source Files\LilyPad\InputAPIs</Filter>
+    </ClCompile>
+    <ClCompile Include="LilyPad\InputManager.cpp">
+      <Filter>Source Files\LilyPad\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="LilyPad\DeviceEnumerator.cpp">
+      <Filter>Source Files\LilyPad\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="TouchPadInput.cpp">
+      <Filter>Source Files\LilyPad\InputAPIs</Filter>
+    </ClCompile>
+    <ClCompile Include="LilyPad\XInputEnum.cpp">
+      <Filter>Source Files\LilyPad\InputAPIs</Filter>
+    </ClCompile>
+    <ClCompile Include="LilyPad\DirectInput.cpp">
+      <Filter>Source Files\LilyPad\InputAPIs</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Pad.def">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

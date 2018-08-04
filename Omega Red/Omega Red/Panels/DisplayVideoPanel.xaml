@@ -1,0 +1,43 @@
+﻿<UserControl x:Class="Omega_Red.Tools.Panels.DisplayVideoPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <Grid Background="Black" PreviewMouseMove="Grid_PreviewMouseMove">
+        <MediaElement x:Name="mVideoPlayer" LoadedBehavior="Manual" UnloadedBehavior="Manual"/>
+        <Grid x:Name="mControlPanel" VerticalAlignment="Bottom" Margin="30">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition />
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <CheckBox Style="{DynamicResource PlayPauseCheckBox}" />
+            <Button Grid.Column="2" Style="{DynamicResource StopBtn}"/>
+            <Border Padding="3,0" CornerRadius="{DynamicResource StandardCornerRadius}" Background="{DynamicResource MainBackgroundBrush}" Grid.Column="1" VerticalAlignment="Top" HorizontalAlignment="Stretch" Opacity="{DynamicResource StandardOpacity}">
+                <StackPanel Orientation="Horizontal"  >
+                    <TextBlock FontWeight="{DynamicResource StandardFontWeight}" FontSize="{DynamicResource StandardFontSize}" Foreground="{DynamicResource MainForegroundBrush}" Text="{DynamicResource TimeLineTitle}" />
+                    <TextBlock FontWeight="{DynamicResource StandardFontWeight}" FontSize="{DynamicResource StandardFontSize}" Foreground="{DynamicResource MainForegroundBrush}" x:Name="mCurrentTimeTextBlock" />
+                </StackPanel>
+            </Border>
+            <Slider Margin="10,0" VerticalAlignment="Center" Grid.Column="1" x:Name="mTimelineSlider" PreviewMouseDown="mSlider_MouseLeftButtonDown" PreviewMouseUp="mSlider_MouseLeftButtonUp" MouseLeave="mSlider_MouseLeave" Minimum="0" Maximum="100" ValueChanged="Slider_ValueChanged" />
+
+            <Grid Grid.Row="1" Grid.ColumnSpan="3" HorizontalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox Style="{DynamicResource MutedCheckBox}" IsChecked="{Binding ElementName=mVideoPlayer, Path=IsMuted}">
+                    <Path Stroke="Black" StrokeThickness="2" Margin="0,3,0,0" Data="M 0,5 L 7,5 L 7, 20 L 0,20 Z M 7,5 L 14,0 L 14, 25 L 7,20 Z" />
+                </CheckBox>
+                <Slider Margin="10,0" Width="100" VerticalAlignment="Center" Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding ElementName=mVideoPlayer, Path=Volume, Mode=TwoWay}" />
+
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

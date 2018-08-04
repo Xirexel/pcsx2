@@ -1,0 +1,5 @@
+LIBRARY "MemoryCard"
+EXPORTS
+	getAPI			PRIVATE
+	execute			PRIVATE
+	releaseString	PRIVATE
