@@ -48,7 +48,6 @@ static const uint32 g_fx_cb_index         = 14;
 static const uint32 g_convert_index       = 15;
 static const uint32 g_vs_cb_index         = 20;
 static const uint32 g_ps_cb_index         = 21;
-static const uint32 g_gs_cb_index         = 22;
 
 bool  GSDeviceOGL::m_debug_gl_call = false;
 int   GSDeviceOGL::m_shader_inst = 0;
@@ -348,18 +347,17 @@ bool GSDeviceOGL::Create(const std::shared_ptr<GSWnd> &wnd)
 		GL_PUSH("GSDeviceOGL::Vertex Buffer");
 
 		static_assert(sizeof(GSVertexPT1) == sizeof(GSVertex), "wrong GSVertex size");
-		GSInputLayoutOGL il_convert[] =
-		{
-			{2 , GL_FLOAT          , GL_FALSE , sizeof(GSVertexPT1) , (const GLvoid*)(0) }  ,
-			{2 , GL_FLOAT          , GL_FALSE , sizeof(GSVertexPT1) , (const GLvoid*)(16) } ,
-			{4 , GL_UNSIGNED_BYTE  , GL_FALSE , sizeof(GSVertex)    , (const GLvoid*)(8) }  ,
-			{1 , GL_FLOAT          , GL_FALSE , sizeof(GSVertex)    , (const GLvoid*)(12) } ,
-			{2 , GL_UNSIGNED_SHORT , GL_FALSE , sizeof(GSVertex)    , (const GLvoid*)(16) } ,
-			{1 , GL_UNSIGNED_INT   , GL_FALSE , sizeof(GSVertex)    , (const GLvoid*)(20) } ,
-			{2 , GL_UNSIGNED_SHORT , GL_FALSE , sizeof(GSVertex)    , (const GLvoid*)(24) } ,
-			{4 , GL_UNSIGNED_BYTE  , GL_TRUE  , sizeof(GSVertex)    , (const GLvoid*)(28) } , // Only 1 byte is useful but hardware unit only support 4B
+		std::vector<GSInputLayoutOGL> il_convert = {
+			{0, 2 , GL_FLOAT          , GL_FALSE , sizeof(GSVertexPT1) , (const GLvoid*)(0) }  ,
+			{1, 2 , GL_FLOAT          , GL_FALSE , sizeof(GSVertexPT1) , (const GLvoid*)(16) } ,
+			{2, 4 , GL_UNSIGNED_BYTE  , GL_FALSE , sizeof(GSVertex)    , (const GLvoid*)(8) }  ,
+			{3, 1 , GL_FLOAT          , GL_FALSE , sizeof(GSVertex)    , (const GLvoid*)(12) } ,
+			{4, 2 , GL_UNSIGNED_SHORT , GL_FALSE , sizeof(GSVertex)    , (const GLvoid*)(16) } ,
+			{5, 1 , GL_UNSIGNED_INT   , GL_FALSE , sizeof(GSVertex)    , (const GLvoid*)(20) } ,
+			{6, 2 , GL_UNSIGNED_SHORT , GL_FALSE , sizeof(GSVertex)    , (const GLvoid*)(24) } ,
+			{7, 4 , GL_UNSIGNED_BYTE  , GL_TRUE  , sizeof(GSVertex)    , (const GLvoid*)(28) } , // Only 1 byte is useful but hardware unit only support 4B
 		};
-		m_va = new GSVertexBufferStateOGL(il_convert, countof(il_convert));
+		m_va = new GSVertexBufferStateOGL(il_convert);
 	}
 
 	// ****************************************************************
@@ -962,7 +960,7 @@ GLuint GSDeviceOGL::CompilePS(PSSelector sel)
 		+ format("#define PS_COLCLIP %d\n", sel.colclip)
 		+ format("#define PS_DATE %d\n", sel.date)
 		+ format("#define PS_TCOFFSETHACK %d\n", sel.tcoffsethack)
-		//+ format("#define PS_POINT_SAMPLER %d\n", sel.point_sampler)
+		+ format("#define PS_POINT_SAMPLER %d\n", sel.point_sampler)
 		+ format("#define PS_BLEND_A %d\n", sel.blend_a)
 		+ format("#define PS_BLEND_B %d\n", sel.blend_b)
 		+ format("#define PS_BLEND_C %d\n", sel.blend_c)

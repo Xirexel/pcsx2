@@ -331,12 +331,12 @@ namespace Panels
 		pxCheckBox*		m_check_Enable;
 		wxButton*		m_button_Defaults;
 
-		wxPanelWithHelpers* m_eeSliderPanel;
-		wxPanelWithHelpers* m_vuSliderPanel;
-		wxSlider*		m_slider_eecycle;
-		wxSlider*		m_slider_vustealer;
-		pxStaticText*	m_msg_eecycle;
-		pxStaticText*	m_msg_vustealer;
+		wxPanelWithHelpers* m_eeRateSliderPanel;
+		wxPanelWithHelpers* m_eeSkipSliderPanel;
+		wxSlider*		m_slider_eeRate;
+		wxSlider*		m_slider_eeSkip;
+		pxStaticText*	m_msg_eeRate;
+		pxStaticText*	m_msg_eeSkip;
 
 		pxCheckBox*		m_check_intc;
 		pxCheckBox*		m_check_waitloop;
@@ -353,8 +353,8 @@ namespace Panels
 		void ApplyConfigToGui( AppConfig& configToApply, int flags=0 );
 
 	protected:
-		const wxChar* GetEEcycleSliderMsg( int val );
-		const wxChar* GetVUcycleSliderMsg( int val );
+		const wxChar* GetEECycleRateSliderMsg( int val );
+		const wxChar* GetEECycleSkipSliderMsg( int val );
 		void SetEEcycleSliderMsg();
 		void SetVUcycleSliderMsg();
 		void TrigLayout();
@@ -382,40 +382,6 @@ namespace Panels
 		void Apply();
 		void AppStatusEvent_OnSettingsApplied();
 		void ApplyConfigToGui( AppConfig& configToApply, int flags=0 );
-	};
-
-	// --------------------------------------------------------------------------------------
-	//  GameDatabasePanel
-	// --------------------------------------------------------------------------------------
-	class GameDatabasePanel : public BaseApplicableConfigPanel
-	{
-	protected:
-		//wxTextCtrl*	searchBox;
-		//wxComboBox*	searchType;
-		//wxListBox*	searchList;
-		wxButton*	searchBtn;
-		wxTextCtrl*	serialBox;
-		wxTextCtrl*	nameBox;
-		wxTextCtrl*	regionBox;
-		wxTextCtrl*	compatBox;
-		wxTextCtrl*	commentBox;
-		wxTextCtrl*	patchesBox;
-		pxCheckBox*	gameFixes[GamefixId_COUNT];
-
-	public:
-		GameDatabasePanel( wxWindow* parent );
-		virtual ~GameDatabasePanel() = default;
-		void Apply();
-		void AppStatusEvent_OnSettingsApplied();
-
-	protected:
-		void PopulateFields( const wxString& serial=wxEmptyString );
-		bool WriteFieldsToDB();
-		void Search_Click( wxCommandEvent& evt );
-
-	private:
-		void placeTextBox(wxFlexGridSizer& sizer1, wxTextCtrl* wxBox, const wxString& txt);
-		void blankLine(wxFlexGridSizer& sizer1);
 	};
 
 	class SettingsDirPickerPanel : public DirPickerPanel

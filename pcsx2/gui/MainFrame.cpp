@@ -28,6 +28,7 @@
 #include "AppAccelerators.h"
 
 #include "svnrev.h"
+#include "Saveslots.h"
 
 // ------------------------------------------------------------------------
 wxMenu* MainEmuFrame::MakeStatesSubMenu( int baseid, int loadBackupId ) const
@@ -36,18 +37,18 @@ wxMenu* MainEmuFrame::MakeStatesSubMenu( int baseid, int loadBackupId ) const
 
 	for (int i = 0; i < 10; i++)
 	{
-		mnuSubstates->Append( baseid+i+1, wxsFormat(_("Slot %d"), i) );
+		// Will be changed once an iso is loaded.
+		mnuSubstates->Append(baseid + i + 1, wxsFormat(_("Slot %d"), i));
 	}
-	if( loadBackupId>=0 )
+
+	if (loadBackupId >= 0)
 	{
 		mnuSubstates->AppendSeparator();
 
-		wxMenuItem* m = mnuSubstates->Append( loadBackupId,	_("Backup") );
+		wxMenuItem* m = mnuSubstates->Append(loadBackupId, _("Backup"));
 		m->Enable( false );
-		States_registerLoadBackupMenuItem( m );
 	}
 
-	//mnuSubstates->Append( baseid - 1,	_("Other...") );
 	return mnuSubstates;
 }
 
@@ -217,7 +218,6 @@ void MainEmuFrame::ConnectMenus()
 	Bind(wxEVT_MENU, &MainEmuFrame::Menu_SysSettings_Click, this, MenuId_Config_SysSettings);
 	Bind(wxEVT_MENU, &MainEmuFrame::Menu_McdSettings_Click, this, MenuId_Config_McdSettings);
 	Bind(wxEVT_MENU, &MainEmuFrame::Menu_SelectPluginsBios_Click, this, MenuId_Config_BIOS);
-	Bind(wxEVT_MENU, &MainEmuFrame::Menu_GameDatabase_Click, this, MenuId_Config_GameDatabase);
 
 	Bind(wxEVT_MENU, &MainEmuFrame::Menu_GSSettings_Click, this, MenuId_Video_CoreSettings);
 	Bind(wxEVT_MENU, &MainEmuFrame::Menu_WindowSettings_Click, this, MenuId_Video_WindowSettings);
@@ -472,7 +472,6 @@ MainEmuFrame::MainEmuFrame(wxWindow* parent, const wxString& title)
 	m_menuConfig.Append(MenuId_Config_SysSettings,	_("Emulation &Settings") );
 	m_menuConfig.Append(MenuId_Config_McdSettings,	_("&Memory cards") );
 	m_menuConfig.Append(MenuId_Config_BIOS,			_("&Plugin/BIOS Selector") );
-	if (IsDebugBuild) m_menuConfig.Append(MenuId_Config_GameDatabase,	_("&Game Database Editor") );
 
 	m_menuConfig.AppendSeparator();
 
@@ -789,4 +788,3 @@ void PerPluginMenuInfo::OnLoaded()
 	);
 	MyMenu.Enable( GetPluginMenuId_Settings(PluginId), true );
 }
-

@@ -25,7 +25,6 @@ set(UtilitiesSources
 	EventSource.cpp
 	Exceptions.cpp
 	FastFormatString.cpp
-	HashTools.cpp
 	IniInterface.cpp
 	Linux/LnxHostSys.cpp
 	Mutex.cpp
@@ -56,8 +55,8 @@ set(UtilitiesHeaders
 	../../include/Utilities/EventSource.h
 	../../include/Utilities/Exceptions.h
 	../../include/Utilities/FixedPointTypes.h
+	../../include/Utilities/gtkGuiTools.h
 	../../include/Utilities/General.h
-	../../include/Utilities/HashMap.h
 	../../include/Utilities/MakeUnique.h
 	../../include/Utilities/MemcpyFast.h
 	../../include/Utilities/MemsetFast.inl

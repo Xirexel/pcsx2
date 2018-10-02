@@ -34,6 +34,7 @@ class GSRendererDX : public GSRendererHW
 	bool UserHacks_AlphaStencil;
 
 protected:
+	void ResetStates();
 	void EmulateAtst(const int pass, const GSTextureCache::Source* tex);
 	void EmulateZbuffer();
 	void EmulateChannelShuffle(GSTexture** rt, const GSTextureCache::Source* tex);
@@ -43,8 +44,6 @@ protected:
 	virtual void SetupIA(const float& sx, const float& sy) = 0;
 	virtual void UpdateFBA(GSTexture* rt) {}
 
-	unsigned int UserHacks_TCOffset;
-	float UserHacks_TCO_x, UserHacks_TCO_y;
 	int UserHacks_HPO;
 
 	bool DATE;
@@ -54,12 +53,13 @@ protected:
 
 	GSDeviceDX* dev;
 
-	GSDeviceDX::OMDepthStencilSelector om_dssel;
-	GSDeviceDX::OMBlendSelector om_bsel;
-
-	GSDeviceDX::PSSelector m_ps_sel;
-	GSDeviceDX::PSSamplerSelector m_ps_ssel;
+	GSDeviceDX::VSSelector m_vs_sel;
 	GSDeviceDX::GSSelector m_gs_sel;
+	GSDeviceDX::PSSelector m_ps_sel;
+
+	GSDeviceDX::PSSamplerSelector m_ps_ssel;
+	GSDeviceDX::OMBlendSelector	om_bsel;
+	GSDeviceDX::OMDepthStencilSelector om_dssel;
 
 	GSDeviceDX::PSConstantBuffer ps_cb;
 	GSDeviceDX::VSConstantBuffer vs_cb;

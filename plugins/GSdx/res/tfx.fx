@@ -3,9 +3,6 @@
 #define FMT_24 1
 #define FMT_16 2
 
-// And I say this as an ATI user.
-#define ATI_SUCKS 1
-
 #if SHADER_MODEL >= 0x400
 
 #ifndef VS_BPPZ
@@ -116,7 +113,7 @@ cbuffer cb2
 
 float4 sample_c(float2 uv)
 {
-	if (ATI_SUCKS && PS_POINT_SAMPLER)
+	if (PS_POINT_SAMPLER)
 	{
 		// Weird issue with ATI cards (happens on at least HD 4xxx and 5xxx),
 		// it looks like they add 127/128 of a texel to sampling coordinates
@@ -257,7 +254,7 @@ float4 clamp_wrap_uv(float4 uv)
 		else if(PS_WMS == 3)
 		{
 			#if SHADER_MODEL >= 0x400
-			uv = (float4)(((int4)(uv * WH.xyxy) & MskFix.xyxy) | MskFix.zwzw) / WH.xyxy;
+			uv = (float4)(((uint4)(frac(uv) * WH.xyxy) & MskFix.xyxy) | MskFix.zwzw) / WH.xyxy;
 			#elif SHADER_MODEL <= 0x300
 			uv.x = tex1D(UMSKFIX, uv.x);
 			uv.y = tex1D(VMSKFIX, uv.y);
@@ -286,7 +283,7 @@ float4 clamp_wrap_uv(float4 uv)
 		else if(PS_WMS == 3)
 		{
 			#if SHADER_MODEL >= 0x400
-			uv.xz = (float2)(((int2)(uv.xz * WH.xx) & MskFix.xx) | MskFix.zz) / WH.xx;
+			uv.xz = (float2)(((uint2)(frac(uv.xz) * WH.xx) & MskFix.xx) | MskFix.zz) / WH.xx;
 			#elif SHADER_MODEL <= 0x300
 			uv.x = tex1D(UMSKFIX, uv.x);
 			uv.z = tex1D(UMSKFIX, uv.z);
@@ -310,7 +307,7 @@ float4 clamp_wrap_uv(float4 uv)
 		else if(PS_WMT == 3)
 		{
 			#if SHADER_MODEL >= 0x400
-			uv.yw = (float2)(((int2)(uv.yw * WH.yy) & MskFix.yy) | MskFix.ww) / WH.yy;
+			uv.yw = (float2)(((uint2)(frac(uv.yw) * WH.yy) & MskFix.yy) | MskFix.ww) / WH.yy;
 			#elif SHADER_MODEL <= 0x300
 			uv.y = tex1D(VMSKFIX, uv.y);
 			uv.w = tex1D(VMSKFIX, uv.w);
@@ -333,7 +330,7 @@ float4x4 sample_4c(float4 uv)
 	return c;
 }
 
-float4 sample_4a(float4 uv)
+float4 sample_4_index(float4 uv)
 {
 	float4 c;
 
@@ -406,6 +403,12 @@ float4 sample(float2 st, float q)
 		{
 			uv = st.xyxy + HalfTexel;
 			dd = frac(uv.xy * WH.zw);
+			#if SHADER_MODEL >= 0x400
+			if(PS_FST == 0)
+			{
+				dd = clamp(dd, (float2)0.0, (float2)0.9999999);
+			}
+			#endif
 		}
 		else
 		{
@@ -415,7 +418,7 @@ float4 sample(float2 st, float q)
 		uv = clamp_wrap_uv(uv);
 
 #if PS_PAL_FMT != 0
-			c = sample_4p(sample_4a(uv));
+			c = sample_4p(sample_4_index(uv));
 #else
 			c = sample_4c(uv);
 #endif
@@ -818,36 +821,31 @@ PS_OUTPUT ps_main(PS_INPUT input)
 
 	PS_OUTPUT output;
 
-	if (PS_SHUFFLE){
+	if (PS_SHUFFLE)
+	{
 		uint4 denorm_c = uint4(c * 255.0f + 0.5f);
 		uint2 denorm_TA = uint2(float2(TA.xy) * 255.0f + 0.5f);
 
 		// Mask will take care of the correct destination
-		if (PS_READ_BA){
+		if (PS_READ_BA)
 			c.rb = c.bb;
-		}
-		else {
+		else
 			c.rb = c.rr;
-		}
-		c.g = c.a;
-		if (PS_READ_BA){
-			if (denorm_c.a & 0x80)
-				c.a = float((denorm_c.a & 0x7Fu) | (denorm_TA.y & 0x80u)) / 255.0f;
-			else
-				c.a = float((denorm_c.a & 0x7Fu) | (denorm_TA.x & 0x80u)) / 255.0f;
 
-			//c.g = c.a;
-		}
-		else {
-			if (denorm_c.g & 0x80)
-				c.a = float((denorm_c.g & 0x7Fu) | (denorm_TA.y & 0x80u)) / 255.0f;
+		if (PS_READ_BA)
+		{
+			if (denorm_c.a & 0x80u)
+				c.ga = (float2)(float((denorm_c.a & 0x7Fu) | (denorm_TA.y & 0x80u)) / 255.0f);
 			else
-				c.a = float((denorm_c.g & 0x7Fu) | (denorm_TA.x & 0x80u)) / 255.0f;
-
-			//c.g = c.a;
+				c.ga = (float2)(float((denorm_c.a & 0x7Fu) | (denorm_TA.x & 0x80u)) / 255.0f);
 		}
-		//Probably not right :/
-		//c.g = c.b;
+		else
+		{
+			if (denorm_c.g & 0x80u)
+				c.ga = (float2)(float((denorm_c.g & 0x7Fu) | (denorm_TA.y & 0x80u)) / 255.0f);
+			else
+				c.ga = (float2)(float((denorm_c.g & 0x7Fu) | (denorm_TA.x & 0x80u)) / 255.0f);
+		}
 	}
 
 	output.c1 = c.a * 2; // used for alpha blending

@@ -20,13 +20,14 @@
 
 #include "../Global.h"
 #include "../Config.h"
+#include "Utilities/gtkGuiTools.h"
 
 namespace DebugConfig
 {
 extern void ReadSettings();
 extern void WriteSettings();
 extern void DisplayDialog();
-}
+} // namespace DebugConfig
 
 extern void CfgSetSettingsDir(const char *dir);
 extern void CfgSetLogDir(const char *dir);

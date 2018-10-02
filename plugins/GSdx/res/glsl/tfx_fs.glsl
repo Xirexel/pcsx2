@@ -82,6 +82,15 @@ vec4 sample_c(vec2 uv)
     return texelFetch(RtSampler, ivec2(gl_FragCoord.xy), 0);
 #else
 
+#if PS_POINT_SAMPLER
+    // Weird issue with ATI cards (happens on at least HD 4xxx and 5xxx),
+    // it looks like they add 127/128 of a texel to sampling coordinates
+    // occasionally causing point sampling to erroneously round up.
+    // I'm manually adjusting coordinates to the centre of texels here,
+    // though the centre is just paranoia, the top left corner works fine.
+    uv = (trunc(uv * WH.zw) + vec2(0.5, 0.5)) / WH.zw;
+#endif
+
 #if PS_AUTOMATIC_LOD == 1
     return texture(TextureSampler, uv);
 #elif PS_MANUAL_LOD == 1
@@ -118,7 +127,7 @@ vec4 clamp_wrap_uv(vec4 uv)
 #if PS_WMS == 2
     uv_out = clamp(uv, MinMax.xyxy, MinMax.zwzw);
 #elif PS_WMS == 3
-    uv_out = vec4((ivec4(uv * WH.xyxy) & ivec4(MskFix.xyxy)) | ivec4(MskFix.zwzw)) / WH.xyxy;
+    uv_out = vec4((uvec4(fract(uv) * WH.xyxy) & ivec4(MskFix.xyxy)) | ivec4(MskFix.zwzw)) / WH.xyxy;
 #endif
 
 #else // PS_WMS != PS_WMT
@@ -127,7 +136,7 @@ vec4 clamp_wrap_uv(vec4 uv)
     uv_out.xz = clamp(uv.xz, MinMax.xx, MinMax.zz);
 
 #elif PS_WMS == 3
-    uv_out.xz = vec2((ivec2(uv.xz * WH.xx) & ivec2(MskFix.xx)) | ivec2(MskFix.zz)) / WH.xx;
+    uv_out.xz = vec2((uvec2(fract(uv.xz) * WH.xx) & ivec2(MskFix.xx)) | ivec2(MskFix.zz)) / WH.xx;
 
 #endif
 
@@ -136,7 +145,7 @@ vec4 clamp_wrap_uv(vec4 uv)
 
 #elif PS_WMT == 3
 
-    uv_out.yw = vec2((ivec2(uv.yw * WH.yy) & ivec2(MskFix.yy)) | ivec2(MskFix.ww)) / WH.yy;
+    uv_out.yw = vec2((uvec2(fract(uv.yw) * WH.yy) & ivec2(MskFix.yy)) | ivec2(MskFix.ww)) / WH.yy;
 #endif
 
 #endif
@@ -177,11 +186,11 @@ vec4 sample_4_index(vec4 uv)
     uvec4 i = uvec4(c * 255.0f + 0.5f); // Denormalize value
 
 #if PS_PAL_FMT == 1
-	// 4HL
+    // 4HL
     return vec4(i & 0xFu) / 255.0f;
 
 #elif PS_PAL_FMT == 2
-	// 4HH
+    // 4HH
     return vec4(i >> 4u) / 255.0f;
 
 #else
@@ -419,7 +428,7 @@ vec4 sample_color(vec2 st)
         // Background in Shin Megami Tensei Lucifers
         // I suspect that uv isn't a standard number, so fract is outside of the [0;1] range
         // Note: it is free on GPU but let's do it only for float coordinate
-        // Strangely Dx doesn't suffer from this issue.
+        // Strangely DX9 doesn't suffer from this issue.
         dd = clamp(dd, vec2(0.0f), vec2(1.0f));
 #endif
     }
@@ -445,17 +454,17 @@ vec4 sample_color(vec2 st)
 
 #endif
 
-	// PERF note: using dot product reduces by 1 the number of instruction
-	// but I'm not sure it is equivalent neither faster.
-	for (int i = 0; i < 4; i++)
-	{
+    // PERF note: using dot product reduces by 1 the number of instruction
+    // but I'm not sure it is equivalent neither faster.
+    for (int i = 0; i < 4; i++)
+    {
         //float sum = dot(c[i].rgb, vec3(1.0f));
 #if (PS_AEM_FMT == FMT_24)
-		c[i].a = ( (PS_AEM == 0) || any(bvec3(c[i].rgb))  ) ? TA.x : 0.0f;
-		//c[i].a = ( (PS_AEM == 0) || (sum > 0.0f) ) ? TA.x : 0.0f;
+            c[i].a = ( (PS_AEM == 0) || any(bvec3(c[i].rgb))  ) ? TA.x : 0.0f;
+            //c[i].a = ( (PS_AEM == 0) || (sum > 0.0f) ) ? TA.x : 0.0f;
 #elif (PS_AEM_FMT == FMT_16)
-		c[i].a = c[i].a >= 0.5 ? TA.y : ( (PS_AEM == 0) || any(bvec3(c[i].rgb)) ) ? TA.x : 0.0f;
-		//c[i].a = c[i].a >= 0.5 ? TA.y : ( (PS_AEM == 0) || (sum > 0.0f) ) ? TA.x : 0.0f;
+            c[i].a = c[i].a >= 0.5 ? TA.y : ( (PS_AEM == 0) || any(bvec3(c[i].rgb)) ) ? TA.x : 0.0f;
+            //c[i].a = c[i].a >= 0.5 ? TA.y : ( (PS_AEM == 0) || (sum > 0.0f) ) ? TA.x : 0.0f;
 #endif
     }
 
