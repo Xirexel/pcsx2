@@ -53,13 +53,17 @@ const char* dialog_message(int ID, bool* updateText) {
 				"For an optimal experience with OpenGL, Blending Unit Accuracy/Depth Emulation may need to be enabled.\n\n"
 				"Full:\nEnable all CRC hacks.\n\n"
 				"Aggressive:\nUse more aggressive CRC hacks. Only affects a few games, removing some effects which might make the image sharper/clearer.\n"
-				"Affected games: FFX, FFX2, FFXII, GOW2, ICO, SoTC, SSX3, SMT3, SMTDDS1, SMTDDS2.\n"
-				"Works as a speedhack for: Steambot Chronicles.";
+				"Affected games: AC4, DBZBT3, FFX, FFX2, FFXII, GOW2, ICO, LegoBatman, OnimushaDoD, RE4, SoTC, SMT3, SMTDDS1, SMTDDS2, Tekken5.\n"
+				"Works as a speedhack for: BleachBB, Kunoichi, Steambot Chronicles, The Simpsons Game.";
 		case IDC_SKIPDRAWHACK:
 		case IDC_SKIPDRAWHACKEDIT:
-			return "Skips drawing n surfaces completely. "
-				"Use it, for example, to try and get rid of bad post processing effects."
-				" Try values between 1 and 100.";
+		case IDC_SKIPDRAWOFFSET:
+		case IDC_SKIPDRAWOFFSETEDIT:
+			return "Completely skips drawing surfaces from the surface in the left box up to the surface specified in the box on the right.\n\n"
+				"Use it, for example, to try and get rid of bad post processing effects.\n"
+				"Step 1: Increase the value in the left box and keep the value in the right box set to the same value as the left box to find and remove a bad effect.\n"
+				"Step 2: If a bad effect found with Step 1 is not completely removed yet, then without changing the value in the left box, try increasing the value in the box to right until the effect is completely gone.\n"
+				"Note: Increase the value in the right box and keep the value in the left box set to \"1\" to reproduce the old skipdraw behaviour.";
 		case IDC_ALPHAHACK:
 			return "Different alpha handling. Can work around some shadow problems.";
 		case IDC_OFFSETHACK:
@@ -80,13 +84,6 @@ const char* dialog_message(int ID, bool* updateText) {
 			return "Extend stencil based emulation of destination alpha to perform stencil operations while drawing.\n\n"
 				"Improves many shadows which are normally overdrawn in parts, may affect other effects.\n"
 				"Will disable partial transparency in some games or even prevent drawing some elements altogether.";
-		case IDC_CHECK_DISABLE_ALL_HACKS:
-			return "FOR TESTING ONLY!!\n\n"
-				"Disable all CRC hacks - will break many games. Overrides CrcHacksExclusion at gsdx.ini\n"
-				"\n"
-				"It's possible to exclude CRC hacks also via the gsdx.ini. E.g.:\n"
-				"CrcHacksExclusions=all\n"
-				"CrcHacksExclusions=0x0F0C4A9C, 0x0EE5646B, 0x7ACF7E03";
 		case IDC_ALIGN_SPRITE:
 			return "Fixes issues with upscaling(vertical lines) in Namco games like Ace Combat, Tekken, Soul Calibur, etc.";
 		case IDC_ROUND_SPRITE:
@@ -98,8 +95,7 @@ const char* dialog_message(int ID, bool* updateText) {
 		case IDC_TCOFFSETY:
 		case IDC_TCOFFSETY2:
 			return "Offset for the ST/UV texture coordinates. Fixes some odd texture issues and might fix some post processing alignment too.\n\n"
-				"  0500 0500, fixes Persona 3 minimap, helps Haunting Ground.\n"
-				"  0000 1000, fixes Xenosaga hair edges (DX10+ Issue)";
+				"  0500 0500, fixes Persona 3 minimap, helps Haunting Ground.";
 		case IDC_OSD_LOG:
 			return "Prints log messages from the Function keys onscreen.";
 		case IDC_OSD_MONITOR:

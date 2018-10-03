@@ -318,6 +318,7 @@ CRC::Game CRC::m_games[] =
 	{0x518DD841, Sly2, KO, 0},
 	{0x07652DD9, Sly2, US, 0},
 	{0x5B93397F, Sly2, US, 0}, // E3 Demo
+	{0xDD0B5E6C, Sly2, US, 0}, // Internal prototype disc
 	{0x615EA2DB, Sly2, JP, 0}, // Kaitou Sly Cooper 2
 	{0xFDA1CBF6, Sly2, EU, 0},
 	{0x15DD1F6F, Sly2, NoRegion, 0},
@@ -411,6 +412,7 @@ CRC::Game CRC::m_games[] =
 	{0x381EE9EF, BurnoutTakedown, EU, 0}, // E3 Demo
 	{0xD224D348, BurnoutRevenge, US, 0},
 	{0x7E83CC5B, BurnoutRevenge, EU, 0},
+	{0x2CAC3DBC, BurnoutRevenge, EU, 0},
 	{0xEEA60511, BurnoutRevenge, KO, 0},
 	{0x8C9576A1, BurnoutDominator, US, 0},
 	{0x8C9576B4, BurnoutDominator, EU, 0},
@@ -438,10 +440,12 @@ CRC::Game CRC::m_games[] =
 	{0XD3F182A3, Yakuza, EU, 0},
 	{0x6F9F99F8, Yakuza, EU, 0},
 	{0x388F687B, Yakuza, US, 0},
+	{0xC1B91FC5, Yakuza, US, 0}, // Demo
 	{0xB7B3800A, Yakuza, JP, 0},
 	{0xA60C2E65, Yakuza2, EU, 0},
 	{0x800E3E5A, Yakuza2, EU, 0},
 	{0x97E9C87E, Yakuza2, US, 0},
+	{0xB1EBD841, Yakuza2, US, 0},
 	{0xC6B95C48, Yakuza2, JP, 0},
 	{0x9000252A, SkyGunner, JP, 0},
 	{0x93092623, SkyGunner, JP, 0},
@@ -530,6 +534,9 @@ CRC::Game CRC::m_games[] =
 	{0x194C9F38, AceCombatZero, EU, 0},
 	{0x65729657, AceCombatZero, US, 0},
 	{0xA04B52DB, AceCombatZero, JP, 0},
+	{0x09B3AD4D, ApeEscape2, EU, 0},
+	{0xBDD9F5E1, ApeEscape2, US, 0},
+	{0xFE0A6AB6, ApeEscape2, JP, 0}, // Saru! Get You! 2
 	{0x0940508D, BrianLaraInternationalCricket, EU, 0},
 	{0x0BAA8DD8, DarkCloud, EU, 0},
 	{0x1DF41F33, DarkCloud, US, 0},
@@ -551,6 +558,8 @@ CRC::Game CRC::m_games[] =
 	{0xC5473413, HarryPotterATCOS, NoRegion, 0}, // EU and US versions have the same CRC - Chamber Of Secrets
 	{0xE90BE9F8, HarryPotterATCOS, JP, 0 }, // Coca Cola original Version
 	{0x51E019BC, HarryPotterATPOA, NoRegion, 0 }, // EU and US versions have the same CRC - Prisoner of Azkaban
+	{0x99A8B4FF, HarryPotterATPOA, KO, 0 },
+	{0xA8901AD6, HarryPotterATPOA, JP, 0 }, // Harry Potter to Azkaban no Shuujin
 	{0x4C01B1B0, HarryPotterOOTP, US, 0}, // Order Of The Phoenix
 	{0x01A9BF0E, HarryPotterOOTP, EU, 0},
 	{0x230CB71D, SoulReaver2, US, 0},

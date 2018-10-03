@@ -34,9 +34,6 @@ GSRendererOGL::GSRendererOGL()
 	// Hope nothing requires too many draw calls.
 	m_drawlist.reserve(2048);
 
-	UserHacks_TCOffset       = theApp.GetConfigI("UserHacks_TCOffset");
-	UserHacks_TCO_x          = (UserHacks_TCOffset & 0xFFFF) / -1000.0f;
-	UserHacks_TCO_y          = ((UserHacks_TCOffset >> 16) & 0xFFFF) / -1000.0f;
 	UserHacks_unscale_pt_ln  = theApp.GetConfigB("UserHacks_unscale_point_line");
 	UserHacks_HPO            = theApp.GetConfigI("UserHacks_HalfPixelOffset");
 	UserHacks_tri_filter     = static_cast<TriFiltering>(theApp.GetConfigI("UserHacks_TriFilter"));
@@ -45,9 +42,6 @@ GSRendererOGL::GSRendererOGL()
 	ResetStates();
 
 	if (!theApp.GetConfigB("UserHacks")) {
-		UserHacks_TCOffset       = 0;
-		UserHacks_TCO_x          = 0;
-		UserHacks_TCO_y          = 0;
 		UserHacks_unscale_pt_ln  = false;
 		UserHacks_HPO            = 0;
 		UserHacks_tri_filter     = TriFiltering::None;
@@ -391,7 +385,7 @@ void GSRendererOGL::EmulateTextureShuffleAndFbmask()
 				// The safe and accurate path (but slow)
 				GL_INS("FBMASK SW emulated fb_mask:%x on %d bits format", m_context->FRAME.FBMSK,
 						(GSLocalMemory::m_psm[m_context->FRAME.PSM].fmt == 2) ? 16 : 32);
-				m_require_full_barrier = true;;
+				m_require_full_barrier = true;
 			}
 		}
 	}
@@ -816,6 +810,7 @@ void GSRendererOGL::EmulateTextureSampler(const GSTextureCache::Source* tex)
 	m_ps_sel.tcc = m_context->TEX0.TCC;
 
 	m_ps_sel.ltf = bilinear && shader_emulated_sampler;
+	m_ps_sel.point_sampler = GLLoader::vendor_id_amd && (!bilinear || shader_emulated_sampler);
 
 	int w = tex->m_texture->GetWidth();
 	int h = tex->m_texture->GetHeight();
@@ -843,8 +838,8 @@ void GSRendererOGL::EmulateTextureSampler(const GSTextureCache::Source* tex)
 	}
 
 	// TC Offset Hack
-	m_ps_sel.tcoffsethack = !!UserHacks_TCOffset;
-	ps_cb.TC_OH_TS = GSVector4(1/16.0f, 1/16.0f, UserHacks_TCO_x, UserHacks_TCO_y) / WH.xyxy();
+	m_ps_sel.tcoffsethack = m_userhacks_tcoffset;
+	ps_cb.TC_OH_TS = GSVector4(1/16.0f, 1/16.0f, m_userhacks_tcoffset_x, m_userhacks_tcoffset_y) / WH.xyxy();
 
 
 	// Only enable clamping in CLAMP mode. REGION_CLAMP will be done manually in the shader

@@ -256,14 +256,12 @@ set(pcsx2GuiSources
 	gui/ConsoleLogger.cpp
 	gui/CpuUsageProvider.cpp
 	gui/Dialogs/AboutBoxDialog.cpp
-	gui/Dialogs/AppConfigDialog.cpp
 	gui/Dialogs/AssertionDialog.cpp
 	gui/Dialogs/BaseConfigurationDialog.cpp
 	gui/Dialogs/ConfirmationDialogs.cpp
 	gui/Dialogs/ConvertMemoryCardDialog.cpp
 	gui/Dialogs/CreateMemoryCardDialog.cpp
 	gui/Dialogs/FirstTimeWizard.cpp
-	gui/Dialogs/GameDatabaseDialog.cpp
 	gui/Dialogs/ImportSettingsDialog.cpp
 	gui/Dialogs/LogOptionsDialog.cpp
 	gui/Dialogs/McdConfigDialog.cpp
@@ -291,7 +289,6 @@ set(pcsx2GuiSources
 	gui/Panels/BiosSelectorPanel.cpp
 	gui/Panels/CpuPanel.cpp
 	gui/Panels/DirPickerPanel.cpp
-	gui/Panels/GameDatabasePanel.cpp
 	gui/Panels/GameFixesPanel.cpp
 	gui/Panels/GSWindowPanel.cpp
 	gui/Panels/LogOptionsPanels.cpp
@@ -346,6 +343,7 @@ set(pcsx2GuiHeaders
 	gui/Panels/MemoryCardPanels.h
 	gui/pxEventThread.h
 	gui/RecentIsoList.h
+	gui/Saveslots.h
 	)
 
 # Warning: the declaration of the .h are mandatory in case of resources files. It will ensure the creation

@@ -23,6 +23,7 @@
 #include "GSTextureCache.h"
 #include "GSUtil.h"
 
+bool s_IS_DIRECT3D11 = false;
 bool s_IS_OPENGL = false;
 bool GSTextureCache::m_disable_partial_invalidation = false;
 bool GSTextureCache::m_wrap_gs_mem = false;
@@ -30,6 +31,7 @@ bool GSTextureCache::m_wrap_gs_mem = false;
 GSTextureCache::GSTextureCache(GSRenderer* r)
 	: m_renderer(r)
 {
+	s_IS_DIRECT3D11 = theApp.GetCurrentRendererType() == GSRendererType::DX1011_HW;
 	s_IS_OPENGL = theApp.GetCurrentRendererType() == GSRendererType::OGL_HW;
 
 	if (theApp.GetConfigB("UserHacks")) {
@@ -283,11 +285,11 @@ GSTextureCache::Source* GSTextureCache::LookupSource(const GIFRegTEX0& TEX0, con
 					// It is a complex to convert the code in shader. As a reference, let's do it on the CPU, it will be slow but
 					// 1/ it just works :)
 					// 2/ even with upscaling
-					// 3/ for both DX and OpenGL
+					// 3/ for both Direct3D and OpenGL
 					if (m_cpu_fb_conversion && (psm == PSM_PSMT4 || psm == PSM_PSMT8))
 						// Forces 4-bit and 8-bit frame buffer conversion to be done on the CPU instead of the GPU, but performance will be slower.
 						// There is no dedicated shader to handle 4-bit conversion.
-						// Direct3D doesn't support 8-bit fb conversion, OpenGL does support it but it doesn't render some corner cases properly.
+						// Direct3D10/11 and OpenGL support 8-bit fb conversion but don't render some corner cases properly, also Direct3D supports it only on native res for now.
 						// The hack can fix glitches in some games.
 						// Harry Potter games (Direct3D and OpenGL).
 						// FIFA Street games (Direct3D).
@@ -1187,7 +1189,7 @@ GSTextureCache::Source* GSTextureCache::CreateSource(const GIFRegTEX0& TEX0, con
 		// TODO: clean up this mess
 
 		int shader = dst->m_type != RenderTarget ? ShaderConvert_FLOAT32_TO_RGBA8 : ShaderConvert_COPY;
-		bool is_8bits = TEX0.PSM == PSM_PSMT8 && s_IS_OPENGL;
+		bool is_8bits = TEX0.PSM == PSM_PSMT8 && (s_IS_DIRECT3D11 || s_IS_OPENGL);
 
 		if (is_8bits) {
 			GL_INS("Reading RT as a packed-indexed 8 bits format");

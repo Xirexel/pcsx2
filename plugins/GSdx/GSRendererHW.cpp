@@ -30,6 +30,9 @@ GSRendererHW::GSRendererHW(GSTextureCache* tc)
 	, m_reset(false)
 	, m_upscale_multiplier(1)
 	, m_tc(tc)
+	, m_userhacks_tcoffset(false)
+	, m_userhacks_tcoffset_x(0)
+	, m_userhacks_tcoffset_y(0)
 	, m_channel_shuffle(false)
 	, m_lod(GSVector2i(0,0))
 {
@@ -42,6 +45,9 @@ GSRendererHW::GSRendererHW(GSTextureCache* tc)
 		m_userhacks_disable_gs_mem_clear = theApp.GetConfigB("UserHacks_DisableGsMemClear");
 		m_userHacks_HPO                  = theApp.GetConfigI("UserHacks_HalfPixelOffset");
 		m_userHacks_merge_sprite         = theApp.GetConfigB("UserHacks_merge_pp_sprite");
+		m_userhacks_tcoffset_x           = theApp.GetConfigI("UserHacks_TCOffsetX") / -1000.0f;
+		m_userhacks_tcoffset_y           = theApp.GetConfigI("UserHacks_TCOffsetY") / -1000.0f;
+		m_userhacks_tcoffset             = m_userhacks_tcoffset_x < 0.0f || m_userhacks_tcoffset_y < 0.0f;
 	} else {
 		m_userhacks_align_sprite_X       = false;
 		m_userhacks_round_sprite_offset  = 0;
@@ -194,6 +200,7 @@ void GSRendererHW::SetGameCRC(uint32 crc, int options)
 		case CRC::AceCombatZero:
 		case CRC::AceCombat4:
 		case CRC::AceCombat5:
+		case CRC::ApeEscape2:
 		case CRC::BrianLaraInternationalCricket:
 		case CRC::DarkCloud:
 		case CRC::DestroyAllHumans:
@@ -278,6 +285,7 @@ void GSRendererHW::VSync(int field)
 	m_dev->PrintMemoryUsage();
 
 	m_skip = 0;
+	m_skip_offset = 0;
 }
 
 void GSRendererHW::ResetDevice()
