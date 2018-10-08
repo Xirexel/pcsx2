@@ -356,6 +356,10 @@ bool wxString::Empty() const{
 	return m_content.empty();
 }
 
+bool wxString::empty() const{
+	return m_content.empty();
+}
+
 wxString& wxString::Trim(bool state)
 {
 	bool lspaceState = false;

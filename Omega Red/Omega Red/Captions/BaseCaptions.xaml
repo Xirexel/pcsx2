@@ -11,6 +11,7 @@
     <sys:String x:Key="CompressionQualityTitle">Качество сжатия видео:</sys:String>
     <sys:String x:Key="DisableWideScreenTitle">Отключить широкоформатный режим</sys:String>
     <sys:String x:Key="LanguageTitle">Текущий перевод</sys:String>
+    <sys:String x:Key="ColourSchemaTitle">Цветовая схема</sys:String>
     <sys:String x:Key="CaptureManagerTitle">Поддерживает CaptureManager SDK</sys:String>
     <sys:String x:Key="YesTitle">Выполнить</sys:String>
     <sys:String x:Key="NoTitle">Отменить</sys:String>

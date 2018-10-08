@@ -1043,11 +1043,11 @@ static Pcsx2Config parsePcsx2Config(const wchar_t* a_config)
 						l_Pcsx2Config.Speedhacks.EECycleRate = l_Attribute.as_int();
 					}
 
-					l_Attribute = l_ChildNode.attribute(L"VUCycleSteal");
+					l_Attribute = l_ChildNode.attribute(L"EECycleSkip");
 
 					if (!l_Attribute.empty())
 					{
-						l_Pcsx2Config.Speedhacks.VUCycleSteal = l_Attribute.as_int();
+						l_Pcsx2Config.Speedhacks.EECycleSkip = l_Attribute.as_int();
 					}					
 				}
 				else

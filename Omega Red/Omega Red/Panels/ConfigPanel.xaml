@@ -5,7 +5,7 @@
              xmlns:p="clr-namespace:Omega_Red.Properties"   
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="400" d:DesignWidth="300">
+             d:DesignHeight="600" d:DesignWidth="300">
 
     <ListView Style="{DynamicResource ItemListView}">
         <StackPanel>
@@ -36,6 +36,10 @@
         <StackPanel>
             <TextBlock Text="{DynamicResource LanguageTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
             <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding LanguageCollection}" Margin="5,0,5,5"/>
+        </StackPanel>
+        <StackPanel>
+            <TextBlock Text="{DynamicResource ColourSchemaTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
+            <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ColourSchemaCollection}" Margin="5,0,5,5"/>
         </StackPanel>
     </ListView>
 </UserControl>

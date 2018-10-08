@@ -11,6 +11,7 @@
     <sys:String x:Key="CompressionQualityTitle">Video compression quality:</sys:String>
     <sys:String x:Key="DisableWideScreenTitle">Turn off widescreen mode</sys:String>
     <sys:String x:Key="LanguageTitle">Current language:</sys:String>
+    <sys:String x:Key="ColourSchemaTitle">Current colour schema:</sys:String>
     <sys:String x:Key="CaptureManagerTitle">Powered by CaptureManager SDK</sys:String>
     <sys:String x:Key="YesTitle">Confirm</sys:String>
     <sys:String x:Key="NoTitle">Cancel</sys:String>

@@ -252,7 +252,7 @@ namespace Omega_Red.Tools
             public sbyte EECycleRate;		// EE cycle rate selector (1.0, 1.5, 2.0)
 
             [XmlAttribute]
-            public byte VUCycleSteal;		// VU Cycle Stealer factor (0, 1, 2, or 3)
+            public byte EECycleSkip;		// VU Cycle Stealer factor (0, 1, 2, or 3)
 
         };
 

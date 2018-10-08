@@ -84,7 +84,17 @@ namespace Omega_Red.Managers
 
 
 
+
+        private ICollectionView mColourSchemaModeView = null;
+
+        private readonly ObservableCollection<String> _colourSchemaCollection = new ObservableCollection<String>();
+        
+
+
+
         private ResourceDictionary m_languageResource = null;
+
+        private ResourceDictionary m_colourSchemaResource = null;
 
         private static ConfigManager m_Instance = null;
 
@@ -133,11 +143,34 @@ namespace Omega_Red.Managers
 
 
 
+
+            _colourSchemaCollection.Add("Default");
+
+            foreach (var item in l_assembly.GetManifestResourceNames())
+            {
+                if (item.Contains("Omega_Red.ColourSchemes."))
+                {
+                    _colourSchemaCollection.Add(item.Replace("Omega_Red.ColourSchemes.", "").Replace(".xaml", ""));
+                }
+            }
+
+            mColourSchemaModeView = CollectionViewSource.GetDefaultView(_colourSchemaCollection);
+
+            mColourSchemaModeView.MoveCurrentTo(Settings.Default.ColourSchema);
+
+
+
+
             mDisplayModeView.CurrentChanged += mDisplayModeView_CurrentChanged;
 
             mControlModeView.CurrentChanged += mControlModeView_CurrentChanged;
 
             mLanguageModeView.CurrentChanged += mLanguageModeView_CurrentChanged;
+
+            mColourSchemaModeView.CurrentChanged += mColourSchemaModeView_CurrentChanged;
+
+
+
 
 
 
@@ -157,6 +190,57 @@ namespace Omega_Red.Managers
 
             if (SwitchTopmostEvent != null)
                 SwitchTopmostEvent(Settings.Default.Topmost);
+        }
+
+        void mColourSchemaModeView_CurrentChanged(object sender, EventArgs e)
+        {
+            if (mColourSchemaModeView == null)
+                return;
+
+            if (mColourSchemaModeView.CurrentItem == null)
+                return;
+
+            if (App.Current == null)
+                return;
+
+            if (App.Current.MainWindow == null)
+                return;
+
+            loadColourSchema(mColourSchemaModeView.CurrentItem as string);
+        }
+
+        private void loadColourSchema(string a_colourSchema)
+        {
+            System.Reflection.Assembly l_assembly = Assembly.GetExecutingAssembly();
+
+            using (var lStream = l_assembly.GetManifestResourceStream(
+                string.Format("Omega_Red.ColourSchemes.{0}.xaml", a_colourSchema)))
+            {
+                if (m_colourSchemaResource != null)
+                    App.Current.Resources.MergedDictionaries.Remove(m_colourSchemaResource);
+
+                m_colourSchemaResource = null;
+
+                if (lStream == null)
+                {
+                    Settings.Default.ColourSchema = "Default";
+
+                    Settings.Default.Save();
+
+                    return;
+                }
+
+                m_colourSchemaResource = (ResourceDictionary)XamlReader.Load(lStream);
+
+                if (m_languageResource != null)
+                {
+                    App.Current.Resources.MergedDictionaries.Add(m_colourSchemaResource);
+
+                    Settings.Default.ColourSchema = a_colourSchema;
+
+                    Settings.Default.Save();
+                }
+            }
         }
 
         void mLanguageModeView_CurrentChanged(object sender, EventArgs e)
@@ -305,6 +389,11 @@ namespace Omega_Red.Managers
         public ICollectionView LanguageCollection
         {
             get { return mLanguageModeView; }
-        }              
+        }
+
+        public ICollectionView ColourSchemaCollection
+        {
+            get { return mColourSchemaModeView; }
+        }            
     }
 }

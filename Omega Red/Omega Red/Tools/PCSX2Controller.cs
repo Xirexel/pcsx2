@@ -154,7 +154,7 @@ namespace Omega_Red.Tools
             m_Pcsx2Config.Speedhacks.vuFlagHack = true;
             m_Pcsx2Config.Speedhacks.vuThread = false;
             m_Pcsx2Config.Speedhacks.EECycleRate = 0;
-            m_Pcsx2Config.Speedhacks.VUCycleSteal = 0;
+            m_Pcsx2Config.Speedhacks.EECycleSkip = 0;
 
 
             m_Pcsx2Config.Profiler.Enabled = false;

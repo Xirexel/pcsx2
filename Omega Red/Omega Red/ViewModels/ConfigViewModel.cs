@@ -68,6 +68,11 @@ namespace Omega_Red.ViewModels
         public ICollectionView LanguageCollection
         {
             get { return ConfigManager.Instance.LanguageCollection; }
+        }
+
+        public ICollectionView ColourSchemaCollection
+        {
+            get { return ConfigManager.Instance.ColourSchemaCollection; }
         } 
 
         private System.Windows.Visibility mTouchControlVisibility;

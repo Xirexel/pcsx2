@@ -164,6 +164,8 @@ public:
 
 	bool Empty() const;
 
+	bool empty() const;
+
 	wxString& Trim(bool state = false);
 
 	void clear();
@@ -225,6 +227,11 @@ public:
 extern wxString wxEmptyString;
 
 inline wxString operator+(const wxChar *pwz, const wxString& string)
+{
+	return wxString(pwz) + string;
+}
+
+inline wxString operator+(const char *pwz, const wxString& string)
 {
 	return wxString(pwz) + string;
 }

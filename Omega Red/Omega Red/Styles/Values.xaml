@@ -13,7 +13,7 @@
     <sys:Double x:Key="StandardOpacity">0.75</sys:Double>
     <FontWeight x:Key="StandardFontWeight">Bold</FontWeight>
     <sys:Double x:Key="StandardFontSize">15</sys:Double>
-    <sys:Double x:Key="TitleFontSize">18</sys:Double>
+    <sys:Double x:Key="TitleFontSize">22</sys:Double>
     <FontWeight x:Key="TitleFontWeight">Bold</FontWeight>
     <sys:Double x:Key="AboutFontSize">22</sys:Double>
     

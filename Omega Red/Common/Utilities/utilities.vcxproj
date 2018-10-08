@@ -78,7 +78,6 @@
     <ClCompile Include="..\..\..\common\src\Utilities\Console.cpp" />
     <ClCompile Include="..\..\..\common\src\Utilities\Exceptions.cpp" />
     <ClCompile Include="..\..\..\common\src\Utilities\FastFormatString.cpp" />
-    <ClCompile Include="..\..\..\common\src\Utilities\HashTools.cpp" />
     <ClCompile Include="..\..\..\common\src\Utilities\VirtualMemory.cpp" />
     <ClCompile Include="..\..\..\common\src\Utilities\x86\MemcpyFast.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>

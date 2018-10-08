@@ -178,5 +178,17 @@ namespace Omega_Red.Properties {
                 this["Language"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Default")]
+        public string ColourSchema {
+            get {
+                return ((string)(this["ColourSchema"]));
+            }
+            set {
+                this["ColourSchema"] = value;
+            }
+        }
     }
 }

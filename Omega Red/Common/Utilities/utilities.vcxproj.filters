@@ -35,9 +35,6 @@
     <ClCompile Include="..\..\..\common\src\Utilities\FastFormatString.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\common\src\Utilities\HashTools.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\common\src\Utilities\VirtualMemory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
