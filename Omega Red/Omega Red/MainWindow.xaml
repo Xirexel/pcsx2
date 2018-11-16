@@ -9,7 +9,7 @@
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         WindowStyle="None"
-        Title="{DynamicResource MainName}" Height="640" Width="820"
+        Title="{DynamicResource MainName}" Height="600" Width="800"
         Loaded="Window_Loaded"
         StateChanged="Window_StateChanged"
         Background="{DynamicResource MainWindowBackgroundBrush}"

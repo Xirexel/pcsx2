@@ -4,10 +4,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:panels="clr-namespace:Omega_Red.Tools.Panels"  
+             xmlns:converters="clr-namespace:Omega_Red.Tools.Converters"
+             xmlns:p="clr-namespace:Omega_Red.Properties"   
              mc:Ignorable="d" 
              DataContext="{Binding}"
              Visibility="{Binding TouchPadPanelVisibility}"
-             d:DesignHeight="400" d:DesignWidth="700">
+             d:DesignHeight="800" d:DesignWidth="700">
     <UserControl.ContentTemplate>
         <DataTemplate>
             <Grid DataContext="{Binding RelativeSource={RelativeSource  
@@ -15,15 +17,13 @@
                     AncestorType={x:Type UserControl}, 
                     AncestorLevel=1}}" >
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto"/>
                     <ColumnDefinition/>
-                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition />
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition />
                 </Grid.RowDefinitions>
                 <Border Background="Black" BorderBrush="{DynamicResource StandardBorderBrush}" 
                         BorderThickness="{Binding CurrentBorderThickness}" HorizontalAlignment="Center" VerticalAlignment="Center" 
@@ -34,103 +34,144 @@
                     <ContentPresenter Content="{TemplateBinding Content}"/>
                 </Border>
 
-                <Button Tag="200" Grid.Column="2" Grid.Row="1" Style="{DynamicResource ShoulderPadButtonStyle}" Visibility="{Binding TouchPadPanelVisibility}" PreviewMouseDown="Button_MouseDown">
-
-                    <TextBlock Foreground="{DynamicResource PadBorderBrush}" FontWeight="{DynamicResource StandardFontWeight}" FontSize="30" Text="R1"/>
-                </Button>
-                <Button Tag="100" Grid.Column="0" Grid.Row="1" Style="{DynamicResource ShoulderPadButtonStyle}" Visibility="{Binding TouchPadPanelVisibility}" PreviewMouseDown="Button_MouseDown">
-                    <TextBlock Foreground="{DynamicResource PadBorderBrush}" FontWeight="{DynamicResource StandardFontWeight}" FontSize="30" Text="L1"/>
-                </Button>
-                <Grid Visibility="{Binding TouchPadPanelVisibility}"
-                    VerticalAlignment="Stretch" Grid.Row="2" Grid.RowSpan="1" Margin="50,5,20,5">
-
+                
+                <Grid Visibility="{Binding TouchPadPanelVisibility}" 
+                      Grid.Column="0"
+                      Grid.ColumnSpan="3"
+                      Grid.Row="1">
+                    <Grid.Resources>
+                        <converters:ScaledTouchPadConverter x:Key="m_ScaledTouchPadConverter" />
+                    </Grid.Resources>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
                         <ColumnDefinition/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
+                        <ColumnDefinition Width="auto"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                        <RowDefinition/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Rectangle Grid.Column="1" Grid.Row="1" Width="80" Height="80"/>
+                    <Viewbox Width="{Binding Converter={StaticResource m_ScaledTouchPadConverter},
+                        ConverterParameter={StaticResource TouchPadWidth},
+                        Mode=OneWay,
+                        Source={x:Static p:Settings.Default}, Path=TouchPadScale
+                        }">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Button Tag="100" Grid.Row="0" Style="{DynamicResource ShoulderPadButtonStyle}" Visibility="{Binding TouchPadPanelVisibility}" PreviewMouseDown="Button_MouseDown">
+                                <TextBlock Foreground="{DynamicResource PadBorderBrush}" FontWeight="{DynamicResource StandardFontWeight}" FontSize="30" Text="L1"/>
+                            </Button>
 
-                    <Button Tag="0001" Margin="0, 0, 0, -30" HorizontalAlignment="Center" PreviewMouseDown="Button_MouseDown"
+                            <Grid Visibility="{Binding TouchPadPanelVisibility}"
+                    VerticalAlignment="Stretch" Grid.Row="1" Grid.RowSpan="1" Margin="100,5,80,5">
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <Rectangle Grid.Column="1" Grid.Row="1" Width="80" Height="80"/>
+
+                                <Button Tag="0001" Margin="0, 0, 0, -30" HorizontalAlignment="Center" PreviewMouseDown="Button_MouseDown"
                                 Grid.Column="1" Style="{DynamicResource D_PadButtonStyle}" />
 
-                    <Button Tag="0004" Margin="0, 0, -30, 0" HorizontalAlignment="Center" VerticalAlignment="Center" PreviewMouseDown="Button_MouseDown" 
+                                <Button Tag="0004" Margin="0, 0, -30, 0" HorizontalAlignment="Center" VerticalAlignment="Center" PreviewMouseDown="Button_MouseDown" 
                                 Grid.Column="0" Grid.Row="1" Style="{DynamicResource D_PadButtonStyle}">
-                        <Button.LayoutTransform>
-                            <RotateTransform Angle="270"/>
-                        </Button.LayoutTransform>
-                    </Button>
+                                    <Button.LayoutTransform>
+                                        <RotateTransform Angle="270"/>
+                                    </Button.LayoutTransform>
+                                </Button>
 
-                    <Button Tag="0002" Margin="0, -30, 0, 0" HorizontalAlignment="Center" VerticalAlignment="Center" PreviewMouseDown="Button_MouseDown" 
+                                <Button Tag="0002" Margin="0, -30, 0, 0" HorizontalAlignment="Center" VerticalAlignment="Center" PreviewMouseDown="Button_MouseDown" 
                                 Grid.Column="1" Grid.Row="2" Style="{DynamicResource D_PadButtonStyle}">
-                        <Button.LayoutTransform>
-                            <RotateTransform Angle="180"/>
-                        </Button.LayoutTransform>
-                    </Button>
+                                    <Button.LayoutTransform>
+                                        <RotateTransform Angle="180"/>
+                                    </Button.LayoutTransform>
+                                </Button>
 
-                    <Button Tag="0008" Margin="-30, 0, 0, 0" HorizontalAlignment="Center" VerticalAlignment="Center" PreviewMouseDown="Button_MouseDown" 
+                                <Button Tag="0008" Margin="-30, 0, 0, 0" HorizontalAlignment="Center" VerticalAlignment="Center" PreviewMouseDown="Button_MouseDown" 
                                 Grid.Row="1" Grid.Column="2" Style="{DynamicResource D_PadButtonStyle}">
-                        <Button.LayoutTransform>
-                            <RotateTransform Angle="90"/>
-                        </Button.LayoutTransform>
-                    </Button>
-                </Grid>
-                <Grid Visibility="{Binding TouchPadPanelVisibility}"
-                    VerticalAlignment="Stretch" Grid.Row="2" Grid.RowSpan="1" Grid.Column="2" Margin="15,0,35,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                    </Grid.RowDefinitions>
-
-                    <Button Tag="8000" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Column="1" >
-                        <Path Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Data="M 5,15 L 17.5,-4 L 30,15 Z"/>
-                    </Button>
-                    <Button Tag="1000" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Row="2" Grid.Column="1" >
-                        <Grid>
-                            <Line  X1="4" Y1="4" X2="26" Y2="26" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" />
-                            <Line  X1="4" Y1="26" X2="26" Y2="4" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" />
+                                    <Button.LayoutTransform>
+                                        <RotateTransform Angle="90"/>
+                                    </Button.LayoutTransform>
+                                </Button>
+                            </Grid>
+                            <Button Tag="0020" Style="{DynamicResource PadButtonStyle}" Grid.Row="1" PreviewMouseDown="Button_MouseDown" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,0,0" >
+                                <Rectangle Margin="10" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Width="30" Height="20"/>
+                            </Button>
+                            <panels:AnalogStickPanel Grid.Row="2" Grid.Column="0" Margin="70,10,0,0" Axises="{Binding LeftStickAxises, Mode=TwoWay}"
+                    Visibility="{Binding TouchPadPanelVisibility}"/>
                         </Grid>
-                    </Button>
+                    </Viewbox>
 
-                    <Button Tag="4000" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Row="1">
-                        <Rectangle Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Margin="1,0,0,0" Height="25" Width="25"/>
-                    </Button>
-                    <Button Tag="2000" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Row="1" Grid.Column="2">
-                        <Ellipse Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Height="30" Width="30"/>
-                    </Button>
+                    <Viewbox Width="{Binding Converter={StaticResource m_ScaledTouchPadConverter},
+                        ConverterParameter={StaticResource TouchPadWidth},
+                        Mode=OneWay,
+                        Source={x:Static p:Settings.Default}, Path=TouchPadScale
+                        }"
+                             Grid.Column="2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Button Tag="200" Grid.Row="0" Style="{DynamicResource ShoulderPadButtonStyle}" Visibility="{Binding TouchPadPanelVisibility}" PreviewMouseDown="Button_MouseDown">
+
+                                <TextBlock Foreground="{DynamicResource PadBorderBrush}" FontWeight="{DynamicResource StandardFontWeight}" FontSize="30" Text="R1"/>
+                            </Button>
+
+                            <Grid Visibility="{Binding TouchPadPanelVisibility}"
+                        VerticalAlignment="Stretch" Grid.Row="1" Grid.RowSpan="1" Margin="90,5,100,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <Button Tag="8000" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Column="1" >
+                                    <Path Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Data="M 5,15 L 17.5,-4 L 30,15 Z"/>
+                                </Button>
+                                <Button Tag="1000" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Row="2" Grid.Column="1" >
+                                    <Grid>
+                                        <Line  X1="4" Y1="4" X2="26" Y2="26" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" />
+                                        <Line  X1="4" Y1="26" X2="26" Y2="4" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" />
+                                    </Grid>
+                                </Button>
+
+                                <Button Tag="4000" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Row="1">
+                                    <Rectangle Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Margin="1,0,0,0" Height="25" Width="25"/>
+                                </Button>
+                                <Button Tag="2000" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Row="1" Grid.Column="2">
+                                    <Ellipse Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Height="30" Width="30"/>
+                                </Button>
+                            </Grid>
+                            <Button Tag="0010" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" >
+                                <Path Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Data="M 10,4 L 35,15 L 10,27 Z"/>
+                            </Button>
+                            <panels:AnalogStickPanel Grid.Row="2" Grid.Column="2" Margin="-80,10,70,0" Axises="{Binding RightStickAxises, Mode=TwoWay}"
+                        Visibility="{Binding TouchPadPanelVisibility}"/>
+                        </Grid>
+                    </Viewbox>
+
                 </Grid>
-                <Grid HorizontalAlignment="Stretch"
-                      VerticalAlignment="Bottom"
-                      Margin="0,0"
-                      Visibility="{Binding TouchPadPanelVisibility}"
-                     Grid.Row="2" Grid.Column="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <Button Tag="0020" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Column="0" VerticalAlignment="Bottom" HorizontalAlignment="Left" >
-                        <Rectangle Margin="10" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Width="30" Height="20"/>
-                    </Button>
-                    <Button Tag="0010" Style="{DynamicResource PadButtonStyle}" PreviewMouseDown="Button_MouseDown" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" >
-                        <Path Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Data="M 10,4 L 35,15 L 10,27 Z"/>
-                    </Button>
-                </Grid>
-                <panels:AnalogStickPanel Grid.Row="3" Grid.Column="2" Margin="-50,10,70,80" Axises="{Binding RightStickAxises, Mode=TwoWay}"
-                    Visibility="{Binding TouchPadPanelVisibility}"/>
-                <panels:AnalogStickPanel Grid.Row="3" Grid.Column="0" Margin="70,10,-50,80" Axises="{Binding LeftStickAxises, Mode=TwoWay}"
-                    Visibility="{Binding TouchPadPanelVisibility}"/>
             </Grid> 
         </DataTemplate>
     </UserControl.ContentTemplate>

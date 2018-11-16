@@ -56,7 +56,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MEMORYCARD_EXPORTS;PUGIXML_WCHAR_MODE;__VISUALC__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\PCSX2Lib;..\..\PCSX2Lib\Extend;..\..\Common\PugiXML;..\..\Common;.\;..\..\..\common\include;..\..\..\pcsx2;..\..\Common\Framework</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;.\;$(SolutionDir)..\common\include;$(SolutionDir)..\pcsx2;..\..\Common\Framework</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -76,7 +76,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MEMORYCARD_EXPORTS;PUGIXML_WCHAR_MODE;__VISUALC__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>..\..\PCSX2Lib;..\..\PCSX2Lib\Extend;..\..\Common\PugiXML;..\..\Common;.\;..\..\..\common\include;..\..\..\pcsx2;..\..\Common\Framework</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;.\;$(SolutionDir)..\common\include;$(SolutionDir)..\pcsx2;..\..\Common\Framework</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

@@ -42,7 +42,13 @@
       <Value Profile="(Default)">English</Value>
     </Setting>
     <Setting Name="ColourSchema" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Default</Value>
+      <Value Profile="(Default)">Blue</Value>
+    </Setting>
+    <Setting Name="MediaOutputType" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Capture</Value>
+    </Setting>
+    <Setting Name="TouchPadScale" Type="System.UInt32" Scope="User">
+      <Value Profile="(Default)">100</Value>
     </Setting>
   </Settings>
 </SettingsFile>

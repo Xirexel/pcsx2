@@ -108,3 +108,5 @@ oprofile_data/
 Omega Red/ipch/
 Omega Red/Omega Red/Modules/
 Omega Red/packages/
+.vs
+Omega Red/bin/

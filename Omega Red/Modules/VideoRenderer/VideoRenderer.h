@@ -3,7 +3,7 @@
 #include <Unknwnbase.h>
 
 #include <memory>
-#include "GS\GSRendererDX11.h"
+#include "Extend\GSRendererProxy.h"
 
 typedef void(*Action)();
 
@@ -15,7 +15,7 @@ class VideoRenderer
 
 	int m_AspectRatio;
 
-	std::unique_ptr<GSRendererDX11> m_VideoRenderer;
+	std::unique_ptr<GSRendererProxy> m_VideoRenderer;
 
 	int init(void* sharedhandle, void* updateCallback);
 

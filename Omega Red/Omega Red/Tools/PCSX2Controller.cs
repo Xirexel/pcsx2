@@ -327,6 +327,9 @@ namespace Omega_Red.Tools
                             PatchAndGameFixManager.Instance.LoadPatches(m_IsoInfo.ElfCRC.ToString("x"));
                         
                         ModuleControl.Instance.setVideoAspectRatio(l_wideScreen ? AspectRatio.Ratio_16_9 : AspectRatio.Ratio_4_3);
+
+                        ModuleControl.Instance.setGameCRC(m_IsoInfo.ElfCRC);
+
                     }
 
                     break;

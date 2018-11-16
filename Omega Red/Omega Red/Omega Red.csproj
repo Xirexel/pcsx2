@@ -67,6 +67,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Capture\MediaStream.cs" />
     <Compile Include="Managers\IManager.cs" />
     <Compile Include="Managers\MediaRecorderManager.cs" />
     <Compile Include="Capture\MediaCapture.cs" />
@@ -82,6 +83,7 @@
     <Compile Include="Managers\ConfigManager.cs" />
     <Compile Include="Tools\Converters\CompatibilityConverter.cs" />
     <Compile Include="Tools\Converters\GameNameConverter.cs" />
+    <Compile Include="Tools\Converters\ScaledTouchPadConverter.cs" />
     <Compile Include="Tools\Converters\WideScreenConverter.cs" />
     <Compile Include="Tools\Converters\WidthConverter.cs" />
     <Compile Include="Tools\GameIndex.cs" />
@@ -412,7 +414,9 @@
   <ItemGroup>
     <Resource Include="Assests\Images\Media.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\x86\MediaStream.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>"$(DevEnvDir)..\..\VC\bin\editbin.exe" /STACK:6000000 "$(TargetPath)"

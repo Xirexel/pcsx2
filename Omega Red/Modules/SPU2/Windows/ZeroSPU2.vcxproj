@@ -91,7 +91,7 @@
       <Command>"$(SolutionDir)..\common\vsprops\preBuild.cmd"</Command>
     </PreBuildEvent>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\PCSX2Lib\Extend;..\..\..\PCSX2Lib;..\..\..\Common\Framework;..\..\..\Common\PugiXML;..\..\..\..\3rdparty;..\..\..\..\3rdparty\soundtouch;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)PCSX2Lib;$(SolutionDir)Common\Framework;$(SolutionDir)Common\PugiXML;$(SolutionDir)..\common\include;$(SolutionDir)..\3rdparty;$(SolutionDir)..\3rdparty\soundtouch;$(SolutionDir)Emitters;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -100,7 +100,7 @@
     <ClCompile>
       <PreprocessorDefinitions>NDEBUG;PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>..\..\..\PCSX2Lib\Extend;..\..\..\PCSX2Lib;..\..\..\Common\Framework;..\..\..\Common\PugiXML;..\..\..\..\3rdparty;..\..\..\..\3rdparty\soundtouch;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)PCSX2Lib;$(SolutionDir)Common\Framework;$(SolutionDir)Common\PugiXML;$(SolutionDir)..\common\include;$(SolutionDir)..\3rdparty;$(SolutionDir)..\3rdparty\soundtouch;$(SolutionDir)Emitters;$(ProjectDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>dsound.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>

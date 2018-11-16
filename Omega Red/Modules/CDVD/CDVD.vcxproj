@@ -54,10 +54,10 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;CDVD_EXPORTS;__WXMSW__;PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;CDVD_EXPORTS;__WXMSW__;PUGIXML_WCHAR_MODE;_HAS_EXCEPTIONS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>.\;$(SolutionDir)..\pcsx2;$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\3rdparty;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;$(SolutionDir)Common\Framework;$(SolutionDir)..\3rdparty\pthreads4w\include;$(SolutionDir)Emitters</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;$(SolutionDir)..\pcsx2;$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\3rdparty;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;$(SolutionDir)Common\Framework;$(SolutionDir)..\3rdparty\pthreads4w\include;$(SolutionDir)Emitters;$(SolutionDir)..\common\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -77,7 +77,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;CDVD_EXPORTS;PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\;$(SolutionDir)..\pcsx2;$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\3rdparty;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;$(SolutionDir)Common\Framework;$(SolutionDir)..\3rdparty\pthreads4w\include;$(SolutionDir)Emitters</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;$(SolutionDir)..\pcsx2;$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\3rdparty;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;$(SolutionDir)Common\Framework;$(SolutionDir)..\3rdparty\pthreads4w\include;$(SolutionDir)Emitters;$(SolutionDir)..\common\include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>

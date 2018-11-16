@@ -1,8 +1,10 @@
 #include "stdafx.h"
 #include "VideoRenderer.h"
-#include "GS\GSDevice11.h"
-#include "GS\Extend\GSWndStub.h"
+#include "Extend\GSDeviceProxy.h"
+#include "Extend\GSWndStub.h"
+#include "pugixml.hpp"
 
+#include "GSRendererSW.h"
 
 
 VideoRenderer g_VideoRenderer;
@@ -165,7 +167,20 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 						}
 
 					}
-				}
+                } 
+				else if (std::wstring(l_ChildNode.name()) == L"GameCRC") {
+
+                    auto l_Attribute = l_ChildNode.attribute(L"Value");
+
+                    if (!l_Attribute.empty()) {
+                        if (m_VideoRenderer) {
+                            m_VideoRenderer->SetGameCRC(l_Attribute.as_uint(0), 0);
+                        }
+                    }	
+                }
+
+
+				
 
 				l_ChildNode = l_ChildNode.next_sibling();
 			}
@@ -236,9 +251,70 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 	}
 }
 
+int innerGSinit()
+{
+    if (!GSUtil::CheckSSE()) {
+        return -1;
+    }
+
+    // Vector instructions must be avoided when initialising GSdx since PCSX2
+    // can crash if the CPU does not support the instruction set.
+    // Initialise it here instead - it's not ideal since we have to strip the
+    // const type qualifier from all the affected variables.
+    theApp.Init();
+
+    GSUtil::Init();
+    GSBlock::InitVectors();
+    GSClut::InitVectors();
+#ifdef ENABLE_OPENCL
+    GSRendererCL::InitVectors();
+#endif
+    GSRendererSW::InitVectors();
+    GSVector4i::InitVectors();
+    GSVector4::InitVectors();
+#if _M_SSE >= 0x500
+    GSVector8::InitVectors();
+#endif
+#if _M_SSE >= 0x501
+    GSVector8i::InitVectors();
+#endif
+    GSVertexTrace::InitVectors();
+
+    if (g_const == nullptr)
+        return -1;
+    else
+        g_const->Init();
+
+#ifdef _WIN32
+
+    //s_hr = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
+
+    if (!GSDeviceDX::LoadD3DCompiler()) {
+        return -1;
+    }
+#endif
+
+    return 0;
+}
+
+int innerGSshutdown()
+{
+    theApp.SetCurrentRendererType(GSRendererType::Undefined);
+
+#ifdef _WIN32
+	
+    GSDeviceDX::FreeD3DCompiler();
+
+#endif
+
+	return -1;
+}
+
 int VideoRenderer::init(void* sharedhandle, void* updateCallback)
 {
-	std::unique_ptr<GSDevice11> l_Device;
+    innerGSinit();
+
+    std::unique_ptr<GSDeviceProxy> l_Device;
 
 	GSRendererType VideoRenderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_HW : GSRendererType::DX9_HW;
 
@@ -250,13 +326,11 @@ int VideoRenderer::init(void* sharedhandle, void* updateCallback)
 		{
 		case GSRendererType::DX1011_HW:
 		case GSRendererType::DX1011_SW:
-		case GSRendererType::DX1011_Null:
 		case GSRendererType::DX1011_OpenCL:
-			l_Device = std::make_unique<GSDevice11>();
+            l_Device = std::make_unique<GSDeviceProxy>();
 			break;			
 		case GSRendererType::DX9_HW:
 		case GSRendererType::DX9_SW:
-		case GSRendererType::DX9_Null:
 		case GSRendererType::DX9_OpenCL:
 		default:
 			break;
@@ -272,19 +346,14 @@ int VideoRenderer::init(void* sharedhandle, void* updateCallback)
 			switch (VideoRenderer)
 			{
 			case GSRendererType::DX1011_HW:
-				m_VideoRenderer = std::make_unique<GSRendererDX11>();
+                    m_VideoRenderer = std::make_unique<GSRendererProxy>();
 				break;
 			case GSRendererType::OGL_HW:
 			case GSRendererType::DX9_SW:
 			case GSRendererType::DX1011_SW:
-			case GSRendererType::Null_SW:
 			case GSRendererType::OGL_SW:
-			case GSRendererType::DX9_Null:
-			case GSRendererType::DX1011_Null:
-			case GSRendererType::Null_Null:
 			case GSRendererType::DX9_OpenCL:
 			case GSRendererType::DX1011_OpenCL:
-			case GSRendererType::Null_OpenCL:
 			case GSRendererType::OGL_OpenCL:
 			default:
 				break;
@@ -295,7 +364,7 @@ int VideoRenderer::init(void* sharedhandle, void* updateCallback)
 
 		if (m_VideoRenderer->m_wnd == NULL)
 		{
-			m_VideoRenderer->m_wnd = new GSWndStub();
+            m_VideoRenderer->m_wnd = std::make_shared<GSWndStub>();
 		}
 	}
 	catch (std::exception& ex)
@@ -332,6 +401,8 @@ int VideoRenderer::init(void* sharedhandle, void* updateCallback)
 void VideoRenderer::shutdown()
 {
 	m_VideoRenderer.reset();
+
+	innerGSshutdown();
 }
 
 void VideoRenderer::setBaseMem(void * a_ptr)

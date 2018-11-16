@@ -183,7 +183,7 @@ wxString wxFileName::GetFullPath(wxPathFormat format) const
 
 	l_fullpath += std::get<0>(l_sep);
 
-	for (size_t i = 0; i < m_dirs.GetCount(); i++)
+	for (decltype(m_dirs.GetCount()) i = 0; i < m_dirs.GetCount(); i++)
 	{
 		l_fullpath += m_dirs[i];
 

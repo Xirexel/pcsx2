@@ -32,14 +32,33 @@ namespace Omega_Red.Tools.Savestate
 
         public byte[] read()
         {
-            if (m_reader == null || m_reader.BaseStream.Length <= 0)
+            if (m_reader == null)
                 return new byte[0];
 
-            byte[] l_result = new byte[m_reader.BaseStream.Length];
+            if(m_reader.BaseStream.CanSeek)
+            {
+                byte[] l_result = new byte[m_reader.BaseStream.Length];
 
-            var l_readLength = m_reader.Read(l_result, 0, l_result.Length);
+                var l_readLength = m_reader.Read(l_result, 0, l_result.Length);
 
-            return l_result;
+                return l_result;
+            }
+            else
+            {
+                byte[] l_result = new byte[0];
+
+                using (var ms = new MemoryStream())
+                {
+                    m_reader.BaseStream.CopyTo(ms);
+                    ms.Position = 0; // rewind
+
+                    l_result = new byte[ms.Length];
+
+                    var l_readLength = ms.Read(l_result, 0, l_result.Length);
+                }
+
+                return l_result;
+            }
         }
     }
 }

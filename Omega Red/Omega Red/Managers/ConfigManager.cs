@@ -20,10 +20,17 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Markup;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace Omega_Red.Managers
 {
@@ -88,7 +95,16 @@ namespace Omega_Red.Managers
         private ICollectionView mColourSchemaModeView = null;
 
         private readonly ObservableCollection<String> _colourSchemaCollection = new ObservableCollection<String>();
-        
+
+
+
+
+
+
+        private ICollectionView mMediaOutputTypeModeView = null;
+
+        private readonly ObservableCollection<MediaOutputTypeInfo> _mediaOutputTypeCollection = new ObservableCollection<MediaOutputTypeInfo>();
+
 
 
 
@@ -125,71 +141,123 @@ namespace Omega_Red.Managers
             mLanguageModeView.MoveCurrentTo(Settings.Default.Language);
             
 
-
-
-            _displayModeCollection.Add(new DisplayModeInfo() { Value = DisplayMode.Window });
-
-            _displayModeCollection.Add(new DisplayModeInfo() { Value = DisplayMode.Full });
-
-            mDisplayModeView = CollectionViewSource.GetDefaultView(_displayModeCollection);
-
-
-
-            _controlModeCollection.Add(new ControlModeInfo() { Value = ControlMode.Button });
-
-            _controlModeCollection.Add(new ControlModeInfo() { Value = ControlMode.Touch });
-
-            mControlModeView = CollectionViewSource.GetDefaultView(_controlModeCollection);
-
-
-
-
-            _colourSchemaCollection.Add("Default");
-
-            foreach (var item in l_assembly.GetManifestResourceNames())
+            App.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
             {
-                if (item.Contains("Omega_Red.ColourSchemes."))
+
+                _displayModeCollection.Add(new DisplayModeInfo() { Value = DisplayMode.Window });
+
+                _displayModeCollection.Add(new DisplayModeInfo() { Value = DisplayMode.Full });
+
+                mDisplayModeView = CollectionViewSource.GetDefaultView(_displayModeCollection);
+
+
+
+                _controlModeCollection.Add(new ControlModeInfo() { Value = ControlMode.Button });
+
+                _controlModeCollection.Add(new ControlModeInfo() { Value = ControlMode.Touch });
+
+                mControlModeView = CollectionViewSource.GetDefaultView(_controlModeCollection);
+
+
+
+
+                _colourSchemaCollection.Add("Default");
+
+                foreach (var item in l_assembly.GetManifestResourceNames())
                 {
-                    _colourSchemaCollection.Add(item.Replace("Omega_Red.ColourSchemes.", "").Replace(".xaml", ""));
+                    if (item.Contains("Omega_Red.ColourSchemes."))
+                    {
+                        _colourSchemaCollection.Add(item.Replace("Omega_Red.ColourSchemes.", "").Replace(".xaml", ""));
+                    }
                 }
-            }
 
-            mColourSchemaModeView = CollectionViewSource.GetDefaultView(_colourSchemaCollection);
+                mColourSchemaModeView = CollectionViewSource.GetDefaultView(_colourSchemaCollection);
 
-            mColourSchemaModeView.MoveCurrentTo(Settings.Default.ColourSchema);
-
+                mColourSchemaModeView.MoveCurrentTo(Settings.Default.ColourSchema);
 
 
 
-            mDisplayModeView.CurrentChanged += mDisplayModeView_CurrentChanged;
 
-            mControlModeView.CurrentChanged += mControlModeView_CurrentChanged;
-
-            mLanguageModeView.CurrentChanged += mLanguageModeView_CurrentChanged;
-
-            mColourSchemaModeView.CurrentChanged += mColourSchemaModeView_CurrentChanged;
+                _mediaOutputTypeCollection.Add(new MediaOutputTypeInfo() { Value = MediaOutputType.Capture });
 
 
 
 
 
+                _mediaOutputTypeCollection.Add(new MediaOutputTypeInfo() { Value = MediaOutputType.Stream });
 
-            DisplayMode l_DisplayMode = DisplayMode.Window;
-
-            Enum.TryParse<DisplayMode>(Settings.Default.DisplayMode, out l_DisplayMode);
-
-            mDisplayModeView.MoveCurrentToPosition((int)l_DisplayMode);
+                mMediaOutputTypeModeView = CollectionViewSource.GetDefaultView(_mediaOutputTypeCollection);
 
 
 
-            ControlMode l_ControlMode = ControlMode.Button;
 
-            Enum.TryParse<ControlMode>(Settings.Default.ControlMode, out l_ControlMode);
 
-            mControlModeView.MoveCurrentToPosition((int)l_ControlMode);
+                mDisplayModeView.CurrentChanged += mDisplayModeView_CurrentChanged;
 
-            if (SwitchTopmostEvent != null)
-                SwitchTopmostEvent(Settings.Default.Topmost);
+                mControlModeView.CurrentChanged += mControlModeView_CurrentChanged;
+
+                mLanguageModeView.CurrentChanged += mLanguageModeView_CurrentChanged;
+
+                mColourSchemaModeView.CurrentChanged += mColourSchemaModeView_CurrentChanged;
+
+                mMediaOutputTypeModeView.CurrentChanged += mMediaOutputTypeModeView_CurrentChanged;
+
+
+
+
+
+
+                DisplayMode l_DisplayMode = DisplayMode.Window;
+
+                Enum.TryParse<DisplayMode>(Settings.Default.DisplayMode, out l_DisplayMode);
+
+                mDisplayModeView.MoveCurrentToPosition((int)l_DisplayMode);
+
+
+
+                ControlMode l_ControlMode = ControlMode.Button;
+
+                Enum.TryParse<ControlMode>(Settings.Default.ControlMode, out l_ControlMode);
+
+                mControlModeView.MoveCurrentToPosition((int)l_ControlMode);
+
+
+
+
+                MediaOutputType l_MediaOutputType = MediaOutputType.Capture;
+
+                Enum.TryParse<MediaOutputType>(Settings.Default.MediaOutputType, out l_MediaOutputType);
+
+                mMediaOutputTypeModeView.MoveCurrentToPosition((int)l_MediaOutputType);
+
+
+                if (SwitchTopmostEvent != null)
+                    SwitchTopmostEvent(Settings.Default.Topmost);
+            });
+
+        }
+
+        private void mMediaOutputTypeModeView_CurrentChanged(object sender, EventArgs e)
+        {
+            if (mMediaOutputTypeModeView == null)
+                return;
+
+            if (mMediaOutputTypeModeView.CurrentItem == null)
+                return;
+
+            if (App.Current == null)
+                return;
+
+            if (App.Current.MainWindow == null)
+                return;
+
+            var l_MediaOutputType = (MediaOutputTypeInfo)mMediaOutputTypeModeView.CurrentItem;
+
+            Managers.MediaRecorderManager.Instance.MediaOutputType = l_MediaOutputType.Value;
+
+            Settings.Default.MediaOutputType = l_MediaOutputType.Value.ToString();
+
+            Settings.Default.Save();
         }
 
         void mColourSchemaModeView_CurrentChanged(object sender, EventArgs e)
@@ -394,6 +462,11 @@ namespace Omega_Red.Managers
         public ICollectionView ColourSchemaCollection
         {
             get { return mColourSchemaModeView; }
-        }            
+        }
+
+        public ICollectionView MediaOutputTypeCollection
+        {
+            get { return mMediaOutputTypeModeView; }
+        }        
     }
 }

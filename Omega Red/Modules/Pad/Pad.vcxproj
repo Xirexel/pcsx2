@@ -57,7 +57,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PAD_EXPORTS;_CRT_SECURE_NO_WARNINGS;PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>..\..\PCSX2Lib;..\..\PCSX2Lib\Extend;..\..\Common\PugiXML;..\..\Common;.\;..\..\..\common\include;.\LilyPad</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;.\;$(SolutionDir)..\common\include;.\LilyPad</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4995;4996;4063;4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -78,7 +78,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PAD_EXPORTS;_CRT_SECURE_NO_WARNINGS;PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>..\..\PCSX2Lib;..\..\PCSX2Lib\Extend;..\..\Common\PugiXML;..\..\Common;.\;..\..\..\common\include;.\LilyPad</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;.\;$(SolutionDir)..\common\include;.\LilyPad</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

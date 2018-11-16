@@ -27,13 +27,111 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace Omega_Red.Managers
 {
+    enum MediaOutputType
+    {
+        Capture = 0,
+        Stream = 1
+    }
+
+    class MediaOutputTypeInfo
+    {
+        public MediaOutputType Value { get; set; }
+
+        public override string ToString()
+        {
+            return Value == MediaOutputType.Capture ? App.Current.Resources["MediaOutputTypeCaptureTitle"] as String :
+                App.Current.Resources["MediaOutputTypeStreamTitle"] as String;
+        }
+
+        public object InfoPanel ()
+        {            
+            if(Value == MediaOutputType.Stream)
+            {
+
+                TextBlock lTextBlock = new TextBlock();
+
+                var lVersion = Capture.MediaStream.Instance.CaptureManagerVersion;
+
+                if (lVersion.Contains("Freeware"))
+                {
+                    lTextBlock.Text = App.Current.Resources["MediaOutputTypeStreamNotSupportingTitle"] as String;
+                }
+                else
+                {
+
+                    var lHyperlink = new Hyperlink();
+
+                    lHyperlink.Inlines.Add(@"rtsp://127.0.0.1:8554");
+
+                    lHyperlink.Click += delegate (object sender, RoutedEventArgs e)
+                    {
+                        var lHyperlink1 = sender as Hyperlink;
+
+                        if (lHyperlink1 == null)
+                            return;
+
+                        var lRun = lHyperlink1.Inlines.FirstInline as Run;
+
+                        if (lRun == null)
+                            return;
+
+                        Clipboard.SetText(lRun.Text);
+
+                        TextBlock linfoTextBlock = new TextBlock();
+
+                        Popup mPopupCopy = new Popup();
+
+                        linfoTextBlock.Padding = new Thickness(7);
+
+                        linfoTextBlock.Foreground = Brushes.Black;
+
+                        linfoTextBlock.Background = Brushes.LightBlue;
+
+                        linfoTextBlock.FontSize = 20;
+
+                        linfoTextBlock.Text = "Copying of " + lRun.Text + " to clipboard.";
+
+                        mPopupCopy.Child = linfoTextBlock;
+
+                        mPopupCopy.PlacementTarget = lTextBlock;
+
+                        mPopupCopy.PopupAnimation = PopupAnimation.Slide;
+
+                        mPopupCopy.IsOpen = true;
+
+                        DoubleAnimation fadeInAnimation = new DoubleAnimation(1.0, new Duration(TimeSpan.FromMilliseconds(1000)));
+
+                        fadeInAnimation.Completed += delegate (object sender1, EventArgs e1)
+                        {
+                            mPopupCopy.IsOpen = false;
+                        };
+                        fadeInAnimation.BeginTime = TimeSpan.FromMilliseconds(0);
+                        mPopupCopy.Opacity = 0.0;
+                        mPopupCopy.BeginAnimation(UIElement.OpacityProperty, (AnimationTimeline)fadeInAnimation.GetAsFrozen());
+                    };
+
+                    lTextBlock.Inlines.Add(lHyperlink);
+                }
+
+                lTextBlock.Margin = new Thickness(10, 0, 0, 0);
+
+                return lTextBlock;
+            }
+
+            return null;
+        }
+    }
+
     class MediaRecorderManager : IManager
     {
 
@@ -44,6 +142,8 @@ namespace Omega_Red.Managers
         private static MediaRecorderManager m_Instance = null;
 
         public static MediaRecorderManager Instance { get { if (m_Instance == null) m_Instance = new MediaRecorderManager(); return m_Instance; } }
+
+        public MediaOutputType MediaOutputType { get; set; }
 
         private MediaRecorderManager()
         {
@@ -144,11 +244,31 @@ namespace Omega_Red.Managers
             {
                 if ((bool)aState)
                 {
-                    MediaCapture.Instance.start();
+                    switch (MediaOutputType)
+                    {
+                        case MediaOutputType.Capture:
+                            MediaCapture.Instance.start();
+                            break;
+                        case MediaOutputType.Stream:
+                            MediaStream.Instance.start();
+                            break;
+                        default:
+                            break;
+                    }
                 }
                 else
                 {
-                    MediaCapture.Instance.stop();
+                    switch (MediaOutputType)
+                    {
+                        case MediaOutputType.Capture:
+                            MediaCapture.Instance.stop();
+                            break;
+                        case MediaOutputType.Stream:
+                            MediaStream.Instance.stop();
+                            break;
+                        default:
+                            break;
+                    }
                 }
 
             }

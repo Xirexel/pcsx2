@@ -282,7 +282,7 @@ namespace Omega_Red.Managers
 
                         using (FileStream zipToOpen = new FileStream(l_file_path, FileMode.Open))
                         {
-                            using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Update))
+                            using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
                             {
 
 
@@ -294,11 +294,11 @@ namespace Omega_Red.Managers
                                         {
                                             try
                                             {
-                                                byte[] l_memory = new byte[BiosControl.m_ROMsize];
+                                                MemoryStream l_memoryStream = new MemoryStream();
+                                                
+                                                reader.BaseStream.CopyTo(l_memoryStream);
 
-                                                reader.BaseStream.Read(l_memory, 0, l_memory.Length);
-
-                                                MemoryStream l_memoryStream = new MemoryStream(l_memory);
+                                                l_memoryStream.Position = 0;
 
                                                 using (BinaryReader memoryReader = new BinaryReader(l_memoryStream))
                                                 {
@@ -326,9 +326,15 @@ namespace Omega_Red.Managers
                                                                 {
                                                                     using (BinaryReader readerEntry = new BinaryReader(NVMitem.Open()))
                                                                     {
-                                                                        l_NVM = new byte[readerEntry.BaseStream.Length];
+                                                                        MemoryStream l_NVMmemoryStream = new MemoryStream();
 
-                                                                        readerEntry.BaseStream.Read(l_NVM, 0, l_NVM.Length);
+                                                                        readerEntry.BaseStream.CopyTo(l_NVMmemoryStream);
+
+                                                                        l_NVMmemoryStream.Position = 0;
+
+                                                                        l_NVM = new byte[l_NVMmemoryStream.Length];
+
+                                                                        l_NVMmemoryStream.Read(l_NVM, 0, l_NVM.Length);
                                                                     }
                                                                 }
                                                             }
@@ -344,15 +350,26 @@ namespace Omega_Red.Managers
                                                                 {
                                                                     using (BinaryReader readerEntry = new BinaryReader(MECitem.Open()))
                                                                     {
-                                                                        l_MEC = new byte[readerEntry.BaseStream.Length];
 
-                                                                        readerEntry.BaseStream.Read(l_MEC, 0, l_MEC.Length);
+                                                                        MemoryStream l_MECMmemoryStream = new MemoryStream();
+
+                                                                        readerEntry.BaseStream.CopyTo(l_MECMmemoryStream);
+
+                                                                        l_MECMmemoryStream.Position = 0;
+
+                                                                        l_MEC = new byte[l_MECMmemoryStream.Length];
+
+                                                                        l_MECMmemoryStream.Read(l_MEC, 0, l_MEC.Length);
                                                                     }
                                                                 }
                                                             }
                                                         }
 
                                                         LockScreenManager.Instance.displayMessage(l_file_path + "|" + item.Name);
+
+                                                        byte[] l_result = new byte[l_memoryStream.Length];
+
+                                                        var l_readLength = l_memoryStream.Read(l_result, 0, l_result.Length);
 
                                                         BiosManager.Instance.addBiosInfo(new Models.BiosInfo()
                                                         {
@@ -361,7 +378,7 @@ namespace Omega_Red.Managers
                                                             VersionInt = versionInt,
                                                             Data = data,
                                                             Build = build,
-                                                            CheckSum = Omega_Red.Tools.BiosControl.getBIOSChecksum(l_memory),
+                                                            CheckSum = Omega_Red.Tools.BiosControl.getBIOSChecksum(l_result),
                                                             FilePath = l_file_path + "|" + item.Name,
                                                             NVM = l_NVM,
                                                             MEC = l_MEC

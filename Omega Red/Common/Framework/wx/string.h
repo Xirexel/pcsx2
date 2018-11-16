@@ -174,7 +174,7 @@ public:
 
 	wxString Upper() const;
 	
-	wxString& wxString::MakeUpper();
+	wxString& MakeUpper();
 	
 	bool CmpNoCase(const wxString& i) const;
 

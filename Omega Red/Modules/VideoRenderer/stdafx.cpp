@@ -47,3 +47,72 @@ string format(const char* fmt, ...)
 
 	return s;
 }
+
+extern void fifo_free(void *ptr, size_t size, size_t repeat);
+
+static HANDLE s_fh = NULL;
+static uint8 *s_Next[8];
+
+void *fifo_alloc(size_t size, size_t repeat)
+{
+    ASSERT(s_fh == NULL);
+
+    if (repeat >= countof(s_Next)) {
+        fprintf(stderr, "Memory mapping overflow (%zu >= %u)\n", repeat, countof(s_Next));
+        return vmalloc(size * repeat, false); // Fallback to default vmalloc
+    }
+
+    s_fh = CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, size, nullptr);
+    DWORD errorID = ::GetLastError();
+    if (s_fh == NULL) {
+        fprintf(stderr, "Failed to reserve memory. WIN API ERROR:%u\n", errorID);
+        return vmalloc(size * repeat, false); // Fallback to default vmalloc
+    }
+
+    int mmap_segment_failed = 0;
+    void *fifo = MapViewOfFile(s_fh, FILE_MAP_ALL_ACCESS, 0, 0, size);
+    for (size_t i = 1; i < repeat; i++) {
+        void *base = (uint8 *)fifo + size * i;
+        s_Next[i] = (uint8 *)MapViewOfFileEx(s_fh, FILE_MAP_ALL_ACCESS, 0, 0, size, base);
+        errorID = ::GetLastError();
+        if (s_Next[i] != base) {
+            mmap_segment_failed++;
+            if (mmap_segment_failed > 4) {
+                fprintf(stderr, "Memory mapping failed after %d attempts, aborting. WIN API ERROR:%u\n", mmap_segment_failed, errorID);
+                fifo_free(fifo, size, repeat);
+                return vmalloc(size * repeat, false); // Fallback to default vmalloc
+            }
+            do {
+                UnmapViewOfFile(s_Next[i]);
+                s_Next[i] = 0;
+            } while (--i > 0);
+
+            fifo = MapViewOfFile(s_fh, FILE_MAP_ALL_ACCESS, 0, 0, size);
+        }
+    }
+
+    return fifo;
+}
+
+void fifo_free(void *ptr, size_t size, size_t repeat)
+{
+    ASSERT(s_fh != NULL);
+
+    if (s_fh == NULL) {
+        if (ptr != NULL)
+            vmfree(ptr, size);
+        return;
+    }
+
+    UnmapViewOfFile(ptr);
+
+    for (size_t i = 1; i < countof(s_Next); i++) {
+        if (s_Next[i] != 0) {
+            UnmapViewOfFile(s_Next[i]);
+            s_Next[i] = 0;
+        }
+    }
+
+    CloseHandle(s_fh);
+    s_fh = NULL;
+}

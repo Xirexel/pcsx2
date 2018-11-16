@@ -109,6 +109,45 @@ namespace Omega_Red.Tools
             }
         }
 
+        public void setGameCRC(uint a_CRC)
+        {
+            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.VideoRenderer);
+
+            XmlDocument l_XmlDocument = new XmlDocument();
+
+            XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+
+            l_XmlDocument.AppendChild(ldocNode);
+
+            XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+
+            XmlNode l_PropertyNode = l_XmlDocument.CreateElement("GameCRC");
+
+
+
+            var l_Atrr = l_XmlDocument.CreateAttribute("Value");
+
+            l_Atrr.Value = (a_CRC).ToString();
+
+            l_PropertyNode.Attributes.Append(l_Atrr);
+
+
+
+            rootNode.AppendChild(l_PropertyNode);
+
+            l_XmlDocument.AppendChild(rootNode);
+
+            using (var stringWriter = new StringWriter())
+            using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+            {
+                l_XmlDocument.WriteTo(xmlTextWriter);
+
+                xmlTextWriter.Flush();
+
+                l_Module.execute(stringWriter.GetStringBuilder().ToString());
+            }
+        }
+
         public void setVideoAspectRatio(AspectRatio a_AspectRatio)
         {
             var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.VideoRenderer);

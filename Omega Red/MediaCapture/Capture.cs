@@ -50,7 +50,7 @@ namespace MediaCapture
             try
             {
                 mCaptureManager = new CaptureManager();
-
+                
                 mUpdateCallbackDelegate =
                 () =>
                 {

@@ -56,7 +56,7 @@ namespace Omega_Red.Tools.Panels
 
                 GridColumnSpanContent = 3;
 
-                GridRowSpanContent = 4;
+                GridRowSpanContent = 2;
 
                 CurrentBorderThickness = new Thickness(0);
             }
@@ -66,7 +66,7 @@ namespace Omega_Red.Tools.Panels
 
                 GridColumnSpanContent = 3;
 
-                GridRowSpanContent = 2;
+                GridRowSpanContent = 1;
 
                 CurrentBorderThickness = (Thickness)App.Current.Resources["StandardBorderThickness"];
             }
@@ -205,6 +205,22 @@ namespace Omega_Red.Tools.Panels
 
                 PadInput.Instance.setKey(l_key);
             }
-        }        
+        }
+
+
+
+
+
+        //public double ScaledWidth
+        //{
+        //    get { return (double)GetValue(ScaledWidthProperty); }
+        //    set { SetValue(ScaledWidthProperty, value); }
+        //}
+
+        //// Using a DependencyProperty as the backing store for ScaledWidth.  This enables animation, styling, binding, etc...
+        //public static readonly DependencyProperty ScaledWidthProperty =
+        //    DependencyProperty.Register("ScaledWidth", typeof(double), typeof(UserControl), new PropertyMetadata(0));
+
+
     }
 }

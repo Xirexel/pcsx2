@@ -61,12 +61,12 @@
       <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\PCSX2Lib\Extend;..\..\..\PCSX2Lib;..\..\..\Common\Framework;..\..\..\Common\PugiXML;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)Emitters;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)PCSX2Lib;$(SolutionDir)Common\Framework;$(SolutionDir)Common\PugiXML;$(SolutionDir)..\common\include;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PUGIXML_WCHAR_MODE;BUILTIN_FW_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <ClCompile>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\PCSX2Lib\Extend;..\..\..\PCSX2Lib;..\..\..\Common\Framework;..\..\..\Common\PugiXML;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)Emitters;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)PCSX2Lib;$(SolutionDir)Common\Framework;$(SolutionDir)Common\PugiXML;$(SolutionDir)..\common\include;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PUGIXML_WCHAR_MODE;BUILTIN_FW_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MultiThreaded</RuntimeLibrary>
     </ClCompile>

@@ -22,6 +22,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace Omega_Red.ViewModels
 {
@@ -73,7 +78,12 @@ namespace Omega_Red.ViewModels
         public ICollectionView ColourSchemaCollection
         {
             get { return ConfigManager.Instance.ColourSchemaCollection; }
-        } 
+        }
+
+        public ICollectionView MediaOutputTypeCollection
+        {
+            get { return ConfigManager.Instance.MediaOutputTypeCollection; }
+        }
 
         private System.Windows.Visibility mTouchControlVisibility;
 
@@ -143,7 +153,41 @@ namespace Omega_Red.ViewModels
             }
         }
 
+        object mMediaOutputConfig = null;
 
-        
+        public object MediaOutputConfig {
+            get
+            {
+                return mMediaOutputConfig;// MediaOutputTypeCollection.CurrentItem;
+            }
+            set
+            {
+                var lMediaOutputTypeInfo = (MediaOutputTypeInfo)value;
+
+                if(lMediaOutputTypeInfo != null)
+                    mMediaOutputConfig = lMediaOutputTypeInfo.InfoPanel();
+                else
+                    mMediaOutputConfig = null;
+
+                RaisePropertyChangedEvent("MediaOutputConfig");
+            }
+        }
+
+        double mTouchPadScale = 100;
+
+        public double TouchPadScale {
+            get
+            {
+                return (uint)Settings.Default.TouchPadScale;
+            }
+            set
+            {
+                mTouchPadScale = value;
+
+                Settings.Default.TouchPadScale = (uint)value;
+
+                RaisePropertyChangedEvent("TouchPadScale");
+            }
+        }
     }
 }

@@ -84,7 +84,7 @@ namespace Omega_Red.Tools.Savestate
 
             using (FileStream zipToOpen = new FileStream(a_file_path, FileMode.Open))
             {
-                using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Update))
+                using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
                 {
                     var l_SavestateEntry = new SavestateEntry_InternalStructures();
                     
@@ -186,7 +186,7 @@ namespace Omega_Red.Tools.Savestate
 
             using (FileStream zipToOpen = new FileStream(a_FilePath, FileMode.Open))
             {
-                using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Update))
+                using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
                 {
                     foreach (var l_SavestateEntry in m_SavestateEntries)
                     {

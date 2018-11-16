@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "VideoRenderer.h"
+#include "PCSX2Lib_API.h"
 
 extern PCSX2Lib::API::GS_API g_API;
 

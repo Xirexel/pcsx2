@@ -51,6 +51,10 @@
     <sys:String x:Key="InitilizedTitle">Инициализирован</sys:String>
     <sys:String x:Key="StoppedTitle">Остановлен</sys:String>
     <sys:String x:Key="PausedTitle">Пауза</sys:String>
+    <sys:String x:Key="MediaOutputTypeCaptureTitle">Запись в файл</sys:String>
+    <sys:String x:Key="MediaOutputTypeStreamTitle">Стриминг</sys:String>
+    <sys:String x:Key="MediaOutputTypeStreamNotSupportingTitle">Freeware не поддерживается</sys:String>
+    <sys:String x:Key="TouchPadScaleTitle">Масштаб сенсорного контроллера: </sys:String>
 
     
 

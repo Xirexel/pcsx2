@@ -51,5 +51,9 @@
     <sys:String x:Key="InitilizedTitle">Initialized</sys:String>
     <sys:String x:Key="StoppedTitle">Stopped</sys:String>
     <sys:String x:Key="PausedTitle">Paused</sys:String>
+    <sys:String x:Key="MediaOutputTypeCaptureTitle">Recording to file</sys:String>
+    <sys:String x:Key="MediaOutputTypeStreamTitle">Streaming</sys:String>
+    <sys:String x:Key="MediaOutputTypeStreamNotSupportingTitle">Freeware is not supported</sys:String>
+    <sys:String x:Key="TouchPadScaleTitle">Touch pad scale:</sys:String>
 
 </ResourceDictionary>

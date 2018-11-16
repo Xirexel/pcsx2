@@ -1,7 +1,7 @@
 
 #include "stdafx.h"
 #include "VideoRenderer.h"
-
+#include "PCSX2Lib_API.h"
 
 
 

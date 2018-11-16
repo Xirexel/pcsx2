@@ -16,5 +16,6 @@
     <sys:Double x:Key="TitleFontSize">22</sys:Double>
     <FontWeight x:Key="TitleFontWeight">Bold</FontWeight>
     <sys:Double x:Key="AboutFontSize">22</sys:Double>
+    <sys:Double x:Key="TouchPadWidth">300</sys:Double>
     
 </ResourceDictionary> 

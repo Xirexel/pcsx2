@@ -29,6 +29,18 @@
             <Slider ValueChanged="Slider_ValueChanged"  Value="{Binding Source={x:Static p:Settings.Default}, Path=CompressionQuality, Mode=TwoWay}"  Minimum="10" Maximum="99" Margin="10,0"/>
         </StackPanel>
         <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Media output type:" TextAlignment="Center" Foreground="Black" Margin="5"/>
+            <ComboBox  IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding MediaOutputTypeCollection}" SelectedItem="{Binding MediaOutputConfig, Mode=OneWayToSource}" Margin="5,0,5,5"/>
+            <ContentPresenter Content="{Binding MediaOutputConfig}"/>
+        </StackPanel>
+        <StackPanel VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock Text="{DynamicResource TouchPadScaleTitle}" TextAlignment="Left" TextWrapping="Wrap" Width="150" Foreground="Black" Margin="5"/>
+                <TextBlock Text="{Binding Source={x:Static p:Settings.Default}, Path=TouchPadScale, StringFormat={}{0:#,#.0}, Mode=OneWay}" VerticalAlignment="Bottom" Margin="5"/>
+            </StackPanel>
+            <Slider ValueChanged="Slider_ValueChanged" Value="{Binding TouchPadScale, Mode=TwoWay}"  Minimum="50" Maximum="300" Margin="10,0"/>
+        </StackPanel>
+        <StackPanel VerticalAlignment="Center">
             <CheckBox Margin="5" IsChecked="{Binding DisableWideScreen}" VerticalContentAlignment="Center">
                 <TextBlock Text="{DynamicResource DisableWideScreenTitle}" TextWrapping="Wrap" TextAlignment="Center" Foreground="Black"/>
             </CheckBox>
