@@ -18,6 +18,9 @@ set(CommonFlags
     -Wstrict-aliasing # Allow to track strict aliasing issue.
     -Wno-char-subscripts # only impact svu which is deprecated
     -Wno-missing-braces
+    # Largely turning off because LegacyPluginAPI_Common in Plugins.h spams really badly in gcc 8 due to the memzero initialization.
+    # Should probably be fixed properly, but for now this should work.
+    -Wno-class-memaccess 
     #-Wno-ignored-attributes # don't remember why I put here but it is pure C option, therefore it complains for nothings on cpp files
     -DWX_PRECOMP
 	)
@@ -705,3 +708,9 @@ if(USE_VTUNE)
 endif()
 
 add_pcsx2_executable(${Output} "${pcsx2FinalSources}" "${pcsx2FinalLibs}" "${pcsx2FinalFlags}")
+
+if(PACKAGE_MODE)
+	install(CODE "execute_process(COMMAND /bin/bash -c \"echo 'Enabling networking capability on Linux...';set -x; [ -f ${BIN_DIR}/${Output} ] && sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' ${BIN_DIR}/${Output}; set +x\")")
+else()
+	install(CODE "execute_process(COMMAND /bin/bash -c \"echo 'Enabling networking capability on Linux...';set -x; [ -f ${CMAKE_SOURCE_DIR}/bin/${Output} ] && sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' ${CMAKE_SOURCE_DIR}/bin/${Output}; set +x\")")
+endif()

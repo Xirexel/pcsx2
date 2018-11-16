@@ -402,14 +402,14 @@ void GSRendererOGL::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache::
 	if (m_channel_shuffle) {
 		if (m_game.title == CRC::GT4 || m_game.title == CRC::GT3 || m_game.title == CRC::GTConcept || m_game.title == CRC::TouristTrophy) {
 			GL_INS("Gran Turismo RGB Channel");
-			m_ps_sel.channel = 7;
+			m_ps_sel.channel = ChannelFetch_RGB;
 			m_context->TEX0.TFX = TFX_DECAL;
 			*rt = tex->m_from_target;
 		} else if (m_game.title == CRC::Tekken5) {
 			if (m_context->FRAME.FBW == 1) {
 				// Used in stages: Secret Garden, Acid Rain, Moonlit Wilderness
 				GL_INS("Tekken5 RGB Channel");
-				m_ps_sel.channel = 7;
+				m_ps_sel.channel = ChannelFetch_RGB;
 				m_context->FRAME.FBMSK = 0xFF000000;
 				// 12 pages: 2 calls by channel, 3 channels, 1 blit
 				// Minus current draw call
@@ -444,7 +444,7 @@ void GSRendererOGL::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache::
 			// Read either blue or Alpha. Let's go for Blue ;)
 			// MGS3/Kill Zone
 			GL_INS("Blue channel");
-			m_ps_sel.channel = 3;
+			m_ps_sel.channel = ChannelFetch_BLUE;
 		} else if (m_context->CLAMP.WMS == 3 && ((m_context->CLAMP.MINU & 0x8) == 0)) {
 			// Read either Red or Green. Let's check the V coordinate. 0-1 is likely top so
 			// red. 2-3 is likely bottom so green (actually depends on texture base pointer offset)
@@ -473,20 +473,20 @@ void GSRendererOGL::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache::
 
 				if (blue_shift >= 0) {
 					GL_INS("Green/Blue channel (%d, %d)", blue_shift, green_shift);
-					m_ps_sel.channel = 6;
+					m_ps_sel.channel = ChannelFetch_GXBY;
 					m_context->FRAME.FBMSK = 0x00FFFFFF;
 				} else {
 					GL_INS("Green channel (wrong mask) (fbmask %x)", m_context->FRAME.FBMSK >> 24);
-					m_ps_sel.channel = 2;
+					m_ps_sel.channel = ChannelFetch_GREEN;
 				}
 
 			} else if (green) {
 				GL_INS("Green channel");
-				m_ps_sel.channel = 2;
+				m_ps_sel.channel = ChannelFetch_GREEN;
 			} else {
 				// Pop
 				GL_INS("Red channel");
-				m_ps_sel.channel = 1;
+				m_ps_sel.channel = ChannelFetch_RED;
 			}
 		} else {
 			GL_INS("Channel not supported");
@@ -562,17 +562,23 @@ void GSRendererOGL::EmulateBlending(bool DATE_GL42)
 	bool accumulation_blend = !!(blend_flag & BLEND_ACCU);
 
 	// Warning no break on purpose
+	// Note: the "fall through" comments tell gcc not to complain about not having breaks.
 	switch (m_sw_blending) {
 		case ACC_BLEND_ULTRA:           sw_blending |= true;
+										// fall through
 		case ACC_BLEND_FULL:            if (!m_vt.m_alpha.valid && (ALPHA.C == 0)) GetAlphaMinMax();
 										sw_blending |= (ALPHA.A != ALPHA.B) &&
 												((ALPHA.C == 0 && m_vt.m_alpha.max > 128) || (ALPHA.C == 2 && ALPHA.FIX > 128u));
+										// fall through
 		case ACC_BLEND_CCLIP_DALPHA:    sw_blending |= (ALPHA.C == 1) || (m_env.COLCLAMP.CLAMP == 0);
 										// Initial idea was to enable accurate blending for sprite rendering to handle
 										// correctly post-processing effect. Some games (ZoE) use tons of sprites as particles.
 										// In order to keep it fast, let's limit it to smaller draw call.
+										// fall through
 		case ACC_BLEND_SPRITE:          sw_blending |= m_vt.m_primclass == GS_SPRITE_CLASS && m_drawlist.size() < 100;
+										// fall through
 		case ACC_BLEND_FREE:            sw_blending |= impossible_or_free_blend;
+										// fall through
 		default:                        /*sw_blending |= accumulation_blend*/;
 	}
 	// SW Blending
@@ -1312,24 +1318,27 @@ void GSRendererOGL::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sour
 			// Depth buffer was moved so GSdx will invalide it which means a
 			// downscale. ICO uses the MSB depth bits as the texture alpha
 			// channel.  However this depth of field effect requires
-			// texel:pixel mapping accuraccy.
+			// texel:pixel mapping accuracy.
 			//
 			// Use an HLE shader to sample depth directly as the alpha channel
 			GL_INS("ICO sample depth as alpha");
 			m_require_full_barrier = true;
 			// Extract the depth as palette index
 			m_ps_sel.depth_fmt = 1;
-			m_ps_sel.channel = 3;
+			m_ps_sel.channel = ChannelFetch_BLUE;
 			dev->PSSetShaderResource(4, ds);
 
 			// We need the palette to convert the depth to the correct alpha value.
 			if (!tex->m_palette) {
+				// If this asserts fails, the allocated palette texture (tex->m_palette)
+				// is leaked because it is not released on tex destruction
+				ASSERT(!tex->m_should_have_tex_palette); // No 8-bit texture enabled
+
 				tex->m_palette = m_dev->CreateTexture(256, 1);
 
 				const uint32* clut = m_mem.m_clut;
-				int pal = GSLocalMemory::m_psm[tex->m_TEX0.PSM].pal;
+				uint16 pal = GSLocalMemory::m_psm[tex->m_TEX0.PSM].pal;
 				tex->m_palette->Update(GSVector4i(0, 0, pal, 1), clut, pal * sizeof(clut[0]));
-				tex->m_initpalette = false;
 
 				dev->PSSetShaderResource(1, tex->m_palette);
 			}

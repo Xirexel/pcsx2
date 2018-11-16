@@ -1095,6 +1095,7 @@ int cop2flags(u32 code)
 				default:
 					break;
 			}
+			break;
 		case 4: // MAXbc
 		case 5: // MINbc
 		case 12: // IADD, ISUB, IADDI
@@ -1264,7 +1265,6 @@ void encodeMemcheck()
 
 void recompileNextInstruction(int delayslot)
 {
-	static u8 s_bFlushReg = 1;
 	u32 i;
 	int count;
 
@@ -1349,19 +1349,7 @@ void recompileNextInstruction(int delayslot)
 		}
 	}
 
-	if( !delayslot ) {
-		if( s_bFlushReg ) {
-			//if( !_flushUnusedConstReg() ) {
-				int flushed = 0;
-				if( false ) flushed = 0; // old mmx path. I don't understand why flushed isn't set in the line below
-				if( !flushed && _getNumXMMwrite() > 2 ) _flushXMMunused();
-				s_bFlushReg = !flushed;
-//			}
-//			else s_bFlushReg = 0;
-		}
-		else s_bFlushReg = 1;
-	}
-	else s_bFlushReg = 1;
+	if (!delayslot && (_getNumXMMwrite() > 2)) _flushXMMunused();
 
 	//CHECK_XMMCHANGED();
 	_clearNeededX86regs();
@@ -1651,15 +1639,33 @@ static void __fastcall recRecompile( const u32 startpc )
 
 	pxAssert(s_pCurBlockEx);
 
-	if (HWADDR(startpc) == EELOAD_START) {
-		// The EELOAD _start function is the same across all BIOS versions afaik
+	if (HWADDR(startpc) == EELOAD_START)
+	{
+		// The EELOAD _start function is the same across all BIOS versions
 		u32 mainjump = memRead32(EELOAD_START + 0x9c);
 		if (mainjump >> 26 == 3) // JAL
-			eeloadMain = ((EELOAD_START + 0xa0) & 0xf0000000U) | (mainjump << 2 & 0x0fffffffU);
+			g_eeloadMain = ((EELOAD_START + 0xa0) & 0xf0000000U) | (mainjump << 2 & 0x0fffffffU);
 	}
 
-	if (eeloadMain && HWADDR(startpc) == HWADDR(eeloadMain)) {
+	if (g_eeloadMain && HWADDR(startpc) == HWADDR(g_eeloadMain))
+	{
 		xFastCall((void*)eeloadHook);
+		if (g_SkipBiosHack)
+		{
+			// There are four known versions of EELOAD, identifiable by the location of the 'jal' to the EELOAD function which
+			// calls ExecPS2(). The function itself is at the same address in all BIOSs after v1.00-v1.10.
+			u32 typeAexecjump = memRead32(EELOAD_START + 0x470); // v1.00, v1.01?, v1.10?
+			u32 typeBexecjump = memRead32(EELOAD_START + 0x5B0); // v1.20, v1.50, v1.60 (3000x models)
+			u32 typeCexecjump = memRead32(EELOAD_START + 0x618); // v1.60 (3900x models)
+			u32 typeDexecjump = memRead32(EELOAD_START + 0x600); // v1.70, v1.90, v2.00, v2.20, v2.30
+			if ((typeBexecjump >> 26 == 3) || (typeCexecjump >> 26 == 3) || (typeDexecjump >> 26 == 3)) // JAL to 0x822B8
+				g_eeloadExec = EELOAD_START + 0x2B8;
+			else if (typeAexecjump >> 26 == 3) // JAL to 0x82170
+				g_eeloadExec = EELOAD_START + 0x170;
+			else // There might be other types of EELOAD, because these models' BIOSs have not been examined: 18000, 3500x, 3700x,
+				 // 5500x, and 7900x. However, all BIOS versions have been examined except for v1.01 and v1.10.
+				Console.WriteLn("recRecompile: Could not enable launch arguments for fast boot mode; unidentified BIOS version! Please report this to the PCSX2 developers.");
+		}
 
 		// On fast/full boot this will have a crc of 0x0. But when the game/elf itself is
 		// recompiled (below - ElfEntry && g_GameLoading), then the crc would be from the elf.
@@ -1669,6 +1675,9 @@ static void __fastcall recRecompile( const u32 startpc )
 			doPlace0Patches();
 		g_patchesNeedRedo = 0;
 	}
+	
+	if (g_eeloadExec && HWADDR(startpc) == HWADDR(g_eeloadExec))
+		xFastCall((void*)eeloadHook2);
 
 	// this is the only way patches get applied, doesn't depend on a hack
 	if (g_GameLoading && HWADDR(startpc) == ElfEntry) {

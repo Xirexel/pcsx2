@@ -37,7 +37,7 @@ protected:
 	void ResetStates();
 	void EmulateAtst(const int pass, const GSTextureCache::Source* tex);
 	void EmulateZbuffer();
-	void EmulateChannelShuffle(GSTexture** rt, const GSTextureCache::Source* tex);
+	void EmulateChannelShuffle(const GSTextureCache::Source* tex);
 	void EmulateTextureSampler(const GSTextureCache::Source* tex);
 	virtual void DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* tex);
 	virtual void EmulateTextureShuffleAndFbmask() = 0;
@@ -46,20 +46,15 @@ protected:
 
 	int UserHacks_HPO;
 
-	bool DATE;
-
-	GSDrawingContext* context;
-	GSDrawingEnvironment env;
-
 	GSDeviceDX* dev;
 
 	GSDeviceDX::VSSelector m_vs_sel;
 	GSDeviceDX::GSSelector m_gs_sel;
 	GSDeviceDX::PSSelector m_ps_sel;
 
-	GSDeviceDX::PSSamplerSelector m_ps_ssel;
-	GSDeviceDX::OMBlendSelector	om_bsel;
-	GSDeviceDX::OMDepthStencilSelector om_dssel;
+	GSDeviceDX::PSSamplerSelector      m_ps_ssel;
+	GSDeviceDX::OMBlendSelector        m_om_bsel;
+	GSDeviceDX::OMDepthStencilSelector m_om_dssel;
 
 	GSDeviceDX::PSConstantBuffer ps_cb;
 	GSDeviceDX::VSConstantBuffer vs_cb;

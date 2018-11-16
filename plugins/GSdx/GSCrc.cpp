@@ -25,7 +25,7 @@
 
 CRC::Game CRC::m_games[] =
 {
-	// Note: Id 0x7ACF7E03 shouldn't be added as it's from the multiloader when packing games.
+	// Note: IDs 0x7ACF7E03, 0x7D4EA48F, 0x37C53760 - shouldn't be added as it's from the multiloaders when packing games.
 	{0x00000000, NoTitle, NoRegion, 0},
 	{0xF46142D3, ArTonelico2, NoRegion, 0},
 	{0xC38067F4, ArTonelico2, NoRegion, 0}, // project metafalica 1.0
@@ -71,7 +71,6 @@ CRC::Game CRC::m_games[] =
 	{0x280AD120, FFXII, JP, 0},
 	{0x08C1ED4D, HauntingGround, EU, 0},
 	{0x2CD5794C, HauntingGround, EU, 0},
-	// {0x7D4EA48F, HauntingGround, EU, 0}, // same CRC as {Genji, EU}
 	{0x867BB945, HauntingGround, JP, 0},
 	{0xE263BC4B, HauntingGround, JP, 0},
 	{0x901AAC09, HauntingGround, US, 0},
@@ -140,12 +139,26 @@ CRC::Game CRC::m_games[] =
 	{0x3DCE2229, ICO, RU, 0}, // Unofficial RU-version
 	{0x788D8B4F, ICO, EU, 0},
 	{0x29C28734, ICO, CH, 0},
+	{0x60013EBD, GTConcept, EU, 0},
+	{0x6810C3BC, GTConcept, CH, 0}, // Gran Turismo Concept 2002 Tokyo-Geneva
+	{0x0EEF32A3, GTConcept, KO, 0}, // Gran Turismo Concept 2002 Tokyo-Seoul
+	{0x3E9D448A, GT3, CH, 0}, // cutie comment
+	{0xAD66643C, GT3, CH, 0}, // cutie comment
+	{0x85AE91B3, GT3, US, 0},
+	{0x8AA991B0, GT3, US, 0},
+	{0xC220951A, GT3, JP, 0},
+	{0x9DE5CF65, GT3, JP, 0},
+	{0x706DFF80, GT3, JP, 0}, // GT3 Store Disc Vol. 2
+	{0x55CE5111, GT3, JP, 0}, // Gran Turismo 2000 Body Omen
+	{0xB590CE04, GT3, EU, 0},
 	{0xC02C653E, GT4, CH, 0},
 	{0x7ABDBB5E, GT4, CH, 0}, // cutie comment
 	{0xAEAD1CA3, GT4, JP, 0},
 	{0xE906EA37, GT4, JP, 0}, // GT4 First Preview 
 	{0xCA6243B9, GT4, JP, 0}, // GT4 Prologue
 	{0xDD764BBE, GT4, JP, 0}, // GT4 Prologue
+	{0xE1258846, GT4, JP, 0}, // GT4 Prologue
+	{0x27B8F05F, GT4, JP, 0}, // GT4 Prius Trial Version
 	{0x30E41D93, GT4, KO, 0},
 	{0x715CF2EC, GT4, EU, 0},
 	{0x44A61C8F, GT4, EU, 0},
@@ -153,18 +166,9 @@ CRC::Game CRC::m_games[] =
 	{0x3FB69323, GT4, EU, 0}, // GT4 Prologue
 	{0x77E61C8A, GT4, US, 0},
 	{0x33C6E35E, GT4, US, 0},
-	{0x32A1C752, GT4, US, 0}, // GT4 Online Beta
 	{0x70538747, GT4, US, 0}, // Toyota Prius Trial
-	{0x3E9D448A, GT3, CH, 0}, // cutie comment
-	{0xAD66643C, GT3, CH, 0}, // cutie comment
-	{0x85AE91B3, GT3, US, 0},
-	{0x8AA991B0, GT3, US, 0},
-	{0xC220951A, GT3, JP, 0},
-	{0x9DE5CF65, GT3, JP, 0},
-	{0xB590CE04, GT3, EU, 0},
-	{0x60013EBD, GTConcept, EU, 0},
-	{0x6810C3BC, GTConcept, CH, 0}, // Gran Turismo Concept 2002 Tokyo-Geneva
-	{0x0EEF32A3, GTConcept, KO, 0}, // Gran Turismo Concept 2002 Tokyo-Seoul
+	{0x32A1C752, GT4, US, 0}, // GT4 Online Beta
+	{0x0087EEC4, GT4, NoRegion, 0}, // JP and US versions have the same CRC - GT4 Online Beta
 	{0xC164550A, WildArms5, JPUNDUB, 0},
 	{0xC1640D2C, WildArms5, US, 0},
 	{0x0FCF8FE4, WildArms5, EU, 0},
@@ -261,7 +265,6 @@ CRC::Game CRC::m_games[] =
 	{0x56242EC9, Genji, KO, 0},
 	{0xCDAF243D, Genji, CH, 0},
 	{0x2A5E0B61, Genji, CH, 0},
-	{0x7D4EA48F, Genji, EU, 0}, // same CRC as {HauntingGround, EU}
 	{0xE04EA200, StarOcean3, EU, 0},
 	{0x23A97857, StarOcean3, US, 0},
 	{0xBEC32D49, StarOcean3, JP, 0},
@@ -341,6 +344,7 @@ CRC::Game CRC::m_games[] =
 	{0x37CD4279, LordOfTheRingsThirdAge, KO, 0},
 	{0xE169BAF8, RedDeadRevolver, US, 0},
 	{0xE2E67E23, RedDeadRevolver, EU, 0},
+	{0x87844524, RedDeadRevolver, RU, 0}, // Unofficial RU-version
 	{0xF56C7948, HeavyMetalThunder, JP, 0},
 	{0x6DF62AEA, BleachBladeBattlers, JP, 0},
 	{0x6EB71AB0, BleachBladeBattlers, JP, 0}, // 2nd
@@ -557,6 +561,8 @@ CRC::Game CRC::m_games[] =
 	{0x972719A3, FIFA05, EU, 0},
 	{0xC5473413, HarryPotterATCOS, NoRegion, 0}, // EU and US versions have the same CRC - Chamber Of Secrets
 	{0xE90BE9F8, HarryPotterATCOS, JP, 0 }, // Coca Cola original Version
+	{0x9C3A84F4, HarryPotterATHBP, US, 0 }, // Half-Blood Prince
+	{0xCB598BC2, HarryPotterATHBP, EU, 0 },
 	{0x51E019BC, HarryPotterATPOA, NoRegion, 0 }, // EU and US versions have the same CRC - Prisoner of Azkaban
 	{0x99A8B4FF, HarryPotterATPOA, KO, 0 },
 	{0xA8901AD6, HarryPotterATPOA, JP, 0 }, // Harry Potter to Azkaban no Shuujin
