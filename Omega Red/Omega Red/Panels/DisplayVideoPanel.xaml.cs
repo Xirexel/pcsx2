@@ -28,7 +28,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-namespace Omega_Red.Tools.Panels
+namespace Omega_Red.Panels
 {
     /// <summary>
     /// Interaction logic for DisplayVideoPanel.xaml
@@ -68,7 +68,7 @@ namespace Omega_Red.Tools.Panels
 
             l_HideControlTimer.Tick += (object send_arg, EventArgs e_arg) =>
             {
-                mControlPanel.Opacity = 0.0;
+                mControlPanel.Visibility = Visibility.Hidden;
 
                 l_HideControlTimer.Stop();
             };
@@ -154,7 +154,7 @@ namespace Omega_Red.Tools.Panels
         {
             Release();
 
-            mControlPanel.Opacity = 1.0;
+            mControlPanel.Visibility = Visibility.Visible;
 
             mMediaDuration = 0;
 
@@ -241,7 +241,7 @@ namespace Omega_Red.Tools.Panels
 
         private void Grid_PreviewMouseMove(object sender, MouseEventArgs e)
         {
-            mControlPanel.Opacity = 1.0;
+            mControlPanel.Visibility = Visibility.Visible;
 
             l_HideControlTimer.Start();
         }

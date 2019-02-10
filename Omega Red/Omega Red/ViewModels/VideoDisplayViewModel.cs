@@ -14,7 +14,7 @@
 
 using Omega_Red.Managers;
 using Omega_Red.Models;
-using Omega_Red.Tools.Panels;
+using Omega_Red.Panels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

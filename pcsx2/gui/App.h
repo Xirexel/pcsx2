@@ -27,6 +27,9 @@
 #include "AppCoreThread.h"
 #include "RecentIsoList.h"
 
+//Purely to make sure the saveslot define comes through. Remove if it gets removed.
+#include "Saveslots.h"
+
 class DisassemblyDialog;
 
 #include "System.h"
@@ -284,6 +287,8 @@ public:
 	wxString		IsoFile;
 
 	wxString		ElfFile;
+
+	wxString		GameLaunchArgs;
 
 	// Specifies the CDVD source type to use when AutoRunning
 	CDVD_SourceType CdvdSource;

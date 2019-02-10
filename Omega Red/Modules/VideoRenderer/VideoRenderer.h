@@ -9,6 +9,10 @@ typedef void(*Action)();
 
 class VideoRenderer
 {
+    BOOL m_is_wired;
+
+    BOOL m_is_tessellated;
+
 	uint8* m_BaseMem;
 
 	Action m_Irq;

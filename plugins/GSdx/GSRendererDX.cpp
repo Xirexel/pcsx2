@@ -103,12 +103,12 @@ void GSRendererDX::EmulateZbuffer()
 {
 	if (m_context->TEST.ZTE)
 	{
-		om_dssel.ztst = m_context->TEST.ZTST;
-		om_dssel.zwe = !m_context->ZBUF.ZMSK;
+		m_om_dssel.ztst = m_context->TEST.ZTST;
+		m_om_dssel.zwe = !m_context->ZBUF.ZMSK;
 	}
 	else
 	{
-		om_dssel.ztst = ZTST_ALWAYS;
+		m_om_dssel.ztst = ZTST_ALWAYS;
 	}
 
 	uint32 max_z;
@@ -129,7 +129,7 @@ void GSRendererDX::EmulateZbuffer()
 	// than the buffer supports seems to be an error condition on the real GS, causing it to crash.
 	// We are probably receiving bad coordinates from VU1 in these cases.
 
-	if (om_dssel.ztst >= ZTST_ALWAYS && om_dssel.zwe && (m_context->ZBUF.PSM != PSM_PSMZ32))
+	if (m_om_dssel.ztst >= ZTST_ALWAYS && m_om_dssel.zwe && (m_context->ZBUF.PSM != PSM_PSMZ32))
 	{
 		if (m_vt.m_max.p.z > max_z)
 		{
@@ -140,23 +140,23 @@ void GSRendererDX::EmulateZbuffer()
 #ifdef _DEBUG
 				fprintf(stdout, "Bad Z size on %s buffers\n", psm_str(m_context->ZBUF.PSM));
 #endif
-				om_dssel.ztst = ZTST_ALWAYS;
+				m_om_dssel.ztst = ZTST_ALWAYS;
 			}
 		}
 	}
 
 	GSVertex* v = &m_vertex.buff[0];
 	// Minor optimization of a corner case (it allow to better emulate some alpha test effects)
-	if (om_dssel.ztst == ZTST_GEQUAL && m_vt.m_eq.z && v[0].XYZ.Z == max_z)
+	if (m_om_dssel.ztst == ZTST_GEQUAL && m_vt.m_eq.z && v[0].XYZ.Z == max_z)
 	{
 #ifdef _DEBUG
 		fprintf(stdout, "Optimize Z test GEQUAL to ALWAYS (%s)\n", psm_str(m_context->ZBUF.PSM));
 #endif
-		om_dssel.ztst = ZTST_ALWAYS;
+		m_om_dssel.ztst = ZTST_ALWAYS;
 	}
 }
 
-void GSRendererDX::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache::Source* tex)
+void GSRendererDX::EmulateChannelShuffle(const GSTextureCache::Source* tex)
 {
 	// Channel shuffle effect not supported on DX. Let's keep the logic because it help to
 	// reduce memory requirement (and why not a partial port)
@@ -369,17 +369,19 @@ void GSRendererDX::ResetStates()
 	m_gs_sel.key = 0;
 	m_ps_sel.key = 0;
 
-	m_ps_ssel.key = 0;
-	om_bsel.key   = 0;
-	om_dssel.key  = 0;
+	m_ps_ssel.key  = 0;
+	m_om_bsel.key  = 0;
+	m_om_dssel.key = 0;
 }
 
 void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* tex)
 {
+	GSTexture* rtcopy = NULL;
+
 	const GSVector2i& rtsize = ds ? ds->GetSize()  : rt->GetSize();
 	const GSVector2& rtscale = ds ? ds->GetScale() : rt->GetScale();
 
-	DATE = m_context->TEST.DATE && m_context->FRAME.PSM != PSM_PSMCT24;
+	bool DATE = m_context->TEST.DATE && m_context->FRAME.PSM != PSM_PSMCT24;
 
 	bool ate_first_pass = m_context->TEST.DoFirstPass();
 	bool ate_second_pass = m_context->TEST.DoSecondPass();
@@ -387,16 +389,60 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 	ResetStates();
 	vs_cb.Texture_Scale_Offset = GSVector4(0.0f);
 
-	GSTexture* rtcopy = NULL;
-
 	ASSERT(m_dev != NULL);
-
 	dev = (GSDeviceDX*)m_dev;
 
-	EmulateChannelShuffle(&rt, tex);
+	// HLE implementation of the channel selection effect
+	//
+	// Warning it must be done at the begining because it will change the vertex list
+	EmulateChannelShuffle(tex);
 
 	// Upscaling hack to avoid various line/grid issues
 	MergeSprite(tex);
+
+	EmulateTextureShuffleAndFbmask();
+
+	// Blend
+
+	if (!IsOpaque())
+	{
+		m_om_bsel.abe = PRIM->ABE || PRIM->AA1 && m_vt.m_primclass == GS_LINE_CLASS;
+
+		m_om_bsel.a = m_context->ALPHA.A;
+		m_om_bsel.b = m_context->ALPHA.B;
+		m_om_bsel.c = m_context->ALPHA.C;
+		m_om_bsel.d = m_context->ALPHA.D;
+
+		if (m_env.PABE.PABE)
+		{
+			if (m_om_bsel.a == 0 && m_om_bsel.b == 1 && m_om_bsel.c == 0 && m_om_bsel.d == 1)
+			{
+				// this works because with PABE alpha blending is on when alpha >= 0x80, but since the pixel shader
+				// cannot output anything over 0x80 (== 1.0) blending with 0x80 or turning it off gives the same result
+
+				m_om_bsel.abe = 0;
+			}
+			else
+			{
+				//Breath of Fire Dragon Quarter triggers this in battles. Graphics are fine though.
+				//ASSERT(0);
+			}
+		}
+	}
+
+	uint8 afix = m_context->ALPHA.FIX;
+
+	if (m_ps_sel.dfmt == 1)
+	{
+		if (m_context->ALPHA.C == 1)
+		{
+			// 24 bits no alpha channel so use 1.0f fix factor as equivalent
+			m_context->ALPHA.C = 2;
+			afix = 0x00000001;
+		}
+		// Disable writing of the alpha channel
+		m_om_bsel.wa = 0;
+	}
 
 	if (DATE)
 	{
@@ -438,33 +484,7 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 
 	if (m_fba)
 	{
-		om_dssel.fba = m_context->FBA.FBA;
-	}
-
-	if (!IsOpaque())
-	{
-		om_bsel.abe = PRIM->ABE || PRIM->AA1 && m_vt.m_primclass == GS_LINE_CLASS;
-
-		om_bsel.a = m_context->ALPHA.A;
-		om_bsel.b = m_context->ALPHA.B;
-		om_bsel.c = m_context->ALPHA.C;
-		om_bsel.d = m_context->ALPHA.D;
-
-		if (m_env.PABE.PABE)
-		{
-			if (om_bsel.a == 0 && om_bsel.b == 1 && om_bsel.c == 0 && om_bsel.d == 1)
-			{
-				// this works because with PABE alpha blending is on when alpha >= 0x80, but since the pixel shader
-				// cannot output anything over 0x80 (== 1.0) blending with 0x80 or turning it off gives the same result
-
-				om_bsel.abe = 0;
-			}
-			else
-			{
-				//Breath of Fire Dragon Quarter triggers this in battles. Graphics are fine though.
-				//ASSERT(0);
-			}
-		}
+		m_om_dssel.fba = m_context->FBA.FBA;
 	}
 
 	// vs
@@ -510,19 +530,11 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 
 	// ps
 
-	EmulateTextureShuffleAndFbmask();
-
-	if (m_ps_sel.dfmt == 1)
-	{
-		// Disable writing of the alpha channel
-		om_bsel.wa = 0;
-	}
-
 	if (DATE)
 	{
 		if (dev->HasStencil())
 		{
-			om_dssel.date = 1;
+			m_om_dssel.date = 1;
 		}
 		else
 		{
@@ -530,12 +542,22 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 		}
 	}
 
-	if (m_env.COLCLAMP.CLAMP == 0 && /* hack */ !tex && PRIM->PRIM != GS_POINTLIST)
+	bool colclip_wrap = m_env.COLCLAMP.CLAMP == 0 && !tex && PRIM->PRIM != GS_POINTLIST;
+	if (colclip_wrap)
 	{
-		m_ps_sel.colclip = 1;
+		if ((m_context->ALPHA.A == m_context->ALPHA.B) || !m_om_bsel.abe) // Optimize-away colclip
+		{
+			// No addition neither substraction so no risk of overflow the [0:255] range.
+			colclip_wrap = false;
+		}
+		else
+		{
+			m_ps_sel.colclip = 1;
+			// fprintf(stderr, "COLCLIP ENABLED (blending is %d/%d/%d/%d)\n", m_context->ALPHA.A, m_context->ALPHA.B, m_context->ALPHA.C, m_context->ALPHA.D);
+		}
 	}
 
-	m_ps_sel.clr1 = om_bsel.IsCLR1();
+	m_ps_sel.clr1 = m_om_bsel.IsCLR1();
 	m_ps_sel.fba = m_context->FBA.FBA;
 	m_ps_sel.aout = m_context->FRAME.PSM == PSM_PSMCT16 || m_context->FRAME.PSM == PSM_PSMCT16S || (m_context->FRAME.FBMSK & 0xff000000) == 0x7f000000 ? 1 : 0;
 	m_ps_sel.aout &= !m_ps_sel.shuffle;
@@ -565,7 +587,7 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 #ifdef _DEBUG
 		fprintf(stdout, "Complex Alpha Test\n");
 #endif
-		bool commutative_depth = (om_dssel.ztst == ZTST_GEQUAL && m_vt.m_eq.z) || (om_dssel.ztst == ZTST_ALWAYS);
+		bool commutative_depth = (m_om_dssel.ztst == ZTST_GEQUAL && m_vt.m_eq.z) || (m_om_dssel.ztst == ZTST_ALWAYS);
 		bool commutative_alpha = (m_context->ALPHA.C != 1); // when either Alpha Src or a constant
 
 		ate_RGBA_then_Z = (m_context->TEST.AFAIL == AFAIL_FB_ONLY) & commutative_depth;
@@ -579,7 +601,7 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 #endif
 		// Render all color but don't update depth
 		// ATE is disabled here
-		om_dssel.zwe = false;
+		m_om_dssel.zwe = false;
 	}
 	else if (ate_RGB_then_ZA)
 	{
@@ -588,8 +610,8 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 #endif
 		// Render RGB color but don't update depth/alpha
 		// ATE is disabled here
-		om_dssel.zwe = false;
-		om_bsel.wa = false;
+		m_om_dssel.zwe = false;
+		m_om_bsel.wa = false;
 	}
 	else
 	{
@@ -600,7 +622,7 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 	// to only draw pixels which would cause the destination alpha test to fail in the future once.
 	// Unfortunately this also means only drawing those pixels at all, which is why this is a hack.
 	// The interaction with FBA in D3D9 is probably less than ideal.
-	if (UserHacks_AlphaStencil && DATE && dev->HasStencil() && om_bsel.wa && !m_context->TEST.ATE)
+	if (UserHacks_AlphaStencil && DATE && dev->HasStencil() && m_om_bsel.wa && !m_context->TEST.ATE)
 	{
 		if (!m_context->FBA.FBA)
 		{
@@ -616,7 +638,7 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 			ps_cb.FogColor_AREF.a = (float)0x80;
 		}
 		if (!(m_context->FBA.FBA && m_context->TEST.DATM == 1))
-			om_dssel.alpha_stencil = 1;
+			m_om_dssel.alpha_stencil = 1;
 	}
 
 	if (tex)
@@ -628,8 +650,24 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 		m_ps_sel.tfx = 4;
 	}
 
-	// rs
+	if (m_game.title == CRC::ICO)
+	{
+		GSVertex* v = &m_vertex.buff[0];
+		const GSVideoMode mode = GetVideoMode();
+		if (tex && m_vt.m_primclass == GS_SPRITE_CLASS && m_vertex.next == 2 && PRIM->ABE && // Blend texture
+				((v[1].U == 8200 && v[1].V == 7176 && mode == GSVideoMode::NTSC) || // at display resolution 512x448
+				(v[1].U == 8200 && v[1].V == 8200 && mode == GSVideoMode::PAL)) && // at display resolution 512x512
+				tex->m_TEX0.PSM == PSM_PSMT8H) // i.e. read the alpha channel of a 32 bits texture
+		{
+			// Note potentially we can limit to TBP0:0x2800
 
+			// DX doesn't support depth or channel shuffle yet so we can just do a partial port that skips the bad drawcalls,
+			// this way we can purge any remaining crc hacks.
+			throw GSDXRecoverableError();
+		}
+	}
+
+	// rs
 	GSVector4i scissor = GSVector4i(GSVector4(rtscale).xyxy() * m_context->scissor.in).rintersect(GSVector4i(rtsize).zwxy());
 
 	dev->OMSetRenderTargets(rt, ds, &scissor);
@@ -637,11 +675,9 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 	dev->PSSetShaderResource(1, tex ? tex->m_palette : NULL);
 	dev->PSSetShaderResource(2, rtcopy);
 
-	uint8 afix = m_context->ALPHA.FIX;
-
 	SetupIA(sx, sy);
 
-	dev->SetupOM(om_dssel, om_bsel, afix);
+	dev->SetupOM(m_om_dssel, m_om_bsel, afix);
 	dev->SetupVS(m_vs_sel, &vs_cb);
 	dev->SetupGS(m_gs_sel, &gs_cb);
 	dev->SetupPS(m_ps_sel, &ps_cb, m_ps_ssel);
@@ -652,19 +688,19 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 	{
 		dev->DrawIndexedPrimitive();
 
-		if (m_env.COLCLAMP.CLAMP == 0 && /* hack */ !tex && PRIM->PRIM != GS_POINTLIST)
+		if (colclip_wrap)
 		{
-			GSDeviceDX::OMBlendSelector om_bselneg(om_bsel);
+			GSDeviceDX::OMBlendSelector om_bselneg(m_om_bsel);
 			GSDeviceDX::PSSelector ps_selneg(m_ps_sel);
 
 			om_bselneg.negative = 1;
 			ps_selneg.colclip = 2;
 
-			dev->SetupOM(om_dssel, om_bselneg, afix);
+			dev->SetupOM(m_om_dssel, om_bselneg, afix);
 			dev->SetupPS(ps_selneg, &ps_cb, m_ps_ssel);
 
 			dev->DrawIndexedPrimitive();
-			dev->SetupOM(om_dssel, om_bsel, afix);
+			dev->SetupOM(m_om_dssel, m_om_bsel, afix);
 		}
 	}
 
@@ -687,18 +723,18 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 
 		dev->SetupPS(m_ps_sel, &ps_cb, m_ps_ssel);
 
-		bool z = om_dssel.zwe;
-		bool r = om_bsel.wr;
-		bool g = om_bsel.wg;
-		bool b = om_bsel.wb;
-		bool a = om_bsel.wa;
+		bool z = m_om_dssel.zwe;
+		bool r = m_om_bsel.wr;
+		bool g = m_om_bsel.wg;
+		bool b = m_om_bsel.wb;
+		bool a = m_om_bsel.wa;
 
 		switch(m_context->TEST.AFAIL)
 		{
-			case 0: z = r = g = b = a = false; break; // none
-			case 1: z = false; break; // rgba
-			case 2: r = g = b = a = false; break; // z
-			case 3: z = a = false; break; // rgb
+			case AFAIL_KEEP: z = r = g = b = a = false; break; // none
+			case AFAIL_FB_ONLY: z = false; break; // rgba
+			case AFAIL_ZB_ONLY: r = g = b = a = false; break; // z
+			case AFAIL_RGB_ONLY: z = a = false; break; // rgb
 			default: __assume(0);
 		}
 
@@ -718,25 +754,25 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 
 		if (z || r || g || b || a)
 		{
-			om_dssel.zwe = z;
-			om_bsel.wr = r;
-			om_bsel.wg = g;
-			om_bsel.wb = b;
-			om_bsel.wa = a;
+			m_om_dssel.zwe = z;
+			m_om_bsel.wr = r;
+			m_om_bsel.wg = g;
+			m_om_bsel.wb = b;
+			m_om_bsel.wa = a;
 
-			dev->SetupOM(om_dssel, om_bsel, afix);
+			dev->SetupOM(m_om_dssel, m_om_bsel, afix);
 
 			dev->DrawIndexedPrimitive();
 
-			if (m_env.COLCLAMP.CLAMP == 0 && /* hack */ !tex && PRIM->PRIM != GS_POINTLIST)
+			if (colclip_wrap)
 			{
-				GSDeviceDX::OMBlendSelector om_bselneg(om_bsel);
+				GSDeviceDX::OMBlendSelector om_bselneg(m_om_bsel);
 				GSDeviceDX::PSSelector ps_selneg(m_ps_sel);
 
 				om_bselneg.negative = 1;
 				ps_selneg.colclip = 2;
 
-				dev->SetupOM(om_dssel, om_bselneg, afix);
+				dev->SetupOM(m_om_dssel, om_bselneg, afix);
 				dev->SetupPS(ps_selneg, &ps_cb, m_ps_ssel);
 
 				dev->DrawIndexedPrimitive();
@@ -748,5 +784,5 @@ void GSRendererDX::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sourc
 
 	dev->Recycle(rtcopy);
 
-	if (om_dssel.fba) UpdateFBA(rt);
+	if (m_om_dssel.fba) UpdateFBA(rt);
 }

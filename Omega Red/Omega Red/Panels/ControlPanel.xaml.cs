@@ -13,22 +13,26 @@
 */
 
 using Omega_Red.Managers;
+using Omega_Red.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Omega_Red.Tools.Panels
+namespace Omega_Red.Panels
 {
     /// <summary>
     /// Interaction logic for ControlPanel.xaml
@@ -38,10 +42,165 @@ namespace Omega_Red.Tools.Panels
         public ControlPanel()
         {
             InitializeComponent();
-            
+
             m_Panels.AddHandler(Expander.ExpandedEvent, new RoutedEventHandler(Expander_Expanded));
 
             ConfigManager.Instance.SwitchControlModeEvent += Instance_SwitchControlModeEvent;
+
+            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+
+
+            { 
+                TextBlock lTextBlock = new TextBlock();
+
+                lTextBlock.FontSize = 18;
+
+                var lHyperlink = new Hyperlink();
+
+                lHyperlink.Inlines.Add(@"rtsp://127.0.0.1:" + Properties.Settings.Default.OffScreenStreamerPort.ToString());
+
+                lHyperlink.Click += delegate (object sender, RoutedEventArgs e)
+                {
+                    var lHyperlink1 = sender as Hyperlink;
+
+                    if (lHyperlink1 == null)
+                        return;
+
+                    var lRun = lHyperlink1.Inlines.FirstInline as Run;
+
+                    if (lRun == null)
+                        return;
+
+                    Clipboard.SetText(lRun.Text);
+
+                    TextBlock linfoTextBlock = new TextBlock();
+
+                    Popup mPopupCopy = new Popup();
+
+                    linfoTextBlock.Padding = new Thickness(7);
+
+                    linfoTextBlock.Foreground = Brushes.Black;
+
+                    linfoTextBlock.Background = Brushes.LightBlue;
+
+                    linfoTextBlock.FontSize = 20;
+
+                    linfoTextBlock.Text = "Copying of " + lRun.Text + " to clipboard.";
+
+                    mPopupCopy.Child = linfoTextBlock;
+
+                    mPopupCopy.PlacementTarget = lTextBlock;
+
+                    mPopupCopy.PopupAnimation = PopupAnimation.Slide;
+
+                    mPopupCopy.IsOpen = true;
+
+                    DoubleAnimation fadeInAnimation = new DoubleAnimation(1.0, new Duration(TimeSpan.FromMilliseconds(1000)));
+
+                    fadeInAnimation.Completed += delegate (object sender1, EventArgs e1)
+                    {
+                        mPopupCopy.IsOpen = false;
+                    };
+                    fadeInAnimation.BeginTime = TimeSpan.FromMilliseconds(0);
+                    mPopupCopy.Opacity = 0.0;
+                    mPopupCopy.BeginAnimation(UIElement.OpacityProperty, (AnimationTimeline)fadeInAnimation.GetAsFrozen());
+                };
+
+                lTextBlock.Inlines.Add(lHyperlink);
+
+                lTextBlock.Margin = new Thickness(10, 0, 0, 0);
+
+                mIPList.Items.Add(lTextBlock);
+            }
+
+            foreach (var item in GetIPAddresses())
+            {
+                if(!item.IsIPv6LinkLocal)
+                {
+                    TextBlock lTextBlock = new TextBlock();
+
+                    lTextBlock.FontSize = 18;
+
+                    var lHyperlink = new Hyperlink();
+
+                    lHyperlink.Inlines.Add(@"rtsp://" + item.ToString() + ":" + Properties.Settings.Default.OffScreenStreamerPort.ToString());
+
+                    lHyperlink.Click += delegate (object sender, RoutedEventArgs e)
+                    {
+                        var lHyperlink1 = sender as Hyperlink;
+
+                        if (lHyperlink1 == null)
+                            return;
+
+                        var lRun = lHyperlink1.Inlines.FirstInline as Run;
+
+                        if (lRun == null)
+                            return;
+
+                        Clipboard.SetText(lRun.Text);
+
+                        TextBlock linfoTextBlock = new TextBlock();
+
+                        Popup mPopupCopy = new Popup();
+
+                        linfoTextBlock.Padding = new Thickness(7);
+
+                        linfoTextBlock.Foreground = Brushes.Black;
+
+                        linfoTextBlock.Background = Brushes.LightBlue;
+
+                        linfoTextBlock.FontSize = 20;
+
+                        linfoTextBlock.Text = "Copying of " + lRun.Text + " to clipboard.";
+
+                        mPopupCopy.Child = linfoTextBlock;
+
+                        mPopupCopy.PlacementTarget = lTextBlock;
+
+                        mPopupCopy.PopupAnimation = PopupAnimation.Slide;
+
+                        mPopupCopy.IsOpen = true;
+
+                        DoubleAnimation fadeInAnimation = new DoubleAnimation(1.0, new Duration(TimeSpan.FromMilliseconds(1000)));
+
+                        fadeInAnimation.Completed += delegate (object sender1, EventArgs e1)
+                        {
+                            mPopupCopy.IsOpen = false;
+                        };
+                        fadeInAnimation.BeginTime = TimeSpan.FromMilliseconds(0);
+                        mPopupCopy.Opacity = 0.0;
+                        mPopupCopy.BeginAnimation(UIElement.OpacityProperty, (AnimationTimeline)fadeInAnimation.GetAsFrozen());
+                    };
+
+                    lTextBlock.Inlines.Add(lHyperlink);
+
+                    lTextBlock.Margin = new Thickness(10, 0, 0, 0);
+
+                    mIPList.Items.Add(lTextBlock);
+                }
+            }
+
+            mIPList.Visibility = VisibilityStateIP;
+        }
+
+        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        {
+            switch (a_Status)
+            {
+                case PCSX2Controller.StatusEnum.NoneInitilized:
+                case PCSX2Controller.StatusEnum.Initilized:
+                case PCSX2Controller.StatusEnum.Stopped:
+                case PCSX2Controller.StatusEnum.Paused:
+                case PCSX2Controller.StatusEnum.Started:
+                    for (int i = 0; i < m_Panels.Items.Count; i++)
+                    {
+                        Expander l_ItemExpander = m_Panels.Items.GetItemAt(i) as Expander;
+                        
+                        l_ItemExpander.IsExpanded = false;
+                    }
+                    break;
+            }           
+
         }
 
         void Instance_SwitchControlModeEvent(bool obj)
@@ -121,13 +280,23 @@ namespace Omega_Red.Tools.Panels
 
             if (l_extendedExpander != null)
             {
-                var l_headerexpendedheight = l_expendedheight / ((double)m_Panels.Items.Count);
-
                 var l_control = (l_extendedExpander.Content as FrameworkElement);
 
                 if (l_control != null)
                 {
-                    var l_newHeight = l_actualHeight - l_expendedheight - l_headerexpendedheight;
+                    double l_VertHeight = 0.0;
+
+                    if (l_extendedExpander.Margin != null)
+                    {
+                        l_VertHeight = l_extendedExpander.Margin.Top + l_extendedExpander.Margin.Bottom;
+                    }
+
+                    if (l_extendedExpander.Padding != null)
+                    {
+                        l_VertHeight += l_extendedExpander.Padding.Top + l_extendedExpander.Padding.Bottom;
+                    }
+                    
+                    var l_newHeight = l_actualHeight - l_expendedheight - l_VertHeight + 10;
 
                     if (l_newHeight > 0.0)
                         l_control.Height = l_newHeight;
@@ -157,5 +326,20 @@ namespace Omega_Red.Tools.Panels
             this.UpdateLayout();
         }
 
+        public Visibility VisibilityState
+        {
+            get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
+        }
+        public Visibility VisibilityStateIP
+        {
+            get { return App.m_AppType == App.AppType.OffScreen ? Visibility.Visible : Visibility.Collapsed; }
+        }
+
+        private static IPAddress[] GetIPAddresses()
+        {
+            String strHostName = Dns.GetHostName();
+            IPHostEntry ipEntry = Dns.GetHostEntry(strHostName);  
+            return ipEntry.AddressList;
+        }
     }
 }

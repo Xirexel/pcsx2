@@ -10,7 +10,9 @@
 VideoRenderer g_VideoRenderer;
 
 VideoRenderer::VideoRenderer():
-	m_AspectRatio(1)
+	m_AspectRatio(1),
+	m_is_wired(FALSE), 
+	m_is_tessellated(FALSE)
 {
 }
 
@@ -67,6 +69,43 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 						}
 					}
 
+					l_Attribute = l_ChildNode.attribute(L"Version");
+
+					if (!l_Attribute.empty())
+					{
+						MIDL_INTERFACE("15D9A4F6-B0FC-4833-AF37-21FB6AA0D07D")
+						ILock : public IUnknown
+						{
+							virtual HRESULT Lock() = 0;
+							virtual HRESULT Unlock() = 0;
+						};
+
+						xml_document l_xmlLockDoc;
+
+						l_XMLRes = l_xmlLockDoc.load_string(l_Attribute.value());
+
+						if (l_XMLRes.status == xml_parse_status::status_ok)
+						{
+							auto l_firstNode = l_xmlLockDoc.first_child();
+
+							if (!l_firstNode.empty())
+							{
+								auto l_buildAttr = l_firstNode.attribute(L"BUILD");
+
+								if (!l_buildAttr.empty())
+								{
+									auto l_lock = (ILock*)l_buildAttr.as_int();
+
+									if (l_lock != nullptr)
+									{
+										l_lock->Unlock();
+									}
+								}
+							}
+						}
+					}
+					
+
 					l_Attribute = l_ChildNode.attribute(L"UpdateCallback");
 
 					if (!l_Attribute.empty() && !m_VideoRenderer)
@@ -91,6 +130,7 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 
 					if (l_SharedHandle != nullptr && l_UpdateCallback != nullptr)
 						init(l_SharedHandle, l_UpdateCallback);
+
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Shutdown")
 				{
@@ -177,6 +217,29 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
                             m_VideoRenderer->SetGameCRC(l_Attribute.as_uint(0), 0);
                         }
                     }	
+                } else if (std::wstring(l_ChildNode.name()) == L"IsWired") {
+
+                    auto l_Attribute = l_ChildNode.attribute(L"Value");
+
+                    if (!l_Attribute.empty()) {
+
+						m_is_wired = l_Attribute.as_uint(0);
+
+                        if (m_VideoRenderer) {
+                            m_VideoRenderer->setIsWired(m_is_wired);
+                        }
+                    }
+                } else if (std::wstring(l_ChildNode.name()) == L"IsTessellated") {
+
+                    auto l_Attribute = l_ChildNode.attribute(L"Value");
+
+					m_is_tessellated = l_Attribute.as_uint(0);
+
+                    if (!l_Attribute.empty()) {
+                        if (m_VideoRenderer) {
+                            m_VideoRenderer->setIsTessellated(m_is_tessellated);
+                        }
+                    }
                 }
 
 
@@ -392,6 +455,10 @@ int VideoRenderer::init(void* sharedhandle, void* updateCallback)
 
 		return -1;
 	}
+		
+    m_VideoRenderer->setIsWired(m_is_wired);
+
+    m_VideoRenderer->setIsTessellated(m_is_tessellated);
 
 	l_Device.release();
 	

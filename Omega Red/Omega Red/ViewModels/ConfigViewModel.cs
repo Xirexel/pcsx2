@@ -79,6 +79,7 @@ namespace Omega_Red.ViewModels
         {
             get { return ConfigManager.Instance.ColourSchemaCollection; }
         }
+        
 
         public ICollectionView MediaOutputTypeCollection
         {
@@ -188,6 +189,90 @@ namespace Omega_Red.ViewModels
 
                 RaisePropertyChangedEvent("TouchPadScale");
             }
+        }
+
+        public ICollectionView RenderingSchemaCollection
+        {
+            get { return ConfigManager.Instance.RenderingSchemaCollection; }
+        }
+                
+        public object RenderingConfig
+        {
+            get
+            {
+                CheckBox l_checkBox = new CheckBox();
+
+                l_checkBox.Content = "Is wired.";
+
+                l_checkBox.VerticalContentAlignment = VerticalAlignment.Center;
+
+                l_checkBox.Checked += (object sender, RoutedEventArgs e)=> {
+
+                    Tools.ModuleControl.Instance.setIsWired(true);
+
+                };
+
+                l_checkBox.Unchecked += (object sender, RoutedEventArgs e) => {
+
+                    Tools.ModuleControl.Instance.setIsWired(false);
+
+                };
+
+                return l_checkBox;
+            }
+        }
+
+        public Visibility EnableRenderingConfig {
+            get
+            {
+                return App.m_is_enable_rendering_mode? Visibility.Visible: Visibility.Collapsed;
+            }
+        }
+
+        
+        public double SoundLevel
+        {
+            get
+            {
+                ModuleControl.Instance.setVolume(Settings.Default.SoundLevel);
+
+                return Settings.Default.SoundLevel;
+            }
+            set
+            {
+                Settings.Default.SoundLevel = value;
+
+                ModuleControl.Instance.setVolume(Settings.Default.SoundLevel);
+
+                Settings.Default.Save();
+
+                RaisePropertyChangedEvent("SoundLevel");
+            }
+        }
+        
+        public bool IsMuted
+        {
+            get
+            {
+                ModuleControl.Instance.setIsMuted(Settings.Default.IsMuted);
+
+                return Settings.Default.IsMuted;
+            }
+            set
+            {
+                Settings.Default.IsMuted = value;
+
+                ModuleControl.Instance.setIsMuted(Settings.Default.IsMuted);
+
+                Settings.Default.Save();
+
+                RaisePropertyChangedEvent("IsMuted");
+            }
+        }
+
+        public Visibility VisibilityState
+        {
+            get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
         }
     }
 }

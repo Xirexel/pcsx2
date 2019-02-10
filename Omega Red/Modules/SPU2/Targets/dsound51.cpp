@@ -17,6 +17,7 @@
  */
 
 #include "dsound51.h"
+#include "AudioCaptureProcessor.h"
 HWND hWMain = NULL;
 
 LPDIRECTSOUND lpDS;
@@ -31,6 +32,8 @@ DSBCAPS             dsbcaps;
 unsigned long LastWrite = 0xffffffff;
 unsigned long LastWriteS = 0xffffffff;
 unsigned long LastPlay = 0;
+
+LONG CurrentVolume = DSBVOLUME_MAX;
 
 int DSSetupSound()
 {
@@ -55,7 +58,7 @@ int DSSetupSound()
 
 	memset(&dsbd,0,sizeof(DSBUFFERDESC));
 	dsbd.dwSize = sizeof(DSBUFFERDESC);                                     // NT4 hack! sizeof(dsbd);
-	dsbd.dwFlags = DSBCAPS_PRIMARYBUFFER;
+    dsbd.dwFlags = DSBCAPS_PRIMARYBUFFER | DSBCAPS_CTRLVOLUME;
 	dsbd.dwBufferBytes = 0;
 	dsbd.lpwfxFormat = NULL;
 
@@ -92,7 +95,7 @@ int DSSetupSound()
 	memset(&dsbdesc, 0, sizeof(DSBUFFERDESC));
 	// NT4 hack! sizeof(DSBUFFERDESC);
 	dsbdesc.dwSize = sizeof(DSBUFFERDESC);
-	dsbdesc.dwFlags = DSBCAPS_LOCHARDWARE | DSBCAPS_STICKYFOCUS | DSBCAPS_GETCURRENTPOSITION2;
+    dsbdesc.dwFlags = DSBCAPS_LOCHARDWARE | DSBCAPS_STICKYFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_CTRLVOLUME;
 	dsbdesc.dwBufferBytes = SOUNDSIZE;
 	dsbdesc.lpwfxFormat = (LPWAVEFORMATEX)&pcmwf;
 
@@ -126,7 +129,22 @@ int DSSetupSound()
 	LastWrite = 0x00000000;
 	LastPlay = 0;
 
+	DSSetVolume(CurrentVolume);
+
 	return 0;
+}
+
+void DSSetVolume(LONG lVolume)
+{
+    HRESULT lres = DS_OK;
+
+    CurrentVolume = lVolume;
+
+    if (lpDSBPRIMARY != NULL)
+        lres = IDirectSoundBuffer_SetVolume(lpDSBPRIMARY, lVolume);
+
+	if (lpDSBSECONDARY1 != NULL)
+        lres = IDirectSoundBuffer_SetVolume(lpDSBSECONDARY1, lVolume);
 }
 
 void DSRemoveSound()
@@ -236,4 +254,7 @@ void DSSoundFeedVoiceData(unsigned char* pSound,long lBytes)
 	LastWrite += lBytes;
 	if(LastWrite >= SOUNDSIZE) LastWrite -= SOUNDSIZE;
 	LastPlay = cplay;
+		
+    if (g_ISourceRequestResult)
+        g_ISourceRequestResult->setData(pSound, lBytes, TRUE);
 }

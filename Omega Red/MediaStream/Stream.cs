@@ -31,11 +31,42 @@ namespace MediaStream
 
         public static Stream Instance { get { if (m_Instance == null) m_Instance = new Stream(); return m_Instance; } }
 
+
+        List<Tuple<RtspServer.StreamType, int>> m_streams = new List<Tuple<RtspServer.StreamType, int>>();
+
+        private int m_videoTrackID = 120;
+
+        private int m_audioTrackID = 121;
+
+        Guid MFMediaType_Video = new Guid(
+0x73646976, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71);
+
+        Guid MFVideoFormat_H264 = new Guid("34363248-0000-0010-8000-00AA00389B71");
+
+        Guid MFMediaType_Audio = new Guid(
+0x73647561, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71);
+
+        Guid MFAudioFormat_AAC = new Guid(
+0x1610, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+
+        Guid StreamingCBR = new Guid("8F6FF1B6-534E-49C0-B2A8-16D534EAF135");
+
         private Stream()
         {
             try
             {
-                mCaptureManager = new CaptureManager();
+                m_streams.Add(Tuple.Create<RtspServer.StreamType, int>(RtspServer.StreamType.Video, m_videoTrackID));
+
+                m_streams.Add(Tuple.Create<RtspServer.StreamType, int>(RtspServer.StreamType.Audio, m_audioTrackID));
+
+                try
+                {
+                    mCaptureManager = new CaptureManager("CaptureManager.dll");
+                }
+                catch (Exception)
+                {
+                    mCaptureManager = new CaptureManager();
+                }
 
                 mUpdateCallbackDelegate =
                 () =>
@@ -75,18 +106,18 @@ namespace MediaStream
 
         }
 
-        RtspServer s = null;
+        RtspServer m_RtspServer = null;
 
         //rtsp://127.0.0.1:8554
 
-        private void startServer(List<Tuple<RtspServer.StreamType, int>> streams)
+        private void startServer()
         {
             int port = 8554;
             string username = "user";      // or use NUL if there is no username
             string password = "password";  // or use NUL if there is no password
 
-            s = new RtspServer(streams, port, null, null);
-            s.StartListen();
+            m_RtspServer = new RtspServer(m_streams, port, null, null);
+            m_RtspServer.StartListen();
         }
 
         private Guid setContainerFormat(XmlNode aXmlNode)
@@ -120,7 +151,9 @@ namespace MediaStream
 
 
 
-        public string start(string a_PtrDirectX11Source, string a_FilePath, uint a_CompressionQuality)
+
+
+        public string start(string a_PtrDirectX11Source, string a_PtrAudioCaptureProcessor, string a_FilePath, uint a_CompressionQuality)
         {
 
             string l_FileExtention = "";
@@ -130,13 +163,17 @@ namespace MediaStream
             IEncoderControl l_EncoderControl = null;
 
             IStreamControl l_StreamControl = null;
-            
+
             ISinkControl l_SinkControl = null;
 
             object l_VideoMediaSource = null;
-            
+
             object l_VideoSourceMediaType = null;
-            
+
+            object lAudioSourceOutputMediaType = null;
+
+            object l_AudioMediaSource = null;
+
             List<object> lSourceMediaNodeList = new List<object>();
 
             do
@@ -158,7 +195,7 @@ namespace MediaStream
 
                 if (l_StreamControl == null)
                     break;
-                
+
                 l_SinkControl = mCaptureManager.createSinkControl();
 
                 if (l_SinkControl == null)
@@ -214,27 +251,7 @@ namespace MediaStream
 
 
 
-
-                l_EncoderControl.getMediaTypeCollectionOfEncoder(
-                    l_VideoSourceMediaType,
-                    lCLSIDVideoEncoder,
-                    out lxmldoc);
-
-                doc.LoadXml(lxmldoc);
-
-                var lGUIDEncoderModeNode = doc.SelectSingleNode("EncoderMediaTypes/Group[1]/@GUID");
-
-                if (lGUIDEncoderModeNode == null)
-                    break;
-
-                Guid lGUIDVideoEncoderMode;
-
-                if (!Guid.TryParse(lGUIDEncoderModeNode.Value, out lGUIDVideoEncoderMode))
-                    break;
-
-
-
-
+                                                          
                 mCaptureManager.getCollectionOfSinks(ref lxmldoc);
 
                 doc = new XmlDocument();
@@ -261,10 +278,9 @@ namespace MediaStream
                 lReadMode,
                 out lSampleGrabberCallbackSinkFactory);
 
-                int lIndexCount = 120;
 
 
-                var l_videoStream = createVideoStream(lSampleGrabberCallbackSinkFactory, lIndexCount);
+                var l_videoStream = createVideoStream(lSampleGrabberCallbackSinkFactory, m_videoTrackID);
 
 
                 IEncoderNodeFactory lEncoderNodeFactory;
@@ -278,7 +294,7 @@ namespace MediaStream
 
                 if (!lEncoderNodeFactory.createEncoderNode(
                     l_VideoSourceMediaType,
-                    lGUIDVideoEncoderMode,
+                    StreamingCBR,
                     a_CompressionQuality,
                     (uint)0,
                     l_videoStream.Item1,
@@ -299,12 +315,104 @@ namespace MediaStream
 
                 lSourceMediaNodeList.Add(l_VideoSourceNode);
 
-                List<Tuple<RtspServer.StreamType, int>> streams = new List<Tuple<RtspServer.StreamType, int>>();
 
-                if (l_videoStream.Item1 != null)
+
+
+
+
+                // Audio Source
+
+                object l_AudioCaptureProcessor = null;
+
+                if (!string.IsNullOrEmpty(a_PtrAudioCaptureProcessor))
                 {
-                    streams.Add(Tuple.Create<RtspServer.StreamType, int>(l_videoStream.Item2, l_videoStream.Item3));
+                    int l_ptrValue = 0;
+
+                    if (int.TryParse(a_PtrAudioCaptureProcessor, out l_ptrValue))
+                    {
+                        IntPtr l_ptr = new IntPtr(l_ptrValue);
+
+                        l_AudioCaptureProcessor = Marshal.GetObjectForIUnknown(l_ptr);
+                    }
                 }
+
+
+
+                string lAudioLoopBack = null;
+
+                uint lAudioSourceIndexStream = 0;
+
+                uint lAudioSourceIndexMediaType = 0;
+
+                if (l_AudioCaptureProcessor != null)
+                {
+                    l_ISourceControl.createSourceFromCaptureProcessor(
+                        l_AudioCaptureProcessor,
+                        out l_AudioMediaSource);
+
+                    if (l_AudioMediaSource == null)
+                        break;
+
+                    l_ISourceControl.getSourceOutputMediaTypeFromMediaSource(
+                        l_AudioMediaSource,
+                        lAudioSourceIndexStream,
+                        lAudioSourceIndexMediaType,
+                        out lAudioSourceOutputMediaType);
+
+                }
+                else
+                {
+                    lAudioLoopBack = a_PtrAudioCaptureProcessor;// "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack";
+
+                    l_ISourceControl.getSourceOutputMediaType(
+                        lAudioLoopBack,
+                        lAudioSourceIndexStream,
+                        lAudioSourceIndexMediaType, out lAudioSourceOutputMediaType);
+
+                    l_ISourceControl.createSourceNode(
+                        lAudioLoopBack,
+                        lAudioSourceIndexStream,
+                        lAudioSourceIndexMediaType,
+                        out l_AudioMediaSource);
+
+                }
+
+                var l_audioStream = createAudioStream(lSampleGrabberCallbackSinkFactory, m_audioTrackID);
+
+                lEncoderNodeFactory = null;
+
+                Guid lAACEncoder = new Guid("93AF0C51-2275-45d2-A35B-F2BA21CAED00");
+
+                if (!l_EncoderControl.createEncoderNodeFactory(
+                    lAACEncoder,
+                    out lEncoderNodeFactory))
+                    break;
+
+                lEncoderNode = null;
+
+                if (!lEncoderNodeFactory.createEncoderNode(
+                    lAudioSourceOutputMediaType,
+                    StreamingCBR,
+                    a_CompressionQuality,
+                    (uint)0,
+                    l_audioStream.Item1,
+                    out lEncoderNode))
+                    break;
+
+
+                object l_AudioSourceNode;
+
+                if (!l_ISourceControl.createSourceNodeFromExternalSourceWithDownStreamConnection(
+                    l_AudioMediaSource,
+                    lAudioSourceIndexStream,
+                    lAudioSourceIndexMediaType,
+                    lEncoderNode,
+                    out l_AudioSourceNode))
+                    break;
+
+
+                lSourceMediaNodeList.Add(l_AudioSourceNode);
+
 
 
 
@@ -323,30 +431,30 @@ namespace MediaStream
 
                 mISession.startSession(0, Guid.Empty);
 
+                startServer();
+
                 lock (this)
                 {
                     mUpdateCallbackDelegateInner = lUpdateCallbackDelegateInner;
                 }
-                
-                startServer(streams);
 
             } while (false);
-            
+
             if (lSourceMediaNodeList != null)
                 foreach (var item in lSourceMediaNodeList)
                 {
                     Marshal.ReleaseComObject(item);
                 }
-            
+
             if (l_VideoSourceMediaType != null)
                 Marshal.ReleaseComObject(l_VideoSourceMediaType);
-            
+
             if (l_VideoMediaSource != null)
                 Marshal.ReleaseComObject(l_VideoMediaSource);
 
             return l_FileExtention;
         }
-        
+
         private Tuple<object, RtspServer.StreamType, int> createVideoStream(
             ISampleGrabberCallbackSinkFactory aISampleGrabberCallbackSinkFactory,
             int aIndexCount)
@@ -358,33 +466,27 @@ namespace MediaStream
             int index = 0;
 
             do
-            {                                               
+            {
                 ISampleGrabberCallback lH264SampleGrabberCallback;
-
-                Guid MFMediaType_Video = new Guid(0x73646976, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71);
-
-                Guid MFVideoFormat_H264 = new Guid("34363248-0000-0010-8000-00AA00389B71");
 
                 aISampleGrabberCallbackSinkFactory.createOutputNode(
                     MFMediaType_Video,
                     MFVideoFormat_H264,
                     out lH264SampleGrabberCallback);
-                
+
                 if (lH264SampleGrabberCallback != null)
                 {
-                    uint ltimestamp = 0;
-
                     lH264SampleGrabberCallback.mUpdateEvent += delegate
                         (byte[] aData, uint aLength)
                     {
-                        if (s != null)
+                        if (m_RtspServer != null)
                         {
-                            ThreadPool.QueueUserWorkItem((object state) =>
+                            lock (m_RtspServer)
                             {
-                                s.sendData(aIndexCount, ltimestamp, aData);
+                                currentmillisecond += 33;
 
-                                ltimestamp += 33;
-                            });
+                                m_RtspServer.sendData(aIndexCount, (int)type, currentmillisecond * 90, aData);
+                            };
                         }
                     };
 
@@ -402,6 +504,54 @@ namespace MediaStream
 
             return Tuple.Create<object, RtspServer.StreamType, int>(result, type, index);
         }
+
+
+
+        uint currentmillisecond = 0;
+
+        private Tuple<object, RtspServer.StreamType, int> createAudioStream(ISampleGrabberCallbackSinkFactory aISampleGrabberCallbackSinkFactory, int aIndexCount)
+        {
+            object result = null;
+
+            RtspServer.StreamType type = RtspServer.StreamType.Audio;
+
+            int index = aIndexCount;
+
+            do
+            {
+
+                ISampleGrabberCallback lAACSampleGrabberCallback;
+
+                aISampleGrabberCallbackSinkFactory.createOutputNode(
+                    MFMediaType_Audio,
+                    MFAudioFormat_AAC,
+                    out lAACSampleGrabberCallback);
+
+                if (lAACSampleGrabberCallback != null)
+                {
+                    lAACSampleGrabberCallback.mUpdateFullEvent += delegate
+                        (uint aSampleFlags, long aSampleTime, long aSampleDuration, byte[] aData, uint aLength)
+                    {
+                        if (m_RtspServer != null)
+                        {
+                            lock (m_RtspServer)
+                            {
+                                currentmillisecond = (uint)aSampleTime / 10000;
+
+                                m_RtspServer.sendData(aIndexCount, (int)type, currentmillisecond * 90, aData);
+                            }
+                        }
+                    };
+
+                    result = lAACSampleGrabberCallback.getTopologyNode();
+
+                }
+            }
+            while (false);
+
+            return Tuple.Create<object, RtspServer.StreamType, int>(result, type, index);
+        }
+
 
 
 
@@ -448,13 +598,13 @@ namespace MediaStream
 
         public void stop()
         {
-            if (s != null)
+            if (m_RtspServer != null)
             {
-                s.StopListen();
+                m_RtspServer.StopListen();
 
-                s.Dispose();
+                m_RtspServer.Dispose();
 
-                s = null;
+                m_RtspServer = null;
             }
             
             if (mISession == null)

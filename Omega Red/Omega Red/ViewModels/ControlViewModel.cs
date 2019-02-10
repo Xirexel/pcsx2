@@ -27,7 +27,8 @@ namespace Omega_Red.ViewModels
     {
         private void exit()
         {
-            App.Current.MainWindow.Close();
+            if(App.Current.MainWindow != null)
+                App.Current.MainWindow.Close();
         }
 
         public ICommand ExitCommand
@@ -47,7 +48,7 @@ namespace Omega_Red.ViewModels
 
         protected override Managers.IManager Manager
         {
-            get { throw new NotImplementedException(); }
+            get { return null; }
         }
     }
 }

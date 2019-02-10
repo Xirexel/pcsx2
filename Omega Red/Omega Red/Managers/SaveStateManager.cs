@@ -16,7 +16,7 @@ using Omega_Red.Managers;
 using Omega_Red.Models;
 using Omega_Red.Properties;
 using Omega_Red.Tools;
-using Omega_Red.Tools.Panels;
+using Omega_Red.Panels;
 using Omega_Red.Tools.Savestate;
 using System;
 using System.Collections.Generic;
@@ -60,6 +60,8 @@ namespace Omega_Red.Managers
         
         private SaveStateInfo m_autoSave = new SaveStateInfo();
 
+        private List<SaveStateInfo> m_quickSaves = new List<SaveStateInfo>();
+
         private static SaveStateManager m_Instance = null;
 
         public static SaveStateManager Instance { get { if (m_Instance == null) m_Instance = new SaveStateManager(); return m_Instance; } }
@@ -91,7 +93,7 @@ namespace Omega_Red.Managers
 
             m_ListSlotIndexes.Clear();
 
-            for (int i = 0; i < 101; i++)
+            for (int i = 0; i < 106; i++)
             {
                 m_ListSlotIndexes.Add(i);
             }
@@ -175,6 +177,41 @@ namespace Omega_Red.Managers
 
                 m_autoSave = lautoSaveState;
             }
+
+            List<SaveStateInfo> l_quickSaves = new List<SaveStateInfo>();
+
+            for (int i = 0; i < 5; i++)
+            {
+                int l_index = i + 101;
+
+                var lquickSaveState = new SaveStateInfo()
+                {
+                    IsQuicksave = true,
+                    FilePath = Settings.Default.SlotFolder +
+                        PCSX2Controller.Instance.IsoInfo.DiscSerial + ".quick." +
+                        l_index.ToString() + ".p2s"
+
+                };
+
+                if (File.Exists(lquickSaveState.FilePath))
+                {
+                    try
+                    {
+                        lquickSaveState = SStates.Instance.readData(lquickSaveState.FilePath, l_index, lquickSaveState.IsAutosave, lquickSaveState.IsQuicksave);
+
+                        addSaveStateInfo(lquickSaveState);
+
+                        m_ListSlotIndexes.Remove(l_index);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                l_quickSaves.Add(lquickSaveState);
+            }
+
+            m_quickSaves = l_quickSaves.OrderBy(o => o.DateTime).ToList();
         }
         
         void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
@@ -341,6 +378,61 @@ namespace Omega_Red.Managers
             {
                 Tools.Savestate.SStates.Instance.Load(a_SaveStateInfo.FilePath);
             }
+        }
+
+        public void quickSave(string aDate, double aDurationInSeconds)
+        {
+            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
+            {
+                var l_quickSave = m_quickSaves.ElementAt(0);
+
+                m_quickSaves.RemoveAt(0);
+
+                l_quickSave.Date = aDate;
+
+                l_quickSave.Duration = TimeSpan.FromSeconds(aDurationInSeconds).ToString(@"dd\.hh\:mm\:ss");
+
+                var l_file_path = l_quickSave.FilePath + "_temp";
+
+                Tools.Savestate.SStates.Instance.Save(l_file_path, aDate, aDurationInSeconds);
+
+                File.Delete(l_quickSave.FilePath);
+
+                File.Move(l_file_path, l_quickSave.FilePath);
+
+                m_quickSaves.Add(l_quickSave);
+            }
+        }
+
+        private int lquickLoadLast = 0;
+
+        private DateTime mlastQuickLoadTime = DateTime.Now;
+
+        public SaveStateInfo quickLoad()
+        {
+            SaveStateInfo lresult = null;
+            
+            if (m_quickSaves.Count > 0)
+            {
+                var lDiff = DateTime.Now.Subtract(mlastQuickLoadTime);
+
+                if(lDiff.Seconds > 30)
+                {
+                    lquickLoadLast = 0;
+                }
+                else
+                {
+                    ++lquickLoadLast;
+
+                    lquickLoadLast = lquickLoadLast % m_quickSaves.Count;
+                }
+
+                lresult = m_quickSaves[lquickLoadLast];
+
+                mlastQuickLoadTime = DateTime.Now;
+            }
+
+            return lresult;
         }
 
         public void autoSave(string aDate, double aDurationInSeconds)

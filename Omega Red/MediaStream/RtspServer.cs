@@ -25,8 +25,8 @@ public class RtspServer : IDisposable
     public enum StreamType
     {
         None,
-        Video,
-        Audio
+        Video = 97,
+        Audio = 96
     }
 
     const uint global_ssrc = 0x4321FADE; // 8 hex digits
@@ -38,6 +38,8 @@ public class RtspServer : IDisposable
     List<Tuple<RtspServer.StreamType, int>> mStreams;
     
     List<RTPSession> rtp_list = new List<RTPSession>(); // list of RTSP Listeners, used when sending RTP over RTSP
+
+
 
     Random rnd = new Random();
     int session_count = 0;
@@ -209,18 +211,18 @@ public class RtspServer : IDisposable
                     {
                         case StreamType.Video:
                             {
-                                sdp.Append("m=video 0 RTP/AVP 96\n");
-                                sdp.Append("a=rtpmap:96 H264/90000\n");
-                                sdp.Append("a=fmtp:96\n");
+                                sdp.Append(string.Format("m=video 0 RTP/AVP {0}\n", (uint)item.Item1));
+                                sdp.Append(string.Format("a=rtpmap:{0} H264/90000\n", (uint)item.Item1));
+                                sdp.Append(string.Format("a=fmtp:{0}\n", (uint)item.Item1));
                                 sdp.Append(string.Format("a=control:trackID={0}\n", item.Item2));
                                 //sdp.Append("a=fmtp:96 profile-level-id=42A01E; sprop-parameter-sets=" + sps_str + "," + pps_str + ";\n");
                             }
                             break;
                         case StreamType.Audio:
                             {
-                                sdp.Append("m=audio 0 RTP/AVP 96\n");
-                                sdp.Append("a=rtpmap:96 mpeg4-generic\n");
-                                sdp.Append("a=fmtp:96\n");
+                                sdp.Append(string.Format("m=audio 0 RTP/AVP {0}\n", (uint)item.Item1));
+                                sdp.Append(string.Format("a=rtpmap:{0} mpeg4-generic/90000/2\n", (uint)item.Item1));
+                                sdp.Append(string.Format("a=fmtp:{0}\n", (uint)item.Item1));
                                 sdp.Append(string.Format("a=control:trackID={0}\n", item.Item2));
                                 //sdp.Append("a=fmtp:96 profile-level-id=42A01E; sprop-parameter-sets=" + sps_str + "," + pps_str + ";\n");
                             }
@@ -325,6 +327,10 @@ public class RtspServer : IDisposable
                         }
                     }
 
+                    
+
+                    //setupMessage.SourcePort.RemoteAdress
+
                     // Create a 'Session' and add it to the Session List
                     // ToDo - Check the Track ID. In the SDP the H264 video track is TrackID 0
                     // Place Lock() here so the Session Count and the addition to the list is locked
@@ -360,7 +366,7 @@ public class RtspServer : IDisposable
                 bool session_found = false;
                 foreach (RTPSession session in rtp_list)
                 {
-                    if (session.session_id.Equals(message.Session))
+                    //if (session.session_id.Equals(message.Session))
                     {
                         // found the session
                         session_found = true;
@@ -374,8 +380,6 @@ public class RtspServer : IDisposable
                         play_response.AddHeader("Range: " + range);
                         play_response.AddHeader("RTP-Info: " + rtp_info);
                         listener.SendMessage(play_response);
-
-                        break;
                     }
                 }
 
@@ -444,7 +448,7 @@ public class RtspServer : IDisposable
     }
 
 
-    public void sendData(int trackID, uint timestamp_ms, byte[] raw_nal)
+    public void sendData(int trackID, int rtp_payload_type, uint ts, byte[] raw_nal)
     {
 
         // Check if there are any clients. Only run the encoding if someone is connected
@@ -455,10 +459,10 @@ public class RtspServer : IDisposable
 
         // Take the YUV image and encode it into a H264 NAL
         // This returns a NAL with no headers (no 00 00 00 01 header and no 32 bit sizes)
-        Console.WriteLine("Compressing video at time(ms) " + timestamp_ms + "    " + current_rtp_count + " RTSP clients connected");
+        //Console.WriteLine("Compressing video at time(ms) " + timestamp_ms + "    " + current_rtp_count + " RTSP clients connected");
  
 
-        UInt32 ts = timestamp_ms * 90; // 90kHz clock
+        //UInt32 ts = timestamp_ms * 90; // 90kHz clock
 
         // The H264 Payload could be sent as one large RTP packet (assuming the receiver can handle it)
         // or as a Fragmented Data, split over several RTP packets with the same Timestamp.
@@ -490,7 +494,6 @@ public class RtspServer : IDisposable
             int rtp_extension = 0;
             int rtp_csrc_count = 0;
             int rtp_marker = 1;
-            int rtp_payload_type = 96;
 
             RTPPacketUtil.WriteHeader(rtp_packet, rtp_version, rtp_padding, rtp_extension, rtp_csrc_count, rtp_marker, rtp_payload_type);
 
@@ -540,7 +543,7 @@ public class RtspServer : IDisposable
                 int rtp_extension = 0;
                 int rtp_csrc_count = 0;
                 int rtp_marker = (end_bit == 1 ? 1 : 0); // Marker set to 1 on last packet
-                int rtp_payload_type = 96;
+                
 
                 RTPPacketUtil.WriteHeader(rtp_packet, rtp_version, rtp_padding, rtp_extension, rtp_csrc_count, rtp_marker, rtp_payload_type);
 

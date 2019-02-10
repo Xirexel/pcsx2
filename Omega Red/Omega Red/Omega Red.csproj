@@ -68,6 +68,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Capture\MediaStream.cs" />
+    <Compile Include="Capture\OffScreenStream.cs" />
+    <Compile Include="Managers\AdditionalControlManager.cs" />
     <Compile Include="Managers\IManager.cs" />
     <Compile Include="Managers\MediaRecorderManager.cs" />
     <Compile Include="Capture\MediaCapture.cs" />
@@ -78,12 +80,37 @@
     <Compile Include="Models\PadControlInfo.cs" />
     <Compile Include="Models\SaveStateInfo.cs" />
     <Compile Include="Models\ScreenshotInfo.cs" />
+    <Compile Include="NotifyIconWpf\BalloonIcon.cs" />
+    <Compile Include="NotifyIconWpf\Interop\BalloonFlags.cs" />
+    <Compile Include="NotifyIconWpf\Interop\IconDataMembers.cs" />
+    <Compile Include="NotifyIconWpf\Interop\IconState.cs" />
+    <Compile Include="NotifyIconWpf\Interop\MouseEvent.cs" />
+    <Compile Include="NotifyIconWpf\Interop\NotifyCommand.cs" />
+    <Compile Include="NotifyIconWpf\Interop\NotifyIconData.cs" />
+    <Compile Include="NotifyIconWpf\Interop\NotifyIconVersion.cs" />
+    <Compile Include="NotifyIconWpf\Interop\Point.cs" />
+    <Compile Include="NotifyIconWpf\Interop\TrayInfo.cs" />
+    <Compile Include="NotifyIconWpf\Interop\WinApi.cs" />
+    <Compile Include="NotifyIconWpf\Interop\WindowClass.cs" />
+    <Compile Include="NotifyIconWpf\Interop\WindowMessageSink.cs" />
+    <Compile Include="NotifyIconWpf\PopupActivationMode.cs" />
+    <Compile Include="NotifyIconWpf\RoutedEventHelper.cs" />
+    <Compile Include="NotifyIconWpf\TaskbarIcon.cs" />
+    <Compile Include="NotifyIconWpf\TaskbarIcon.Declarations.cs" />
+    <Compile Include="NotifyIconWpf\Util.cs" />
+    <Compile Include="OffScreenWindow.xaml.cs">
+      <DependentUpon>OffScreenWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\SoundControl.xaml.cs">
+      <DependentUpon>SoundControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Tools\BiosControl.cs" />
     <Compile Include="Managers\BiosManager.cs" />
     <Compile Include="Managers\ConfigManager.cs" />
     <Compile Include="Tools\Converters\CompatibilityConverter.cs" />
     <Compile Include="Tools\Converters\GameNameConverter.cs" />
     <Compile Include="Tools\Converters\ScaledTouchPadConverter.cs" />
+    <Compile Include="Tools\Converters\VisibilityConverter.cs" />
     <Compile Include="Tools\Converters\WideScreenConverter.cs" />
     <Compile Include="Tools\Converters\WidthConverter.cs" />
     <Compile Include="Tools\GameIndex.cs" />
@@ -223,6 +250,14 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="OffScreenWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\SoundControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Styles\ButtonStyles.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -250,6 +285,10 @@
     <Page Include="Styles\ScrollViewerStyles.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\SliderStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Styles\Styles.xaml">
       <Generator>MSBuild:Compile</Generator>

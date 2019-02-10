@@ -106,6 +106,8 @@ bool GSDeviceProxy::CreateTextureFX()
     return true;
 }
 
+#include "resource1.h"
+
 void GSDeviceProxy::SetupVS(VSSelector sel, const VSConstantBuffer *cb)
 {
     auto i = std::as_const(m_vs).find(sel);
@@ -143,6 +145,19 @@ void GSDeviceProxy::SetupVS(VSSelector sel, const VSConstantBuffer *cb)
         std::vector<char> shader;
         theApp.LoadResource(IDR_TFX_FX, shader);
         CompileShader(shader.data(), shader.size(), "tfx.fx", nullptr, "vs_main", macro, &vs.vs, layout, countof(layout), &vs.il);
+
+		
+
+        std::vector<char> tessellationShader;
+        theApp.LoadResource(IDR_TESS_FX, tessellationShader);
+        
+
+        if (m_hs == nullptr)
+            CompileShader(tessellationShader.data(), tessellationShader.size(), "Tessellation.fx", nullptr, "hs_main", macro, &m_hs);
+
+        if (m_ds == nullptr)
+            CompileShader(tessellationShader.data(), tessellationShader.size(), "Tessellation.fx", nullptr, "ds_main", macro, &m_ds);
+
 
         m_vs[sel] = vs;
 
@@ -203,7 +218,52 @@ void GSDeviceProxy::SetupGS(GSSelector sel, const GSConstantBuffer *cb)
         ctx->UpdateSubresource(m_gs_cb, 0, NULL, cb, 0, 0);
     }
 
-    GSSetShader(gs, m_gs_cb);
+	if (m_is_wired != FALSE) {
+
+        D3D11_PRIMITIVE_TOPOLOGY lTopology;
+
+        m_ctx->IAGetPrimitiveTopology(&lTopology);
+
+        if (lTopology == D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST ||
+            lTopology == D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST)
+            m_ctx->RSSetState(m_wired_rs);
+        else
+            m_ctx->RSSetState(m_solid_rs);
+    }
+    else
+        m_ctx->RSSetState(m_solid_rs);
+
+	if (m_is_tessellated != FALSE) {
+
+        D3D11_PRIMITIVE_TOPOLOGY lTopology;
+
+        m_ctx->IAGetPrimitiveTopology(&lTopology);
+
+        if (lTopology == D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST ||
+            lTopology == D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST) {
+            m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+
+            m_ctx->HSSetShader(m_hs, NULL, 0);
+
+            m_ctx->DSSetShader(m_ds, NULL, 0);
+
+            GSSetShader(gs, m_gs_cb);
+
+        } else {
+            m_ctx->HSSetShader(NULL, NULL, 0);
+
+            m_ctx->DSSetShader(NULL, NULL, 0);
+
+            GSSetShader(gs, m_gs_cb);
+        }
+	}
+	else {
+        m_ctx->HSSetShader(NULL, NULL, 0);
+
+        m_ctx->DSSetShader(NULL, NULL, 0);
+
+        GSSetShader(gs, m_gs_cb);
+	}
 }
 
 void GSDeviceProxy::SetupPS(PSSelector sel, const PSConstantBuffer *cb, PSSamplerSelector ssel)
@@ -464,6 +524,10 @@ GSDeviceProxy::GSDeviceProxy()
     }
 
     updateCallbackInner = nullptr;
+
+	m_is_wired = FALSE;
+
+	m_is_tessellated = FALSE;
 }
 
 GSDeviceProxy::~GSDeviceProxy()
@@ -744,9 +808,9 @@ bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd)
     rd.MultisampleEnable = true;
     rd.AntialiasedLineEnable = false;
 
-    hr = m_dev->CreateRasterizerState(&rd, &m_rs);
+    hr = m_dev->CreateRasterizerState(&rd, &m_solid_rs);
 
-    m_ctx->RSSetState(m_rs);
+    m_ctx->RSSetState(m_solid_rs);
 
     //
 
@@ -893,7 +957,7 @@ bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle
 
     //hr = D3D11CreateDeviceAndSwapChain(adapter, driver_type, NULL, flags, levels, countof(levels), D3D11_SDK_VERSION, &scd, &m_swapchain, &m_dev, &level, &m_ctx);
     hr = D3D11CreateDevice(adapter, driver_type, NULL, flags, levels, countof(levels), D3D11_SDK_VERSION, &m_dev, &level, &m_ctx);
-	
+
     if (FAILED(hr))
         return false;
 
@@ -1119,9 +1183,13 @@ bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle
     rd.MultisampleEnable = true;
     rd.AntialiasedLineEnable = false;
 
-    hr = m_dev->CreateRasterizerState(&rd, &m_rs);
+    hr = m_dev->CreateRasterizerState(&rd, &m_solid_rs);
 
-    m_ctx->RSSetState(m_rs);
+    m_ctx->RSSetState(m_solid_rs);
+
+	rd.FillMode = D3D11_FILL_WIREFRAME;
+
+    hr = m_dev->CreateRasterizerState(&rd, &m_wired_rs);	
 
     //
 
@@ -1241,11 +1309,67 @@ void GSDeviceProxy::Flip()
 void GSDeviceProxy::DrawPrimitive()
 {
     m_ctx->Draw(m_vertex.count, m_vertex.start);
+	   
+
+
+	if (m_is_wired != FALSE) {
+
+        D3D11_PRIMITIVE_TOPOLOGY lTopology;
+
+        m_ctx->IAGetPrimitiveTopology(&lTopology);
+
+        if (lTopology == D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST ||
+            lTopology == D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST)
+            m_ctx->RSSetState(m_wired_rs);
+        else
+            m_ctx->RSSetState(m_solid_rs);
+    } else
+        m_ctx->RSSetState(m_solid_rs);
+
+    m_ctx->HSSetShader(NULL, NULL, 0);
+
+    m_ctx->DSSetShader(NULL, NULL, 0);
+
+    D3D11_PRIMITIVE_TOPOLOGY lTopology;
+
+    m_ctx->IAGetPrimitiveTopology(&lTopology);
+
+    if (lTopology == D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST) {
+        m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    }
 }
 
 void GSDeviceProxy::DrawIndexedPrimitive()
 {
     m_ctx->DrawIndexed(m_index.count, m_index.start, m_vertex.start);
+
+
+
+	if (m_is_wired != FALSE) {
+
+        D3D11_PRIMITIVE_TOPOLOGY lTopology;
+
+        m_ctx->IAGetPrimitiveTopology(&lTopology);
+
+        if (lTopology == D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST ||
+            lTopology == D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST)
+            m_ctx->RSSetState(m_wired_rs);
+        else
+            m_ctx->RSSetState(m_solid_rs);
+    } else
+        m_ctx->RSSetState(m_solid_rs);
+
+    m_ctx->HSSetShader(NULL, NULL, 0);
+
+    m_ctx->DSSetShader(NULL, NULL, 0);
+
+    D3D11_PRIMITIVE_TOPOLOGY lTopology;
+
+    m_ctx->IAGetPrimitiveTopology(&lTopology);
+
+    if (lTopology == D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST) {
+        m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    }
 }
 
 void GSDeviceProxy::DrawIndexedPrimitive(int offset, int count)
@@ -1253,6 +1377,34 @@ void GSDeviceProxy::DrawIndexedPrimitive(int offset, int count)
     ASSERT(offset + count <= (int)m_index.count);
 
     m_ctx->DrawIndexed(count, m_index.start + offset, m_vertex.start);
+
+
+
+	if (m_is_wired != FALSE) {
+
+        D3D11_PRIMITIVE_TOPOLOGY lTopology;
+
+        m_ctx->IAGetPrimitiveTopology(&lTopology);
+
+        if (lTopology == D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST ||
+            lTopology == D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST)
+            m_ctx->RSSetState(m_wired_rs);
+        else
+            m_ctx->RSSetState(m_solid_rs);
+    } else
+        m_ctx->RSSetState(m_solid_rs);
+
+    m_ctx->HSSetShader(NULL, NULL, 0);
+
+    m_ctx->DSSetShader(NULL, NULL, 0);
+
+    D3D11_PRIMITIVE_TOPOLOGY lTopology;
+
+    m_ctx->IAGetPrimitiveTopology(&lTopology);
+
+    if (lTopology == D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST) {
+        m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    }
 }
 
 void GSDeviceProxy::Dispatch(uint32 x, uint32 y, uint32 z)
@@ -1517,6 +1669,8 @@ void GSDeviceProxy::StretchRect(GSTexture *sTex, const GSVector4 &sRect, GSTextu
 
     //
 
+    m_ctx->RSSetState(m_solid_rs);
+
     DrawPrimitive();
 
     //
@@ -1688,6 +1842,7 @@ void GSDeviceProxy::SetupDATE(GSTexture *rt, GSTexture *ds, const GSVertexPT1 *v
 
     VSSetShader(m_convert.vs, NULL);
 
+
     // gs
 
     GSSetShader(NULL, NULL);
@@ -1701,6 +1856,8 @@ void GSDeviceProxy::SetupDATE(GSTexture *rt, GSTexture *ds, const GSVertexPT1 *v
     PSSetShader(m_convert.ps[datm ? 2 : 3], NULL);
 
     //
+
+    m_ctx->RSSetState(m_solid_rs);
 
     DrawPrimitive();
 
@@ -2073,6 +2230,61 @@ void GSDeviceProxy::OMSetRenderTargets(const GSVector2i &rtsize, int count, ID3D
     }
 }
 
+
+void GSDeviceProxy::CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11DomainShader **ds)
+{
+    HRESULT hr;
+
+    std::vector<D3D_SHADER_MACRO> m;
+
+    PrepareShaderMacro(m, macro);
+
+    CComPtr<ID3DBlob> shader, error;
+
+    hr = s_pD3DCompile(source, size, fn, &m[0], s_old_d3d_compiler_dll ? nullptr : include, entry, "ds_5_0", 0, 0, &shader, &error);
+
+    if (error) {
+        printf("%s\n", (const char *)error->GetBufferPointer());
+    }
+
+    if (FAILED(hr)) {
+        throw GSDXRecoverableError();
+    }
+
+    hr = m_dev->CreateDomainShader((void *)shader->GetBufferPointer(), shader->GetBufferSize(), NULL, ds);
+
+    if (FAILED(hr)) {
+        throw GSDXRecoverableError();
+    }
+}
+
+void GSDeviceProxy::CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11HullShader **hs)
+{
+    HRESULT hr;
+
+    std::vector<D3D_SHADER_MACRO> m;
+
+    PrepareShaderMacro(m, macro);
+
+    CComPtr<ID3DBlob> shader, error;
+
+    hr = s_pD3DCompile(source, size, fn, &m[0], s_old_d3d_compiler_dll ? nullptr : include, entry, "hs_5_0", 0, 0, &shader, &error);
+
+    if (error) {
+        printf("%s\n", (const char *)error->GetBufferPointer());
+    }
+
+    if (FAILED(hr)) {
+        throw GSDXRecoverableError();
+    }
+
+    hr = m_dev->CreateHullShader((void *)shader->GetBufferPointer(), shader->GetBufferSize(), NULL, hs);
+
+    if (FAILED(hr)) {
+        throw GSDXRecoverableError();
+    }
+}
+
 void GSDeviceProxy::CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11VertexShader **vs, D3D11_INPUT_ELEMENT_DESC *layout, int count, ID3D11InputLayout **il)
 {
     HRESULT hr;
@@ -2185,4 +2397,14 @@ void GSDeviceProxy::CompileShader(const char *source, size_t size, const char *f
     if (FAILED(hr)) {
         throw GSDXRecoverableError();
     }
+}
+
+void GSDeviceProxy::setIsWired(BOOL a_value)
+{
+    m_is_wired = a_value;
+}
+
+void GSDeviceProxy::setIsTessellated(BOOL a_value)
+{
+    m_is_tessellated = a_value;
 }

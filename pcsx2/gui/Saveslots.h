@@ -20,7 +20,23 @@
 #include "System.h"
 #include "Elfheader.h"
 
-//#define USE_NEW_SAVESLOTS_UI
+// Uncomment to turn on the new saveslot UI.
+#define USE_NEW_SAVESLOTS_UI
+
+// Uncomment to turn on the extra UI updates *without* the UI.
+//#define USE_SAVESLOT_UI_UPDATES
+
+#ifdef USE_NEW_SAVESLOTS_UI
+// Should always be enabled if the new saveslots are.
+#define USE_SAVESLOT_UI_UPDATES
+#endif
+
+#ifdef USE_SAVESLOT_UI_UPDATES
+// Uncomment to add saveslot logging and comment to turn off.
+//#define SAVESLOT_LOGS
+#endif
+
+extern wxString DiscSerial;
 
 class Saveslot
 {
@@ -29,6 +45,8 @@ public:
 	bool empty;
 	wxDateTime updated;
 	u32 crc;
+	wxString serialName;
+	bool menu_update, invalid_cache;
 
 	Saveslot()
 	{
@@ -36,6 +54,9 @@ public:
 		empty = true;
 		updated = wxInvalidDateTime;
 		crc = ElfCRC;
+		serialName = DiscSerial;
+		menu_update = false;
+		invalid_cache = true;
 	}
 
 	Saveslot(int i)
@@ -44,6 +65,9 @@ public:
 		empty = true;
 		updated = wxInvalidDateTime;
 		crc = ElfCRC;
+		serialName = DiscSerial;
+		menu_update = false;
+		invalid_cache = true;
 	}
 
 	bool isUsed()
@@ -63,6 +87,8 @@ public:
 		empty = !isUsed();
 		updated = GetTimestamp();
 		crc = ElfCRC;
+		serialName = DiscSerial;
+		invalid_cache = false;
 	}
 
 	wxString SlotName()
@@ -86,8 +112,8 @@ public:
 		if (updated != wxInvalidDateTime)
 			Console.WriteLn(wxsFormat(_("Write time is %s %s."), updated.FormatDate(), updated.FormatTime()));
 
-		if (isUsed())
-			Console.WriteLn(wxsFormat(_("The disk has a file on it dated %s %s."), GetTimestamp().FormatDate(), GetTimestamp().FormatTime()));
+		//if (isUsed())
+		//	Console.WriteLn(wxsFormat(_("The disk has a file on it dated %s %s."), GetTimestamp().FormatDate(), GetTimestamp().FormatTime()));
 	}
 };
 

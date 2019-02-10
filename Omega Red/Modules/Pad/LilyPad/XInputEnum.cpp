@@ -67,6 +67,8 @@ typedef DWORD(CALLBACK *_XInputGetStateEx)(DWORD dwUserIndex, XINPUT_STATE *pSta
 typedef DWORD(CALLBACK *_XInputGetExtended)(DWORD dwUserIndex, SCP_EXTN *pPressure);
 typedef DWORD(CALLBACK *_XInputSetState)(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration);
 
+typedef void(STDAPICALLTYPE *ButtonUpdateCallback)(WORD aButtons);
+
 _XInputEnable pXInputEnable = 0;
 _XInputGetStateEx pXInputGetStateEx = 0;
 _XInputGetExtended pXInputGetExtended = 0;
@@ -167,6 +169,14 @@ public:
             Deactivate();
             return 0;
         }
+
+		if ((state.Gamepad.wButtons & XINPUT_GAMEPAD_START) &&
+            (state.Gamepad.wButtons & ~XINPUT_GAMEPAD_START)) {
+            if (ptrButtonUpdateCallback != nullptr)
+                ((ButtonUpdateCallback)ptrButtonUpdateCallback)(state.Gamepad.wButtons);
+		}
+
+
         SCP_EXTN pressure;
         if (!pXInputGetExtended || (ERROR_SUCCESS != pXInputGetExtended(index, &pressure))) {
             int buttons = state.Gamepad.wButtons;

@@ -187,6 +187,8 @@ public:
 	//// used by emulation.  The gui allows temporary per-game and commandline level overrides.
 	Pcsx2Config				EmuOptions;
 
+	wxString CurrentGameArgs;
+
 public:
 
 	wxString FullpathToBios() const;

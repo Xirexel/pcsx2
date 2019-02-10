@@ -207,6 +207,10 @@ namespace Omega_Red.Tools
 
         public void updateInitilize()
         {
+            if (m_Status != StatusEnum.NoneInitilized &&
+                m_Status != StatusEnum.Initilized)
+                return;
+
             if (m_BiosInfo != null && m_IsoInfo != null)
             {
                 setStatus(StatusEnum.Initilized);
@@ -251,6 +255,26 @@ namespace Omega_Red.Tools
             Bind();
 
             m_isinitilized = true;
+        }
+
+        public void quickSave()
+        {
+            if (m_Status == StatusEnum.Started)
+            {
+                LockScreenManager.Instance.show();
+                PlayPause();
+                SaveStateManager.Instance.quickSave(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
+                PlayPause();
+                LockScreenManager.Instance.hide();
+            }
+        }
+
+        public void quickLoad()
+        {
+            var lSaveState = SaveStateManager.Instance.quickLoad();
+
+            if(lSaveState != null)
+                PCSX2Controller.Instance.loadState(lSaveState);
         }
 
         public void saveState(SaveStateInfo a_SaveStateInfo)

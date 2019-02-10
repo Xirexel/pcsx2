@@ -50,5 +50,17 @@
     <Setting Name="TouchPadScale" Type="System.UInt32" Scope="User">
       <Value Profile="(Default)">100</Value>
     </Setting>
+    <Setting Name="RenderingSchema" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Default</Value>
+    </Setting>
+    <Setting Name="SoundLevel" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0.5</Value>
+    </Setting>
+    <Setting Name="IsMuted" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="OffScreenStreamerPort" Type="System.UInt16" Scope="User">
+      <Value Profile="(Default)">8559</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

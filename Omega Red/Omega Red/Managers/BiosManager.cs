@@ -195,7 +195,7 @@ namespace Omega_Red.Managers
             lOpenFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
             lOpenFileDialog.Filter = "Bios files (*.zip, *.bin)|*.zip;*.bin|All files (*.*)|*.*";
-
+            
             bool l_result = (bool)lOpenFileDialog.ShowDialog();
 
             if (l_result &&

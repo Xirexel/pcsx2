@@ -209,7 +209,7 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 
 	if(i == m_ps.end())
 	{
-		std::string str[21];
+		std::string str[22];
 
 		str[0] = format("%d", sel.fst);
 		str[1] = format("%d", sel.wms);
@@ -232,6 +232,7 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 		str[18] = format("%d", sel.shuffle);
 		str[19] = format("%d", sel.read_ba);
 		str[20] = format("%d", sel.fmt >> 2);
+		str[21] = format("%d", m_upscale_multiplier);
 
 		D3D_SHADER_MACRO macro[] =
 		{
@@ -256,6 +257,7 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 			{"PS_SHUFFLE", str[18].c_str() },
 			{"PS_READ_BA", str[19].c_str() },
 			{"PS_PAL_FMT", str[20].c_str() },
+			{"PS_SCALE_FACTOR", str[21].c_str() },
 			{NULL, NULL},
 		};
 
@@ -424,17 +426,6 @@ void GSDevice11::SetupOM(OMDepthStencilSelector dssel, OMBlendSelector bsel, uin
 				}
 				else
 					; // god knows, best just not to mess with it for now
-			}
-
-			if(m_blendMapD3D9[i].bogus == 1)
-			{
-				(bsel.a == 0 ? bd.RenderTarget[0].SrcBlend : bd.RenderTarget[0].DestBlend) = D3D11_BLEND_ONE;
-
-				const std::string afixstr = format("%d >> 7", afix);
-				const char *col[3] = {"Cs", "Cd", "0"};
-				const char *alpha[3] = {"As", "Ad", afixstr.c_str()};
-				
-				printf("Impossible blend for D3D: (%s - %s) * %s + %s\n", col[bsel.a], col[bsel.b], alpha[bsel.c], col[bsel.d]);
 			}
 		}
 

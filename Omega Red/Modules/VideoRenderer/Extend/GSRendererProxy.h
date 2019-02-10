@@ -43,4 +43,8 @@ public:
     bool CreateDevice(GSDeviceProxy *dev, void *sharedhandle, void *updateCallback);
 
     HRESULT getRenderingTexture(IUnknown **aPtrPtrUnkRenderingTexture);
+
+    void setIsWired(BOOL a_value);
+
+    void setIsTessellated(BOOL a_value);
 };

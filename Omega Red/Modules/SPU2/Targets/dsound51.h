@@ -33,7 +33,10 @@
 extern int DSSetupSound();
 extern void DSRemoveSound();
 extern int DSSoundGetBytesBuffered();
-extern void DSSoundFeedVoiceData(unsigned char* pSound,long lBytes);
+extern void DSSoundFeedVoiceData(unsigned char *pSound, long lBytes);
+extern void DSSetVolume(LONG lVolume);
+
+
 
 static SoundCallbacks DSCmds =
 {

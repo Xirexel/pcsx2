@@ -12,7 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Omega_Red.Tools.Panels.Video.Interop;
+using Omega_Red.Panels.Video.Interop;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +24,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace Omega_Red.Tools.Panels
+namespace Omega_Red.Panels
 {
     internal class VideoPanel : System.Windows.Controls.ContentControl
     {

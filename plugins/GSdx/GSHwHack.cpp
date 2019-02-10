@@ -23,6 +23,7 @@
 #include "GSState.h"
 #include "GSdx.h"
 
+bool s_nativeres;
 static CRCHackLevel s_crc_hack_level = CRCHackLevel::Full;
 
 // hacks
@@ -102,8 +103,9 @@ bool GSC_DBZBT3(const GSFrameInfo& fi, int& skip)
 				skip = 5;
 			}
 		}
-		else if(fi.TME && (fi.FBP == 0x03400 || fi.FBP == 0x02e00) && fi.FPSM == fi.TPSM && fi.TBP0 == 0x03f00 && fi.TPSM == PSM_PSMCT32)
+		else if((g_crc_region == CRC::EU || Dx_only || !s_nativeres) && fi.TME && (fi.FBP == 0x03400 || fi.FBP == 0x02e00) && fi.FPSM == fi.TPSM && fi.TBP0 == 0x03f00 && fi.TPSM == PSM_PSMCT32)
 		{
+			// Don't enable hack on native res if crc is below DX level.
 			// Ghosting (glow) effect. Ghosting appears when resolution is upscaled. Doesn't appear on native resolution.
 			// This can also be fixed by using the TC Offsets x and y hardware hacks or using Native resolution.
 			skip = 3;
@@ -270,8 +272,9 @@ bool GSC_IkkiTousen(const GSFrameInfo& fi, int& skip)
 		{
 			skip = 1000; // shadow (result is broken without depth copy, also includes 16 bit)
 		}
-		else if(fi.TME && fi.FBP == 0x00700 && fi.FPSM == PSM_PSMZ24 && fi.TBP0 == 0x01180 && fi.TPSM == PSM_PSMZ24)
+		else if((Aggressive || !s_nativeres) && fi.TME && fi.FBP == 0x00700 && fi.FPSM == PSM_PSMZ24 && fi.TBP0 == 0x01180 && fi.TPSM == PSM_PSMZ24)
 		{
+			// Don't enable hack on native res if crc is below aggressive.
 			skip = 11; // blur
 		}
 	}
@@ -328,8 +331,9 @@ bool GSC_EvangelionJo(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
-		if(fi.TME && fi.TBP0 == 0x2BC0 || (fi.FBP == 0 || fi.FBP == 0x1180) && (fi.FPSM | fi.TPSM) == 0)
+		if((Aggressive || !s_nativeres) && fi.TME && fi.TBP0 == 0x2BC0 || (fi.FBP == 0 || fi.FBP == 0x1180) && (fi.FPSM | fi.TPSM) == 0)
 		{
+			// Don't enable hack on native res if crc is below aggressive.
 			// Removes blur/glow. Fixes ghosting when resolution is upscaled.
 			skip = 1;
 		}
@@ -457,7 +461,9 @@ bool GSC_SFEX3(const GSFrameInfo& fi, int& skip)
 	{
 		if (fi.TME && fi.FBP == 0x00500 && fi.FPSM == PSM_PSMCT16 && fi.TBP0 == 0x00f00 && fi.TPSM == PSM_PSMCT16)
 		{
-			skip = 2; // blur
+			// Not an upscaling issue.
+			// Elements on the screen show double/distorted.
+			skip = 2;
 		}
 	}
 
@@ -509,8 +515,9 @@ bool GSC_RedDeadRevolver(const GSFrameInfo& fi, int& skip)
 		{
 			skip = 2;	//filter
 		}
-		else if(fi.FBP == 0x03700 && fi.FPSM == PSM_PSMCT32 && fi.TPSM == PSM_PSMCT24)
+		else if((Aggressive || !s_nativeres) && fi.FBP == 0x03700 && fi.FPSM == PSM_PSMCT32 && fi.TPSM == PSM_PSMCT24)
 		{
+			// Don't enable hack on native res if crc is below aggressive.
 			skip = 2;	//blur
 		}
 	}
@@ -529,8 +536,9 @@ bool GSC_Tekken5(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
-		if(Aggressive && fi.TME && (fi.FBP == 0x02d60 || fi.FBP == 0x02d80 || fi.FBP == 0x02ea0 || fi.FBP == 0x03620 || fi.FBP == 0x03640) && fi.FPSM == fi.TPSM && fi.TBP0 == 0x00000 && fi.TPSM == PSM_PSMCT32)
+		if((Aggressive || !s_nativeres) && fi.TME && (fi.FBP == 0x02d60 || fi.FBP == 0x02d80 || fi.FBP == 0x02ea0 || fi.FBP == 0x03620 || fi.FBP == 0x03640) && fi.FPSM == fi.TPSM && fi.TBP0 == 0x00000 && fi.TPSM == PSM_PSMCT32)
 		{
+			// Don't enable hack on native res if crc is below aggressive.
 			// Fixes/removes ghosting/blur effect and white lines appearing in stages: Moonfit Wilderness, Acid Rain - caused by upscaling.
 			// Downside is it also removes the channel effect which is fixed on OpenGL.
 			// Let's enable this hack for Aggressive only since it's an upscaling issue for both renders.
@@ -556,7 +564,7 @@ bool GSC_Tekken5(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
-bool GSC_TombRaider(const GSFrameInfo& fi, int& skip)
+bool GSC_TombRaiderAnniversary(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
@@ -666,7 +674,7 @@ bool GSC_BlackHawkDown(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
-bool GSC_Burnout(const GSFrameInfo& fi, int& skip)
+bool GSC_BurnoutGames(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
@@ -871,8 +879,9 @@ bool GSC_FightingBeautyWulong(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
-		if(fi.TME && (fi.TBP0 ==0x0700 || fi.TBP0 ==0x0a80) && (fi.TPSM == PSM_PSMCT32 || fi.TPSM == PSM_PSMCT24))
+		if((Aggressive || !s_nativeres) && fi.TME && (fi.TBP0 ==0x0700 || fi.TBP0 ==0x0a80) && (fi.TPSM == PSM_PSMCT32 || fi.TPSM == PSM_PSMCT24))
 		{
+			// Don't enable hack on native res if crc is below aggressive.
 			// removes glow/blur which cause ghosting and other sprite issues similar to Tekken 5 
 			skip = 1;
 		}
@@ -915,8 +924,9 @@ bool GSC_UltramanFightingEvolution(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
-		if(fi.TME && fi.FBP==0x2a00 && fi.FPSM == PSM_PSMZ24 && fi.TBP0 == 0x1c00 && fi.TPSM == PSM_PSMZ24)
+		if((Aggressive || !s_nativeres) && fi.TME && fi.FBP==0x2a00 && fi.FPSM == PSM_PSMZ24 && fi.TBP0 == 0x1c00 && fi.TPSM == PSM_PSMZ24)
 		{
+			// Don't enable hack on native res if crc is below aggressive.
 			skip = 5; // blur
 		}
 	}
@@ -945,8 +955,9 @@ bool GSC_Simple2000Vol114(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
-		if(fi.TME==0 && (fi.FBP==0x1500) && (fi.TBP0==0x2c97 || fi.TBP0==0x2ace || fi.TBP0==0x03d0 || fi.TBP0==0x2448) && (fi.FBMSK == 0x0000))
+		if((Aggressive || !s_nativeres) && fi.TME==0 && (fi.FBP==0x1500) && (fi.TBP0==0x2c97 || fi.TBP0==0x2ace || fi.TBP0==0x03d0 || fi.TBP0==0x2448) && (fi.FBMSK == 0x0000))
 		{
+			// Don't enable hack on native res if crc is below aggressive.
 			// Upscaling issues, removes glow/blur effect which fixes ghosting.
 			skip = 1;
 		}
@@ -1125,7 +1136,7 @@ bool GSC_HeavyMetalThunder(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
-bool GSC_GetaWay(const GSFrameInfo& fi, int& skip)
+bool GSC_GetaWayGames(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
@@ -1193,37 +1204,6 @@ bool GSC_DeathByDegreesTekkenNinaWilliams(const GSFrameInfo& fi, int& skip)
 		if((fi.FBP | fi.TBP0 | fi.FPSM | fi.TPSM) && (fi.FBMSK == 0x00FFFFFF ))
 		{
 			skip = 1;
-		}
-	}
-
-	return true;
-}
-
-bool GSC_ICO(const GSFrameInfo& fi, int& skip)
-{
-	if(skip == 0)
-	{
-		if(Aggressive && fi.TME && fi.FBP == 0x00800 && fi.FPSM == PSM_PSMCT32 && fi.TBP0 == 0x03d00 && fi.TPSM == PSM_PSMCT32)
-		{
-			// Removes shadows, shadows can be a little misaligned when upscaled. HPO fixes the issue.
-			// Can be used as a speed hack.
-			skip = 3;
-		}
-		else if(fi.TME && fi.FBP == 0x00800 && fi.FPSM == PSM_PSMCT32 && fi.TBP0 == 0x02800 && fi.TPSM == PSM_PSMT8H)
-		{
-			// Depth effects.
-			skip = 1;
-		}
-		else if(Aggressive && fi.TME && fi.FBP == 0x0800 && (fi.TBP0 == 0x2800 || fi.TBP0 ==0x2c00) && fi.TPSM ==0  && fi.FBMSK == 0)
-		{
-			skip = 1;
-		}
-	}
-	else
-	{
-		if(fi.TME && fi.TBP0 == 0x00800 && fi.TPSM == PSM_PSMCT32)
-		{
-			skip = 0;
 		}
 	}
 
@@ -1650,7 +1630,7 @@ bool GSC_LordOfTheRingsTwoTowers(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
-bool GSC_Castlevania(const GSFrameInfo& fi, int& skip)
+bool GSC_CastlevaniaGames(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
@@ -2151,6 +2131,7 @@ void GSState::SetupCrcHack()
 {
 	GetSkipCount lut[CRC::TitleCount];
 
+	s_nativeres = m_nativeres;
 	s_crc_hack_level = m_crc_hack_level;
 
 	memset(lut, 0, sizeof(lut));
@@ -2159,9 +2140,9 @@ void GSState::SetupCrcHack()
 		lut[CRC::AceCombat4] = GSC_AceCombat4;
 		lut[CRC::BigMuthaTruckers] = GSC_BigMuthaTruckers;
 		lut[CRC::BlackHawkDown] = GSC_BlackHawkDown;
-		lut[CRC::BurnoutDominator] = GSC_Burnout;
-		lut[CRC::BurnoutRevenge] = GSC_Burnout;
-		lut[CRC::BurnoutTakedown] = GSC_Burnout;
+		lut[CRC::BurnoutDominator] = GSC_BurnoutGames;
+		lut[CRC::BurnoutRevenge] = GSC_BurnoutGames;
+		lut[CRC::BurnoutTakedown] = GSC_BurnoutGames;
 		lut[CRC::CrashBandicootWoC] = GSC_CrashBandicootWoC;
 		lut[CRC::DevilMayCry3] = GSC_DevilMayCry3;
 		lut[CRC::EvangelionJo] = GSC_EvangelionJo;
@@ -2189,7 +2170,7 @@ void GSState::SetupCrcHack()
 		lut[CRC::TalesOfLegendia] = GSC_TalesOfLegendia;
 		lut[CRC::TalesofSymphonia] = GSC_TalesofSymphonia;
 		lut[CRC::TimeSplitters2] = GSC_TimeSplitters2;
-		lut[CRC::TombRaiderAnniversary] = GSC_TombRaider;
+		lut[CRC::TombRaiderAnniversary] = GSC_TombRaiderAnniversary;
 		lut[CRC::TombRaiderLegend] = GSC_TombRaiderLegend;
 		lut[CRC::TombRaiderUnderworld] = GSC_TombRaiderUnderWorld;
 		lut[CRC::UltramanFightingEvolution] = GSC_UltramanFightingEvolution;
@@ -2241,7 +2222,6 @@ void GSState::SetupCrcHack()
 		lut[CRC::FrontMission5] = GSC_FrontMission5;
 		lut[CRC::GodOfWar2] = GSC_GodOfWar2;
 		lut[CRC::HeavyMetalThunder] = GSC_HeavyMetalThunder;
-		lut[CRC::ICO] = GSC_ICO;
 		lut[CRC::LordOfTheRingsTwoTowers] = GSC_LordOfTheRingsTwoTowers;
 		lut[CRC::Okami] = GSC_Okami;
 		lut[CRC::SoulCalibur2] = GSC_SoulCaliburGames;
@@ -2270,8 +2250,8 @@ void GSState::SetupCrcHack()
 		lut[CRC::Sly3] = GSC_Sly3;
 
 		// Those games require accurate_colclip (perf)
-		lut[CRC::CastlevaniaCoD] = GSC_Castlevania;
-		lut[CRC::CastlevaniaLoI] = GSC_Castlevania;
+		lut[CRC::CastlevaniaCoD] = GSC_CastlevaniaGames;
+		lut[CRC::CastlevaniaLoI] = GSC_CastlevaniaGames;
 		lut[CRC::GodOfWar] = GSC_GodOfWar;
 
 		// Deprecated hack could be removed (Cutie)
@@ -2284,8 +2264,8 @@ void GSState::SetupCrcHack()
 		// Channel Effect
 		lut[CRC::DeathByDegreesTekkenNinaWilliams] = GSC_DeathByDegreesTekkenNinaWilliams;
 		lut[CRC::MetalGearSolid3] = GSC_MetalGearSolid3; // + accurate blending
-		lut[CRC::StarWarsBattlefront2] = GSC_StarWarsBattlefront2;
 		lut[CRC::StarWarsBattlefront] = GSC_StarWarsBattlefront;
+		lut[CRC::StarWarsBattlefront2] = GSC_StarWarsBattlefront2;
 
 		// Dedicated shader for channel effect
 		lut[CRC::TalesOfAbyss] = GSC_TalesOfAbyss;
@@ -2294,8 +2274,8 @@ void GSState::SetupCrcHack()
 		lut[CRC::GTASanAndreas] = GSC_GTASanAndreas;
 
 		// Can be fixed by setting Blending Unit Accuracy to at least High.
-		lut[CRC::GetaWayBlackMonday] = GSC_GetaWay;
-		lut[CRC::GetaWay] = GSC_GetaWay;
+		lut[CRC::GetaWay] = GSC_GetaWayGames;
+		lut[CRC::GetaWayBlackMonday] = GSC_GetaWayGames;
 
 		// Accumulation blend
 		lut[CRC::NanoBreaker] = GSC_NanoBreaker;

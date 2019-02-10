@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Omega_Red.Tools.Panels.Video.Interop
+namespace Omega_Red.Panels.Video.Interop
 {
     internal sealed class Direct3DSurface9 : IDisposable
     {

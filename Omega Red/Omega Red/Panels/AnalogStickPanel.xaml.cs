@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +28,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Omega_Red.Tools.Panels
+namespace Omega_Red.Panels
 {
     /// <summary>
     /// Interaction logic for AnalogStickPanel.xaml

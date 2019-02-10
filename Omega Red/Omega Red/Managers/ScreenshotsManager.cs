@@ -15,7 +15,7 @@
 using Omega_Red.Models;
 using Omega_Red.Properties;
 using Omega_Red.Tools;
-using Omega_Red.Tools.Panels;
+using Omega_Red.Panels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;

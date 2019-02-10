@@ -1,0 +1,955 @@
+﻿using CaptureManagerToCSharpProxy;
+using CaptureManagerToCSharpProxy.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Xml;
+
+namespace MediaStream
+{
+    class OffScreenStream
+    {
+
+        private CaptureManager mCaptureManager = null;
+
+        private ISession mISession = null;
+
+        private static OffScreenStream m_Instance = null;
+
+        public UpdateCallback UpdateCallbackDelegate { get { return mUpdateCallbackDelegate; } }
+
+        private UpdateCallback mUpdateCallbackDelegate = null;
+
+        private UpdateCallback mUpdateCallbackDelegateInner = null;
+
+        public static OffScreenStream Instance { get { if (m_Instance == null) m_Instance = new OffScreenStream(); return m_Instance; } }
+
+
+        List<Tuple<RtspServer.StreamType, int>> m_streams = new List<Tuple<RtspServer.StreamType, int>>();
+
+        private int m_videoTrackID = 120;
+
+        private int m_audioTrackID = 121;
+
+        Guid MFMediaType_Video = new Guid(
+0x73646976, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71);
+
+        Guid MFMediaType_Audio = new Guid(
+0x73647561, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71);
+        
+        Guid StreamingCBR = new Guid("8F6FF1B6-534E-49C0-B2A8-16D534EAF135");
+
+        private OffScreenStream()
+        {
+            try
+            {
+                m_streams.Add(Tuple.Create<RtspServer.StreamType, int>(RtspServer.StreamType.Video, m_videoTrackID));
+
+                m_streams.Add(Tuple.Create<RtspServer.StreamType, int>(RtspServer.StreamType.Audio, m_audioTrackID));
+
+                try
+                {
+                    mCaptureManager = new CaptureManager("CaptureManager.dll");
+                }
+                catch (Exception)
+                {
+                    mCaptureManager = new CaptureManager();
+                }
+                
+                mUpdateCallbackDelegate =
+                () =>
+                {
+                    //lock (this)
+                    //{
+                    //    if (mUpdateCallbackDelegateInner != null)
+                    //        mUpdateCallbackDelegateInner();
+                    //}
+                };
+            }
+            catch (System.Exception)
+            {
+
+            }
+        }
+
+
+        public void getVersion(StringBuilder aStringBuilderXMLstring)
+        {
+            do
+            {
+                if (aStringBuilderXMLstring == null)
+                    break;
+
+                if (mCaptureManager == null)
+                    break;
+
+                string aPtrPtrXMLstring = "";
+
+                if (mCaptureManager.getVersionControl().getXMLStringVersion(out aPtrPtrXMLstring))
+                {
+                    aStringBuilderXMLstring.Append(aPtrPtrXMLstring);
+                }
+
+            } while (false);
+        }
+
+        RtspServer m_RtspServer = null;
+
+        private ushort mPort = 8554;
+
+        //rtsp://127.0.0.1:8554
+        public void startServer(ushort port)
+        {
+            string username = "user";      // or use NUL if there is no username
+            string password = "password";  // or use NUL if there is no password
+
+            mPort = port;
+
+            m_RtspServer = new RtspServer(m_streams, port, null, null);
+
+            try
+            {
+                m_RtspServer.StartListen();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public void stopServer()
+        {
+            if (m_RtspServer != null)
+            {
+                m_RtspServer.StopListen();
+
+                m_RtspServer.Dispose();
+
+                m_RtspServer = null;
+            }
+        }
+                
+        private Guid setContainerFormat(XmlNode aXmlNode)
+        {
+
+            Guid lContainerFormatGuid = Guid.Empty;
+
+            do
+            {
+                if (aXmlNode == null)
+                    break;
+
+                var lAttrNode = aXmlNode.SelectSingleNode("@Value");
+
+                if (lAttrNode == null)
+                    break;
+
+                lAttrNode = aXmlNode.SelectSingleNode("@GUID");
+
+                if (lAttrNode == null)
+                    break;
+
+                if (Guid.TryParse(lAttrNode.Value, out lContainerFormatGuid))
+                {
+                }
+
+            } while (false);
+
+            return lContainerFormatGuid;
+        }
+
+
+
+        public string start(string a_PtrDirectX11Source, string a_PtrAudioCaptureProcessor, string a_File, uint a_CompressionQuality)
+        {
+            string l_FileExtention = "";
+
+            ISourceControl l_ISourceControl = null;
+
+            IEncoderControl l_EncoderControl = null;
+
+            IStreamControl l_StreamControl = null;
+
+            ISinkControl l_SinkControl = null;
+
+            object l_VideoMediaSource = null;
+
+            object l_VideoSourceMediaType = null;
+
+            object lAudioSourceOutputMediaType = null;
+
+            object l_AudioMediaSource = null;
+
+            List<object> lSourceMediaNodeList = new List<object>();
+
+            do
+            {
+                if (mCaptureManager == null)
+                    break;
+
+                l_ISourceControl = mCaptureManager.createSourceControl();
+
+                if (l_ISourceControl == null)
+                    break;
+
+                l_EncoderControl = mCaptureManager.createEncoderControl();
+
+                if (l_EncoderControl == null)
+                    break;
+
+                l_StreamControl = mCaptureManager.createStreamControl();
+
+                if (l_StreamControl == null)
+                    break;
+
+                l_SinkControl = mCaptureManager.createSinkControl();
+
+                if (l_SinkControl == null)
+                    break;
+
+                UpdateCallback lUpdateCallbackDelegateInner = null;
+
+                var l_VideoCaptureProcessor = VideoTextureCaptureProcessor.createCaptureProcessor(a_PtrDirectX11Source, ref lUpdateCallbackDelegateInner);
+
+                if (l_VideoCaptureProcessor == null)
+                    break;
+
+                l_ISourceControl.createSourceFromCaptureProcessor(
+                    l_VideoCaptureProcessor,
+                    out l_VideoMediaSource);
+
+                if (l_VideoMediaSource == null)
+                    break;
+
+
+
+
+
+
+
+                string lxmldoc = "";
+
+                XmlDocument doc = new XmlDocument();
+
+                mCaptureManager.getCollectionOfEncoders(ref lxmldoc);
+
+                doc.LoadXml(lxmldoc);
+                
+                var l_VideoEncoderNode = doc.SelectSingleNode("EncoderFactories/Group[@GUID='{73646976-0000-0010-8000-00AA00389B71}']/EncoderFactory[@IsStreaming='TRUE'][1]/@CLSID");
+
+                if (l_VideoEncoderNode == null)
+                    break;
+
+                Guid lCLSIDVideoEncoder;
+
+                if (!Guid.TryParse(l_VideoEncoderNode.Value, out lCLSIDVideoEncoder))
+                    break;
+                
+                var l_AudioEncoderNode = doc.SelectSingleNode("EncoderFactories/Group[@GUID='{73647561-0000-0010-8000-00AA00389B71}']/EncoderFactory[@IsStreaming='TRUE'][1]/@CLSID");
+
+                if (l_AudioEncoderNode == null)
+                    break;
+
+                Guid lCLSIDAudioEncoder;
+
+                if (!Guid.TryParse(l_AudioEncoderNode.Value, out lCLSIDAudioEncoder))
+                    break;
+                               
+
+                if (!l_ISourceControl.getSourceOutputMediaTypeFromMediaSource(
+                    l_VideoMediaSource,
+                    0,
+                    0,
+                    out l_VideoSourceMediaType))
+                    break;
+                               
+
+                l_EncoderControl.getMediaTypeCollectionOfEncoder(
+                    l_VideoSourceMediaType,
+                    lCLSIDVideoEncoder,
+                    out lxmldoc);
+
+                doc.LoadXml(lxmldoc);
+
+                var lGUIDEncoderModeNode = doc.SelectSingleNode("EncoderMediaTypes/Group[1]/@GUID");
+
+                if (lGUIDEncoderModeNode == null)
+                    break;
+
+                Guid lGUIDVideoEncoderMode;
+
+                if (!Guid.TryParse(lGUIDEncoderModeNode.Value, out lGUIDVideoEncoderMode))
+                    break;
+
+                Guid lVideoFormat = Guid.Empty;
+
+                var lVideoCompressedNode = doc.SelectSingleNode("EncoderMediaTypes/Group[1]/MediaTypes/MediaType");
+                
+                if (lVideoCompressedNode != null)
+                {
+                    var lGUID = lVideoCompressedNode.SelectSingleNode("MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@GUID");
+
+                    if (lGUID != null)
+                    {
+                        Guid.TryParse(lGUID.Value, out lVideoFormat);
+                    }
+                }
+
+                var lGroup = doc.SelectSingleNode("EncoderMediaTypes/Group[@GUID='{8F6FF1B6-534E-49C0-B2A8-16D534EAF135}']");
+
+                if (lGroup != null)
+                {
+                    uint lMaxBitRate = 0;
+                    
+                    var lAttr = lGroup.SelectSingleNode("@MaxBitRate");
+
+                    if (lAttr != null)
+                    {
+                        if (uint.TryParse(lAttr.Value, out lMaxBitRate))
+                        {
+                            a_CompressionQuality = lMaxBitRate;
+                        }
+                    }
+                }
+
+                mCaptureManager.getCollectionOfSinks(ref lxmldoc);
+
+                doc = new XmlDocument();
+
+                doc.LoadXml(lxmldoc);
+
+                var lSinkNode = doc.SelectSingleNode("SinkFactories/SinkFactory[@GUID='{3D64C48E-EDA4-4EE1-8436-58B64DD7CF13}']");
+
+                if (lSinkNode == null)
+                    break;
+
+                var lContainerNode = lSinkNode.SelectSingleNode("Value.ValueParts/ValuePart[1]");
+
+                if (lContainerNode == null)
+                    break;
+
+                var lReadMode = setContainerFormat(lContainerNode);
+
+                var lSinkControl = mCaptureManager.createSinkControl();
+
+                ISampleGrabberCallbackSinkFactory lSampleGrabberCallbackSinkFactory = null;
+
+                lSinkControl.createSinkFactory(
+                lReadMode,
+                out lSampleGrabberCallbackSinkFactory);
+
+
+
+                var l_videoStream = createVideoStream(lSampleGrabberCallbackSinkFactory, m_videoTrackID, lVideoFormat);
+
+
+                IEncoderNodeFactory lEncoderNodeFactory;
+
+                if (!l_EncoderControl.createEncoderNodeFactory(
+                    lCLSIDVideoEncoder,
+                    out lEncoderNodeFactory))
+                    break;
+
+                object lEncoderNode;
+
+                if (!lEncoderNodeFactory.createEncoderNode(
+                    l_VideoSourceMediaType,
+                    lGUIDVideoEncoderMode,
+                    a_CompressionQuality,
+                    (uint)0,
+                    l_videoStream.Item1,
+                    out lEncoderNode))
+                    break;
+
+
+                object l_VideoSourceNode;
+
+                if (!l_ISourceControl.createSourceNodeFromExternalSourceWithDownStreamConnection(
+                    l_VideoMediaSource,
+                    0,
+                    0,
+                    lEncoderNode,
+                    out l_VideoSourceNode))
+                    break;
+
+
+                lSourceMediaNodeList.Add(l_VideoSourceNode);
+                
+
+
+
+
+
+                // Audio Source
+
+                object l_AudioCaptureProcessor = null;
+
+                if (!string.IsNullOrEmpty(a_PtrAudioCaptureProcessor))
+                {
+                    int l_ptrValue = 0;
+
+                    if (int.TryParse(a_PtrAudioCaptureProcessor, out l_ptrValue))
+                    {
+                        IntPtr l_ptr = new IntPtr(l_ptrValue);
+
+                        l_AudioCaptureProcessor = Marshal.GetObjectForIUnknown(l_ptr);
+                    }
+                }
+
+
+
+
+                string lAudioLoopBack = null;
+
+                uint lAudioSourceIndexStream = 0;
+
+                uint lAudioSourceIndexMediaType = 0;
+
+                if (l_AudioCaptureProcessor != null)
+                {
+                    l_ISourceControl.createSourceFromCaptureProcessor(
+                        l_AudioCaptureProcessor,
+                        out l_AudioMediaSource);
+
+                    if (l_AudioMediaSource == null)
+                        break;
+
+                    l_ISourceControl.getSourceOutputMediaTypeFromMediaSource(
+                        l_AudioMediaSource,
+                        lAudioSourceIndexStream,
+                        lAudioSourceIndexMediaType,
+                        out lAudioSourceOutputMediaType);
+
+                }
+                else
+                {
+                    lAudioLoopBack = a_PtrAudioCaptureProcessor;// "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack";
+
+                    l_ISourceControl.getSourceOutputMediaType(
+                        lAudioLoopBack,
+                        lAudioSourceIndexStream,
+                        lAudioSourceIndexMediaType, out lAudioSourceOutputMediaType);
+
+                    l_ISourceControl.createSourceNode(
+                        lAudioLoopBack,
+                        lAudioSourceIndexStream,
+                        lAudioSourceIndexMediaType,
+                        out l_AudioMediaSource);
+
+                }
+
+                Guid lAudioFormat = Guid.Empty;
+                               
+                l_EncoderControl.getMediaTypeCollectionOfEncoder(
+                    lAudioSourceOutputMediaType,
+                    lCLSIDAudioEncoder,
+                    out lxmldoc);
+
+                doc.LoadXml(lxmldoc);
+                
+                var lAudioCompressedNode = doc.SelectSingleNode("EncoderMediaTypes/Group[1]/MediaTypes/MediaType");
+
+                if (lAudioCompressedNode != null)
+                {
+                    var lGUID = lAudioCompressedNode.SelectSingleNode("MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@GUID");
+
+                    if (lGUID != null)
+                    {
+                        Guid.TryParse(lGUID.Value, out lAudioFormat);
+                    }
+                }
+
+
+                var l_audioStream = createAudioStream(lSampleGrabberCallbackSinkFactory, m_audioTrackID, lAudioFormat);
+
+                lEncoderNodeFactory = null;
+
+                Guid lAACEncoder = new Guid("93AF0C51-2275-45d2-A35B-F2BA21CAED00");
+
+                if (!l_EncoderControl.createEncoderNodeFactory(
+                    lAACEncoder,
+                    out lEncoderNodeFactory))
+                    break;
+
+                lEncoderNode = null;
+
+                if (!lEncoderNodeFactory.createEncoderNode(
+                    lAudioSourceOutputMediaType,
+                    StreamingCBR,
+                    0,
+                    (uint)0,
+                    l_audioStream.Item1,
+                    out lEncoderNode))
+                    break;
+
+
+                object l_AudioSourceNode;
+
+                if (!l_ISourceControl.createSourceNodeFromExternalSourceWithDownStreamConnection(
+                    l_AudioMediaSource,
+                    0,
+                    0,
+                    lEncoderNode,
+                    out l_AudioSourceNode))
+                    break;
+
+
+                lSourceMediaNodeList.Add(l_AudioSourceNode);
+
+
+
+
+                var lSessionControl = mCaptureManager.createSessionControl();
+
+                if (lSessionControl == null)
+                    break;
+
+                mISession = lSessionControl.createSession(
+                    lSourceMediaNodeList.ToArray());
+
+                if (mISession == null)
+                    break;
+
+                mISession.registerUpdateStateDelegate(UpdateStateDelegate);
+
+                mISession.startSession(0, Guid.Empty);
+
+                lock (this)
+                {
+                    mUpdateCallbackDelegateInner = lUpdateCallbackDelegateInner;
+                }
+                
+            } while (false);
+
+            if (lSourceMediaNodeList != null)
+                foreach (var item in lSourceMediaNodeList)
+                {
+                    Marshal.ReleaseComObject(item);
+                }
+
+            if (l_VideoSourceMediaType != null)
+                Marshal.ReleaseComObject(l_VideoSourceMediaType);
+
+            if (l_VideoMediaSource != null)
+                Marshal.ReleaseComObject(l_VideoMediaSource);
+
+            return l_FileExtention;
+        }
+
+        private Tuple<object, RtspServer.StreamType, int> createVideoStream(
+            ISampleGrabberCallbackSinkFactory aISampleGrabberCallbackSinkFactory,
+            int aIndexCount,
+            Guid aVideoFormat)
+        {
+            object result = null;
+
+            RtspServer.StreamType type = RtspServer.StreamType.None;
+
+            int index = 0;
+
+            do
+            {
+                ISampleGrabberCallback lH264SampleGrabberCallback;
+                
+                aISampleGrabberCallbackSinkFactory.createOutputNode(
+                    MFMediaType_Video,
+                    aVideoFormat,
+                    out lH264SampleGrabberCallback);
+
+                if (lH264SampleGrabberCallback != null)
+                {
+                    lH264SampleGrabberCallback.mUpdateEvent += delegate
+                        (byte[] aData, uint aLength)
+                    {
+                        Console.WriteLine("lH264SampleGrabberCallback");
+                        if (m_RtspServer != null)
+                        {
+                            lock (m_RtspServer)
+                            {
+                                m_RtspServer.sendData(aIndexCount, (int)type, currentmillisecond * 90, aData);
+
+                                currentmillisecond += 33;
+                            };
+                        }
+                    };
+
+                    result = lH264SampleGrabberCallback.getTopologyNode();
+                }
+
+                if (result != null)
+                {
+                    type = RtspServer.StreamType.Video;
+
+                    index = aIndexCount;
+                }
+            }
+            while (false);
+
+            return Tuple.Create<object, RtspServer.StreamType, int>(result, type, index);
+        }
+
+
+
+        uint currentmillisecond = 0;
+
+        private Tuple<object, RtspServer.StreamType, int> createAudioStream(
+            ISampleGrabberCallbackSinkFactory aISampleGrabberCallbackSinkFactory, 
+            int aIndexCount,
+            Guid aAudioFormat)
+        {
+            object result = null;
+
+            RtspServer.StreamType type = RtspServer.StreamType.Audio;
+
+            int index = aIndexCount;
+
+            do
+            {
+
+                ISampleGrabberCallback lAACSampleGrabberCallback;
+
+                aISampleGrabberCallbackSinkFactory.createOutputNode(
+                    MFMediaType_Audio,
+                    aAudioFormat,
+                    out lAACSampleGrabberCallback);
+
+                if (lAACSampleGrabberCallback != null)
+                {
+                    lAACSampleGrabberCallback.mUpdateFullEvent += delegate
+                        (uint aSampleFlags, long aSampleTime, long aSampleDuration, byte[] aData, uint aLength)
+                    {
+                        Console.WriteLine("lAACSampleGrabberCallback");
+
+                        if (m_RtspServer != null)
+                        {
+                            lock (m_RtspServer)
+                            {
+                                uint lcurrentmillisecond = (uint)aSampleTime / 10000;
+
+                                if (lcurrentmillisecond > currentmillisecond)
+                                    currentmillisecond = lcurrentmillisecond;
+
+                                m_RtspServer.sendData(aIndexCount, (int)type, currentmillisecond * 90, aData);
+
+                                currentmillisecond += 1;
+                            }
+                        }
+                    };
+
+                    result = lAACSampleGrabberCallback.getTopologyNode();
+
+                }
+            }
+            while (false);
+
+            return Tuple.Create<object, RtspServer.StreamType, int>(result, type, index);
+        }
+
+
+        private void UpdateStateDelegate(uint aCallbackEventCode, uint aSessionDescriptor)
+        {
+            SessionCallbackEventCode k = (SessionCallbackEventCode)aCallbackEventCode;
+
+            switch (k)
+            {
+                case SessionCallbackEventCode.Unknown:
+                    break;
+                case SessionCallbackEventCode.Error:
+                    break;
+                case SessionCallbackEventCode.Status_Error:
+                    break;
+                case SessionCallbackEventCode.Execution_Error:
+                    break;
+                case SessionCallbackEventCode.ItIsReadyToStart:
+                    break;
+                case SessionCallbackEventCode.ItIsStarted:
+                    break;
+                case SessionCallbackEventCode.ItIsPaused:
+                    break;
+                case SessionCallbackEventCode.ItIsStopped:
+                    break;
+                case SessionCallbackEventCode.ItIsEnded:
+                    break;
+                case SessionCallbackEventCode.ItIsClosed:
+                    break;
+                case SessionCallbackEventCode.VideoCaptureDeviceRemoved:
+                    {
+
+
+                        //Dispatcher.Invoke(
+                        //DispatcherPriority.Normal,
+                        //new Action(() => mLaunchButton_Click(null, null)));
+
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void stop()
+        {
+            if (mISession == null)
+                return;
+
+            lock (this)
+            {
+                mUpdateCallbackDelegateInner = null;
+            }
+
+
+            mISession.stopSession();
+
+            mISession.closeSession();
+
+            mISession = null;
+        }
+
+        private object getCompressedMediaType(
+            IEncoderControl aEncoderControl,
+            object aSourceMediaType,
+            Guid aCLSIDEncoder,
+            Guid aCLSIDEncoderMode,
+            uint a_CompressionQuality,
+            int aCompressedMediaTypeIndex)
+        {
+            object lresult = null;
+
+            do
+            {
+                if (aCompressedMediaTypeIndex < 0)
+                    break;
+
+                if (aEncoderControl == null)
+                    break;
+
+                if (aSourceMediaType == null)
+                    break;
+
+                IEncoderNodeFactory lEncoderNodeFactory;
+
+                if (!aEncoderControl.createEncoderNodeFactory(
+                    aCLSIDEncoder,
+                    out lEncoderNodeFactory))
+                    break;
+
+                if (lEncoderNodeFactory == null)
+                    break;
+
+                object lCompressedMediaType;
+
+                if (!lEncoderNodeFactory.createCompressedMediaType(
+                    aSourceMediaType,
+                    aCLSIDEncoderMode,
+                    a_CompressionQuality,
+                    (uint)aCompressedMediaTypeIndex,
+                    out lCompressedMediaType))
+                    break;
+
+                lresult = lCompressedMediaType;
+
+            } while (false);
+
+            return lresult;
+        }
+
+        private List<object> getOutputNodes(
+            List<object> aCompressedMediaTypeList,
+            IFileSinkFactory aFileSinkFactory,
+            string aFilename)
+        {
+            List<object> lresult = new List<object>();
+
+            do
+            {
+                if (aCompressedMediaTypeList == null)
+                    break;
+
+                if (aCompressedMediaTypeList.Count == 0)
+                    break;
+
+                if (aFileSinkFactory == null)
+                    break;
+
+                if (string.IsNullOrEmpty(aFilename))
+                    break;
+
+                aFileSinkFactory.createOutputNodes(
+                    aCompressedMediaTypeList,
+                    aFilename,
+                    out lresult);
+
+            } while (false);
+
+            return lresult;
+        }
+
+        private object getSourceNode(
+            ISourceControl aSourceControl,
+            IEncoderControl aEncoderControl,
+            ISpreaderNodeFactory aSpreaderNodeFactory,
+            object aMediaSource,
+            object aSourceMediaType,
+            Guid aCLSIDEncoder,
+            Guid aCLSIDEncoderMode,
+            uint a_CompressionQuality,
+            int aCompressedMediaTypeIndex,
+            object PreviewRenderNode,
+            object aOutputNode)
+        {
+            object lresult = null;
+
+            do
+            {
+                if (aCompressedMediaTypeIndex < 0)
+                    break;
+
+                if (aEncoderControl == null)
+                    break;
+
+                if (aSourceMediaType == null)
+                    break;
+
+                IEncoderNodeFactory lEncoderNodeFactory;
+
+                if (!aEncoderControl.createEncoderNodeFactory(
+                    aCLSIDEncoder,
+                    out lEncoderNodeFactory))
+                    break;
+
+                if (lEncoderNodeFactory == null)
+                    break;
+
+                object lEncoderNode;
+
+                if (!lEncoderNodeFactory.createEncoderNode(
+                    aSourceMediaType,
+                    aCLSIDEncoderMode,
+                    a_CompressionQuality,
+                    (uint)aCompressedMediaTypeIndex,
+                    aOutputNode,
+                    out lEncoderNode))
+                    break;
+
+
+                object SpreaderNode = lEncoderNode;
+
+                if (PreviewRenderNode != null)
+                {
+
+                    List<object> lOutputNodeList = new List<object>();
+
+                    lOutputNodeList.Add(PreviewRenderNode);
+
+                    lOutputNodeList.Add(lEncoderNode);
+
+                    aSpreaderNodeFactory.createSpreaderNode(
+                        lOutputNodeList,
+                        out SpreaderNode);
+
+                }
+
+                object lSourceNode;
+
+                if (!aSourceControl.createSourceNodeFromExternalSourceWithDownStreamConnection(
+                    aMediaSource,
+                    0,
+                    0,
+                    SpreaderNode,
+                    out lSourceNode))
+                    break;
+
+                lresult = lSourceNode;
+
+            } while (false);
+
+            return lresult;
+        }
+
+
+        private object getSourceNode(
+            ISourceControl aSourceControl,
+            IEncoderControl aEncoderControl,
+            ISpreaderNodeFactory aSpreaderNodeFactory,
+            string aSymbolicLink,
+            object aSourceMediaType,
+            Guid aCLSIDEncoder,
+            Guid aCLSIDEncoderMode,
+            uint a_CompressionQuality,
+            int aCompressedMediaTypeIndex,
+            object PreviewRenderNode,
+            object aOutputNode)
+        {
+            object lresult = null;
+
+            do
+            {
+                if (aCompressedMediaTypeIndex < 0)
+                    break;
+
+                if (aEncoderControl == null)
+                    break;
+
+                if (aSourceMediaType == null)
+                    break;
+
+                IEncoderNodeFactory lEncoderNodeFactory;
+
+                if (!aEncoderControl.createEncoderNodeFactory(
+                    aCLSIDEncoder,
+                    out lEncoderNodeFactory))
+                    break;
+
+                if (lEncoderNodeFactory == null)
+                    break;
+
+                object lEncoderNode;
+
+                if (!lEncoderNodeFactory.createEncoderNode(
+                    aSourceMediaType,
+                    aCLSIDEncoderMode,
+                    a_CompressionQuality,
+                    (uint)aCompressedMediaTypeIndex,
+                    aOutputNode,
+                    out lEncoderNode))
+                    break;
+
+
+                object SpreaderNode = lEncoderNode;
+
+                if (PreviewRenderNode != null)
+                {
+
+                    List<object> lOutputNodeList = new List<object>();
+
+                    lOutputNodeList.Add(PreviewRenderNode);
+
+                    lOutputNodeList.Add(lEncoderNode);
+
+                    aSpreaderNodeFactory.createSpreaderNode(
+                        lOutputNodeList,
+                        out SpreaderNode);
+
+                }
+
+                object lSourceNode;
+
+                if (!aSourceControl.createSourceNode(
+                    aSymbolicLink,
+                    0,
+                    0,
+                    SpreaderNode,
+                    out lSourceNode))
+                    break;
+
+                lresult = lSourceNode;
+
+            } while (false);
+
+            return lresult;
+        }
+    }
+}

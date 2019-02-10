@@ -108,6 +108,12 @@ namespace Omega_Red.Managers
 
 
 
+        private ICollectionView mRenderingSchemaModeView = null;
+
+        private readonly ObservableCollection<string> _renderingSchemaCollection = new ObservableCollection<string>();
+
+
+
         private ResourceDictionary m_languageResource = null;
 
         private ResourceDictionary m_colourSchemaResource = null;
@@ -190,6 +196,16 @@ namespace Omega_Red.Managers
 
 
 
+                _renderingSchemaCollection.Add("Default");
+
+                if (App.m_is_enable_rendering_mode)
+                    _renderingSchemaCollection.Add("Tessellated");
+
+                mRenderingSchemaModeView = CollectionViewSource.GetDefaultView(_renderingSchemaCollection);
+
+
+
+
 
 
                 mDisplayModeView.CurrentChanged += mDisplayModeView_CurrentChanged;
@@ -202,7 +218,7 @@ namespace Omega_Red.Managers
 
                 mMediaOutputTypeModeView.CurrentChanged += mMediaOutputTypeModeView_CurrentChanged;
 
-
+                mRenderingSchemaModeView.CurrentChanged += mRenderingSchemaCollection_CurrentChanged;
 
 
 
@@ -226,15 +242,57 @@ namespace Omega_Red.Managers
 
                 MediaOutputType l_MediaOutputType = MediaOutputType.Capture;
 
-                Enum.TryParse<MediaOutputType>(Settings.Default.MediaOutputType, out l_MediaOutputType);
+                //Enum.TryParse<MediaOutputType>(Settings.Default.MediaOutputType, out l_MediaOutputType);
 
                 mMediaOutputTypeModeView.MoveCurrentToPosition((int)l_MediaOutputType);
 
 
                 if (SwitchTopmostEvent != null)
                     SwitchTopmostEvent(Settings.Default.Topmost);
+
+                mRenderingSchemaModeView.MoveCurrentTo(Settings.Default.RenderingSchema);
+
+
+                mColourSchemaModeView.MoveCurrentTo(Settings.Default.ColourSchema);
+
+                mLanguageModeView.MoveCurrentTo(Settings.Default.Language);
+
+
             });
 
+        }
+
+        private void mRenderingSchemaCollection_CurrentChanged(object sender, EventArgs e)
+        {
+            if (mRenderingSchemaModeView == null)
+                return;
+
+            if (mRenderingSchemaModeView.CurrentItem == null)
+                return;
+
+            if (App.Current == null)
+                return;
+
+            if (App.Current.MainWindow == null)
+                return;
+
+            string ltitle = (string)mRenderingSchemaModeView.CurrentItem;
+
+            if (string.IsNullOrEmpty(ltitle))
+                return;
+
+            if(ltitle == "Tessellated")
+            {
+                Tools.ModuleControl.Instance.setIsTessellated(true);
+            }
+            else
+            {
+                Tools.ModuleControl.Instance.setIsTessellated(false);
+            }
+
+            Settings.Default.RenderingSchema = ltitle;
+
+            Settings.Default.Save();
         }
 
         private void mMediaOutputTypeModeView_CurrentChanged(object sender, EventArgs e)
@@ -448,6 +506,7 @@ namespace Omega_Red.Managers
         {
             get { return mDisplayModeView; }
         }
+        
 
         public ICollectionView ControlModeCollection
         {
@@ -462,11 +521,15 @@ namespace Omega_Red.Managers
         public ICollectionView ColourSchemaCollection
         {
             get { return mColourSchemaModeView; }
-        }
+        }        
 
         public ICollectionView MediaOutputTypeCollection
         {
             get { return mMediaOutputTypeModeView; }
-        }        
+        }
+        public ICollectionView RenderingSchemaCollection
+        {
+            get { return mRenderingSchemaModeView; }
+        }
     }
 }

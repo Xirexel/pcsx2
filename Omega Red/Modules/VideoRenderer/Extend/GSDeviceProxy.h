@@ -69,6 +69,18 @@ class GSDeviceProxy : public GSDeviceDX
 
     CComPtr<ID3D11Texture2D> m_SharedTexture;
 
+    CComPtr<ID3D11HullShader> m_hs;
+
+    CComPtr<ID3D11DomainShader> m_ds;
+
+    CComPtr<ID3D11RasterizerState> m_solid_rs;
+
+    CComPtr<ID3D11RasterizerState> m_wired_rs;
+
+	BOOL m_is_wired;
+
+	BOOL m_is_tessellated;
+
     struct
     {
         ID3D11Buffer *vb;
@@ -95,7 +107,6 @@ class GSDeviceProxy : public GSDeviceDX
     } m_state;
 
 public: // TODO
-    CComPtr<ID3D11RasterizerState> m_rs;
 
     bool FXAA_Compiled;
     bool ExShader_Compiled;
@@ -243,4 +254,12 @@ public:
     void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11GeometryShader **gs);
     void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11GeometryShader **gs, D3D11_SO_DECLARATION_ENTRY *layout, int count);
     void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11PixelShader **ps);
+
+	void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11HullShader **hs);
+    void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11DomainShader **ds);
+
+
+	void setIsWired(BOOL a_value);
+
+    void setIsTessellated(BOOL a_value);
 };

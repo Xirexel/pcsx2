@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 using Omega_Red.Properties;
 using Omega_Red.Util;
 using Omega_Red.Models;
-using Omega_Red.Tools.Panels;
+using Omega_Red.Panels;
 using System.Windows.Media.Imaging;
 
 namespace Omega_Red.Tools.Savestate
@@ -70,11 +70,13 @@ namespace Omega_Red.Tools.Savestate
             return l_result;
         }
 
-        public SaveStateInfo readData(string a_file_path, int a_value, bool a_isAutosave = false)
+        public SaveStateInfo readData(string a_file_path, int a_value, bool a_isAutosave = false, bool a_isIsQuicksave = false)
         {
             SaveStateInfo l_result = new SaveStateInfo();
 
             l_result.IsAutosave = a_isAutosave;
+
+            l_result.IsQuicksave = a_isIsQuicksave;
 
             l_result.FilePath = a_file_path;
 

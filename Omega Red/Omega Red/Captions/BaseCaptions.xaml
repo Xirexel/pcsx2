@@ -24,7 +24,7 @@
     <sys:String x:Key="PadControlTypeTitle">Тип управления:</sys:String>
     <sys:String x:Key="ConfigTitle">Общие настройки</sys:String>
     <sys:String x:Key="PadTitle">Игровой контроллер</sys:String>
-    <sys:String x:Key="BIOSTitle">Базовая Система Ввода Вывода</sys:String>
+    <sys:String x:Key="BIOSTitle">БИОС</sys:String>
     <sys:String x:Key="MemoryCardTitle">Карты памяти</sys:String>
     <sys:String x:Key="ISOTitle">Игровые диски</sys:String>
     <sys:String xml:space="preserve" x:Key="TypeISOTitle">Тип файла: </sys:String>
@@ -33,6 +33,7 @@
     <sys:String xml:space="preserve" x:Key="WideScreenTitle">Широкоэкранный формат</sys:String>
     <sys:String x:Key="SlotTitle">Текущие сохранения</sys:String>
     <sys:String x:Key="AutosaveTitle">Автосохранение</sys:String>
+    <sys:String x:Key="QuicksaveTitle">Быстрое сохранение</sys:String>    
     <sys:String x:Key="ScreenshotsTitle">Сохранённые кадры</sys:String>
     <sys:String x:Key="VideoTitle">Сохранённые видео</sys:String>
     <sys:String xml:space="preserve" x:Key="TimeLineTitle">Текущее время: </sys:String>
@@ -51,10 +52,12 @@
     <sys:String x:Key="InitilizedTitle">Инициализирован</sys:String>
     <sys:String x:Key="StoppedTitle">Остановлен</sys:String>
     <sys:String x:Key="PausedTitle">Пауза</sys:String>
+    <sys:String x:Key="StartedTitle">Запущен</sys:String>
     <sys:String x:Key="MediaOutputTypeCaptureTitle">Запись в файл</sys:String>
     <sys:String x:Key="MediaOutputTypeStreamTitle">Стриминг</sys:String>
     <sys:String x:Key="MediaOutputTypeStreamNotSupportingTitle">Freeware не поддерживается</sys:String>
-    <sys:String x:Key="TouchPadScaleTitle">Масштаб сенсорного контроллера: </sys:String>
+    <sys:String x:Key="TouchPadScaleTitle">Масштаб сенсорного контроллера:</sys:String>
+    <sys:String x:Key="RenderingSchemaTitle">Схема рендеринга:</sys:String>
 
     
 

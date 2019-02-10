@@ -15,7 +15,7 @@
 using Omega_Red.Managers;
 using Omega_Red.Tools;
 using Omega_Red.Tools.Converters;
-using Omega_Red.Tools.Panels;
+using Omega_Red.Panels;
 using Omega_Red.Util;
 using System;
 using System.Collections.Generic;
@@ -54,15 +54,15 @@ namespace Omega_Red
             ConfigManager.Instance.SwitchControlModeEvent += Instance_SwitchControlModeEvent;
 
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
-
-#if DEBUG
             
+#if DEBUG
+
             WindowState = System.Windows.WindowState.Normal;
 
             WindowStyle = System.Windows.WindowStyle.SingleBorderWindow;
 #endif
         }
-
+        
         void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
         {
             if (!mButtonControl && a_Status == PCSX2Controller.StatusEnum.Started)

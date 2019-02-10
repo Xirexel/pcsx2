@@ -33,9 +33,10 @@
     <sys:String xml:space="preserve" x:Key="WideScreenTitle">Widescreen format</sys:String>
     <sys:String x:Key="SlotTitle">Saving</sys:String>
     <sys:String x:Key="AutosaveTitle">Autosaving</sys:String>
+    <sys:String x:Key="QuicksaveTitle">Quick saving</sys:String>
     <sys:String x:Key="ScreenshotsTitle">Captured screens</sys:String>
     <sys:String x:Key="VideoTitle">Captured videos</sys:String>
-    <sys:String xml:space="preserve" x:Key="TimeLineTitle">Tileline: </sys:String>
+    <sys:String xml:space="preserve" x:Key="TimeLineTitle">Time line: </sys:String>
     <sys:String xml:space="preserve" x:Key="ModuleBeforeTitle">Module </sys:String>
     <sys:String xml:space="preserve" x:Key="ModuleAfterTitle"> loading.</sys:String>
     <sys:String x:Key="ModuleIsLoadedTitle">is finished.</sys:String>
@@ -51,9 +52,12 @@
     <sys:String x:Key="InitilizedTitle">Initialized</sys:String>
     <sys:String x:Key="StoppedTitle">Stopped</sys:String>
     <sys:String x:Key="PausedTitle">Paused</sys:String>
+    <sys:String x:Key="StartedTitle">Started</sys:String>
     <sys:String x:Key="MediaOutputTypeCaptureTitle">Recording to file</sys:String>
     <sys:String x:Key="MediaOutputTypeStreamTitle">Streaming</sys:String>
     <sys:String x:Key="MediaOutputTypeStreamNotSupportingTitle">Freeware is not supported</sys:String>
     <sys:String x:Key="TouchPadScaleTitle">Touch pad scale:</sys:String>
+    <sys:String x:Key="RenderingSchemaTitle">Rendering schema:</sys:String>
+
 
 </ResourceDictionary>

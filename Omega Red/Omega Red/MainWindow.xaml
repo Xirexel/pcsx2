@@ -1,7 +1,7 @@
 ﻿<Window x:Class="Omega_Red.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:panels="clr-namespace:Omega_Red.Tools.Panels"  
+        xmlns:panels="clr-namespace:Omega_Red.Panels"  
         xmlns:tools="clr-namespace:Omega_Red.Tools"
         xmlns:convertor="clr-namespace:Omega_Red.Tools.Converters"
         xmlns:viewModels="clr-namespace:Omega_Red.ViewModels"     
@@ -18,6 +18,7 @@
         <viewModels:ConfigViewModel x:Key="mConfigViewModel"/>
         <tools:PlayingControl x:Key="mPlayingControl"/>
         <convertor:WidthConverter Offset="-5.0" Scale="-1.0" x:Key="mControlWidthOffset"/>
+        <!--<convertor:WidthConverter Offset="0.0" Scale="0.5" x:Key="mTouchHeightScale"/>-->
         <Storyboard x:Key="AnimOpenControlPanel" x:Shared="False">
             <DoubleAnimation 
                             Storyboard.TargetName="mControlGrid"
@@ -91,65 +92,100 @@
         </Grid>
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition/>
+                <RowDefinition Height="3*"/>
+                <RowDefinition Height="3*"/>
+                <RowDefinition Height="3*"/>
+                <RowDefinition Height="3*"/>
+                <RowDefinition Height="16*"/>
             </Grid.RowDefinitions>
-            <Button Style="{DynamicResource IconBtn}" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10" Command="{Binding AddCommand}">
-                <Image Source="/Assests/Images/TakeScreenshot.png" 
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+            
+            
+            <Viewbox Grid.Row="0" Grid.Column="2" VerticalAlignment="Top">
+                <Button Style="{DynamicResource IconBtn}"  Margin="10" Command="{Binding AddCommand}">
+                    <Image Source="/Assests/Images/TakeScreenshot.png" 
                                    Stretch="Uniform" 
                                    Height="64" 
                                    Width="64" Opacity="0.5"/>
-                <Button.DataContext>
-                    <viewModels:ScreenshotsInfoViewModel/>
-                </Button.DataContext>
-            </Button>
+                    <Button.DataContext>
+                        <viewModels:ScreenshotsInfoViewModel/>
+                    </Button.DataContext>
+                </Button>
+            </Viewbox>
 
-            <CheckBox Style="{DynamicResource MediaRecorderCheckBox}" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10">
-                <CheckBox.DataContext>
-                    <viewModels:MediaRecorderInfoViewModel/>
-                </CheckBox.DataContext>
-                <CheckBox.Triggers>
-                    <EventTrigger RoutedEvent="CheckBox.Checked">
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <ColorAnimationUsingKeyFrames
-                                    Storyboard.TargetProperty="(Control.Background).(SolidColorBrush.Color)"
-                                    BeginTime="00:00:00" 
-                                     AutoReverse="True"
-                                    RepeatBehavior="Forever">
-                                    <LinearColorKeyFrame KeyTime="00:00:00" Value="#FFFF0000"/>
-                                    <LinearColorKeyFrame KeyTime="00:00:00.75" Value="#00FF0000"/>
-                                </ColorAnimationUsingKeyFrames>
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                    <EventTrigger RoutedEvent="CheckBox.Unchecked">
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <ColorAnimationUsingKeyFrames
-                                    Storyboard.TargetProperty="(Control.Background).(SolidColorBrush.Color)"
-                                    BeginTime="00:00:00" 
-                                     FillBehavior="HoldEnd">
-                                    <LinearColorKeyFrame KeyTime="00:00:00" Value="#FF00FF00"/>
-                                </ColorAnimationUsingKeyFrames>
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                </CheckBox.Triggers>
-            </CheckBox>
-       
-        </Grid>
-        <Canvas x:Name="mTouchCtr" 
+            <Viewbox Grid.Row="1" Grid.Column="2" VerticalAlignment="Top">
+                <CheckBox Style="{DynamicResource MediaRecorderCheckBox}" Margin="10">
+                    <CheckBox.DataContext>
+                        <viewModels:MediaRecorderInfoViewModel/>
+                    </CheckBox.DataContext>
+                    <CheckBox.Triggers>
+                        <EventTrigger RoutedEvent="CheckBox.Checked">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimationUsingKeyFrames
+                                        Storyboard.TargetProperty="(Control.Background).(SolidColorBrush.Color)"
+                                        BeginTime="00:00:00" 
+                                         AutoReverse="True"
+                                        RepeatBehavior="Forever">
+                                        <LinearColorKeyFrame KeyTime="00:00:00" Value="#FFFF0000"/>
+                                        <LinearColorKeyFrame KeyTime="00:00:00.75" Value="#00FF0000"/>
+                                    </ColorAnimationUsingKeyFrames>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                        <EventTrigger RoutedEvent="CheckBox.Unchecked">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimationUsingKeyFrames
+                                        Storyboard.TargetProperty="(Control.Background).(SolidColorBrush.Color)"
+                                        BeginTime="00:00:00" 
+                                         FillBehavior="HoldEnd">
+                                        <LinearColorKeyFrame KeyTime="00:00:00" Value="#FF00FF00"/>
+                                    </ColorAnimationUsingKeyFrames>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </CheckBox.Triggers>
+                </CheckBox>
+            </Viewbox>
+            
+            <Viewbox Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <Button Style="{DynamicResource IconBtn}" Margin="10" Command="{Binding QuickSaveCommand}">
+                    <Image Source="/Assests/Images/SaveState.png" 
+                                       Stretch="Uniform" 
+                                       Height="64" 
+                                       Width="64" Opacity="{DynamicResource StandardOpacity}"/>
+                    <Button.DataContext>
+                        <viewModels:SaveStateInfoViewModel/>
+                    </Button.DataContext>
+                </Button>
+            </Viewbox>
+
+            <Viewbox Grid.Row="1" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <panels:SoundControl Orientation="Vertical" Margin="10,0,10,10" Opacity="{DynamicResource StandardOpacity}" IsMuted="{Binding Source={StaticResource mConfigViewModel}, Path=IsMuted, Mode=TwoWay}"  Volume="{Binding Source={StaticResource mConfigViewModel}, Path=SoundLevel, Mode=TwoWay}"/>
+            </Viewbox>
+
+
+
+            <Canvas x:Name="mTouchCtr" 
                 Background="Transparent"
                 MouseDown="mTouchCtr_MouseChange" 
                 MouseUp="mTouchCtr_MouseChange" 
                 MouseMove="mTouchCtr_MouseMove"
                 MouseLeave="mTouchCtr_MouseLeave"
-                Height="230"
+                Height="240"                
                 VerticalAlignment="Top" 
                 Margin="35, 0, 80, 0"
+                    Grid.Column="1"
                 Visibility="{Binding Source={StaticResource mConfigViewModel}, Path=TouchControlVisibility}"
                 />
+            
+        </Grid>
         <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Grid x:Name="mControlGrid" 
                   Canvas.Top="0" 
@@ -161,28 +197,28 @@
                 </Grid.ColumnDefinitions>
                 <Border Grid.ColumnSpan="2" Background="{DynamicResource MainBackgroundBrush}"/>
                 <panels:ControlPanel x:Name="mControlPanel"/>
-                <CheckBox Style="{DynamicResource PanelCheckBoxStyle}" 
+                <Viewbox  VerticalAlignment="Center" 
+                          Grid.Column="2" >
+                    <CheckBox Style="{DynamicResource PanelCheckBoxStyle}" 
                           Visibility="{Binding Source={StaticResource mConfigViewModel}, Path=TouchControlHideVisibility}"
                           IsChecked="{Binding Source={StaticResource mPlayingControl}, Path=IsPaused}"     
                           Command="{Binding Source={StaticResource mPlayingControl}, Path=IsPausedCommand}"
-                          VerticalAlignment="Top" 
-                          Margin="0,180,0,0" 
-                          Grid.Column="2" 
                           Width="130"
                           x:Name="mControlChkBtn">
-                    <CheckBox.LayoutTransform>
-                        <RotateTransform Angle="90"/>
-                    </CheckBox.LayoutTransform>
-                    <CheckBox.Triggers>
-                        <EventTrigger RoutedEvent="CheckBox.Checked">
-                            <BeginStoryboard Storyboard="{StaticResource AnimOpenControlPanel}"/>
-                        </EventTrigger>
-                        <EventTrigger RoutedEvent="CheckBox.Unchecked">
-                            <BeginStoryboard Storyboard="{StaticResource AnimCloseControlPanel}"/>
-                        </EventTrigger>  
-                    </CheckBox.Triggers>
-                    <TextBlock HorizontalAlignment="Center" FontWeight="Medium" FontSize="22" VerticalAlignment="Center" Text="{DynamicResource ControlTitle}"/>
-                </CheckBox>
+                        <CheckBox.LayoutTransform>
+                            <RotateTransform Angle="90"/>
+                        </CheckBox.LayoutTransform>
+                        <CheckBox.Triggers>
+                            <EventTrigger RoutedEvent="CheckBox.Checked">
+                                <BeginStoryboard Storyboard="{StaticResource AnimOpenControlPanel}"/>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="CheckBox.Unchecked">
+                                <BeginStoryboard Storyboard="{StaticResource AnimCloseControlPanel}"/>
+                            </EventTrigger>
+                        </CheckBox.Triggers>
+                        <TextBlock HorizontalAlignment="Center" FontWeight="Medium" FontSize="22" VerticalAlignment="Center" Text="{DynamicResource ControlTitle}"/>
+                    </CheckBox>
+                </Viewbox>
                 <Button x:Name="mControlCloseBtn"
                         Grid.Column="1"
                         Click="mControlCloseBtn_Click"
@@ -203,29 +239,29 @@
                 </Grid.ColumnDefinitions>
                 <Border Grid.Column="1" Grid.ColumnSpan="2" Background="{DynamicResource MainBackgroundBrush}"/>
                 <panels:MediaPanel x:Name="mMediaPanel" Grid.Column="2"/>
-                <CheckBox Style="{DynamicResource PanelCheckBoxStyle}"
+                <Viewbox VerticalAlignment="Center">
+                    <CheckBox Style="{DynamicResource PanelCheckBoxStyle}"
                           Visibility="{Binding Source={StaticResource mConfigViewModel}, Path=TouchControlHideVisibility}"
                           IsChecked="{Binding IsPaused}" 
-                          VerticalAlignment="Top" 
-                          Margin="0,180" 
                           Width="110" 
                           x:Name="mMediaChkBtn">
-                    <CheckBox.DataContext>
-                        <tools:PlayingControl/>
-                    </CheckBox.DataContext>
-                    <CheckBox.LayoutTransform>
-                        <RotateTransform Angle="270"/>
-                    </CheckBox.LayoutTransform>
-                    <CheckBox.Triggers>
-                        <EventTrigger RoutedEvent="CheckBox.Checked">
-                            <BeginStoryboard Storyboard="{StaticResource AnimOpenMediaPanel}"/>
-                        </EventTrigger>
-                        <EventTrigger RoutedEvent="CheckBox.Unchecked">
-                            <BeginStoryboard Storyboard="{StaticResource AnimCloseMediaPanel}"/>
-                        </EventTrigger>
-                    </CheckBox.Triggers>
-                    <TextBlock HorizontalAlignment="Center" FontWeight="Medium" FontSize="22" VerticalAlignment="Center" Text="{DynamicResource MediaTitle}"/>
-                </CheckBox>
+                        <CheckBox.DataContext>
+                            <tools:PlayingControl/>
+                        </CheckBox.DataContext>
+                        <CheckBox.LayoutTransform>
+                            <RotateTransform Angle="270"/>
+                        </CheckBox.LayoutTransform>
+                        <CheckBox.Triggers>
+                            <EventTrigger RoutedEvent="CheckBox.Checked">
+                                <BeginStoryboard Storyboard="{StaticResource AnimOpenMediaPanel}"/>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="CheckBox.Unchecked">
+                                <BeginStoryboard Storyboard="{StaticResource AnimCloseMediaPanel}"/>
+                            </EventTrigger>
+                        </CheckBox.Triggers>
+                        <TextBlock HorizontalAlignment="Center" FontWeight="Medium" FontSize="22" VerticalAlignment="Center" Text="{DynamicResource MediaTitle}"/>
+                    </CheckBox>
+                </Viewbox>
                 <Button x:Name="mMediaCloseBtn"
                         Grid.Column="1"
                         Click="mMediaCloseBtn_Click"

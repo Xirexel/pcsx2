@@ -42,7 +42,12 @@ namespace Omega_Red.ViewModels
         {
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
         }
-               
+
+        public Visibility VisibilityState
+        {
+            get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
+        }
+
         private bool m_IsEnabled = false;
 
         private PCSX2Controller.StatusEnum m_Status = PCSX2Controller.StatusEnum.NoneInitilized;
@@ -91,7 +96,18 @@ namespace Omega_Red.ViewModels
                     m_Status == PCSX2Controller.StatusEnum.Paused;
             }); }
         }
-                
+
+        public ICommand QuickSaveCommand
+        {
+            get
+            {
+                return new DelegateCommand(PCSX2Controller.Instance.quickSave,
+              () => {
+                  return m_Status == PCSX2Controller.StatusEnum.Started;
+              });
+            }
+        }
+
         protected override IManager Manager
         {
             get { return SaveStateManager.Instance; }

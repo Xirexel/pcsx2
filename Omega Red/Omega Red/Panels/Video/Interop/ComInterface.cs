@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Omega_Red.Tools.Panels.Video.Interop
+namespace Omega_Red.Panels.Video.Interop
 {
     // These are the declarations taken from the DirectX SDK
     internal static class ComInterface

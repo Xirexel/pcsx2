@@ -19,17 +19,42 @@ namespace Omega_Red
     /// </summary>
     public partial class App : Application
     {
-        public App()
+        public enum AppType
         {
-            Startup += delegate
-            {
-                using (Process p = Process.GetCurrentProcess())
-                    p.PriorityClass = ProcessPriorityClass.RealTime; 
-            };
+            Screen,
+            OffScreen
         }
 
+        public static bool m_is_enable_rendering_mode = true;
+
+        public static AppType m_AppType = AppType.Screen;
+
+        public App()
+        {
+            Startup += (object sender, StartupEventArgs e)=>
+            {
+                this.StartupUri = new Uri("pack://application:,,,/Omega Red;component/MainWindow.xaml");
+
+                using (Process p = Process.GetCurrentProcess())
+                    p.PriorityClass = ProcessPriorityClass.RealTime;
+
+                for (int i = 0; i != e.Args.Length; ++i)
+                {
+                    if (e.Args[i] == "/OffScreen")
+                    {
+                        m_AppType = AppType.OffScreen;
+
+                        this.StartupUri = new Uri("pack://application:,,,/Omega Red;component/OffScreenWindow.xaml");
+                    }
+                }
+            };  
+        }
+        
         private void Application_Exit(object sender, ExitEventArgs e)
         {
+
+            Capture.OffScreenStream.Instance.stopServer();
+
             PCSX2Controller.Instance.Stop(true);
 
             Thread.Sleep(1500);

@@ -27,7 +27,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Omega_Red.Tools.Panels
+namespace Omega_Red.Panels
 {
     /// <summary>
     /// Interaction logic for DisplayImagePanel.xaml

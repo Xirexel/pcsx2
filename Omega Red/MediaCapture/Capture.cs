@@ -30,7 +30,8 @@ namespace MediaCapture
 
     public class Capture
     {
-        
+        Guid StreamingCBR = new Guid("8F6FF1B6-534E-49C0-B2A8-16D534EAF135");
+
         private CaptureManager mCaptureManager = null;
 
         private ISession mISession = null;
@@ -49,8 +50,15 @@ namespace MediaCapture
         {
             try
             {
-                mCaptureManager = new CaptureManager();
-                
+                try
+                {
+                    mCaptureManager = new CaptureManager("CaptureManager.dll");
+                }
+                catch (Exception)
+                {
+                    mCaptureManager = new CaptureManager();
+                }
+
                 mUpdateCallbackDelegate =
                 () =>
                 {
@@ -89,7 +97,7 @@ namespace MediaCapture
 
         }
 
-        public string start(string a_PtrDirectX11Source, string a_FilePath, uint a_CompressionQuality)
+        public string start(string a_PtrDirectX11Source, string a_PtrAudioCaptureProcessor, string a_FilePath, uint a_CompressionQuality)
         {
 
             string l_FileExtention = "";
@@ -150,45 +158,80 @@ namespace MediaCapture
 
                 UpdateCallback lUpdateCallbackDelegateInner = null;
 
-                var l_VideoCaptureProcessor = VideoTextureCaptureProcessor.createCaptureProcessor(a_PtrDirectX11Source, ref lUpdateCallbackDelegateInner);
+                if(!string.IsNullOrEmpty(a_PtrDirectX11Source))
+                {
+                    var l_VideoCaptureProcessor = VideoTextureCaptureProcessor.createCaptureProcessor(a_PtrDirectX11Source, ref lUpdateCallbackDelegateInner);
 
-                if (l_VideoCaptureProcessor == null)
-                    break;
+                    if (l_VideoCaptureProcessor == null)
+                        break;
 
-                l_ISourceControl.createSourceFromCaptureProcessor(
-                    l_VideoCaptureProcessor,
-                    out l_VideoMediaSource);
+                    l_ISourceControl.createSourceFromCaptureProcessor(
+                        l_VideoCaptureProcessor,
+                        out l_VideoMediaSource);
 
-                if (l_VideoMediaSource == null)
-                    break;
+                    if (l_VideoMediaSource == null)
+                        break;
+                }
 
-                
+                object l_AudioCaptureProcessor = null;
 
-                
+                if (!string.IsNullOrEmpty(a_PtrAudioCaptureProcessor))
+                {
+                    int l_ptrValue = 0;
 
+                    if(int.TryParse(a_PtrAudioCaptureProcessor, out l_ptrValue))
+                    {
+                        IntPtr l_ptr = new IntPtr(l_ptrValue);
+
+                        l_AudioCaptureProcessor = Marshal.GetObjectForIUnknown(l_ptr);
+                    }
+                }
 
                 // Audio Source
 
-
-                string lAudioLoopBack = "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack";
+                string lAudioLoopBack = null;
 
                 uint lAudioSourceIndexStream = 0;
 
                 uint lAudioSourceIndexMediaType = 0;
 
-                l_ISourceControl.getSourceOutputMediaType(
-                    lAudioLoopBack,
-                    lAudioSourceIndexStream,
-                    lAudioSourceIndexMediaType, out lAudioSourceOutputMediaType);
+                if (l_AudioCaptureProcessor != null)
+                {
+                    l_ISourceControl.createSourceFromCaptureProcessor(
+                        l_AudioCaptureProcessor,
+                        out l_AudioMediaSource);
 
-                l_ISourceControl.createSourceNode(
-                    lAudioLoopBack,
-                    lAudioSourceIndexStream,
-                    lAudioSourceIndexMediaType,
-                    out l_AudioMediaSource);
+                    if (l_AudioMediaSource == null)
+                        break;
 
-                if (l_AudioMediaSource == null)
-                    break;
+                    l_ISourceControl.getSourceOutputMediaTypeFromMediaSource(
+                        l_AudioMediaSource,
+                        lAudioSourceIndexStream,
+                        lAudioSourceIndexMediaType, 
+                        out lAudioSourceOutputMediaType);
+
+                }
+                else
+                {
+                    lAudioLoopBack = a_PtrAudioCaptureProcessor;// "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack";
+                    
+                    l_ISourceControl.getSourceOutputMediaType(
+                        lAudioLoopBack,
+                        lAudioSourceIndexStream,
+                        lAudioSourceIndexMediaType, out lAudioSourceOutputMediaType);
+
+                    l_ISourceControl.createSourceNode(
+                        lAudioLoopBack,
+                        lAudioSourceIndexStream,
+                        lAudioSourceIndexMediaType,
+                        out l_AudioMediaSource);
+
+                }
+
+
+
+
+
 
 
                 string lxmldoc = "";
@@ -222,7 +265,7 @@ namespace MediaCapture
 
 
 
-
+                if(l_VideoMediaSource != null)
                 if (!l_ISourceControl.getSourceOutputMediaTypeFromMediaSource(
                     l_VideoMediaSource,
                     0,
@@ -230,73 +273,78 @@ namespace MediaCapture
                     out l_VideoSourceMediaType))
                     break;
 
+                Guid lGUIDVideoEncoderMode = Guid.Empty;
+
+                if (l_VideoSourceMediaType != null)
+                {
+
+                    l_EncoderControl.getMediaTypeCollectionOfEncoder(
+                        l_VideoSourceMediaType,
+                        lCLSIDVideoEncoder,
+                        out lxmldoc);
+
+                    doc.LoadXml(lxmldoc);
+
+                    var lGUIDEncoderModeNode = doc.SelectSingleNode("EncoderMediaTypes/Group[1]/@GUID");
+
+                    if (lGUIDEncoderModeNode == null)
+                        break;
 
 
+                    if (!Guid.TryParse(lGUIDEncoderModeNode.Value, out lGUIDVideoEncoderMode))
+                        break;
 
-                l_EncoderControl.getMediaTypeCollectionOfEncoder(
-                    l_VideoSourceMediaType,
-                    lCLSIDVideoEncoder,
-                    out lxmldoc);
+                    //lGUIDVideoEncoderMode = StreamingCBR;
 
-                doc.LoadXml(lxmldoc);
+                    var l_VideoCompressedMediaType = getCompressedMediaType(
+                        l_EncoderControl,
+                        l_VideoSourceMediaType,
+                        lCLSIDVideoEncoder,
+                        lGUIDVideoEncoderMode,
+                        a_CompressionQuality,
+                        0);
 
-                var lGUIDEncoderModeNode = doc.SelectSingleNode("EncoderMediaTypes/Group[1]/@GUID");
+                    if (l_VideoCompressedMediaType == null)
+                        break;
 
-                if (lGUIDEncoderModeNode == null)
-                    break;
-
-                Guid lGUIDVideoEncoderMode;
-
-                if (!Guid.TryParse(lGUIDEncoderModeNode.Value, out lGUIDVideoEncoderMode))
-                    break;
-
-                var l_VideoCompressedMediaType = getCompressedMediaType(
-                    l_EncoderControl,
-                    l_VideoSourceMediaType,
-                    lCLSIDVideoEncoder,
-                    lGUIDVideoEncoderMode,
-                    a_CompressionQuality,
-                    0);
-
-                if (l_VideoCompressedMediaType == null)
-                    break;
-
-                lCompressedMediaTypeList.Add(l_VideoCompressedMediaType);
+                    lCompressedMediaTypeList.Add(l_VideoCompressedMediaType);
+                }
 
 
+                Guid lGUIDAudioEncoderMode = Guid.Empty;
 
-                l_EncoderControl.getMediaTypeCollectionOfEncoder(
-                    lAudioSourceOutputMediaType,
-                    lCLSIDAudioEncoder,
-                    out lxmldoc);
+                if (lAudioSourceOutputMediaType != null)
+                {
+                    l_EncoderControl.getMediaTypeCollectionOfEncoder(
+                        lAudioSourceOutputMediaType,
+                        lCLSIDAudioEncoder,
+                        out lxmldoc);
 
-                doc.LoadXml(lxmldoc);
+                    doc.LoadXml(lxmldoc);
 
-                lGUIDEncoderModeNode = doc.SelectSingleNode("EncoderMediaTypes/Group[1]/@GUID");
+                    var lGUIDEncoderModeNode = doc.SelectSingleNode("EncoderMediaTypes/Group[1]/@GUID");
 
-                if (lGUIDEncoderModeNode == null)
-                    break;
+                    if (lGUIDEncoderModeNode == null)
+                        break;
 
-                Guid lGUIDAudioEncoderMode;
+                    if (!Guid.TryParse(lGUIDEncoderModeNode.Value, out lGUIDAudioEncoderMode))
+                        break;
 
-                if (!Guid.TryParse(lGUIDEncoderModeNode.Value, out lGUIDAudioEncoderMode))
-                    break;
+                    var l_AudioCompressedMediaType = getCompressedMediaType(
+                        l_EncoderControl,
+                        lAudioSourceOutputMediaType,
+                        lCLSIDAudioEncoder,
+                        lGUIDAudioEncoderMode,
+                        a_CompressionQuality,
+                        0);
 
-                var l_AudioCompressedMediaType = getCompressedMediaType(
-                    l_EncoderControl,
-                    lAudioSourceOutputMediaType,
-                    lCLSIDAudioEncoder,
-                    lGUIDAudioEncoderMode,
-                    a_CompressionQuality,
-                    0);
+                    if (l_AudioCompressedMediaType == null)
+                        break;
 
-                if (l_AudioCompressedMediaType == null)
-                    break;
+                    lCompressedMediaTypeList.Add(l_AudioCompressedMediaType);
+                }
 
-                lCompressedMediaTypeList.Add(l_AudioCompressedMediaType);
-
-
-
+                
 
                 doc = new XmlDocument();
 
@@ -369,37 +417,63 @@ namespace MediaCapture
                 Guid.Empty,
                 out lSinkFactory);
 
-                var l_VideoSourceNode = getSourceNode(
-                    l_ISourceControl,
-                    l_EncoderControl,
-                    l_SpreaderNodeFactory,
-                    l_VideoMediaSource,
-                    l_VideoSourceMediaType,
-                    lCLSIDVideoEncoder,
-                    lGUIDVideoEncoderMode,
-                    a_CompressionQuality,
-                    0,
-                    null,
-                    lOutputNodes[0]);
+                int l_index = 0;
 
+                if(l_VideoMediaSource != null)
+                {
+                    var l_VideoSourceNode = getSourceNode(
+                        l_ISourceControl,
+                        l_EncoderControl,
+                        l_SpreaderNodeFactory,
+                        l_VideoMediaSource,
+                        l_VideoSourceMediaType,
+                        lCLSIDVideoEncoder,
+                        lGUIDVideoEncoderMode,
+                        a_CompressionQuality,
+                        0,
+                        null,
+                        lOutputNodes[l_index++]);
 
-                lSourceMediaNodeList.Add(l_VideoSourceNode);
+                    lSourceMediaNodeList.Add(l_VideoSourceNode);
+                }
 
+                if(!string.IsNullOrEmpty(lAudioLoopBack))
+                {
+                    var l_AudioSourceNode = getSourceNode(
+                        l_ISourceControl,
+                        l_EncoderControl,
+                        l_SpreaderNodeFactory,
+                        lAudioLoopBack,
+                        lAudioSourceOutputMediaType,
+                        lCLSIDAudioEncoder,
+                        lGUIDAudioEncoderMode,
+                        a_CompressionQuality,
+                        0,
+                        null,
+                        lOutputNodes[l_index++]);
 
-                var l_AudioSourceNode = getSourceNode(
-                    l_ISourceControl,
-                    l_EncoderControl,
-                    l_SpreaderNodeFactory,
-                    lAudioLoopBack,
-                    lAudioSourceOutputMediaType,
-                    lCLSIDAudioEncoder,
-                    lGUIDAudioEncoderMode,
-                    a_CompressionQuality,
-                    0,
-                    null,
-                    lOutputNodes[1]);
+                    lSourceMediaNodeList.Add(l_AudioSourceNode);
+                }
+                else
+                {
+                    if(l_AudioMediaSource != null)
+                    {
+                        var l_AudioSourceNode = getSourceNode(
+                            l_ISourceControl,
+                            l_EncoderControl,
+                            l_SpreaderNodeFactory,
+                            l_AudioMediaSource,
+                            lAudioSourceOutputMediaType,
+                            lCLSIDAudioEncoder,
+                            lGUIDAudioEncoderMode,
+                            a_CompressionQuality,
+                            0,
+                            null,
+                            lOutputNodes[l_index++]);
 
-                lSourceMediaNodeList.Add(l_AudioSourceNode);
+                        lSourceMediaNodeList.Add(l_AudioSourceNode);
+                    }
+                }
 
 
 

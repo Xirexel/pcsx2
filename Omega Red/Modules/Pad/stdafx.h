@@ -41,3 +41,5 @@ struct EnterScopedSection
 #define DEBUG_OUT 0&&
 
 extern void DEBUG_NEW_SET();
+
+extern void *ptrButtonUpdateCallback;

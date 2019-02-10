@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Omega_Red.Tools.Panels.Video.Interop
+namespace Omega_Red.Panels.Video.Interop
 {
     // These structs are taken from the DirectX SDK
     // In the SDK unsigned int (uint in c#) is used, however, we're only going

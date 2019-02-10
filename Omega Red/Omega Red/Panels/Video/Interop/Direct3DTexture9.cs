@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Omega_Red.Tools.Panels.Video.Interop
+namespace Omega_Red.Panels.Video.Interop
 {
     class Direct3DTexture9 : IDisposable
     {

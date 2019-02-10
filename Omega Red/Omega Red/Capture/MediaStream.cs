@@ -128,6 +128,7 @@ namespace Omega_Red.Capture
 
                 mFileExtention = m_Start.Invoke(m_StreamObj, new object[] {
                     Omega_Red.Tools.ModuleControl.getRenderingTexture(),
+                    Omega_Red.Tools.ModuleControl.getAudioCaptureProcessor(),
                     "",
                     Omega_Red.Properties.Settings.Default.CompressionQuality}) as string;
 

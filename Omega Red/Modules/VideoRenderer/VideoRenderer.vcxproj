@@ -52,6 +52,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{18E42F6F-3A62-41EE-B42F-79366C4F1E95}</ProjectGuid>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
@@ -78,6 +79,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(PlatformName)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -315,6 +319,7 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\plugins\GSdx\GSdx.rc" />
+    <ResourceCompile Include="VideoRenderer.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\plugins\GSdx\res\logo-null.bmp" />

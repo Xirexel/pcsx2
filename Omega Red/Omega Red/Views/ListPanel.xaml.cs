@@ -37,6 +37,8 @@ namespace Omega_Red.Views
         public ListPanel()
         {
             InitializeComponent();
+
+            mAddBtn.Visibility = App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Hidden;
         }
     }
 }

@@ -1,279 +1,670 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="plugins\GSdx">
-      <UniqueIdentifier>{c35c8806-b2f0-4fd5-a3ff-7fa74cdd6cf6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="plugins">
-      <UniqueIdentifier>{bbdd58d2-95ef-479f-90df-5458a6152070}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="plugins\GSdx\PSX">
-      <UniqueIdentifier>{0288279e-153d-4b96-b3ab-52f07e4c888e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Omega Red\Modules\VideoRenderer\Build\VS2017">
-      <UniqueIdentifier>{0da5a1ad-e56d-4c11-abf9-65e6f93fb4e1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Omega Red\Modules\VideoRenderer\Build">
-      <UniqueIdentifier>{1f1c8411-4ab7-416e-bf3a-03c69a795884}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Omega Red\Modules\VideoRenderer">
-      <UniqueIdentifier>{37d7957c-3553-4100-8991-13a6ee7946a9}</UniqueIdentifier>
+      <UniqueIdentifier>{bc972637-f0cb-44e7-b0df-bb4cc44ffea8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Omega Red\Modules">
-      <UniqueIdentifier>{2ef58897-c292-40ce-bf2e-149efa3bca06}</UniqueIdentifier>
+      <UniqueIdentifier>{1a60b757-db4d-4847-a427-9fb52d2d7fb7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Omega Red">
-      <UniqueIdentifier>{9534597a-1f79-4f8b-994b-6e649b05009b}</UniqueIdentifier>
+      <UniqueIdentifier>{5fc5914d-43ef-4bb1-89fb-fa900e5c9495}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Omega Red\Modules\VideoRenderer\Build\VS2017\Extend">
-      <UniqueIdentifier>{8879f7df-0b7d-4bf5-8024-f83bfba64b9c}</UniqueIdentifier>
+    <Filter Include="Omega Red\Modules\VideoRenderer\Extend">
+      <UniqueIdentifier>{a46b7586-c0d5-4b29-a3d6-5e923a09c211}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="plugins\GSdx">
+      <UniqueIdentifier>{10b5362a-b654-4482-bea2-3b153a78fa25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="plugins">
+      <UniqueIdentifier>{e7323a7e-2410-42b3-bed6-0e9e8144b428}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="plugins\GSdx\PSX">
+      <UniqueIdentifier>{88c6b531-ef43-454a-b58b-5d5b5008d276}</UniqueIdentifier>
     </Filter>
     <Filter Include="plugins\GSdx\xbyak">
-      <UniqueIdentifier>{63e85b9b-dfa9-44fd-8c28-df6409ea9521}</UniqueIdentifier>
+      <UniqueIdentifier>{bdb36760-0305-493b-abd7-a9403a74bdc2}</UniqueIdentifier>
     </Filter>
     <Filter Include="plugins\GSdx\res">
-      <UniqueIdentifier>{ced1c3a7-5452-428a-b3f6-9e203f0f5c92}</UniqueIdentifier>
+      <UniqueIdentifier>{5250a995-3290-4987-888b-248ae6a477ee}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VideoRenderer.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017</Filter>
+      <Filter>Omega Red\Modules\VideoRenderer</Filter>
     </ClCompile>
     <ClCompile Include="VideoRendererControl.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017</Filter>
+      <Filter>Omega Red\Modules\VideoRenderer</Filter>
     </ClCompile>
     <ClCompile Include="Interface.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017</Filter>
-    </ClCompile>
-    <ClCompile Include="Extend\GS.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017\Extend</Filter>
-    </ClCompile>
-    <ClCompile Include="Extend\GSCapture.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017\Extend</Filter>
-    </ClCompile>
-    <ClCompile Include="Extend\GSDump.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017\Extend</Filter>
-    </ClCompile>
-    <ClCompile Include="Extend\GSPng.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017\Extend</Filter>
-    </ClCompile>
-    <ClCompile Include="Extend\GSWndStub.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017\Extend</Filter>
-    </ClCompile>
-    <ClCompile Include="Extend\GSRendererProxy.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017\Extend</Filter>
-    </ClCompile>
-    <ClCompile Include="Extend\GSDeviceProxy.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017\Extend</Filter>
+      <Filter>Omega Red\Modules\VideoRenderer</Filter>
     </ClCompile>
     <ClCompile Include="Stub.cpp">
-      <Filter>Omega Red\Modules\VideoRenderer\Build\VS2017</Filter>
+      <Filter>Omega Red\Modules\VideoRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\plugins\GSdx\GLLoader.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GLState.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSAlignedClass.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSBlock.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSClut.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSCodeBuffer.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSCrc.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDevice.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDevice11.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDevice9.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDeviceDX.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDeviceNull.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDeviceOGL.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDialog.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDirtyRect.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawingContext.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanline.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x64.avx.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x64.avx2.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x64.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x86.avx.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x86.avx2.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x86.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSdx.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSFunctionMap.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSHwHack.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSLocalMemory.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSPerfMon.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSOsdManager.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSRasterizer.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSRenderer.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererCL.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererDX.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererDX11.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererDX9.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererHW.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererNull.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererOGL.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererSW.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSSetting.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSSettingsDlg.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x64.avx.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x64.avx2.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x64.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x86.avx.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x86.avx2.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x86.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSShaderOGL.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSState.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTables.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTexture.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTexture11.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTexture9.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureOGL.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureCache.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureCache11.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureCache9.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureCacheOGL.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureCacheSW.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureFX11.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureFX9.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureNull.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureSW.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSUtil.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSVector.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSVertexList.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSVertexSW.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSVertexTrace.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSWnd.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSWndDX.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\GSWndWGL.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPU.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPUDrawScanline.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPUDrawScanlineCodeGenerator.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPULocalMemory.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPURenderer.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPURendererSW.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPUSettingsDlg.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPUSetupPrimCodeGenerator.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPUState.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\stdafx.cpp" />
+    <ClCompile Include="Extend\GS.cpp">
+      <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="Extend\GSCapture.cpp">
+      <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="Extend\GSDump.cpp">
+      <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="Extend\GSPng.cpp">
+      <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="Extend\GSRendererProxy.cpp">
+      <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="Extend\GSDeviceProxy.cpp">
+      <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="Extend\GSWndStub.cpp">
+      <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GLLoader.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GLState.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSAlignedClass.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSBlock.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSClut.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSCodeBuffer.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSCrc.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDevice.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDevice11.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDevice9.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDeviceDX.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDeviceNull.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDeviceOGL.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDialog.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDirtyRect.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawingContext.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanline.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x64.avx.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x64.avx2.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x64.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x86.avx.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x86.avx2.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.x86.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSdx.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSFunctionMap.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSHwHack.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSLocalMemory.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSPerfMon.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSOsdManager.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSRasterizer.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSRenderer.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererCL.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererDX.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererDX11.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererDX9.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererHW.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererNull.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererOGL.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSRendererSW.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSSetting.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSSettingsDlg.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x64.avx.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x64.avx2.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x64.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x86.avx.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x86.avx2.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.x86.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSShaderOGL.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSState.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTables.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTexture.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTexture11.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTexture9.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureOGL.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureCache.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureCache11.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureCache9.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureCacheOGL.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureCacheSW.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureFX11.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureFX9.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureNull.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSTextureSW.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSUtil.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSVector.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSVertexList.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSVertexSW.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSVertexTrace.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSWnd.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSWndDX.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\GSWndWGL.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPU.cpp">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPUDrawScanline.cpp">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPUDrawScanlineCodeGenerator.cpp">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPULocalMemory.cpp">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPURenderer.cpp">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPURendererSW.cpp">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPUSettingsDlg.cpp">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPUSetupPrimCodeGenerator.cpp">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\PSX\GPUState.cpp">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\stdafx.cpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\plugins\GSdx\boost_spsc_queue.hpp" />
-    <ClInclude Include="..\..\..\plugins\GSdx\config.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GLLoader.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GLState.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GS.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSAlignedClass.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSBlock.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSCapture.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSCaptureDlg.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSClut.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSCodeBuffer.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSCrc.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDevice.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDevice11.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDevice9.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDeviceDX.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDeviceNull.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDeviceOGL.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDialog.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDirtyRect.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDrawingContext.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDrawingEnvironment.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDrawScanline.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSDump.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSdx.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSFastList.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSFunctionMap.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSLocalMemory.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSLzma.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSPerfMon.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSOsdManager.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSPng.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSRasterizer.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSRenderer.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererCL.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererDX.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererDX11.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererDX9.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererHW.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererNull.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererOGL.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererSW.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSScanlineEnvironment.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSSetting.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSSettingsDlg.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSShaderOGL.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSState.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTables.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTexture.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTexture11.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTexture9.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureOGL.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureCache.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureCache11.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureCache9.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureCacheOGL.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureCacheSW.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureNull.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureSW.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSThread.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSThread_CXX11.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSUniformBufferOGL.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSUtil.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVector.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVector4i.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVector4.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVector8i.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVector8.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVertex.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVertexArrayOGL.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVertexHW.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVertexList.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVertexSW.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSVertexTrace.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSWnd.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSWndDX.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\GSWndWGL.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPU.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUDrawingEnvironment.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUDrawScanline.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUDrawScanlineCodeGenerator.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPULocalMemory.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPURenderer.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPURendererSW.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUScanlineEnvironment.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUSettingsDlg.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUSetupPrimCodeGenerator.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUState.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUVertex.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\stdafx.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\svnrev.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\resource.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\targetver.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\xbyak\xbyak.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\xbyak\xbyak_mnemonic.h" />
-    <ClInclude Include="..\..\..\plugins\GSdx\xbyak\xbyak_util.h" />
+    <ClInclude Include="..\..\..\plugins\GSdx\boost_spsc_queue.hpp">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\config.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GLLoader.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GLState.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GS.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSAlignedClass.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSBlock.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSCapture.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSCaptureDlg.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSClut.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSCodeBuffer.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSCrc.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDevice.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDevice11.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDevice9.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDeviceDX.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDeviceNull.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDeviceOGL.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDialog.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDirtyRect.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDrawingContext.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDrawingEnvironment.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDrawScanline.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDrawScanlineCodeGenerator.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSDump.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSdx.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSFastList.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSFunctionMap.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSLocalMemory.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSLzma.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSPerfMon.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSOsdManager.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSPng.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSRasterizer.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSRenderer.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererCL.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererDX.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererDX11.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererDX9.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererHW.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererNull.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererOGL.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSRendererSW.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSScanlineEnvironment.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSSetting.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSSettingsDlg.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSSetupPrimCodeGenerator.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSShaderOGL.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSState.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTables.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTexture.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTexture11.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTexture9.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureOGL.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureCache.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureCache11.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureCache9.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureCacheOGL.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureCacheSW.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureNull.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSTextureSW.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSThread.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSThread_CXX11.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSUniformBufferOGL.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSUtil.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVector.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVector4i.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVector4.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVector8i.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVector8.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVertex.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVertexArrayOGL.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVertexHW.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVertexList.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVertexSW.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSVertexTrace.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSWnd.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSWndDX.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\GSWndWGL.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPU.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUDrawingEnvironment.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUDrawScanline.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUDrawScanlineCodeGenerator.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPULocalMemory.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPURenderer.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPURendererSW.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUScanlineEnvironment.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUSettingsDlg.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUSetupPrimCodeGenerator.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUState.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUVertex.h">
+      <Filter>plugins\GSdx\PSX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\stdafx.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\svnrev.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\resource.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\targetver.h">
+      <Filter>plugins\GSdx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\xbyak\xbyak.h">
+      <Filter>plugins\GSdx\xbyak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\xbyak\xbyak_mnemonic.h">
+      <Filter>plugins\GSdx\xbyak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\GSdx\xbyak\xbyak_util.h">
+      <Filter>plugins\GSdx\xbyak</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\plugins\GSdx\GSdx.rc" />
+    <ResourceCompile Include="..\..\..\plugins\GSdx\GSdx.rc">
+      <Filter>plugins\GSdx</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="VideoRenderer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\plugins\GSdx\res\logo-null.bmp" />
-    <Image Include="..\..\..\plugins\GSdx\res\logo-ogl.bmp" />
-    <Image Include="..\..\..\plugins\GSdx\res\logo11.bmp" />
-    <Image Include="..\..\..\plugins\GSdx\res\psx-logo-null.bmp" />
-    <Image Include="..\..\..\plugins\GSdx\res\psx-logo11.bmp" />
-    <Image Include="..\..\..\plugins\GSdx\res\psx-logo9.bmp" />
+    <Image Include="..\..\..\plugins\GSdx\res\logo-null.bmp">
+      <Filter>plugins\GSdx\res</Filter>
+    </Image>
+    <Image Include="..\..\..\plugins\GSdx\res\logo-ogl.bmp">
+      <Filter>plugins\GSdx\res</Filter>
+    </Image>
+    <Image Include="..\..\..\plugins\GSdx\res\logo11.bmp">
+      <Filter>plugins\GSdx\res</Filter>
+    </Image>
+    <Image Include="..\..\..\plugins\GSdx\res\psx-logo-null.bmp">
+      <Filter>plugins\GSdx\res</Filter>
+    </Image>
+    <Image Include="..\..\..\plugins\GSdx\res\psx-logo11.bmp">
+      <Filter>plugins\GSdx\res</Filter>
+    </Image>
+    <Image Include="..\..\..\plugins\GSdx\res\psx-logo9.bmp">
+      <Filter>plugins\GSdx\res</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="VideoRenderer.def" />
-    <None Include="..\..\..\plugins\GSdx\res\fxaa.fx" />
-    <None Include="..\..\..\plugins\GSdx\res\logo9.bmp" />
-    <None Include="..\..\..\plugins\GSdx\res\logo_ogl.bmp" />
-    <None Include="..\..\..\plugins\GSdx\res\convert.fx" />
-    <None Include="..\..\..\plugins\GSdx\res\interlace.fx" />
-    <None Include="..\..\..\plugins\GSdx\res\merge.fx" />
-    <None Include="..\..\..\plugins\GSdx\res\shadeboost.fx" />
-    <None Include="..\..\..\plugins\GSdx\res\tfx.cl" />
-    <None Include="..\..\..\plugins\GSdx\res\tfx.fx" />
+    <None Include="VideoRenderer.def">
+      <Filter>Omega Red\Modules\VideoRenderer</Filter>
+    </None>
+    <None Include="..\..\..\plugins\GSdx\res\fxaa.fx">
+      <Filter>plugins\GSdx\res</Filter>
+    </None>
+    <None Include="..\..\..\plugins\GSdx\res\logo9.bmp">
+      <Filter>plugins\GSdx\res</Filter>
+    </None>
+    <None Include="..\..\..\plugins\GSdx\res\logo_ogl.bmp">
+      <Filter>plugins\GSdx\res</Filter>
+    </None>
+    <None Include="..\..\..\plugins\GSdx\res\convert.fx">
+      <Filter>plugins\GSdx\res</Filter>
+    </None>
+    <None Include="..\..\..\plugins\GSdx\res\interlace.fx">
+      <Filter>plugins\GSdx\res</Filter>
+    </None>
+    <None Include="..\..\..\plugins\GSdx\res\merge.fx">
+      <Filter>plugins\GSdx\res</Filter>
+    </None>
+    <None Include="..\..\..\plugins\GSdx\res\shadeboost.fx">
+      <Filter>plugins\GSdx\res</Filter>
+    </None>
+    <None Include="..\..\..\plugins\GSdx\res\tfx.cl">
+      <Filter>plugins\GSdx\res</Filter>
+    </None>
+    <None Include="..\..\..\plugins\GSdx\res\tfx.fx">
+      <Filter>plugins\GSdx\res</Filter>
+    </None>
   </ItemGroup>
 </Project>
