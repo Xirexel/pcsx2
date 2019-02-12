@@ -23,7 +23,7 @@
 #include "GSUtil.h"
 
 #ifdef _WIN32
-#include "GSDeviceDX.h"
+#include "Renderers/DX11/GSDevice11.h"
 #include <VersionHelpers.h>
 #include "svnrev.h"
 #else
@@ -341,9 +341,9 @@ std::string GSUtil::GetDeviceUniqueName(cl::Device& device)
 
 bool GSUtil::CheckDirectX()
 {
-	if (GSDeviceDX::LoadD3DCompiler())
+	if (GSDevice11::LoadD3DCompiler())
 	{
-		GSDeviceDX::FreeD3DCompiler();
+		GSDevice11::FreeD3DCompiler();
 		return true;
 	}
 
@@ -426,12 +426,10 @@ GSRendererType GSUtil::GetBestRenderer()
 				// Check for Nvidia VendorID. Latest OpenGL features need at least DX11 level GPU
 				if (desc.VendorId == 0x10DE && level >= D3D_FEATURE_LEVEL_11_0)
 					return GSRendererType::OGL_HW;
-				if (level >= D3D_FEATURE_LEVEL_10_0)
-					return GSRendererType::DX1011_HW;
 			}
 		}
 	}
-	return GSRendererType::DX9_HW;
+	return GSRendererType::DX1011_HW;
 }
 
 #endif

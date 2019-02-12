@@ -5,11 +5,9 @@
 // General Dialog:
 #define IDD_CONFIG                      2001
 #define IDB_NULL                        2002
-#define IDB_LOGO9                       2003
 #define IDB_LOGO11                      2004
 #define IDB_LOGOGL                      2005
 #define IDC_NULL                        2006
-#define IDC_LOGO9                       2007
 #define IDC_LOGO11                      2008
 #define IDC_LOGOGL                      2009
 #define IDC_ADAPTER_TEXT                2010
@@ -42,10 +40,9 @@
 #define IDC_CRC_LEVEL_TEXT              2044
 #define IDC_HACKS_ENABLED               2045
 #define IDC_ACCURATE_DATE               2046
-#define IDC_ACCURATE_BLEND_UNIT         2047
-#define IDC_ACCURATE_BLEND_UNIT_TEXT    2048
-#define IDC_FBA                         2049
-#define IDC_LOGZ                        2050
+#define IDC_ACCURATE_DATE_TEXT          2047
+#define IDC_ACCURATE_BLEND_UNIT         2048
+#define IDC_ACCURATE_BLEND_UNIT_TEXT    2049
 // Software Renderer Settings:
 #define IDC_MIPMAP_SW                   2060
 #define IDC_AA1                         2061
@@ -54,17 +51,16 @@
 #define IDC_SWTHREADS_EDIT              2064
 // PSX:
 #define IDB_PSX_NULL                    2070
-#define IDB_PSX_LOGO9                   2071
 #define IDB_PSX_LOGO11                  2072
 #define IDC_PSX_NULL                    2073
-#define IDC_PSX_LOGO9                   2074
 #define IDC_PSX_LOGO11                  2075
 #define IDD_GPUCONFIG                   2076
 #define IDC_ASPECTRATIO                 2077
 #define IDC_DITHERING                   2078
 #define IDC_WINDOWED                    2079
-#define IDC_RESOLUTION                  2080
-#define IDC_SCALE                       2081
+#define IDC_RESOLUTION_TEXT             2080
+#define IDC_RESOLUTION                  2081
+#define IDC_SCALE                       2082
 // Capture:
 #define IDD_CAPTURE                     2090
 #define IDC_FILENAME                    2091
@@ -81,8 +77,6 @@
 #define IDC_OFFSETHACK_TEXT             2103
 #define IDC_SPRITEHACK                  2106
 #define IDC_SPRITEHACK_TEXT             2107
-#define IDC_MSAACB                      2108
-#define IDC_MSAA_TEXT                   2109
 #define IDC_ALPHASTENCIL                2110
 #define IDC_TCOFFSETX                   2111
 #define IDC_TCOFFSETX2                  2112
@@ -98,7 +92,7 @@
 #define IDC_MEMORY_WRAPPING             2122
 #define IDC_TRI_FILTER                  2123
 #define IDC_TRI_FILTER_TEXT             2124
-#define IDC_UNSCALE_POINT_LINE          2125
+#define IDC_SAFE_FEATURES               2125
 #define IDC_MERGE_PP_SPRITE             2126
 #define IDC_CPU_FB_CONVERSION           2127
 #define IDC_SKIPDRAWHACK                2128
@@ -129,24 +123,34 @@
 // OSD:
 #define IDC_OSD_LOG                     2170
 #define IDC_OSD_MONITOR                 2171
-#define IDC_OSD_INDICATOR               2172
-#define IDC_OSD_FONT_BUTTON             2173
-#define IDC_OSD_FONT_EDIT               2174
-#define IDC_OSD_SPEED                   2175
-#define IDC_OSD_SPEED_EDIT              2176
-#define IDC_OSD_SPEED_TEXT              2177
-#define IDC_OSD_SIZE                    2178
-#define IDC_OSD_SIZE_EDIT               2179
-#define IDC_OSD_TRANSPARENCY_SLIDER     2180
-#define IDC_OSD_TRANSPARENCY_TEXT       2181
-#define IDC_OSD_MAX_LOG                 2182
-#define IDC_OSD_MAX_LOG_EDIT            2183
-#define IDC_OSD_MAX_LOG_TEXT            2184
+#define IDC_OSD_COLOR_RED_SLIDER        2172
+#define IDC_OSD_COLOR_RED_TEXT          2173
+#define IDC_OSD_COLOR_RED_AMOUNT        2174
+#define IDC_OSD_COLOR_BLUE_SLIDER       2175
+#define IDC_OSD_COLOR_BLUE_TEXT         2176
+#define IDC_OSD_COLOR_BLUE_AMOUNT       2177
+#define IDC_OSD_COLOR_GREEN_SLIDER      2178
+#define IDC_OSD_COLOR_GREEN_TEXT        2179
+#define IDC_OSD_COLOR_GREEN_AMOUNT      2180
+#define IDC_OSD_TIMEOUT                 2181
+#define IDC_OSD_TIMEOUT_EDIT            2182
+#define IDC_OSD_TIMEOUT_TEXT            2183
+#define IDC_OSD_SIZE                    2184
+#define IDC_OSD_SIZE_EDIT               2185
+#define IDC_OSD_OPACITY_SLIDER          2186
+#define IDC_OSD_OPACITY_AMOUNT          2187
+#define IDC_OSD_MAX_LOG                 2188
+#define IDC_OSD_MAX_LOG_EDIT            2189
+#define IDC_OSD_MAX_LOG_TEXT            2190
+#define IDC_OSD_SIZE_TEXT               2191
+#define IDC_OSD_OPACITY_TEXT            2192
 // OpenGL Advanced Settings:
-#define IDC_GEOMETRY_SHADER_OVERRIDE    2190
-#define IDC_GEOMETRY_SHADER_TEXT        2191
-#define IDC_IMAGE_LOAD_STORE            2192
-#define IDC_IMAGE_LOAD_STORE_TEXT       2193
+#define IDC_GEOMETRY_SHADER_OVERRIDE    2200
+#define IDC_GEOMETRY_SHADER_TEXT        2201
+#define IDC_IMAGE_LOAD_STORE            2202
+#define IDC_IMAGE_LOAD_STORE_TEXT       2203
+#define IDC_SPARSE_TEXTURE              2204
+#define IDC_SPARSE_TEXTURE_TEXT         2205
 #define IDR_CONVERT_FX                  10000
 #define IDR_TFX_FX                      10001
 #define IDR_MERGE_FX                    10002

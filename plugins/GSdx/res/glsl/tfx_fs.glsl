@@ -439,7 +439,6 @@ vec4 sample_color(vec2 st)
         // Background in Shin Megami Tensei Lucifers
         // I suspect that uv isn't a standard number, so fract is outside of the [0;1] range
         // Note: it is free on GPU but let's do it only for float coordinate
-        // Strangely DX9 doesn't suffer from this issue.
         dd = clamp(dd, vec2(0.0f), vec2(1.0f));
 #endif
     }
@@ -592,10 +591,10 @@ vec4 ps_color()
     vec4 T = fetch_blue();
 #elif PS_CHANNEL_FETCH == 4
     vec4 T = fetch_alpha();
+#elif PS_CHANNEL_FETCH == 5
+    vec4 T = fetch_rgb();
 #elif PS_CHANNEL_FETCH == 6
     vec4 T = fetch_gXbY();
-#elif PS_CHANNEL_FETCH == 7
-    vec4 T = fetch_rgb();
 #elif PS_DEPTH_FMT > 0
     // Integral coordinate
     vec4 T = sample_depth(st_int);
@@ -838,15 +837,15 @@ void ps_main()
 
     ps_fbmask(C);
 
-#if PS_HDR == 1
+// #if PS_HDR == 1
     // Use negative value to avoid overflow of the texture (in accumulation mode)
     // Note: code were initially done for an Half-Float texture. Due to overflow
     // the texture was upgraded to a full float. Maybe this code is useless now!
     // Good testcase is castlevania
-    if (any(greaterThan(C.rgb, vec3(128.0f)))) {
-        C.rgb = (C.rgb - 256.0f);
-    }
-#endif
+    // if (any(greaterThan(C.rgb, vec3(128.0f)))) {
+        // C.rgb = (C.rgb - 256.0f);
+    // }
+// #endif
     SV_Target0 = C / 255.0f;
     SV_Target1 = vec4(alpha_blend);
 }
