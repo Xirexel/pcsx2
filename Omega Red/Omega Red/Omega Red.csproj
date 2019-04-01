@@ -44,6 +44,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
@@ -67,12 +68,21 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Capture\CaptureTargetTexture.cs" />
+    <Compile Include="Capture\Interop\ComInterface.cs" />
+    <Compile Include="Capture\Interop\D3D11Texture2D.cs" />
+    <Compile Include="Capture\Interop\Direct3D11.cs" />
+    <Compile Include="Capture\Interop\DXGIResource.cs" />
+    <Compile Include="Capture\Interop\NativeMethods.cs" />
+    <Compile Include="Capture\Interop\NativeStructs.cs" />
     <Compile Include="Capture\MediaStream.cs" />
     <Compile Include="Capture\OffScreenStream.cs" />
     <Compile Include="Managers\AdditionalControlManager.cs" />
     <Compile Include="Managers\IManager.cs" />
     <Compile Include="Managers\MediaRecorderManager.cs" />
     <Compile Include="Capture\MediaCapture.cs" />
+    <Compile Include="Tools\PPSSPPControl.cs" />
+    <Compile Include="Util\PPSSPPNative.cs" />
     <Compile Include="Models\BiosInfo.cs" />
     <Compile Include="Models\IsoInfo.cs" />
     <Compile Include="Models\MediaRecorderInfo.cs" />
@@ -120,6 +130,7 @@
     <Compile Include="Panels\DisplayVideoPanel.xaml.cs">
       <DependentUpon>DisplayVideoPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModels\AutoSaveStateViewModel.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="Managers\LockScreenManager.cs" />
     <Compile Include="Managers\MemoryCardManager.cs" />
@@ -456,11 +467,26 @@
   <ItemGroup>
     <EmbeddedResource Include="Modules\x86\MediaStream.dll" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\x86\PPSSPP.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>"$(DevEnvDir)..\..\VC\bin\editbin.exe" /STACK:6000000 "$(TargetPath)"
 ping 127.0.0.1 -n 6
+"$(DevEnvDir)..\..\VC\bin\EditBin.exe" /LARGEADDRESSAWARE "$(TargetPath)"
+ping 127.0.0.1 -n 6
 copy "$(TargetPath)" "$(SolutionDir)..\bin\$(TargetFileName)"
+copy "$(SolutionDir)ppsspp\ffmpeg\Windows\x86\bin\avcodec-58.dll" "$(TargetDir)avcodec-58.dll" 
+copy "$(SolutionDir)ppsspp\ffmpeg\Windows\x86\bin\avformat-58.dll" "$(TargetDir)avformat-58.dll" 
+copy "$(SolutionDir)ppsspp\ffmpeg\Windows\x86\bin\avutil-56.dll" "$(TargetDir)avutil-56.dll" 
+copy "$(SolutionDir)ppsspp\ffmpeg\Windows\x86\bin\swresample-3.dll" "$(TargetDir)swresample-3.dll" 
+copy "$(SolutionDir)ppsspp\ffmpeg\Windows\x86\bin\swscale-5.dll" "$(TargetDir)swscale-5.dll" 
+copy "$(SolutionDir)ppsspp\ffmpeg\Windows\x86\bin\avcodec-58.dll" "$(SolutionDir)..\bin\avcodec-58.dll" 
+copy "$(SolutionDir)ppsspp\ffmpeg\Windows\x86\bin\avformat-58.dll" "$(SolutionDir)..\bin\avformat-58.dll" 
+copy "$(SolutionDir)ppsspp\ffmpeg\Windows\x86\bin\avutil-56.dll" "$(SolutionDir)..\bin\avutil-56.dll" 
+copy "$(SolutionDir)ppsspp\ffmpeg\Windows\x86\bin\swresample-3.dll" "$(SolutionDir)..\bin\swresample-3.dll" 
+copy "$(SolutionDir)ppsspp\ffmpeg\Windows\x86\bin\swscale-5.dll" "$(SolutionDir)..\bin\swscale-5.dll" 
 </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>

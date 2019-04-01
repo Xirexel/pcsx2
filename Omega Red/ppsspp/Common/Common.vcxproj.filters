@@ -1,0 +1,158 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="ABI.h" />
+    <ClInclude Include="Atomics.h" />
+    <ClInclude Include="Atomic_GCC.h" />
+    <ClInclude Include="Atomic_Win32.h" />
+    <ClInclude Include="ChunkFile.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="CommonFuncs.h" />
+    <ClInclude Include="CommonTypes.h" />
+    <ClInclude Include="ConsoleListener.h" />
+    <ClInclude Include="CPUDetect.h" />
+    <ClInclude Include="FileUtil.h" />
+    <ClInclude Include="FixedSizeQueue.h" />
+    <ClInclude Include="Log.h" />
+    <ClInclude Include="LogManager.h" />
+    <ClInclude Include="MemArena.h" />
+    <ClInclude Include="MemoryUtil.h" />
+    <ClInclude Include="MsgHandler.h" />
+    <ClInclude Include="StringUtils.h" />
+    <ClInclude Include="Thunk.h" />
+    <ClInclude Include="Timer.h" />
+    <ClInclude Include="x64Analyzer.h" />
+    <ClInclude Include="x64Emitter.h" />
+    <ClInclude Include="ArmEmitter.h" />
+    <ClInclude Include="ThreadPools.h" />
+    <ClInclude Include="Crypto\md5.h">
+      <Filter>Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyMap.h" />
+    <ClInclude Include="Swap.h" />
+    <ClInclude Include="CommonWindows.h" />
+    <ClInclude Include="Crypto\sha1.h">
+      <Filter>Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="Crypto\sha256.h">
+      <Filter>Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="MipsEmitter.h" />
+    <ClInclude Include="Arm64Emitter.h" />
+    <ClInclude Include="ArmCommon.h" />
+    <ClInclude Include="MathUtil.h" />
+    <ClInclude Include="BitSet.h" />
+    <ClInclude Include="CodeBlock.h" />
+    <ClInclude Include="ColorConv.h" />
+    <ClInclude Include="ColorConvNEON.h" />
+    <ClInclude Include="ThreadSafeList.h" />
+    <ClInclude Include="GL\GLInterface\EGL.h">
+      <Filter>GL\GLInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="GL\GLInterface\EGLAndroid.h">
+      <Filter>GL\GLInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="GL\GLInterfaceBase.h">
+      <Filter>GL</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicsContext.h" />
+    <ClInclude Include="DbgNew.h" />
+    <ClInclude Include="Vulkan\SPIRVDisasm.h">
+      <Filter>Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan\VulkanLoader.h">
+      <Filter>Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan\VulkanContext.h">
+      <Filter>Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan\VulkanImage.h">
+      <Filter>Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan\VulkanMemory.h">
+      <Filter>Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="OSVersion.h" />
+    <ClInclude Include="Hashmaps.h" />
+    <ClInclude Include="Vulkan\VulkanDebug.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="ABI.cpp" />
+    <ClCompile Include="ConsoleListener.cpp" />
+    <ClCompile Include="CPUDetect.cpp" />
+    <ClCompile Include="FileUtil.cpp" />
+    <ClCompile Include="LogManager.cpp" />
+    <ClCompile Include="MemoryUtil.cpp" />
+    <ClCompile Include="Misc.cpp" />
+    <ClCompile Include="MsgHandler.cpp" />
+    <ClCompile Include="StringUtils.cpp" />
+    <ClCompile Include="Thunk.cpp" />
+    <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="x64Analyzer.cpp" />
+    <ClCompile Include="x64Emitter.cpp" />
+    <ClCompile Include="ArmEmitter.cpp" />
+    <ClCompile Include="ArmCPUDetect.cpp" />
+    <ClCompile Include="ThreadPools.cpp" />
+    <ClCompile Include="Crypto\md5.cpp">
+      <Filter>Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyMap.cpp" />
+    <ClCompile Include="Crypto\sha1.cpp">
+      <Filter>Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="Crypto\sha256.cpp">
+      <Filter>Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="ChunkFile.cpp" />
+    <ClCompile Include="MipsEmitter.cpp" />
+    <ClCompile Include="Arm64Emitter.cpp" />
+    <ClCompile Include="ColorConv.cpp" />
+    <ClCompile Include="ColorConvNEON.cpp" />
+    <ClCompile Include="GL\GLInterface\EGL.cpp">
+      <Filter>GL\GLInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="GL\GLInterface\EGLAndroid.cpp">
+      <Filter>GL\GLInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="GL\GLInterface\GLInterface.cpp">
+      <Filter>GL\GLInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan\SPIRVDisasm.cpp">
+      <Filter>Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan\VulkanLoader.cpp">
+      <Filter>Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan\VulkanContext.cpp">
+      <Filter>Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan\VulkanImage.cpp">
+      <Filter>Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan\VulkanMemory.cpp">
+      <Filter>Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="MemArenaPosix.cpp" />
+    <ClCompile Include="MemArenaWin32.cpp" />
+    <ClCompile Include="MemArenaAndroid.cpp" />
+    <ClCompile Include="MemArenaDarwin.cpp" />
+    <ClCompile Include="OSVersion.cpp" />
+    <ClCompile Include="Vulkan\VulkanDebug.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Crypto">
+      <UniqueIdentifier>{1b593f03-7b28-4707-9228-4981796f5589}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GL">
+      <UniqueIdentifier>{2f2ca112-9e26-499e-9cb9-38a78b4ac09d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GL\GLInterface">
+      <UniqueIdentifier>{2c723cf4-75b6-406a-90c0-ebb7a13ba476}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Vulkan">
+      <UniqueIdentifier>{c14d66ef-5f7c-4565-975a-72774e7ccfb9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

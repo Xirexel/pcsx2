@@ -54,6 +54,11 @@ namespace Omega_Red.Managers
 
         private ICollectionView mCustomerView = null;
 
+        private ICollectionView mAutoSaveCustomerView = null;
+
+        private CollectionViewSource mAutoSaveCollectionViewSource = new CollectionViewSource();
+   
+
         private readonly ObservableCollection<SaveStateInfo> _saveStateInfoCollection = new ObservableCollection<SaveStateInfo>();
 
         private List<int> m_ListSlotIndexes = new List<int>();
@@ -72,8 +77,14 @@ namespace Omega_Red.Managers
 
             mCustomerView.SortDescriptions.Add(
                 new SortDescription("DateTime", ListSortDirection.Descending));
+
+            mAutoSaveCollectionViewSource.Source = _saveStateInfoCollection;
+
+            mAutoSaveCustomerView = mAutoSaveCollectionViewSource.View;
+
+            mAutoSaveCustomerView.Filter = new Predicate<object>(x => ((SaveStateInfo)x).IsAutosave);
         }
-        
+
         public void init()
         {
             if (string.IsNullOrEmpty(Settings.Default.SlotFolder))
@@ -85,6 +96,14 @@ namespace Omega_Red.Managers
             }
 
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+
+
+            var files = System.IO.Directory.GetFiles(Settings.Default.SlotFolder, "*.p2stempstate");
+
+            foreach (string file in files)
+            {
+                File.Delete(file);
+            }
         }
         
         private void load()
@@ -103,6 +122,7 @@ namespace Omega_Red.Managers
 
             if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
             {
+                
 
                 string[] files = System.IO.Directory.GetFiles(Settings.Default.SlotFolder, "*.p2s");
 
@@ -234,7 +254,7 @@ namespace Omega_Red.Managers
 
                 m_ListSlotIndexes.RemoveAt(0);
 
-                lCheckSum = PCSX2Controller.Instance.BiosInfo.CheckSum;
+                lCheckSum = PCSX2Controller.Instance.IsoInfo.GameType == GameType.PSP? 1:  PCSX2Controller.Instance.BiosInfo.CheckSum;
 
                 var lIndexString = lIndex.ToString();
                 
@@ -257,8 +277,13 @@ namespace Omega_Red.Managers
         
         private void addSaveStateInfo(SaveStateInfo a_SaveStateInfo)
         {
-            if (PCSX2Controller.Instance.BiosInfo.CheckSum != a_SaveStateInfo.CheckSum)
-                return;
+            if (PCSX2Controller.Instance.BiosInfo == null || PCSX2Controller.Instance.BiosInfo.CheckSum != a_SaveStateInfo.CheckSum)
+                if (1 != a_SaveStateInfo.CheckSum)
+                    return;
+                else
+                    a_SaveStateInfo.Type = SaveStateType.PPSSPP;
+            else
+                a_SaveStateInfo.Type = SaveStateType.PCSX2;
 
             if (!_saveStateInfoCollection.Contains(a_SaveStateInfo, new Compare()))
             {
@@ -367,8 +392,31 @@ namespace Omega_Red.Managers
             if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
             {
                 Tools.Savestate.SStates.Instance.Save(a_SaveStateInfo.FilePath, aDate, aDurationInSeconds);
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    removeSaveStateInfo(a_SaveStateInfo, true);
+                });
+            }
+        }
 
-                removeSaveStateInfo(a_SaveStateInfo, true);
+        public void savePPSSPPState(SaveStateInfo a_SaveStateInfo, string aDate, double aDurationInSeconds)
+        {
+            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
+            {
+                string l_tempFile = a_SaveStateInfo.FilePath + "temp";
+
+                PPSSPPControl.Instance.saveState(l_tempFile);
+
+                if (File.Exists(l_tempFile))
+                {
+                    Tools.Savestate.SStates.Instance.SavePPSSPP(a_SaveStateInfo.FilePath, l_tempFile, aDate, aDurationInSeconds);
+
+                    File.Delete(l_tempFile);
+                }
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    removeSaveStateInfo(a_SaveStateInfo, true);
+                });
             }
         }
 
@@ -377,6 +425,47 @@ namespace Omega_Red.Managers
             if (System.IO.File.Exists(a_SaveStateInfo.FilePath))
             {
                 Tools.Savestate.SStates.Instance.Load(a_SaveStateInfo.FilePath);
+            }
+        }
+
+        public void loadPPSSPPState(SaveStateInfo a_SaveStateInfo, string a_tempFilePath)
+        {
+            if (System.IO.File.Exists(a_SaveStateInfo.FilePath))
+            {
+                Tools.Savestate.SStates.Instance.LoadPPSSPP(a_SaveStateInfo.FilePath, a_tempFilePath);
+            }
+        }
+
+        public void quickSavePPSSPP(string aDate, double aDurationInSeconds)
+        {
+            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
+            {
+                var l_quickSave = m_quickSaves.ElementAt(0);
+
+                m_quickSaves.RemoveAt(0);
+
+                l_quickSave.Date = aDate;
+
+                l_quickSave.Duration = TimeSpan.FromSeconds(aDurationInSeconds).ToString(@"dd\.hh\:mm\:ss");
+
+                var l_file_path = l_quickSave.FilePath + "_temp";
+                
+                string l_tempFile = l_quickSave.FilePath + "temp";
+
+                PPSSPPControl.Instance.saveState(l_tempFile);
+
+                if (File.Exists(l_tempFile))
+                {
+                    Tools.Savestate.SStates.Instance.SavePPSSPP(l_file_path, l_tempFile, aDate, aDurationInSeconds);
+
+                    File.Delete(l_tempFile);
+                }
+
+                File.Delete(l_quickSave.FilePath);
+
+                File.Move(l_file_path, l_quickSave.FilePath);
+
+                m_quickSaves.Add(l_quickSave);
             }
         }
 
@@ -453,6 +542,34 @@ namespace Omega_Red.Managers
             }
         }
 
+        public void autoPPSSPPSave(string aDate, double aDurationInSeconds)
+        {
+            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
+            {
+                m_autoSave.Date = aDate;
+
+                m_autoSave.Duration = TimeSpan.FromSeconds(aDurationInSeconds).ToString(@"dd\.hh\:mm\:ss");
+
+                string l_tempFile = m_autoSave.FilePath + "temp";
+
+                PPSSPPControl.Instance.saveState(l_tempFile);
+
+                Thread.Sleep(500);
+
+                var l_file_path = m_autoSave.FilePath + "_temp";
+                if (File.Exists(l_tempFile))
+                {
+                    Tools.Savestate.SStates.Instance.SavePPSSPP(l_file_path, l_tempFile, aDate, aDurationInSeconds);
+
+                    File.Delete(l_tempFile);
+                }
+
+                File.Delete(m_autoSave.FilePath);
+
+                File.Move(l_file_path, m_autoSave.FilePath);
+            }
+        }                      
+
         public void removeItem(object a_Item)
         {
             var l_SaveStateInfo = a_Item as SaveStateInfo;
@@ -469,5 +586,10 @@ namespace Omega_Red.Managers
         {
             get { return mCustomerView; }
         }
+
+        public ICollectionView AutoSaveCollection
+        {
+            get { return mAutoSaveCustomerView; }
+        }        
     }
 }

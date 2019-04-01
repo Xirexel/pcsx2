@@ -145,6 +145,8 @@ void AudioRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 
                     m_volume = l_Attribute.as_double(0.5);
 
+					m_volume = m_volume / 100.0;
+
 					if (m_volume > 0)
                         m_volume = exp2(exp2(m_volume)/2.0)/2.0;
 

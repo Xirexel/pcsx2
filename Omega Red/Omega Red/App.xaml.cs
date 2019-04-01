@@ -1,16 +1,27 @@
-﻿using Omega_Red.Tools;
+﻿using Omega_Red.Properties;
+using Omega_Red.Tools;
 using Omega_Red.Util;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Configuration;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
+using System.IO.IsolatedStorage;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Markup;
+using System.Windows.Threading;
+using System.Xml;
+using System.Xml.Linq;
+using System.Xml.Serialization;
 
 namespace Omega_Red
 {
@@ -25,10 +36,10 @@ namespace Omega_Red
             OffScreen
         }
 
-        public static bool m_is_enable_rendering_mode = true;
+        public static bool m_is_ppsspp = false;
 
         public static AppType m_AppType = AppType.Screen;
-
+               
         public App()
         {
             Startup += (object sender, StartupEventArgs e)=>
@@ -57,6 +68,8 @@ namespace Omega_Red
 
             PCSX2Controller.Instance.Stop(true);
 
+            PPSSPPControl.Instance.close();
+
             Thread.Sleep(1500);
 
             PCSX2LibNative.Instance.SysThreadBase_CancelFunc();
@@ -76,6 +89,8 @@ namespace Omega_Red
             Thread.Sleep(1500);
 
             PCSX2LibNative.Instance.release();
+
+            PPSSPPNative.Instance.release();
         }
     }
 }

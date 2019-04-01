@@ -151,7 +151,7 @@ namespace Omega_Red.Managers
 
                     if (l_splits != null && l_splits.Length == 3)
                     {
-                        if (fi.Name.Contains(new GameNameConverter().Convert(PCSX2Controller.Instance.IsoInfo.DiscSerial, null, null, null) as string + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial))
+                        if (fi.Name.Contains(PCSX2Controller.Instance.IsoInfo.Title + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial))
                         {
                             int l_value = 0;
 
@@ -205,7 +205,7 @@ namespace Omega_Red.Managers
                 if (lIndexString.Length == 1)
                     lIndexString = lIndexString.PadLeft(2, '0');
 
-                var Name = (new GameNameConverter().Convert(PCSX2Controller.Instance.IsoInfo.DiscSerial, null, null, null) as string + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial) + "." + lIndexString + ".ps2";
+                var Name = (PCSX2Controller.Instance.IsoInfo.Title + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial) + "." + lIndexString + ".ps2";
 
                 var FullName = Settings.Default.MemoryCardsFolder + Name;
 

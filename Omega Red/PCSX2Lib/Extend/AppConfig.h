@@ -21,6 +21,13 @@ enum AspectRatioType
 	AspectRatio_MaxCount
 };
 
+enum FMVAspectRatioSwitchType {
+    FMV_AspectRatio_Switch_Off,
+    FMV_AspectRatio_Switch_4_3,
+    FMV_AspectRatio_Switch_16_9,
+    FMV_AspectRatio_Switch_MaxCount
+};
+
 enum FoldersEnum_t
 {
 	// FIXME : Plugins, Settings, and Themes folders are no longer part of the user-local
@@ -128,6 +135,7 @@ public:
 		bool		DisableScreenSaver;
 
 		AspectRatioType AspectRatio;
+        FMVAspectRatioSwitchType FMVAspectRatioSwitch = FMVAspectRatioSwitchType::FMV_AspectRatio_Switch_Off;
 		Fixed100	Zoom;
 		Fixed100	StretchY;
 		Fixed100	OffsetX;

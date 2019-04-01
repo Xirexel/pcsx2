@@ -57,6 +57,8 @@ namespace Omega_Red.ViewModels
             m_Status = a_Status;
 
             IsEnabled = a_Status != PCSX2Controller.StatusEnum.NoneInitilized;
+
+            CommandManager.InvalidateRequerySuggested();
         }  
 
         public bool IsEnabled

@@ -16,7 +16,7 @@
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <Slider Orientation="Horizontal" x:Name="m_volumeSlider" Minimum="0" VerticalAlignment="Center" Grid.Column="1" Maximum="100" Value="{Binding SoundLevel, Mode=TwoWay}" Margin="0,5" />
+        <Slider Orientation="Horizontal" TouchDown="Slider_TouchDown" x:Name="m_volumeSlider" Minimum="0" VerticalAlignment="Center" Grid.Column="1" Maximum="100" Value="{Binding SoundLevel, Mode=TwoWay}" Margin="0,5" />
         <CheckBox x:Name="m_MuteBtn" Checked="CheckBox_Checked" IsChecked="{Binding IsMuted, Mode=TwoWay}" Unchecked="CheckBox_Unchecked" Margin="4" Grid.Column="0" Width="45" Height="45">
             <CheckBox.Style>
                 <Style TargetType="{x:Type CheckBox}">

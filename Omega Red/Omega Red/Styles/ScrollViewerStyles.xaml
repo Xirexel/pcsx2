@@ -214,7 +214,7 @@
                         Value="{DynamicResource HorizontalScrollBar}" />
             </Trigger>
             <Trigger Property="Orientation" Value="Vertical">
-                <Setter Property="Width" Value="28"/>
+                <Setter Property="Width" Value="18"/>
                 <Setter Property="Height" Value="Auto" />
                 <Setter Property="Template"
                         Value="{DynamicResource VerticalScrollBar}" />

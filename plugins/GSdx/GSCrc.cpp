@@ -115,7 +115,7 @@ CRC::Game CRC::m_games[] =
 	{0xCA1F6E53, SFEX3, JP, 0}, // Taikenban Disc (Demo/Trial)
 	{0x28703748, Bully, US, 0},
 	{0x019CFA48, Bully, JP, 0},
-	{0xC78A495D, BullyCC, EU, 0},
+	{0xC78A495D, Bully, EU, 0}, // BullyCC
 	{0xC19A374E, SoTC, US, 0},
 	{0x7D8F539A, SoTC, EU, 0},
 	{0x0F0C4A9C, SoTC, EU, 0},
@@ -278,25 +278,22 @@ CRC::Game CRC::m_games[] =
 	{0xC70FC973, ValkyrieProfile2, IT, 0},
 	{0x47B9B2FD, RadiataStories, US, 0},
 	{0xAC73005E, RadiataStories, JP, 0},
-	{0xE8FCF8EC, SMTNocturne, US, ZWriteMustNotClear}, // saves/reloads z buffer around shadow drawing, same issue with all the SMT games following
-	{0xF0A31EE3, SMTNocturne, EU, ZWriteMustNotClear}, // SMTNocturne (Lucifers Call in EU)
-	{0xAE0DE7B7, SMTNocturne, EU, ZWriteMustNotClear}, // SMTNocturne (Lucifers Call in EU)
-	{0xD60DA6D4, SMTNocturne, JP, ZWriteMustNotClear}, // SMTNocturne
-	{0x0E762E8D, SMTNocturne, JP, ZWriteMustNotClear}, // SMTNocturne Maniacs
-	{0x47BA9034, SMTNocturne, JP, ZWriteMustNotClear}, // SMTNocturne Maniacs Chronicle
-	{0xD3FFC263, SMTNocturne, KO, ZWriteMustNotClear},
-	{0xD7273511, SMTDDS1, US, ZWriteMustNotClear}, // SMT Digital Devil Saga
-	{0x1683A6BE, SMTDDS1, EU, ZWriteMustNotClear}, // SMT Digital Devil Saga
-	{0x44865CE1, SMTDDS1, JP, ZWriteMustNotClear}, // SMT Digital Devil Saga
-	{0xF2E397C0, SMTDDS1, KO, ZWriteMustNotClear}, // SMT Digital Devil Saga
-	{0x43202D1A, SMTDDS2, KO, ZWriteMustNotClear}, // SMT Digital Devil Saga 2
-	{0xD382C164, SMTDDS2, US, ZWriteMustNotClear}, // SMT Digital Devil Saga 2
-	{0xD568B684, SMTDDS2, EU, ZWriteMustNotClear}, // SMT Digital Devil Saga 2
-	{0xE47C1A9C, SMTDDS2, JP, ZWriteMustNotClear}, // SMT Digital Devil Saga 2
+	{0xE8FCF8EC, SMTNocturne, US, 0},
+	{0xF0A31EE3, SMTNocturne, EU, 0}, // SMTNocturne (Lucifers Call in EU)
+	{0xAE0DE7B7, SMTNocturne, EU, 0}, // SMTNocturne (Lucifers Call in EU)
+	{0xD60DA6D4, SMTNocturne, JP, 0}, // SMTNocturne
+	{0x0E762E8D, SMTNocturne, JP, 0}, // SMTNocturne Maniacs
+	{0x47BA9034, SMTNocturne, JP, 0}, // SMTNocturne Maniacs Chronicle
+	{0xD3FFC263, SMTNocturne, KO, 0},
+	{0xD7273511, SMTDDS1, US, 0}, // SMT Digital Devil Saga
+	{0x1683A6BE, SMTDDS1, EU, 0}, // SMT Digital Devil Saga
+	{0x44865CE1, SMTDDS1, JP, 0}, // SMT Digital Devil Saga
+	{0xF2E397C0, SMTDDS1, KO, 0}, // SMT Digital Devil Saga
+	{0x43202D1A, SMTDDS2, KO, 0}, // SMT Digital Devil Saga 2
+	{0xD382C164, SMTDDS2, US, 0}, // SMT Digital Devil Saga 2
+	{0xD568B684, SMTDDS2, EU, 0}, // SMT Digital Devil Saga 2
+	{0xE47C1A9C, SMTDDS2, JP, 0}, // SMT Digital Devil Saga 2
 	{0x0B8AB37B, RozenMaidenGebetGarden, JP, 0},
-	{0x1CC39DBD, SuikodenTactics, US, 0},
-	{0x3E205556, SuikodenTactics, EU, 0},
-	{0xB808413B, SuikodenTactics, JP, 0},
 	{0xA33AF77A, TenchuFS, US, 0},
 	{0x64C58FB4, TenchuFS, US, 0},
 	{0xE7CCCB1E, TenchuFS, EU, 0},
@@ -306,6 +303,7 @@ CRC::Game CRC::m_games[] =
 	{0x696BBEC3, TenchuFS, KO, 0},
 	{0x525C1994, TenchuFS, ASIA, 0},
 	{0x0D73BBCD, TenchuFS, KO, 0},
+	{0x735A10C2, TenchuFS, JP, 0}, // Tenchu Kurenai
 	{0xAFBFB287, TenchuWoH, KO, 0},
 	{0x767E383D, TenchuWoH, US, 0},
 	{0x83261085, TenchuWoH, DE, 0}, // PAL German
@@ -325,6 +323,7 @@ CRC::Game CRC::m_games[] =
 	{0x615EA2DB, Sly2, JP, 0}, // Kaitou Sly Cooper 2
 	{0xFDA1CBF6, Sly2, EU, 0},
 	{0x15DD1F6F, Sly2, NoRegion, 0},
+	{0xBF1739E2, Sly2, NoRegion, 0}, // Prototype maybe, is it official ? I don't remember, found it when testing my dumps (LT).
 	{0xA9C82AB9, DemonStone, US, 0},
 	{0x7C7578F3, DemonStone, EU, 0},
 	{0x22425C19, DemonStone, KO, 0},
@@ -332,20 +331,9 @@ CRC::Game CRC::m_games[] =
 	{0x90F0D852, BigMuthaTruckers, US, 0},
 	{0x5CC9BF81, TimeSplitters2, EU, 0},
 	{0x12532F1C, TimeSplitters2, US, 0},
-	{0xC818BEC2, LordOfTheRingsTwoTowers, US, 0},
-	{0xDC43F2B8, LordOfTheRingsTwoTowers, EU, 0},
-	{0x9ABF90FB, LordOfTheRingsTwoTowers, ES, 0},
-	{0x5FF407EE, LordOfTheRingsTwoTowers, IT, 0},
-	{0xC0E909E9, LordOfTheRingsTwoTowers, JP, 0},
-	{0x6898435D, LordOfTheRingsTwoTowers, KO, 0},
-	{0xDC2F9B98, LordOfTheRingsTwoTowers, CH, 0}, // cutie comment
 	{0xEB198738, LordOfTheRingsThirdAge, US, 0},
 	{0x614F4CF4, LordOfTheRingsThirdAge, EU, 0},
 	{0x37CD4279, LordOfTheRingsThirdAge, KO, 0},
-	{0xE169BAF8, RedDeadRevolver, US, 0},
-	{0xE2E67E23, RedDeadRevolver, EU, 0},
-	{0x87844524, RedDeadRevolver, RU, 0}, // Unofficial RU-version
-	{0xF56C7948, HeavyMetalThunder, JP, 0},
 	{0x6DF62AEA, BleachBladeBattlers, JP, 0},
 	{0x6EB71AB0, BleachBladeBattlers, JP, 0}, // 2nd
 	{0x3A446111, CastlevaniaCoD, US, 0},
@@ -356,22 +344,16 @@ CRC::Game CRC::m_games[] =
 	{0x306CDADA, CastlevaniaLoI, EU, 0},
 	{0xA36CFF6C, CastlevaniaLoI, JP, 0},
 	{0x9A93FE5D, CastlevaniaLoI, KO, 0},
-	{0x7985D894, FinalFightStreetwise, US, 0},
-	{0xED4BF0D3, FinalFightStreetwise, US, 0}, // cutie comment
-	{0x0BA2B682, FinalFightStreetwise, RU, 0},
-	{0x73C560BA, FinalFightStreetwise, EU, 0},
 	{0xCBB87BF9, EvangelionJo, JP, 0}, // cutie comment
 	{0xC5B75C7C, Oneechanbara2Special, JP, 0}, // cutie comment
+	{0xC725CC6C, Oneechanbara2Special, JP, 0},
+	{0x07608CA2, Oneechanbara2Special, EU, 0}, // Zombie Hunters 2
 	{0xC0659AD1, NarutimateAccel, JP, 0}, // cutie comment
 	{0xF3D9DFBE, NarutimateAccel, JP, 0},
 	{0x59739DDE, Naruto, JP, 0}, // cutie comment
-	{0xF7786EE4, EternalPoison, JP, 0}, // cutie comment
-	{0x2BE55519, EternalPoison, US, 0},
-	{0xE01F57EC, LegoBatman, US, 0}, // cutie comment
-	{0xE01F57ED, LegoBatman, EU, 0},
-	{0xE0347841, XE3, JP, 0}, // cutie comment
-	{0xA4E88698, XE3, CH, 0},
-	{0x2088950A, XE3, US, 0},
+	{0xE0347841, XenosagaE3, JP, 0}, // cutie comment
+	{0xA4E88698, XenosagaE3, CH, 0},
+	{0x2088950A, XenosagaE3, US, 0},
 	// DMC(1)? {0x79B8A95F, DevilMayCry3, US, 0},
 	{0x7F3D692D, DevilMayCry3, CH, 0},
 	// {0x1A85E924, DevilMayCry3, CH, 0}, // same CRC as {GodOfWar, NoRegion}
@@ -391,16 +373,9 @@ CRC::Game CRC::m_games[] =
 	{0xBC8B3F50, TombRaiderLegend, US, 0}, // cutie comment
 	{0x365172A0, TombRaiderLegend, JP, 0},
 	{0x05177ECE, TombRaiderLegend, EU, 0},
-	{0x5C891FF1, Black, US, 0},
-	{0xCAA04879, Black, EU, 0},
-	{0xADDFF505, Black, EU, 0},
-	{0xB3A9F9ED, Black, JP, 0},
 	{0x879CDA5E, StarWarsForceUnleashed, US, 0},
 	{0x137C792E, StarWarsForceUnleashed, US, 0},
 	{0xDAF2145C, StarWarsForceUnleashed, EU, 0},
-	{0x503BF9E1, StarWarsBattlefront, NoRegion, 0}, // EU and US versions have the same CRC
-	{0x02F4B541, StarWarsBattlefront2, NoRegion, 0}, // EU and US versions have the same CRC
-	{0xA8DB29DF, BlackHawkDown, EU, 0},
 	{0x25FC361B, DevilMayCry3, US, 0}, // SE
 	{0x2F7D8AD5, DevilMayCry3, US, 0},
 	{0x0BED0AF9, DevilMayCry3, US, 0},
@@ -411,24 +386,21 @@ CRC::Game CRC::m_games[] =
 	{0x05931990, DevilMayCry3, KO, 0},
 	{0x4AD36D59, DevilMayCry3, RU, 0},
 	{0xBEBF8793, BurnoutTakedown, US, 0},
+	{0xBB2E845F, BurnoutTakedown, JP, 0},
 	{0x75BECC18, BurnoutTakedown, EU, 0},
 	{0xCE49B0DE, BurnoutTakedown, EU, 0},
 	{0x381EE9EF, BurnoutTakedown, EU, 0}, // E3 Demo
 	{0xD224D348, BurnoutRevenge, US, 0},
+	{0x878E7A1D, BurnoutRevenge, JP, 0},
+	{0xEEA60511, BurnoutRevenge, KO, 0},
 	{0x7E83CC5B, BurnoutRevenge, EU, 0},
 	{0x2CAC3DBC, BurnoutRevenge, EU, 0},
-	{0xEEA60511, BurnoutRevenge, KO, 0},
 	{0x8C9576A1, BurnoutDominator, US, 0},
 	{0x8C9576B4, BurnoutDominator, EU, 0},
 	{0x8C9C76B4, BurnoutDominator, EU, 0},
 	{0x4A0E5B3A, MidnightClub3, US, 0}, // dub
 	{0xEBE1972D, MidnightClub3, EU, 0}, // dub
 	{0x60A42FF5, MidnightClub3, US, 0}, // remix
-	{0xD03D4C77, SpyroNewBeginning, US, 0},
-	{0x0EE5646B, SpyroNewBeginning, EU, 0},
-	{0xB80CE8EC, SpyroEternalNight, US, 0},
-	{0x8AE9536D, SpyroEternalNight, EU, 0},
-	{0xC95F0198, SpyroEternalNight, NoRegion, 0},
 	{0x43AB7214, TalesOfLegendia, US, 0},
 	{0x1F8640E0, TalesOfLegendia, JP, 0},
 	{0xE4F5DA2B, TalesOfLegendia, KO, 0},
@@ -457,9 +429,10 @@ CRC::Game CRC::m_games[] =
 	{0xC71DE999, SkyGunner, US, 0}, // Regular Demo
 	{0xAADF3287, SkyGunner, US, 0}, // Trade Demo
 	{0xB799A60C, SkyGunner, NoRegion, 0},
-	{0x90F4B057, ZettaiZetsumeiToshi2, CH, 0},
-	{0xC988ECBB, ZettaiZetsumeiToshi2, JP, 0},
 	{0x2905C5C6, ZettaiZetsumeiToshi2, US, 0}, // Raw Danger!
+	{0xC988ECBB, ZettaiZetsumeiToshi2, JP, 0},
+	{0x90F4B057, ZettaiZetsumeiToshi2, CH, 0},
+	{0xA98B5B22, ZettaiZetsumeiToshi2, EU, 0},
 	{0xBD17248E, ShinOnimusha, JP, 0},
 	{0xBE17248E, ShinOnimusha, JP, 0},
 	{0xB817248E, ShinOnimusha, JP, 0},
@@ -486,10 +459,6 @@ CRC::Game CRC::m_games[] =
 	{0x399A49CA, GTASanAndreas, US, 0},
 	{0x2C6BE434, GTASanAndreas, US, 0},
 	{0x60FE139C, GTASanAndreas, JP, 0},
-	{0x2615F542, FrontMission5, JP, 0},
-	{0xF60255AC, FrontMission5, JP, 0},
-	{0xCB783836, FrontMission5, JP, 0},
-	{0xB7532DF6, FrontMission5, JP, 0},
 	{0xAEDAEE99, GodHand, JP, 0},
 	{0x6FB69282, GodHand, US, 0},
 	{0x924C4AA6, GodHand, KO, 0},
@@ -498,23 +467,11 @@ CRC::Game CRC::m_games[] =
 	{0x4E811100, UltramanFightingEvolution, JP, 0}, // cutie comment
 	{0xF7F181C3, DeathByDegreesTekkenNinaWilliams, CH, 0}, // cutie comment
 	{0xF088FA5B, DeathByDegreesTekkenNinaWilliams, KO, 0},
+	{0xE1D6F85E, DeathByDegreesTekkenNinaWilliams, US, 0},
 	{0x59683BB0, DeathByDegreesTekkenNinaWilliams, EU, 0},
 	{0x5B659BED, Grandia3, JP, 0},
 	{0x5B657DAD, Grandia3, US, 0},
 	{0x830B6FB1, TalesofSymphonia, JP, 0},
-	{0x86C57952, SoulCalibur2, JP, 0},
-	{0x83AFB38A, SoulCalibur2, KO, 0},
-	{0xE1B01308, SoulCalibur2, US, 0},
-	{0x4B66F38C, SoulCalibur2, US, 0}, // Demo
-	{0x632A5116, SoulCalibur2, EU, 0},
-	{0xFB8554A0, SoulCalibur3, JP, 0},
-	{0x7C7B9E71, SoulCalibur3, JP, 0},
-	{0x027C604C, SoulCalibur3, US, 0},
-	{0x24090A12, SoulCalibur3, EU, 0},
-	{0x3BA95B70, SoulCalibur3, EU, 0},
-	{0xBC5480A3, SoulCalibur3, EU, 0},
-	{0xBE40779A, SoulCalibur3, RU, 0},
-	{0x37B99B14, SoulCalibur3, KO, 0},
 	{0xFC0F8A5B, Simple2000Vol114, JP, 0},
 	{0xBDD9BAAD, UrbanReign, US, 0}, // cutie comment
 	{0x0418486E, UrbanReign, RU, 0},
@@ -526,11 +483,13 @@ CRC::Game CRC::m_games[] =
 	{0XE8F7BAB6, SuperManReturns, EU, 0},
 	{0x06A7506A, SacredBlaze, JP, 0},
 	{0x4CE7FB04, ItadakiStreet, JP, 0},
+	{0x9C712FF0, Jak1, EU, 0}, // Jak and Daxter: The Precursor Legacy
+	{0x472E7699, Jak1, US, 0},
 	{0x2479F4A9, Jak2, EU, 0},
 	{0x9184AAF1, Jak2, US, 0},
 	{0x12804727, Jak3, EU, 0},
 	{0x644CFD03, Jak3, US, 0},
-	{0xDF659E77, JakX, EU, 0},
+	{0xDF659E77, JakX, EU, 0}, // Jak X: Combat Racing
 	{0x3091E6FB, JakX, US, 0},
 	{0x4653CA3E, HarleyDavidson, US, 0},
 	// Games list for Automatic Mipmapping
@@ -541,6 +500,8 @@ CRC::Game CRC::m_games[] =
 	{0x09B3AD4D, ApeEscape2, EU, 0},
 	{0xBDD9F5E1, ApeEscape2, US, 0},
 	{0xFE0A6AB6, ApeEscape2, JP, 0}, // Saru! Get You! 2
+	{0xEC8EF2DE, Barnyard, US, 0}, // Nickelodeon: Barnyard
+	{0x5267A845, Barnyard, EU, 0},
 	{0x0940508D, BrianLaraInternationalCricket, EU, 0},
 	{0x0BAA8DD8, DarkCloud, EU, 0},
 	{0x1DF41F33, DarkCloud, US, 0},

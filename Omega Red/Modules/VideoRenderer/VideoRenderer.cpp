@@ -4,7 +4,7 @@
 #include "Extend\GSWndStub.h"
 #include "pugixml.hpp"
 
-#include "GSRendererSW.h"
+#include "Renderers/SW/GSRendererSW.h"
 
 
 VideoRenderer g_VideoRenderer;
@@ -44,9 +44,7 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 				if (std::wstring(l_ChildNode.name()) == L"Init")
 				{
 					void* l_SharedHandle = nullptr;
-
-					void* l_UpdateCallback = nullptr;
-
+					
 					auto l_Attribute = l_ChildNode.attribute(L"ShareHandler");
 
 					if (!l_Attribute.empty() && !m_VideoRenderer)
@@ -68,68 +66,26 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 
 						}
 					}
-
-					l_Attribute = l_ChildNode.attribute(L"Version");
-
-					if (!l_Attribute.empty())
-					{
-						MIDL_INTERFACE("15D9A4F6-B0FC-4833-AF37-21FB6AA0D07D")
-						ILock : public IUnknown
-						{
-							virtual HRESULT Lock() = 0;
-							virtual HRESULT Unlock() = 0;
-						};
-
-						xml_document l_xmlLockDoc;
-
-						l_XMLRes = l_xmlLockDoc.load_string(l_Attribute.value());
-
-						if (l_XMLRes.status == xml_parse_status::status_ok)
-						{
-							auto l_firstNode = l_xmlLockDoc.first_child();
-
-							if (!l_firstNode.empty())
-							{
-								auto l_buildAttr = l_firstNode.attribute(L"BUILD");
-
-								if (!l_buildAttr.empty())
-								{
-									auto l_lock = (ILock*)l_buildAttr.as_int();
-
-									if (l_lock != nullptr)
-									{
-										l_lock->Unlock();
-									}
-								}
-							}
-						}
-					}
 					
+					void *l_CaptureHandler = nullptr;
 
-					l_Attribute = l_ChildNode.attribute(L"UpdateCallback");
+                    l_Attribute = l_ChildNode.attribute(L"CaptureHandler");
 
-					if (!l_Attribute.empty() && !m_VideoRenderer)
-					{
-						auto l_value = l_Attribute.as_llong();
+                    if (!l_Attribute.empty() && !m_VideoRenderer) {
+                        auto l_value = l_Attribute.as_llong();
 
-						if (l_value != 0)
-						{
-							try
-							{
+                        if (l_value != 0) {
+                            try {
 
-								l_UpdateCallback = (void*)l_value;
+                                l_CaptureHandler = (void *)l_value;
 
-							}
-							catch (...)
-							{
+                            } catch (...) {
+                            }
+                        }
+                    }
 
-							}
-
-						}
-					}
-
-					if (l_SharedHandle != nullptr && l_UpdateCallback != nullptr)
-						init(l_SharedHandle, l_UpdateCallback);
+                    if (l_SharedHandle != nullptr)
+                        init(l_SharedHandle, l_CaptureHandler);
 
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Shutdown")
@@ -240,6 +196,17 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
                             m_VideoRenderer->setIsTessellated(m_is_tessellated);
                         }
                     }
+                } else if (std::wstring(l_ChildNode.name()) == L"IsFXAA") {
+
+                    auto l_Attribute = l_ChildNode.attribute(L"Value");
+
+                    m_is_fxaa = l_Attribute.as_uint(0);
+
+                    if (!l_Attribute.empty()) {
+                        if (m_VideoRenderer) {
+                            m_VideoRenderer->setFXAA(m_is_fxaa);
+                        }
+                    }
                 }
 
 
@@ -248,69 +215,69 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 				l_ChildNode = l_ChildNode.next_sibling();
 			}
 		}
-		else if (std::wstring(l_document.name()) == L"Commands")
-		{
-			auto l_ChildNode = l_document.first_child();
+		//else if (std::wstring(l_document.name()) == L"Commands")
+		//{
+		//	auto l_ChildNode = l_document.first_child();
 
-			xml_document l_xmlResultDoc;
+		//	xml_document l_xmlResultDoc;
 
-			auto l_declNode = l_xmlResultDoc.append_child(node_declaration);
+		//	auto l_declNode = l_xmlResultDoc.append_child(node_declaration);
 
-			l_declNode.append_attribute(L"version") = L"1.0";
+		//	l_declNode.append_attribute(L"version") = L"1.0";
 
-			xml_node l_commentNode = l_xmlResultDoc.append_child(node_comment);
+		//	xml_node l_commentNode = l_xmlResultDoc.append_child(node_comment);
 
-			l_commentNode.set_value(L"XML Document of results");
+		//	l_commentNode.set_value(L"XML Document of results");
 
-			auto l_RootXMLElement = l_xmlResultDoc.append_child(L"Results");
+		//	auto l_RootXMLElement = l_xmlResultDoc.append_child(L"Results");
 
-			while (!l_ChildNode.empty())
-			{
-				auto l_resultXMLElement = l_RootXMLElement.append_child(L"Result");
+		//	while (!l_ChildNode.empty())
+		//	{
+		//		auto l_resultXMLElement = l_RootXMLElement.append_child(L"Result");
 
-				l_resultXMLElement.append_attribute(L"Command").set_value(l_ChildNode.name());
+		//		l_resultXMLElement.append_attribute(L"Command").set_value(l_ChildNode.name());
 
-				if (std::wstring(l_ChildNode.name()) == L"GetRenderingTexture")
-				{
-					bool l_isValid = false;
+		//		if (std::wstring(l_ChildNode.name()) == L"GetRenderingTexture")
+		//		{
+		//			bool l_isValid = false;
 
-					if (m_VideoRenderer != nullptr)
-					{
-						CComPtr<IUnknown> l_UnkRenderingTexture;
+		//			if (m_VideoRenderer != nullptr)
+		//			{
+		//				CComPtr<IUnknown> l_UnkRenderingTexture;
 
-						auto l_result = m_VideoRenderer->getRenderingTexture(&l_UnkRenderingTexture);
+		//				auto l_result = m_VideoRenderer->getRenderingTexture(&l_UnkRenderingTexture);
 
-						if (SUCCEEDED(l_result) && l_UnkRenderingTexture)
-						{
-							wchar_t lvalue[256];
+		//				if (SUCCEEDED(l_result) && l_UnkRenderingTexture)
+		//				{
+		//					wchar_t lvalue[256];
 
-							_itow_s((DWORD)l_UnkRenderingTexture.p, lvalue, 10);
+		//					_itow_s((DWORD)l_UnkRenderingTexture.p, lvalue, 10);
 
-							l_resultXMLElement.append_attribute(L"Value").set_value(lvalue);
+		//					l_resultXMLElement.append_attribute(L"Value").set_value(lvalue);
 
-							l_isValid = true;
-						}
-					}
+		//					l_isValid = true;
+		//				}
+		//			}
 
-					l_resultXMLElement.append_attribute(L"State").set_value(l_isValid);
-				}
+		//			l_resultXMLElement.append_attribute(L"State").set_value(l_isValid);
+		//		}
 
-				l_ChildNode = l_ChildNode.next_sibling();
-			}
+		//		l_ChildNode = l_ChildNode.next_sibling();
+		//	}
 
-			if (a_result != nullptr)
-			{
-				std::wstringstream l_wstringstream;
+		//	if (a_result != nullptr)
+		//	{
+		//		std::wstringstream l_wstringstream;
 
-				l_xmlResultDoc.print(l_wstringstream);
+		//		l_xmlResultDoc.print(l_wstringstream);
 
-				auto l_XMLDocumentString = l_wstringstream.str();
+		//		auto l_XMLDocumentString = l_wstringstream.str();
 
-				*a_result = new wchar_t[l_XMLDocumentString.size() + 1];
+		//		*a_result = new wchar_t[l_XMLDocumentString.size() + 1];
 
-				wcscpy_s(*a_result, l_XMLDocumentString.size() + 1, l_XMLDocumentString.c_str());
-			}
-		}
+		//		wcscpy_s(*a_result, l_XMLDocumentString.size() + 1, l_XMLDocumentString.c_str());
+		//	}
+		//}
 	}
 }
 
@@ -332,7 +299,7 @@ int innerGSinit()
 #ifdef ENABLE_OPENCL
     GSRendererCL::InitVectors();
 #endif
-    GSRendererSW::InitVectors();
+    //GSRendererSW::InitVectors();
     GSVector4i::InitVectors();
     GSVector4::InitVectors();
 #if _M_SSE >= 0x500
@@ -343,16 +310,16 @@ int innerGSinit()
 #endif
     GSVertexTrace::InitVectors();
 
-    if (g_const == nullptr)
-        return -1;
-    else
-        g_const->Init();
+    //if (g_const == nullptr)
+    //    return -1;
+    //else
+    //    g_const->Init();
 
 #ifdef _WIN32
 
     //s_hr = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
-    if (!GSDeviceDX::LoadD3DCompiler()) {
+    if (!GSDeviceProxy::LoadD3DCompiler()) {
         return -1;
     }
 #endif
@@ -366,22 +333,22 @@ int innerGSshutdown()
 
 #ifdef _WIN32
 	
-    GSDeviceDX::FreeD3DCompiler();
+    GSDeviceProxy::FreeD3DCompiler();
 
 #endif
 
 	return -1;
 }
 
-int VideoRenderer::init(void* sharedhandle, void* updateCallback)
+int VideoRenderer::init(void *sharedhandle, void *capturehandle)
 {
     innerGSinit();
 
     std::unique_ptr<GSDeviceProxy> l_Device;
 
-	GSRendererType VideoRenderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_HW : GSRendererType::DX9_HW;
+	GSRendererType VideoRenderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_HW : GSRendererType::Null;
 
-	GSDeviceDX::LoadD3DCompiler();
+	GSDeviceProxy::LoadD3DCompiler();
 	
 	try
 	{
@@ -392,9 +359,6 @@ int VideoRenderer::init(void* sharedhandle, void* updateCallback)
 		case GSRendererType::DX1011_OpenCL:
             l_Device = std::make_unique<GSDeviceProxy>();
 			break;			
-		case GSRendererType::DX9_HW:
-		case GSRendererType::DX9_SW:
-		case GSRendererType::DX9_OpenCL:
 		default:
 			break;
 		}
@@ -412,10 +376,8 @@ int VideoRenderer::init(void* sharedhandle, void* updateCallback)
                     m_VideoRenderer = std::make_unique<GSRendererProxy>();
 				break;
 			case GSRendererType::OGL_HW:
-			case GSRendererType::DX9_SW:
 			case GSRendererType::DX1011_SW:
 			case GSRendererType::OGL_SW:
-			case GSRendererType::DX9_OpenCL:
 			case GSRendererType::DX1011_OpenCL:
 			case GSRendererType::OGL_OpenCL:
 			default:
@@ -445,7 +407,7 @@ int VideoRenderer::init(void* sharedhandle, void* updateCallback)
 	
 	m_VideoRenderer->SetAspectRatio(m_AspectRatio);
 		
-	if (!m_VideoRenderer->CreateDevice(l_Device.get(), sharedhandle, updateCallback))
+	if (!m_VideoRenderer->CreateDevice(l_Device.get(), sharedhandle, capturehandle))
 	{
 		// This probably means the user has DX11 configured with a video card that is only DX9
 		// compliant.  Cound mean drivr issues of some sort also, but to be sure, that's the most
@@ -459,6 +421,8 @@ int VideoRenderer::init(void* sharedhandle, void* updateCallback)
     m_VideoRenderer->setIsWired(m_is_wired);
 
     m_VideoRenderer->setIsTessellated(m_is_tessellated);
+
+    m_VideoRenderer->setFXAA(m_is_fxaa);	
 
 	l_Device.release();
 	

@@ -58,6 +58,8 @@
     <sys:String x:Key="MediaOutputTypeStreamNotSupportingTitle">Freeware is not supported</sys:String>
     <sys:String x:Key="TouchPadScaleTitle">Touch pad scale:</sys:String>
     <sys:String x:Key="RenderingSchemaTitle">Rendering schema:</sys:String>
-
-
+    <sys:String x:Key="IsFXAATitle">Enable FXAA</sys:String>
+    <sys:String x:Key="SavingTitle">Saving...</sys:String>
+    <sys:String x:Key="BiosTipTitle">Bios is not accessible, try download by link:</sys:String>
+    <sys:String x:Key="IsoTipTitle">Iso disk is not accessible, try download by links:</sys:String>
 </ResourceDictionary>

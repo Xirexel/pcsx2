@@ -20,7 +20,15 @@
 
 #include "stdafx.h"
 
-#include "GSOsdManager.h"
+#include "Renderers\Common\GSOsdManager.h"
+
+
+PFNGLDEBUGMESSAGECALLBACKPROC glDebugMessageCallback = NULL;
+PFNGLGETDEBUGMESSAGELOGPROC glGetDebugMessageLog = NULL;
+PFNGLPUSHDEBUGGROUPPROC glPushDebugGroup = NULL;
+PFNGLPOPDEBUGGROUPPROC glPopDebugGroup = NULL;
+PFNGLDEBUGMESSAGEINSERTPROC glDebugMessageInsert = NULL;
+
 
 FT_Error FT_New_Face(FT_Library   library,
 	const char*  filepathname,

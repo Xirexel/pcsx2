@@ -231,15 +231,12 @@ enum class GS_MIN_FILTER : uint8_t
 enum class GSRendererType : int8_t
 {
 	Undefined = -1,
-	DX9_HW,
-	DX9_SW,
 	DX1011_HW = 3,
 	DX1011_SW,
 	Null = 11,
 	OGL_HW,
 	OGL_SW,
-	DX9_OpenCL,
-	DX1011_OpenCL,
+	DX1011_OpenCL = 15,
 	OGL_OpenCL = 17,
 
 #ifdef _WIN32

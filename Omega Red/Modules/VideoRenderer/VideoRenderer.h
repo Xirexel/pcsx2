@@ -13,6 +13,8 @@ class VideoRenderer
 
     BOOL m_is_tessellated;
 
+    BOOL m_is_fxaa;
+
 	uint8* m_BaseMem;
 
 	Action m_Irq;
@@ -21,7 +23,7 @@ class VideoRenderer
 
 	std::unique_ptr<GSRendererProxy> m_VideoRenderer;
 
-	int init(void* sharedhandle, void* updateCallback);
+	int init(void *sharedhandle, void *capturehandle);
 
 	void shutdown();
 	

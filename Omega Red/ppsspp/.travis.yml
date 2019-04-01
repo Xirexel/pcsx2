@@ -1,0 +1,96 @@
+# https://travis-ci.org
+
+sudo: required
+
+language: cpp
+
+dist: trusty
+
+addons:
+  apt:
+    packages:
+      - build-essential
+      - libgl1-mesa-dev
+      - libglu1-mesa-dev
+      - cmake
+      - aria2
+      - ant
+      - lib32stdc++6
+      - lib32z1
+      - lib32z1-dev
+      - lib32bz2-1.0
+
+cache:
+  - apt
+  - ccache
+
+# By encrypting the channel name, we disable notifications from forks by default.
+# It's not actually a big secret.
+notifications:
+  irc:
+    channels:
+      - secure: "anmDihJ1uPnDSNDsEe3WQ5o4BsPApJbw6NupsAebt6kBxJm7WYKrSyUVmu/9GXgFvy756HBDVA6eikPtcak1+jLFfyOZqGw3ei69ZNnA+R7aoAzfiXilFqf53Yy2tzydEnF2nBYhJjQZgMBZUVWUD6pdKSXtVg/VZRhVqiDlb+A="
+    on_success: change
+    on_failure: always
+    skip_join: true
+    template:
+      - "%{repository_slug}:%{branch} - %{message} %{build_url}"
+
+matrix:
+  include:
+    - os: linux
+      compiler: "gcc"
+      env: PPSSPP_BUILD_TYPE=Linux
+    - os: linux
+      compiler: "gcc"
+      env: PPSSPP_BUILD_TYPE=Android
+           APP_ABI=arm64-v8a
+    - os: linux
+      compiler: "gcc"
+      env: PPSSPP_BUILD_TYPE=Android
+           APP_ABI=armeabi-v7a
+    - os: linux
+      compiler: "gcc"
+      env: PPSSPP_BUILD_TYPE=Android
+           APP_ABI=x86
+    - os: linux
+      compiler: "gcc"
+      env: PPSSPP_BUILD_TYPE=Android
+           APP_ABI=x86_64
+    - os: linux
+      compiler: "clang linux"
+      env: PPSSPP_BUILD_TYPE=Linux
+    - os: linux
+      compiler: "gcc"
+      env: PPSSPP_BUILD_TYPE=Linux
+           QT=TRUE
+    - os: linux
+      compiler: "gcc"
+      env: PPSSPP_BUILD_TYPE=Linux
+           LIBRETRO=TRUE
+    - os: linux
+      compiler: "clang"
+      env: PPSSPP_BUILD_TYPE=Linux
+           LIBRETRO=TRUE
+    - os: osx
+      osx_image: xcode8
+      compiler: "clang macos"
+      env: PPSSPP_BUILD_TYPE=macOS
+           CMAKE=TRUE
+    - os: osx
+      osx_image: xcode8
+      compiler: "clang ios"
+      env: PPSSPP_BUILD_TYPE=iOS
+           CMAKE=TRUE
+
+before_install:
+  - bash .travis.sh travis_before_install
+
+install:
+  - bash .travis.sh travis_install
+
+script:
+  - bash .travis.sh travis_script
+
+after_success:
+  - bash .travis.sh travis_after_success

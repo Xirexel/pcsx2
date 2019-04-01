@@ -262,5 +262,17 @@ namespace Omega_Red.Properties {
                 this["OffScreenStreamerPort"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool IsFXAA {
+            get {
+                return ((bool)(this["IsFXAA"]));
+            }
+            set {
+                this["IsFXAA"] = value;
+            }
+        }
     }
 }

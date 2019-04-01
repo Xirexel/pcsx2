@@ -1,0 +1,106 @@
+# For MSVC
+*.lastcodeanalysissucceeded
+*.pdb
+*.ilk
+*.obj
+*.pch
+*.log
+*.dll
+*.rar
+*.exe
+*.map
+*.lib
+*.user
+*.sdf
+*.ncb
+*.opensdf
+*.suo
+*.aps
+*.exp
+*.qdact
+!ffmpeg/Windows/x86/lib/*.lib
+!ffmpeg/Windows/x86/bin/*.dll
+!headless/*.lib
+controls.ini
+Debug
+Release
+Windows/.vs
+Windows/x64
+Windows/ipch
+Windows/bin-release
+Windows/win-version.h
+ui_atlas.zim.png
+ui_atlas_high.zim.png
+android/assets
+ext/_Output
+android/lint.xml
+PPSSPPWindows64.exe.manifest
+PPSSPPWindows.exe.manifest
+PPSSPPDebug64.exe.manifest
+PPSSPPDebug.exe.manifest
+assets/flash0
+UWP/icph
+UWP/.vs
+.vs
+
+# For Mac
+.DS_Store
+
+# For ppsspp.ini, etc.
+ppsspp.ini
+PPSSPPControls.dat
+
+# Qt Linguist files
+*.qm
+
+# Gradle/Android Studio
+.gradle
+.idea
+*.iml
+build
+build.ios
+versionname.txt
+versioncode.txt
+build*/
+
+# Temp file used by jenkins windows build (TODO: remove)
+desc.txt
+
+Logs
+Memstick
+memstick
+Cheats
+
+/git-version.cpp
+
+.pspsh.hist
+__testoutput.txt
+__testerror.txt
+__testfinish.txt
+__testfailure.bmp
+GameLogNotes.txt
+screenshots
+android/ui_atlas.zim
+android/assets/lang
+android/assets/flash0
+ppge_atlas.zim.png
+local.properties
+
+# For vim
+*.swp
+tags
+
+# Other VCS
+.bzr/
+.bzrignore
+
+# Debian build
+debian/files
+debian/ppsspp.substvars
+debian/ppsspp/
+
+# Libretro build
+*.o
+
+# YouCompleteMe file
+.ycm_extra_conf.pyc

@@ -227,6 +227,45 @@ namespace Omega_Red.Tools
             }
         }
 
+        public void setIsFXAA(bool a_value)
+        {
+            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.VideoRenderer);
+
+            XmlDocument l_XmlDocument = new XmlDocument();
+
+            XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+
+            l_XmlDocument.AppendChild(ldocNode);
+
+            XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+
+            XmlNode l_PropertyNode = l_XmlDocument.CreateElement("IsFXAA");
+
+
+
+            var l_Atrr = l_XmlDocument.CreateAttribute("Value");
+
+            l_Atrr.Value = (a_value ? 1 : 0).ToString();
+
+            l_PropertyNode.Attributes.Append(l_Atrr);
+
+
+
+            rootNode.AppendChild(l_PropertyNode);
+
+            l_XmlDocument.AppendChild(rootNode);
+
+            using (var stringWriter = new StringWriter())
+            using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+            {
+                l_XmlDocument.WriteTo(xmlTextWriter);
+
+                xmlTextWriter.Flush();
+
+                l_Module.execute(stringWriter.GetStringBuilder().ToString());
+            }
+        }
+        
         public void setVideoAspectRatio(AspectRatio a_AspectRatio)
         {
             var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.VideoRenderer);
@@ -679,82 +718,6 @@ namespace Omega_Red.Tools
             return true;
         }
         
-        public static string getRenderingTexture()
-        {
-            string l_result = "";
-
-            do
-            {
-                var l_module = ModuleManager.Instance.getModule(Omega_Red.Tools.ModuleManager.ModuleType.VideoRenderer);
-
-                string l_commandResult = "";
-
-                if (l_module != null)
-                {
-                    XmlDocument l_XmlDocument = new XmlDocument();
-
-                    XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
-
-                    l_XmlDocument.AppendChild(ldocNode);
-
-                    XmlNode rootNode = l_XmlDocument.CreateElement("Commands");
-
-
-                    XmlNode l_PropertyNode = l_XmlDocument.CreateElement("GetRenderingTexture");
-                    
-                    rootNode.AppendChild(l_PropertyNode);
-
-                    l_XmlDocument.AppendChild(rootNode);
-
-                    using (var stringWriter = new StringWriter())
-                    using (var xmlTextWriter = XmlWriter.Create(stringWriter))
-                    {
-                        l_XmlDocument.WriteTo(xmlTextWriter);
-
-                        xmlTextWriter.Flush();
-
-                        l_module.execute(stringWriter.GetStringBuilder().ToString(), out l_commandResult);
-                    }
-
-                }
-
-                if (!string.IsNullOrEmpty(l_commandResult))
-                {
-                    XmlDocument l_XmlDocument = new XmlDocument();
-
-                    l_XmlDocument.LoadXml(l_commandResult);
-
-                    if (l_XmlDocument.DocumentElement != null)
-                    {
-
-                        var l_bResult = false;
-
-                        var l_CheckNode = l_XmlDocument.DocumentElement.SelectSingleNode("Result[@Command='GetRenderingTexture']");
-
-                        if (l_CheckNode != null)
-                        {
-                            var l_StateNode = l_CheckNode.SelectSingleNode("@State");
-
-                            var l_Value = l_CheckNode.SelectSingleNode("@Value");
-
-                            if (l_StateNode != null)
-                            {
-                                Boolean.TryParse(l_StateNode.Value, out l_bResult);
-                            }
-
-                            if (l_Value != null)
-                            {
-                                l_result = l_Value.Value;
-                            }
-                        }
-                    }
-                }
-
-            } while (false);
-
-            return l_result;
-        }
-
         public static string getAudioCaptureProcessor()
         {
             string l_result = "";
@@ -842,9 +805,9 @@ namespace Omega_Red.Tools
 
             a_PropertyNode.Attributes.Append(l_Atrr);
 
-            l_Atrr = a_XmlDocument.CreateAttribute("UpdateCallback");
+            l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
 
-            l_Atrr.Value = Marshal.GetFunctionPointerForDelegate(Omega_Red.Capture.MediaCapture.Instance.UpdateCallbackDelegate).ToString();
+            l_Atrr.Value = Capture.CaptureTargetTexture.Instance.CaptureHandler.ToString();
 
             a_PropertyNode.Attributes.Append(l_Atrr);
         }
@@ -1029,7 +992,7 @@ namespace Omega_Red.Tools
 
             var l_Atrr = l_XmlDocument.CreateAttribute("Value");
 
-            l_Atrr.Value = a_value.ToString();
+            l_Atrr.Value = String.Format("{0:0.##}", a_value * 100.0);
 
             l_PropertyNode.Attributes.Append(l_Atrr);
 

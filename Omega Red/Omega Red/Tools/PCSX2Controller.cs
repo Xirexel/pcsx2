@@ -27,6 +27,7 @@ using System.Windows.Threading;
 using System.Threading;
 using Omega_Red.Managers;
 using Omega_Red.Properties;
+using System.IO;
 
 namespace Omega_Red.Tools
 {    
@@ -208,10 +209,11 @@ namespace Omega_Red.Tools
         public void updateInitilize()
         {
             if (m_Status != StatusEnum.NoneInitilized &&
-                m_Status != StatusEnum.Initilized)
+                m_Status != StatusEnum.Initilized &&
+                m_Status != StatusEnum.Stopped)
                 return;
 
-            if (m_BiosInfo != null && m_IsoInfo != null)
+            if ((m_BiosInfo != null && m_IsoInfo != null) || (m_IsoInfo != null && m_IsoInfo.GameType == GameType.PSP))
             {
                 setStatus(StatusEnum.Initilized);
             }
@@ -261,11 +263,35 @@ namespace Omega_Red.Tools
         {
             if (m_Status == StatusEnum.Started)
             {
-                LockScreenManager.Instance.show();
-                PlayPause();
-                SaveStateManager.Instance.quickSave(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
-                PlayPause();
-                LockScreenManager.Instance.hide();
+                LockScreenManager.Instance.showSaving();
+
+                if (m_IsoInfo.GameType == GameType.PSP)
+                {            
+                    ThreadStart innerCallQuickSaveStart = new ThreadStart(()=> {  
+                        PlayPause();
+                        SaveStateManager.Instance.quickSavePPSSPP(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
+                        PlayPause();
+                        LockScreenManager.Instance.hide();
+                    });
+
+                    Thread innerCallQuickSaveStartThread = new Thread(innerCallQuickSaveStart);
+
+                    innerCallQuickSaveStartThread.Start();
+                }
+                else
+                {
+
+                    ThreadStart innerCallQuickSaveStart = new ThreadStart(()=> {  
+                        PlayPause();
+                        SaveStateManager.Instance.quickSave(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
+                        PlayPause();
+                        LockScreenManager.Instance.hide();
+                    });
+
+                    Thread innerCallQuickSaveStartThread = new Thread(innerCallQuickSaveStart);
+
+                    innerCallQuickSaveStartThread.Start();
+                }
             }
         }
 
@@ -273,35 +299,51 @@ namespace Omega_Red.Tools
         {
             var lSaveState = SaveStateManager.Instance.quickLoad();
 
-            if(lSaveState != null)
+            if (lSaveState != null)
                 PCSX2Controller.Instance.loadState(lSaveState);
         }
 
         public void saveState(SaveStateInfo a_SaveStateInfo)
         {
-            if (m_Status == StatusEnum.Started)
-                PauseInner();
-
-            a_SaveStateInfo.Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
-
-            a_SaveStateInfo.Duration = mGameSessionDuration.ToString(@"dd\.hh\:mm\:ss");
-
-            a_SaveStateInfo.DurationNative = mGameSessionDuration;
-
-            switch (m_Status)
+            if (m_Status == StatusEnum.Paused)
             {
-                case StatusEnum.Started:
-                case StatusEnum.Paused:
-                    SaveStateManager.Instance.saveState(a_SaveStateInfo, a_SaveStateInfo.Date, a_SaveStateInfo.DurationNative.TotalSeconds);
-                    break;
-                case StatusEnum.Stopped:
-                case StatusEnum.Initilized:
-                default:
-                    break;
-            }
+                a_SaveStateInfo.Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
 
-            if (m_Status == StatusEnum.Started)
-                StartInner();
+                a_SaveStateInfo.Duration = mGameSessionDuration.ToString(@"dd\.hh\:mm\:ss");
+
+                a_SaveStateInfo.DurationNative = mGameSessionDuration;
+
+                LockScreenManager.Instance.showSaving();
+
+                if (m_IsoInfo.GameType == GameType.PSP)
+                {
+
+                    ThreadStart innerCallSaveStart = new ThreadStart(() =>
+                    {
+                        SaveStateManager.Instance.savePPSSPPState(a_SaveStateInfo, a_SaveStateInfo.Date, a_SaveStateInfo.DurationNative.TotalSeconds);
+
+                        LockScreenManager.Instance.hide();
+                    });
+
+                    Thread innerCallSaveStartThread = new Thread(innerCallSaveStart);
+
+                    innerCallSaveStartThread.Start();
+                }
+                else
+                {
+                    ThreadStart innerCallSaveStart = new ThreadStart(() =>
+                    {
+
+                        SaveStateManager.Instance.saveState(a_SaveStateInfo, a_SaveStateInfo.Date, a_SaveStateInfo.DurationNative.TotalSeconds);
+
+                        LockScreenManager.Instance.hide();
+                    });
+
+                    Thread innerCallSaveStartThread = new Thread(innerCallSaveStart);
+
+                    innerCallSaveStartThread.Start();
+                }
+            }
         }
 
         private bool innerCall()
@@ -322,6 +364,8 @@ namespace Omega_Red.Tools
         }
                 
         SaveStateInfo m_SaveStateInfo = null;
+
+        string m_tempFile = "";
         
         private void innerCallLoadState()
         {
@@ -371,32 +415,72 @@ namespace Omega_Red.Tools
         {
             m_SaveStateInfo = a_SaveStateInfo;
 
-            LockScreenManager.Instance.showStarting();
-            
-            if (m_Status == StatusEnum.Initilized ||
-                m_Status == StatusEnum.Stopped ||
-                m_Status == StatusEnum.Paused)
+            m_tempFile = a_SaveStateInfo.FilePath + "tempstate";
+
+            switch (a_SaveStateInfo.Type)
             {
-                m_ActionQueue.Enqueue(() => {
+                case SaveStateType.PCSX2:
+                    {
+                        LockScreenManager.Instance.showStarting();
 
-                    ThreadStart innerCallLoadStateStart = new ThreadStart(innerCallLoadState);
+                        if (m_Status == StatusEnum.Initilized ||
+                            m_Status == StatusEnum.Stopped ||
+                            m_Status == StatusEnum.Paused)
+                        {
+                            m_ActionQueue.Enqueue(() => {
 
-                    Thread innerCallLoadStateThread = new Thread(innerCallLoadStateStart);
+                                ThreadStart innerCallLoadStateStart = new ThreadStart(innerCallLoadState);
 
-                    innerCallLoadStateThread.Start();
+                                Thread innerCallLoadStateThread = new Thread(innerCallLoadStateStart);
 
-                });
-                
-                PlayPause();
+                                innerCallLoadStateThread.Start();
 
-            }
-            else
-            {
-                ThreadStart innerCallLoadStateStart = new ThreadStart(innerCallLoadState);
+                            });
 
-                Thread innerCallLoadStateThread = new Thread(innerCallLoadStateStart);
+                            PlayPause();
 
-                innerCallLoadStateThread.Start();
+                        }
+                        else
+                        {
+                            ThreadStart innerCallLoadStateStart = new ThreadStart(innerCallLoadState);
+
+                            Thread innerCallLoadStateThread = new Thread(innerCallLoadStateStart);
+
+                            innerCallLoadStateThread.Start();
+                        }
+                    }
+                    break;
+                case SaveStateType.PPSSPP:
+                    {
+                        LockScreenManager.Instance.showStarting();
+
+                        SaveStateManager.Instance.loadPPSSPPState(m_SaveStateInfo, m_tempFile);
+
+                        if (m_Status == StatusEnum.Paused)
+                        {
+                            PlayPause();
+
+                            PPSSPPControl.Instance.loadState(m_tempFile,
+                            () => {
+
+                                Thread.Sleep(500);
+
+                                if (File.Exists(m_tempFile))
+                                    File.Delete(m_tempFile);
+
+                                LockScreenManager.Instance.hide();
+
+                                PPSSPPControl.Instance.resumeGame();
+                            });
+                        }
+                        else
+                        {                            
+                            PlayPause();
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
 
             mGameSessionDuration = m_SaveStateInfo.DurationNative;
@@ -435,7 +519,14 @@ namespace Omega_Red.Tools
 
             if (m_Status == StatusEnum.Paused)
             {
-                SaveStateManager.Instance.autoSave(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
+                if (m_IsoInfo.GameType == GameType.PSP)
+                {
+                    SaveStateManager.Instance.autoPPSSPPSave(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
+                }
+                else
+                {
+                    SaveStateManager.Instance.autoSave(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
+                }
             }
 
             switch (m_Status)
@@ -457,9 +548,10 @@ namespace Omega_Red.Tools
         
         public void Stop(bool aBlock = false)
         {
-            ModuleControl.Instance.setMemoryCard();
-
-            //MediaCapture.Instance.stop();
+            if (m_IsoInfo != null && m_IsoInfo.GameType != GameType.PSP)
+            {
+                ModuleControl.Instance.setMemoryCard();
+            }
 
             ThreadStart callStopStart = new ThreadStart(callStop);
 
@@ -469,6 +561,7 @@ namespace Omega_Red.Tools
 
             if (aBlock)
                 mBlockEvent.WaitOne();
+
         }
 
         private void Bind()
@@ -551,42 +644,113 @@ namespace Omega_Red.Tools
 
         private void StartInner()
         {
-            init();
-
             if(m_IsoInfo != null)
             {
-                var l_wideScreen = Omega_Red.Tools.Converters.WideScreenConverter.IsWideScreen(
-                    m_IsoInfo.ElfCRC.ToString("x")) && !Settings.Default.DisableWideScreen;
+                mCurrentDateTime = DateTime.Now;
 
-                ModuleControl.Instance.setVideoAspectRatio(l_wideScreen ? AspectRatio.Ratio_16_9 : AspectRatio.Ratio_4_3);
+                if (m_IsoInfo.GameType == GameType.PSP)
+                {
+                    if(m_Status == StatusEnum.Paused ||
+                        m_Status == StatusEnum.Started)
+                    {
+                        PPSSPPControl.Instance.resumeGame();
+
+                        LockScreenManager.Instance.hide();
+                    }
+                    else
+                    {
+                        PPSSPPControl.Instance.Launch(
+                            m_IsoInfo.FilePath + "|--state=" + m_tempFile,
+                            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\PCSX2\",
+                        ()=> {
+                            LockScreenManager.Instance.hide();
+
+                            Thread.Sleep(2000);
+
+                            if (File.Exists(m_tempFile))
+                                File.Delete(m_tempFile);
+
+                            m_tempFile = "";
+                        });
+                    }
+                }
+                else
+                {
+                    init();
+
+                    var l_wideScreen = Omega_Red.Tools.Converters.WideScreenConverter.IsWideScreen(
+                        m_IsoInfo.ElfCRC.ToString("x")) && !Settings.Default.DisableWideScreen;
+
+                    ModuleControl.Instance.setVideoAspectRatio(l_wideScreen ? AspectRatio.Ratio_16_9 : AspectRatio.Ratio_4_3);
+                    
+                    if (m_reloadSettings)
+                    {
+                        reloadSettings();
+
+                        m_reloadSettings = false;
+                    }
+
+                    PCSX2LibNative.Instance.SysThreadBase_ResumeFunc();
+                }
             }
-
-            if (m_reloadSettings)
-            {
-                reloadSettings();
-
-                m_reloadSettings = false;
-            }
-
-            mCurrentDateTime = DateTime.Now;
-            
-            PCSX2LibNative.Instance.SysThreadBase_ResumeFunc();
         }
 
         private void PauseInner()
         {
-            mGameSessionDuration += DateTime.Now - mCurrentDateTime;
+            if (m_IsoInfo != null)
+            {
 
-            PCSX2LibNative.Instance.SysThreadBase_SuspendFunc();
+                if (m_IsoInfo.GameType == GameType.PSP)
+                {
+                    PPSSPPControl.Instance.pauseGame();
+                }
+                else
+                {
+                    PCSX2LibNative.Instance.SysThreadBase_SuspendFunc();
+                }
+
+                mGameSessionDuration += DateTime.Now - mCurrentDateTime;
+            }
         }
 
         private void StopInner()
         {
-            m_reloadSettings = true;
 
-            PCSX2LibNative.Instance.SysThreadBase_ResetFunc();
+            if (m_IsoInfo != null)
+            {
 
-            mGameSessionDuration = new TimeSpan();
+                if (m_IsoInfo.GameType == GameType.PSP)
+                {
+                    PPSSPPControl.Instance.close();
+                }
+                else
+                {
+                    PCSX2LibNative.Instance.SysThreadBase_ResetFunc();
+                }
+
+                m_reloadSettings = true;
+
+                mGameSessionDuration = new TimeSpan();
+            }
+        }
+
+        public string getAudioCaptureProcessor()
+        {
+            string l_result = "";
+
+            if (m_IsoInfo != null)
+            {
+                if (m_IsoInfo.GameType == GameType.PSP)
+                {
+                    l_result = PPSSPPControl.Instance.getAudioCaptureProcessor();
+                }
+                else
+                {
+                    l_result = Omega_Red.Tools.ModuleControl.getAudioCaptureProcessor();
+                };
+            }
+
+            return l_result;
         }
     }
 }

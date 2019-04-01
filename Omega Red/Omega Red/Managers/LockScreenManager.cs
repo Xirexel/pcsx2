@@ -38,12 +38,13 @@ namespace Omega_Red.Managers
             None,
             Show,
             Starting,
+            Saving,
             DisplayImage,
             DisplayVideo,
             DisplayAbout
         }
 
-        private Image mIconImage = new Image();
+        private Image mIconImage = null;
 
         private static LockScreenManager m_Instance = null;
 
@@ -51,22 +52,28 @@ namespace Omega_Red.Managers
 
         private LockScreenManager()
         {
+            try
+            {
+                mIconImage = new Image();
 
-            BitmapImage lBitmapImage = new BitmapImage();
-            lBitmapImage.BeginInit();
-            lBitmapImage.UriSource = new Uri("pack://application:,,,/Omega Red;component/Assests/Images/OmegaRed.gif", UriKind.Absolute);
-            lBitmapImage.EndInit();
+                BitmapImage lBitmapImage = new BitmapImage();
+                lBitmapImage.BeginInit();
+                lBitmapImage.UriSource = new Uri("pack://application:,,,/Omega Red;component/Assests/Images/OmegaRed.gif", UriKind.Absolute);
+                lBitmapImage.EndInit();
 
-            WpfAnimatedGif.ImageBehavior.SetAnimatedSource(mIconImage, lBitmapImage);
+                WpfAnimatedGif.ImageBehavior.SetAnimatedSource(mIconImage, lBitmapImage);
 
-            if (mIconImage != null)
-                mIconImage.Loaded += (object sender, RoutedEventArgs e) =>
-                {
-                    var l_Controller = WpfAnimatedGif.ImageBehavior.GetAnimationController(mIconImage);
+                if (mIconImage != null)
+                    mIconImage.Loaded += (object sender, RoutedEventArgs e) =>
+                    {
+                        var l_Controller = WpfAnimatedGif.ImageBehavior.GetAnimationController(mIconImage);
 
-                    if (l_Controller != null)
-                        l_Controller.Pause();
-                };
+                        if (l_Controller != null)
+                            l_Controller.Pause();
+                    };
+            }
+            catch (Exception)
+            {}
 
         }
 
@@ -98,6 +105,23 @@ namespace Omega_Red.Managers
 
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate()
             {
+                StatusEvent(Status.Show);
+
+                WpfAnimatedGif.ImageBehavior.GetAnimationController(mIconImage).Play();
+            });
+        }
+
+        public void showSaving()
+        {
+            if (StatusEvent == null)
+                return;
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                var l_SavingTitle = App.Current.Resources["SavingTitle"];
+
+                displayMessage(l_SavingTitle == null ? "" : l_SavingTitle as string);
+
                 StatusEvent(Status.Show);
 
                 WpfAnimatedGif.ImageBehavior.GetAnimationController(mIconImage).Play();

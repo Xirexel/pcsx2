@@ -22,23 +22,27 @@
 #include "stdafx.h"
 #include "GSdx.h"
 #include "GSUtil.h"
-#include "GSRendererSW.h"
-#include "GSRendererNull.h"
-#include "GSDeviceNull.h"
-#include "GSDeviceOGL.h"
-#include "GSRendererOGL.h"
-#include "GSRendererCL.h"
+
+namespace GLLoader
+{
+bool s_first_load = true;
+
+bool amd_legacy_buggy_driver = false;
+bool vendor_id_amd = false;
+bool vendor_id_nvidia = false;
+bool vendor_id_intel = false;
+bool mesa_driver = false;
+bool in_replayer = false;
+
+}
+
+#include "Renderers/SW/GSRendererSW.h"
 #include "GSLzma.h"
+#include "GSDeviceProxy.h"
+
+
 
 #ifdef _WIN32
-
-#include "GSRendererDX9.h"
-#include "GSRendererDX11.h"
-#include "GSDevice9.h"
-#include "GSDevice11.h"
-#include "GSWndDX.h"
-#include "GSWndWGL.h"
-#include "GSSettingsDlg.h"
 
 static HRESULT s_hr = E_FAIL;
 
@@ -133,7 +137,7 @@ EXPORT_C_(int) GSinit()
 #ifdef ENABLE_OPENCL
 	GSRendererCL::InitVectors();
 #endif
-	GSRendererSW::InitVectors();
+	//GSRendererSW::InitVectors();
 	GSVector4i::InitVectors();
 	GSVector4::InitVectors();
 #if _M_SSE >= 0x500
@@ -144,16 +148,16 @@ EXPORT_C_(int) GSinit()
 #endif
 	GSVertexTrace::InitVectors();
 
-	if (g_const == nullptr)
-		return -1;
-	else
-		g_const->Init();
+	//if (g_const == nullptr)
+	//	return -1;
+	//else
+	//	g_const->Init();
 
 #ifdef _WIN32
 
 	s_hr = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
-	if (!GSDeviceDX::LoadD3DCompiler())
+	if (!GSDeviceProxy::LoadD3DCompiler())
 	{
 		return -1;
 	}
@@ -180,7 +184,7 @@ EXPORT_C GSshutdown()
 		s_hr = E_FAIL;
 	}
 
-	GSDeviceDX::FreeD3DCompiler();
+	GSDeviceProxy::FreeD3DCompiler();
 
 #endif
 }
@@ -270,12 +274,12 @@ static int _GSopen(void** dsp, const char* title, GSRendererType renderer, int t
 #if defined(__unix__)
 					wnds.push_back(std::make_shared<GSWndOGL>());
 #else
-					wnds.push_back(std::make_shared<GSWndWGL>());
+					//wnds.push_back(std::make_shared<GSWndWGL>());
 #endif
 					break;
 				default:
 #ifdef _WIN32
-					wnds.push_back(std::make_shared<GSWndDX>());
+					//wnds.push_back(std::make_shared<GSWndDX>());
 #endif
 					break;
 			}
@@ -329,7 +333,6 @@ static int _GSopen(void** dsp, const char* title, GSRendererType renderer, int t
 
 		switch (renderer)
 		{
-		case GSRendererType::DX9_SW:
 		case GSRendererType::DX1011_SW:
 		case GSRendererType::OGL_SW:
 			renderer_mode = "(Software renderer)";
@@ -337,7 +340,6 @@ static int _GSopen(void** dsp, const char* title, GSRendererType renderer, int t
 		case GSRendererType::Null:
 			renderer_mode = "(Null renderer)";
 			break;
-		case GSRendererType::DX9_OpenCL:
 		case GSRendererType::DX1011_OpenCL:
 		case GSRendererType::OGL_OpenCL:
 			renderer_mode = "(OpenCL)";
@@ -350,33 +352,6 @@ static int _GSopen(void** dsp, const char* title, GSRendererType renderer, int t
 		switch (renderer)
 		{
 		default:
-#ifdef _WIN32
-		case GSRendererType::DX9_HW:
-		case GSRendererType::DX9_SW:
-		case GSRendererType::DX9_OpenCL:
-			dev = new GSDevice9();
-			s_renderer_name = " D3D9";
-			renderer_fullname = "Direct3D 9";
-			break;
-		case GSRendererType::DX1011_HW:
-		case GSRendererType::DX1011_SW:
-		case GSRendererType::DX1011_OpenCL:
-			dev = new GSDevice11();
-			s_renderer_name = " D3D11";
-			renderer_fullname = "Direct3D 11";
-			break;
-#endif
-		case GSRendererType::Null:
-			dev = new GSDeviceNull();
-			s_renderer_name = " Null";
-			renderer_fullname = "Null";
-			break;
-		case GSRendererType::OGL_HW:
-		case GSRendererType::OGL_SW:
-		case GSRendererType::OGL_OpenCL:
-			dev = new GSDeviceOGL();
-			s_renderer_name = " OGL";
-			renderer_fullname = "OpenGL";
 			break;
 		}
 
@@ -389,44 +364,6 @@ static int _GSopen(void** dsp, const char* title, GSRendererType renderer, int t
 
 		if (s_gs == NULL)
 		{
-			switch (renderer)
-			{
-			default:
-#ifdef _WIN32
-			case GSRendererType::DX9_HW:
-				s_gs = (GSRenderer*)new GSRendererDX9();
-				s_renderer_type = " HW";
-				break;
-			case GSRendererType::DX1011_HW:
-				s_gs = (GSRenderer*)new GSRendererDX11();
-				s_renderer_type = " HW";
-				break;
-#endif
-			case GSRendererType::OGL_HW:
-				s_gs = (GSRenderer*)new GSRendererOGL();
-				s_renderer_type = " HW";
-				break;
-			case GSRendererType::DX9_SW:
-			case GSRendererType::DX1011_SW:
-			case GSRendererType::OGL_SW:
-				s_gs = new GSRendererSW(threads);
-				s_renderer_type = " SW";
-				break;
-			case GSRendererType::Null:
-				s_gs = new GSRendererNull();
-				s_renderer_type = "";
-				break;
-			case GSRendererType::DX9_OpenCL:
-			case GSRendererType::DX1011_OpenCL:
-			case GSRendererType::OGL_OpenCL:
-#ifdef ENABLE_OPENCL
-				s_gs = new GSRendererCL();
-				s_renderer_type = " OCL";
-#else
-				printf("GSdx error: OpenCL is disabled\n");
-#endif
-				break;
-			}
 			if (s_gs == NULL)
 				return -1;
 		}
@@ -464,7 +401,6 @@ static int _GSopen(void** dsp, const char* title, GSRendererType renderer, int t
 
 	if (renderer == GSRendererType::OGL_HW && theApp.GetConfigI("debug_glsl_shader") == 2) {
 		printf("GSdx: test OpenGL shader. Please wait...\n\n");
-		static_cast<GSDeviceOGL*>(s_gs->m_dev)->SelfShaderTest();
 		printf("\nGSdx: test OpenGL shader done. It will now exit\n");
 		return -1;
 	}
@@ -474,12 +410,10 @@ static int _GSopen(void** dsp, const char* title, GSRendererType renderer, int t
 
 EXPORT_C_(void) GSosdLog(const char *utf8, uint32 color)
 {
-	if(s_gs && s_gs->m_dev) s_gs->m_dev->m_osd.Log(utf8, color);
 }
 
 EXPORT_C_(void) GSosdMonitor(const char *key, const char *value, uint32 color)
 {
-	if(s_gs && s_gs->m_dev) s_gs->m_dev->m_osd.Monitor(key, value, color);
 }
 
 EXPORT_C_(int) GSopen2(void** dsp, uint32 flags)
@@ -492,12 +426,10 @@ EXPORT_C_(int) GSopen2(void** dsp, uint32 flags)
 	if (renderer != GSRendererType::Undefined && stored_toggle_state != toggle_state)
 	{
 #ifdef _WIN32
-		GSRendererType best_sw_renderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_SW : GSRendererType::DX9_SW;
+		GSRendererType best_sw_renderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_SW : GSRendererType::Null;
 
 		switch (renderer) {
 			// Use alternative renderer (SW if currently using HW renderer, and vice versa, keeping the same API and API version)
-		case GSRendererType::DX9_SW: renderer = GSRendererType::DX9_HW; break;
-		case GSRendererType::DX9_HW: renderer = GSRendererType::DX9_SW; break;
 		case GSRendererType::DX1011_SW: renderer = GSRendererType::DX1011_HW; break;
 		case GSRendererType::DX1011_HW: renderer = GSRendererType::DX1011_SW; break;
 		case GSRendererType::OGL_SW: renderer = GSRendererType::OGL_HW; break;
@@ -550,7 +482,7 @@ EXPORT_C_(int) GSopen(void** dsp, const char* title, int mt)
 
 #ifdef _WIN32
 
-		renderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_SW : GSRendererType::DX9_SW;
+		renderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_SW : GSRendererType::Null;
 
 #endif
 
@@ -815,11 +747,6 @@ EXPORT_C GSconfigure()
 
 #ifdef _WIN32
 		GSDialog::InitCommonControls();
-		if(GSSettingsDlg().DoModal() == IDOK)
-		{
-			// Force a reload of the gs state
-			theApp.SetCurrentRendererType(GSRendererType::Undefined);
-		}
 
 #else
 
@@ -1197,203 +1124,203 @@ EXPORT_C GSBenchmark(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow
 {
 	::SetPriorityClass(::GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
-	Console console("GSdx", true);
+	//Console console("GSdx", true);
 
-	if(1)
-	{
-		GSLocalMemory* mem = new GSLocalMemory();		
+	//if(1)
+	//{
+	//	GSLocalMemory* mem = new GSLocalMemory();		
 
-		static struct {int psm; const char* name;} s_format[] =
-		{
-			{PSM_PSMCT32, "32"},
-			{PSM_PSMCT24, "24"},
-			{PSM_PSMCT16, "16"},
-			{PSM_PSMCT16S, "16S"},
-			{PSM_PSMT8, "8"},
-			{PSM_PSMT4, "4"},
-			{PSM_PSMT8H, "8H"},
-			{PSM_PSMT4HL, "4HL"},
-			{PSM_PSMT4HH, "4HH"},
-			{PSM_PSMZ32, "32Z"},
-			{PSM_PSMZ24, "24Z"},
-			{PSM_PSMZ16, "16Z"},
-			{PSM_PSMZ16S, "16ZS"},
-		};
+	//	static struct {int psm; const char* name;} s_format[] =
+	//	{
+	//		{PSM_PSMCT32, "32"},
+	//		{PSM_PSMCT24, "24"},
+	//		{PSM_PSMCT16, "16"},
+	//		{PSM_PSMCT16S, "16S"},
+	//		{PSM_PSMT8, "8"},
+	//		{PSM_PSMT4, "4"},
+	//		{PSM_PSMT8H, "8H"},
+	//		{PSM_PSMT4HL, "4HL"},
+	//		{PSM_PSMT4HH, "4HH"},
+	//		{PSM_PSMZ32, "32Z"},
+	//		{PSM_PSMZ24, "24Z"},
+	//		{PSM_PSMZ16, "16Z"},
+	//		{PSM_PSMZ16S, "16ZS"},
+	//	};
 
-		uint8* ptr = (uint8*)_aligned_malloc(1024 * 1024 * 4, 32);
+	//	uint8* ptr = (uint8*)_aligned_malloc(1024 * 1024 * 4, 32);
 
-		for(int i = 0; i < 1024 * 1024 * 4; i++) ptr[i] = (uint8)i;
+	//	for(int i = 0; i < 1024 * 1024 * 4; i++) ptr[i] = (uint8)i;
 
-		//
+	//	//
 
-		for(int tbw = 5; tbw <= 10; tbw++)
-		{
-			int n = 256 << ((10 - tbw) * 2);
+	//	for(int tbw = 5; tbw <= 10; tbw++)
+	//	{
+	//		int n = 256 << ((10 - tbw) * 2);
 
-			int w = 1 << tbw;
-			int h = 1 << tbw;
+	//		int w = 1 << tbw;
+	//		int h = 1 << tbw;
 
-			printf("%d x %d\n\n", w, h);
+	//		printf("%d x %d\n\n", w, h);
 
-			for(size_t i = 0; i < countof(s_format); i++)
-			{
-				const GSLocalMemory::psm_t& psm = GSLocalMemory::m_psm[s_format[i].psm];
+	//		for(size_t i = 0; i < countof(s_format); i++)
+	//		{
+	//			const GSLocalMemory::psm_t& psm = GSLocalMemory::m_psm[s_format[i].psm];
 
-				GSLocalMemory::writeImage wi = psm.wi;
-				GSLocalMemory::readImage ri = psm.ri;
-				GSLocalMemory::readTexture rtx = psm.rtx;
-				GSLocalMemory::readTexture rtxP = psm.rtxP;
+	//			GSLocalMemory::writeImage wi = psm.wi;
+	//			GSLocalMemory::readImage ri = psm.ri;
+	//			GSLocalMemory::readTexture rtx = psm.rtx;
+	//			GSLocalMemory::readTexture rtxP = psm.rtxP;
 
-				GIFRegBITBLTBUF BITBLTBUF;
+	//			GIFRegBITBLTBUF BITBLTBUF;
 
-				BITBLTBUF.SBP = 0;
-				BITBLTBUF.SBW = w / 64;
-				BITBLTBUF.SPSM = s_format[i].psm;
-				BITBLTBUF.DBP = 0;
-				BITBLTBUF.DBW = w / 64;
-				BITBLTBUF.DPSM = s_format[i].psm;
+	//			BITBLTBUF.SBP = 0;
+	//			BITBLTBUF.SBW = w / 64;
+	//			BITBLTBUF.SPSM = s_format[i].psm;
+	//			BITBLTBUF.DBP = 0;
+	//			BITBLTBUF.DBW = w / 64;
+	//			BITBLTBUF.DPSM = s_format[i].psm;
 
-				GIFRegTRXPOS TRXPOS;
+	//			GIFRegTRXPOS TRXPOS;
 
-				TRXPOS.SSAX = 0;
-				TRXPOS.SSAY = 0;
-				TRXPOS.DSAX = 0;
-				TRXPOS.DSAY = 0;
+	//			TRXPOS.SSAX = 0;
+	//			TRXPOS.SSAY = 0;
+	//			TRXPOS.DSAX = 0;
+	//			TRXPOS.DSAY = 0;
 
-				GIFRegTRXREG TRXREG;
+	//			GIFRegTRXREG TRXREG;
 
-				TRXREG.RRW = w;
-				TRXREG.RRH = h;
+	//			TRXREG.RRW = w;
+	//			TRXREG.RRH = h;
 
-				GSVector4i r(0, 0, w, h);
+	//			GSVector4i r(0, 0, w, h);
 
-				GIFRegTEX0 TEX0;
+	//			GIFRegTEX0 TEX0;
 
-				TEX0.TBP0 = 0;
-				TEX0.TBW = w / 64;
+	//			TEX0.TBP0 = 0;
+	//			TEX0.TBW = w / 64;
 
-				GIFRegTEXA TEXA;
+	//			GIFRegTEXA TEXA;
 
-				TEXA.TA0 = 0;
-				TEXA.TA1 = 0x80;
-				TEXA.AEM = 0;
+	//			TEXA.TA0 = 0;
+	//			TEXA.TA1 = 0x80;
+	//			TEXA.AEM = 0;
 
-				int trlen = w * h * psm.trbpp / 8;
-				int len = w * h * psm.bpp / 8;
+	//			int trlen = w * h * psm.trbpp / 8;
+	//			int len = w * h * psm.bpp / 8;
 
-				clock_t start, end;
+	//			clock_t start, end;
 
-				printf("[%4s] ", s_format[i].name);
+	//			printf("[%4s] ", s_format[i].name);
 
-				start = clock();
+	//			start = clock();
 
-				for(int j = 0; j < n; j++)
-				{
-					int x = 0;
-					int y = 0;
+	//			for(int j = 0; j < n; j++)
+	//			{
+	//				int x = 0;
+	//				int y = 0;
 
-					(mem->*wi)(x, y, ptr, trlen, BITBLTBUF, TRXPOS, TRXREG);
-				}
+	//				(mem->*wi)(x, y, ptr, trlen, BITBLTBUF, TRXPOS, TRXREG);
+	//			}
 
-				end = clock();
+	//			end = clock();
 
-				printf("%6d %6d | ", (int)((float)trlen * n / (end - start) / 1000), (int)((float)(w * h) * n / (end - start) / 1000));
+	//			printf("%6d %6d | ", (int)((float)trlen * n / (end - start) / 1000), (int)((float)(w * h) * n / (end - start) / 1000));
 
-				start = clock();
+	//			start = clock();
 
-				for(int j = 0; j < n; j++)
-				{
-					int x = 0;
-					int y = 0;
+	//			for(int j = 0; j < n; j++)
+	//			{
+	//				int x = 0;
+	//				int y = 0;
 
-					(mem->*ri)(x, y, ptr, trlen, BITBLTBUF, TRXPOS, TRXREG);
-				}
+	//				(mem->*ri)(x, y, ptr, trlen, BITBLTBUF, TRXPOS, TRXREG);
+	//			}
 
-				end = clock();
+	//			end = clock();
 
-				printf("%6d %6d | ", (int)((float)trlen * n / (end - start) / 1000), (int)((float)(w * h) * n / (end - start) / 1000));
+	//			printf("%6d %6d | ", (int)((float)trlen * n / (end - start) / 1000), (int)((float)(w * h) * n / (end - start) / 1000));
 
-				const GSOffset* off = mem->GetOffset(TEX0.TBP0, TEX0.TBW, TEX0.PSM);
+	//			const GSOffset* off = mem->GetOffset(TEX0.TBP0, TEX0.TBW, TEX0.PSM);
 
-				start = clock();
+	//			start = clock();
 
-				for(int j = 0; j < n; j++)
-				{
-					(mem->*rtx)(off, r, ptr, w * 4, TEXA);
-				}
+	//			for(int j = 0; j < n; j++)
+	//			{
+	//				(mem->*rtx)(off, r, ptr, w * 4, TEXA);
+	//			}
 
-				end = clock();
+	//			end = clock();
 
-				printf("%6d %6d ", (int)((float)len * n / (end - start) / 1000), (int)((float)(w * h) * n / (end - start) / 1000));
+	//			printf("%6d %6d ", (int)((float)len * n / (end - start) / 1000), (int)((float)(w * h) * n / (end - start) / 1000));
 
-				if(psm.pal > 0)
-				{
-					start = clock();
+	//			if(psm.pal > 0)
+	//			{
+	//				start = clock();
 
-					for(int j = 0; j < n; j++)
-					{
-						(mem->*rtxP)(off, r, ptr, w, TEXA);
-					}
+	//				for(int j = 0; j < n; j++)
+	//				{
+	//					(mem->*rtxP)(off, r, ptr, w, TEXA);
+	//				}
 
-					end = clock();
+	//				end = clock();
 
-					printf("| %6d %6d ", (int)((float)len * n / (end - start) / 1000), (int)((float)(w * h) * n / (end - start) / 1000));
-				}
+	//				printf("| %6d %6d ", (int)((float)len * n / (end - start) / 1000), (int)((float)(w * h) * n / (end - start) / 1000));
+	//			}
 
-				printf("\n");
-			}
+	//			printf("\n");
+	//		}
 
-			printf("\n");
-		}
+	//		printf("\n");
+	//	}
 
-		_aligned_free(ptr);
+	//	_aligned_free(ptr);
 
-		delete mem;
-	}
+	//	delete mem;
+	//}
 
-	//
+	////
 
-	if(0)
-	{
-		GSLocalMemory* mem = new GSLocalMemory();
+	//if(0)
+	//{
+	//	GSLocalMemory* mem = new GSLocalMemory();
 
-		uint8* ptr = (uint8*)_aligned_malloc(1024 * 1024 * 4, 32);
+	//	uint8* ptr = (uint8*)_aligned_malloc(1024 * 1024 * 4, 32);
 
-		for(int i = 0; i < 1024 * 1024 * 4; i++) ptr[i] = (uint8)i;
+	//	for(int i = 0; i < 1024 * 1024 * 4; i++) ptr[i] = (uint8)i;
 
-		const GSLocalMemory::psm_t& psm = GSLocalMemory::m_psm[PSM_PSMCT32];
+	//	const GSLocalMemory::psm_t& psm = GSLocalMemory::m_psm[PSM_PSMCT32];
 
-		GSLocalMemory::writeImage wi = psm.wi;
+	//	GSLocalMemory::writeImage wi = psm.wi;
 
-		GIFRegBITBLTBUF BITBLTBUF;
+	//	GIFRegBITBLTBUF BITBLTBUF;
 
-		BITBLTBUF.DBP = 0;
-		BITBLTBUF.DBW = 32;
-		BITBLTBUF.DPSM = PSM_PSMCT32;
+	//	BITBLTBUF.DBP = 0;
+	//	BITBLTBUF.DBW = 32;
+	//	BITBLTBUF.DPSM = PSM_PSMCT32;
 
-		GIFRegTRXPOS TRXPOS;
+	//	GIFRegTRXPOS TRXPOS;
 
-		TRXPOS.DSAX = 0;
-		TRXPOS.DSAY = 1;
+	//	TRXPOS.DSAX = 0;
+	//	TRXPOS.DSAY = 1;
 
-		GIFRegTRXREG TRXREG;
+	//	GIFRegTRXREG TRXREG;
 
-		TRXREG.RRW = 256;
-		TRXREG.RRH = 256;
+	//	TRXREG.RRW = 256;
+	//	TRXREG.RRH = 256;
 
-		int trlen = 256 * 256 * psm.trbpp / 8;
+	//	int trlen = 256 * 256 * psm.trbpp / 8;
 
-		int x = 0;
-		int y = 0;
+	//	int x = 0;
+	//	int y = 0;
 
-		(mem->*wi)(x, y, ptr, trlen, BITBLTBUF, TRXPOS, TRXREG);
+	//	(mem->*wi)(x, y, ptr, trlen, BITBLTBUF, TRXPOS, TRXREG);
 
-		delete mem;
-	}
+	//	delete mem;
+	//}
 
-	//
+	////
 
-	PostQuitMessage(0);
+	//PostQuitMessage(0);
 }
 
 #endif

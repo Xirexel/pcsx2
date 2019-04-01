@@ -21,6 +21,12 @@ using System.Windows;
 
 namespace Omega_Red.Models
 {
+    public enum SaveStateType
+    {
+        PCSX2,
+        PPSSPP
+    }
+
     public class SaveStateInfo
     {
         public bool     IsAutosave { get; set; }
@@ -36,5 +42,6 @@ namespace Omega_Red.Models
         public bool     IsCurrent { get; set; }
         public Visibility Visibility { get; set; }
         public System.Windows.Media.ImageSource ImageSource { get; set; }
+        public SaveStateType Type { get; set; }
     }
 }

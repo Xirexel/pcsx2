@@ -208,6 +208,9 @@ namespace Omega_Red.Panels
         public static readonly DependencyProperty VolumeProperty =
             DependencyProperty.Register("Volume", typeof(double), typeof(SoundControl), new PropertyMetadata(0.0));
 
-
+        private void Slider_TouchDown(object sender, TouchEventArgs e)
+        {
+            e.Handled = true;
+        }
     }
 }

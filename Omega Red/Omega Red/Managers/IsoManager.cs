@@ -118,6 +118,13 @@ namespace Omega_Red.Managers
                 {
                     foreach (var item in l_collection)
                     {
+                        var l_gameData = GameIndex.Instance.convert(item.DiscSerial);
+
+                        if (l_gameData != null)
+                        {
+                            item.Title = l_gameData.FriendlyName;
+                        }
+
                         _isoInfoCollection.Add(item);
                     }
                 }
@@ -310,11 +317,19 @@ namespace Omega_Red.Managers
                             if (l_GameDiscType != null)
                             {
                                 local_result.GameDiscType = l_GameDiscType.Value;
+                                local_result.GameType = GameType.PS2;
                             }
 
                             if (l_DiscSerial != null)
                             {
                                 local_result.DiscSerial = l_DiscSerial.Value;
+
+                                var l_gameData = GameIndex.Instance.convert(local_result.DiscSerial);
+
+                                if (l_gameData != null)
+                                {
+                                    local_result.Title = l_gameData.FriendlyName;
+                                }
                             }
 
                             if (l_DiscRegionType != null)
@@ -361,9 +376,30 @@ namespace Omega_Red.Managers
             {
                 var l_IsoInfo = IsoManager.getGameDiscInfo(l_OpenFileDialog.FileName);
 
-                if (l_IsoInfo != null)
+                if (l_IsoInfo != null && l_IsoInfo.GameDiscType != "Invalid or unknown disc.")
                 {
                     IsoManager.Instance.addIsoInfo(l_IsoInfo);
+                }
+                else
+                {
+                    var l_info = PPSSPPControl.Instance.getGameInfo(l_OpenFileDialog.FileName);
+
+                    if(!string.IsNullOrEmpty(l_info.Item1))
+                    {
+                        l_IsoInfo.Title = l_info.Item1;
+
+                        l_IsoInfo.GameDiscType = "PSP Disk";
+
+                        l_IsoInfo.GameType = GameType.PSP;
+
+                        l_IsoInfo.DiscSerial = l_info.Item2;
+
+                        l_IsoInfo.DiscRegionType = "PAL";
+
+                        l_IsoInfo.SoftwareVersion = "1.0";
+
+                        IsoManager.Instance.addIsoInfo(l_IsoInfo);
+                    }
                 }
             }
         }

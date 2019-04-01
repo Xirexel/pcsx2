@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "GSWnd.h"
+#include "Window\GSWnd.h"
 
 class GSWndStub : public GSWnd
 {

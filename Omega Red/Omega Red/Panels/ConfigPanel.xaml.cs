@@ -43,5 +43,10 @@ namespace Omega_Red.Views
         {
             Omega_Red.Properties.Settings.Default.Save();
         }
+
+        private void Slider_TouchDown(object sender, TouchEventArgs e)
+        {
+            e.Handled = true;
+        }
     }
 }

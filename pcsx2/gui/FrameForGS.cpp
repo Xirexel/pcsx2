@@ -167,13 +167,21 @@ void GSPanel::DoResize()
 		switchAR = false;
 	}
 
-	if (!switchAR) {
-		if (g_Conf->GSWindow.AspectRatio == AspectRatio_4_3)
+	if (switchAR) {
+		if (g_Conf->GSWindow.FMVAspectRatioSwitch == FMV_AspectRatio_Switch_4_3) {
 			targetAr = 4.0 / 3.0;
-		else if (g_Conf->GSWindow.AspectRatio == AspectRatio_16_9)
+		} else if (g_Conf->GSWindow.FMVAspectRatioSwitch == FMV_AspectRatio_Switch_16_9) {
 			targetAr = 16.0 / 9.0;
+		} else {
+			// Allows for better real time toggling, returns to the non fmv override aspect ratio.
+			switchAR = false;
+		}
 	} else {
-		targetAr = 4.0 / 3.0;
+		if (g_Conf->GSWindow.AspectRatio == AspectRatio_4_3) {
+			targetAr = 4.0 / 3.0;
+		} else if (g_Conf->GSWindow.AspectRatio == AspectRatio_16_9) {
+			targetAr = 16.0 / 9.0;
+		}
 	}
 
 	double arr = targetAr / clientAr;

@@ -187,6 +187,18 @@
             
         </Grid>
         <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <UserControl 
+                Opacity="{DynamicResource StandardOpacity}"
+                Visibility="{Binding VisibilityState}"
+                  Canvas.Bottom="10" 
+                  Canvas.Right="10"
+                Width="300"
+                Height="160">
+                <UserControl.DataContext>
+                    <viewModels:AutoSaveStateViewModel/>
+                </UserControl.DataContext>
+                <ListView Background="Transparent" BorderBrush="Transparent" ScrollViewer.VerticalScrollBarVisibility="Disabled" Style="{DynamicResource InfoListView}"/>
+            </UserControl>
             <Grid x:Name="mControlGrid" 
                   Canvas.Top="0" 
                   Canvas.Left="{Binding ElementName=mControlPanel, Path=ActualWidth, Converter={StaticResource mControlWidthOffset}}">

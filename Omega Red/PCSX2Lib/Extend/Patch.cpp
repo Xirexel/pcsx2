@@ -36,9 +36,7 @@
 extern void _ApplyPatch(IniPatch *p);
 
 
-IniPatch Patch[ MAX_PATCH ];
-
-int patchnumber = 0;
+std::vector<IniPatch> Patch;
 
 wxString strgametitle;
 
@@ -157,7 +155,7 @@ void inifile_processString(const wxString& inStr)
 
 void ForgetLoadedPatches()
 {
-  patchnumber = 0;
+    Patch.clear();
 }
 
 static u32 StrToU32(const wxString& str, int base = 10)
@@ -207,60 +205,54 @@ namespace PatchFunc
 		const wxString& WriteValue() const		{ return m_pieces[4]; }
     };
 
-	void patchHelper(const wxString& cmd, const wxString& param) {
-		// Error Handling Note:  I just throw simple wxStrings here, and then catch them below and
-		// format them into more detailed cmd+data+error printouts.  If we want to add user-friendly
-		// (translated) messages for display in a popup window then we'll have to upgrade the
-		// exception a little bit.
+	void patchHelper(const wxString &cmd, const wxString &param){
+        // Error Handling Note:  I just throw simple wxStrings here, and then catch them below and
+        // format them into more detailed cmd+data+error printouts.  If we want to add user-friendly
+        // (translated) messages for display in a popup window then we'll have to upgrade the
+        // exception a little bit.
 
-		// print the actual patch lines only in verbose mode (even in devel)
-		if (DevConWriterEnabled)
-			DevCon.WriteLn(cmd + L" " + param);
+        // print the actual patch lines only in verbose mode (even in devel)
+        if (DevConWriterEnabled)
+            DevCon.WriteLn(cmd + L" " + param);
 
-		try
-		{
-			if(patchnumber >= MAX_PATCH)
-				throw wxString( L"Maximum number of patches reached" );
+        try {
+            PatchPieces pieces(param);
 
-			IniPatch& iPatch = Patch[patchnumber];
-			PatchPieces pieces(param);
+            IniPatch iPatch = {0};
+            iPatch.enabled = 0;
+            iPatch.placetopatch = StrToU32(pieces.PlaceToPatch(), 10);
 
-			iPatch.enabled = 0;
+            if (iPatch.placetopatch >= _PPT_END_MARKER)
+                throw wxsFormat(L"Invalid 'place' value '%s' (0 - once on startup, 1: continuously)", WX_STR(pieces.PlaceToPatch()));
 
-			iPatch.placetopatch	= StrToU32(pieces.PlaceToPatch(), 10);
-			if (iPatch.placetopatch >= _PPT_END_MARKER)
-				throw wxsFormat(L"Invalid 'place' value '%s' (0 - once on startup, 1: continuously)", WX_STR(pieces.PlaceToPatch()));
-			iPatch.cpu			= (patch_cpu_type)PatchTableExecute(pieces.CpuType(), cpuCore);
-			iPatch.addr			= StrToU32(pieces.MemAddr(), 16);
-			iPatch.type			= (patch_data_type)PatchTableExecute(pieces.OperandSize(), dataType);
-			iPatch.data			= StrToU64(pieces.WriteValue(), 16);
+            iPatch.cpu = (patch_cpu_type)PatchTableExecute(pieces.CpuType(), cpuCore);
+            iPatch.addr = StrToU32(pieces.MemAddr(), 16);
+            iPatch.type = (patch_data_type)PatchTableExecute(pieces.OperandSize(), dataType);
+            iPatch.data = StrToU64(pieces.WriteValue(), 16);
 
-			if (iPatch.cpu  == 0)
-				throw wxsFormat(L"Unrecognized CPU Target: '%s'", WX_STR(pieces.CpuType()));
+            if (iPatch.cpu == 0)
+                throw wxsFormat(L"Unrecognized CPU Target: '%s'", WX_STR(pieces.CpuType()));
 
-			if (iPatch.type == 0)
-				throw wxsFormat(L"Unrecognized Operand Size: '%s'", WX_STR(pieces.OperandSize()));
+            if (iPatch.type == 0)
+                throw wxsFormat(L"Unrecognized Operand Size: '%s'", WX_STR(pieces.OperandSize()));
 
-			iPatch.enabled = 1; // omg success!!
+            iPatch.enabled = 1; // omg success!!
+            Patch.push_back(iPatch);
 
-			patchnumber++;
-		}
-		catch( wxString& exmsg )
-		{
-			Console.Error(L"(Patch) Error Parsing: %s=%s", WX_STR(cmd), WX_STR(param));
-			Console.Indent().Error( exmsg );
-		}
-	}
+        } catch (wxString &exmsg) {
+            Console.Error(L"(Patch) Error Parsing: %s=%s", WX_STR(cmd), WX_STR(param));
+            Console.Indent().Error(exmsg);
+        }
+    }
 	void patch(const wxString& cmd, const wxString& param) { patchHelper(cmd, param); }
 }
 
 // This is for applying patches directly to memory
 void ApplyLoadedPatches(patch_place_type place)
 {
-	for (int i = 0; i < patchnumber; i++)
-	{
-	    if (Patch[i].placetopatch == place)
-            _ApplyPatch(&Patch[i]);
-	}
+    for (auto &i : Patch) {
+        if (i.placetopatch == place)
+            _ApplyPatch(&i);
+    }
 }
 

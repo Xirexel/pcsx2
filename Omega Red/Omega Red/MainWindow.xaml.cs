@@ -54,7 +54,7 @@ namespace Omega_Red
             ConfigManager.Instance.SwitchControlModeEvent += Instance_SwitchControlModeEvent;
 
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
-            
+                        
 #if DEBUG
 
             WindowState = System.Windows.WindowState.Normal;
@@ -110,13 +110,20 @@ namespace Omega_Red
                 {
                     break;
                 }
-                
+
+                if (!PPSSPPNative.Instance.isInit)
+                {
+                    break;
+                }
+                               
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate()
                 {
 
                     if (m_PadPanel.Content != null && m_PadPanel.Content is VideoPanel)
                     {
                         ModuleControl.Instance.setVideoPanel(m_PadPanel.Content as VideoPanel);
+
+                        PPSSPPControl.Instance.setVideoPanelHandler((m_PadPanel.Content as VideoPanel).SharedHandle);
 
                         Tools.Savestate.SStates.Instance.setVideoPanel(m_PadPanel.Content as VideoPanel);
 
@@ -148,6 +155,7 @@ namespace Omega_Red
 
             loadModulesThread.Start();
         }
+
 
         bool mIsPressed = false;
 

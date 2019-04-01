@@ -83,6 +83,10 @@ namespace Omega_Red.ViewModels
                     var l_StartingTitle = App.Current.Resources["StartingTitle"];
                     Message = string.Format("{0}", l_StartingTitle);
                     break;
+                case LockScreenManager.Status.Saving:
+                    var l_SavingTitle = App.Current.Resources["SavingTitle"];
+                    Message = string.Format("{0}", l_SavingTitle);
+                    break;
                 default:
                     break;
             }

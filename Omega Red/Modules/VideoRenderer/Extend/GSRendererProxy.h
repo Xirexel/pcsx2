@@ -1,5 +1,5 @@
 /*
- *	Copyright (C) 2018 Evgeny Pereguda
+ *	Copyright (C) 2007-2009 Gabest
  *	http://www.gabest.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,30 +21,49 @@
 
 #pragma once
 
-
-#include "GSRendererDX.h"
-#include "GSVertexHW.h"
-#include "GSTextureCache11.h"
+#include "Renderers/HW/GSRendererHW.h"
+#include "Renderers/DX11/GSTextureCache11.h"
+#include "Renderers/HW/GSVertexHW.h"
 #include "GSDeviceProxy.h"
 
-class GSRendererProxy : public GSRendererDX
+class GSRendererProxy : public GSRendererHW
 {
-    CComPtr<IUnknown> m_UnkRenderingTexture;
-    bool UserHacks_unscale_pt_ln;
+private:
+    bool UserHacks_AlphaHack;
+    bool UserHacks_AlphaStencil;
 
-protected:
-    void EmulateTextureShuffleAndFbmask();
-    void SetupIA(const float &sx, const float &sy);
+private:
+    inline void ResetStates();
+    inline void SetupIA(const float &sx, const float &sy);
+    inline void EmulateAtst(const int pass, const GSTextureCache::Source *tex);
+    inline void EmulateZbuffer();
+    inline void EmulateTextureShuffleAndFbmask();
+    inline void EmulateChannelShuffle(GSTexture **rt, const GSTextureCache::Source *tex);
+    inline void EmulateTextureSampler(const GSTextureCache::Source *tex);
+
+    GSDeviceProxy::VSSelector m_vs_sel;
+    GSDeviceProxy::GSSelector m_gs_sel;
+    GSDeviceProxy::PSSelector m_ps_sel;
+
+    GSDeviceProxy::PSSamplerSelector m_ps_ssel;
+    GSDeviceProxy::OMBlendSelector m_om_bsel;
+    GSDeviceProxy::OMDepthStencilSelector m_om_dssel;
+
+    GSDeviceProxy::PSConstantBuffer ps_cb;
+    GSDeviceProxy::VSConstantBuffer vs_cb;
+    GSDeviceProxy::GSConstantBuffer gs_cb;
 
 public:
     GSRendererProxy();
     virtual ~GSRendererProxy() {}
 
-    bool CreateDevice(GSDeviceProxy *dev, void *sharedhandle, void *updateCallback);
+    void DrawPrims(GSTexture *rt, GSTexture *ds, GSTextureCache::Source *tex) final;
 
-    HRESULT getRenderingTexture(IUnknown **aPtrPtrUnkRenderingTexture);
-
+    bool CreateDevice(GSDeviceProxy *dev, void *sharedhandle, void *capturehandle);
+	
     void setIsWired(BOOL a_value);
 
     void setIsTessellated(BOOL a_value);
+
+    void setFXAA(BOOL a_value);
 };

@@ -20,8 +20,16 @@ using System.Threading.Tasks;
 
 namespace Omega_Red.Models
 {
+    public enum GameType
+    {
+        PS2,
+        PSP
+    }
+
     public class IsoInfo
     {
+        public string Title { get; set; }
+
         public string IsoType { get; set; }
 
         public string GameDiscType { get; set; }
@@ -37,5 +45,7 @@ namespace Omega_Red.Models
         public string FilePath { get; set; }
 
         public bool IsCurrent { get; set; }
+
+        public GameType GameType { get; set; }
     }
 }

@@ -3,9 +3,7 @@ struct VS_OUTPUT
 {
     float4 p : SV_Position;
     float4 t : TEXCOORD0;
-#if VS_RTCOPY
 	float4 tp : TEXCOORD1;
-#endif
     float4 c : COLOR0;
 };
 
@@ -34,9 +32,7 @@ struct HS_OUTPUT
 {
     float4 p : SV_Position;
     float4 t : TEXCOORD0;
-#if VS_RTCOPY
 	float4 tp : TEXCOORD1;
-#endif
     float4 c : COLOR0;
     //float4 normal : NORMAL;
 };
@@ -57,9 +53,7 @@ HS_OUTPUT hs_main(InputPatch<VS_OUTPUT, 3> patch,
 
     hout.t = patch[i].t;
 
-#if VS_RTCOPY
     hout.tp = patch[i].tp ;
-#endif
 
     hout.c = patch[i].c;
 
@@ -86,9 +80,7 @@ struct DS_OUTPUT
 {
     float4 p : SV_Position;
     float4 t : TEXCOORD0;
-#if VS_RTCOPY
 	float4 tp : TEXCOORD1;
-#endif
     float4 c : COLOR0;
 };
 
@@ -118,12 +110,10 @@ VS_OUTPUT ds_main(PatchTess patchTess,
     BarycentricCoordinates.y * TrianglePatch[1].t +
     BarycentricCoordinates.z * TrianglePatch[2].t;
 
-#if VS_RTCOPY
     dout.tp =
     BarycentricCoordinates.x * TrianglePatch[0].tp +
     BarycentricCoordinates.y * TrianglePatch[1].tp +
     BarycentricCoordinates.z * TrianglePatch[2].tp;
-#endif
 
     dout.c =
     BarycentricCoordinates.x * TrianglePatch[0].c +

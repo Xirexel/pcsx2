@@ -22,14 +22,13 @@
 #include "stdafx.h"
 #include "GSdx.h"
 #include "GSUtil.h"
-#include "GSDeviceNull.h"
+#include "Renderers/Null/GSDeviceNull.h"
 #include "GPURendererSW.h"
 
 #ifdef _WIN32
 
 #include "GPUSettingsDlg.h"
-#include "GSDevice9.h"
-#include "GSDevice11.h"
+#include "Renderers/DX11/GSDevice11.h"
 
 static HRESULT s_hr = E_FAIL;
 
@@ -99,7 +98,7 @@ EXPORT_C_(int32) GPUclose()
 	s_gpu = NULL;
 
 #ifdef _WIN32
-	GSDeviceDX::FreeD3DCompiler();
+	GSDevice11::FreeD3DCompiler();
 
 	if(SUCCEEDED(s_hr))
 	{
@@ -131,7 +130,7 @@ EXPORT_C_(int32) GPUopen(void* hWnd)
 		return -1;
 	}
 
-	if (!GSDeviceDX::LoadD3DCompiler())
+	if (!GSDevice11::LoadD3DCompiler())
 		return -1;
 #endif
 
@@ -141,13 +140,12 @@ EXPORT_C_(int32) GPUopen(void* hWnd)
 	switch(renderer)
 	{
 #ifdef _WIN32
-	case GPURendererType::D3D9_SW: s_gpu = new GPURendererSW(new GSDevice9(), threads); break;
 	case GPURendererType::D3D11_SW: s_gpu = new GPURendererSW(new GSDevice11(), threads); break;
 #endif
 	case GPURendererType::NULL_Renderer: s_gpu = new GPURendererSW(new GSDeviceNull(), threads); break;
-	default: // Fall back to D3D9/null mode if unknown value is read. No one could possibly enter here anyway.
+	default: // Fall back to D3D11/Null mode if unknown value is read. No one could possibly enter here anyway.
 #ifdef _WIN32
-		s_gpu = new GPURendererSW(new GSDevice9(), threads); break;
+		s_gpu = new GPURendererSW(new GSDevice11(), threads); break;
 #else
 		s_gpu = new GPURendererSW(new GSDeviceNull(), threads); break;
 #endif

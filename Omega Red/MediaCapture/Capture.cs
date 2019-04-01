@@ -213,7 +213,7 @@ namespace MediaCapture
                 }
                 else
                 {
-                    lAudioLoopBack = a_PtrAudioCaptureProcessor;// "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack";
+                    lAudioLoopBack = string.IsNullOrWhiteSpace(a_PtrAudioCaptureProcessor)? "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack": a_PtrAudioCaptureProcessor;
                     
                     l_ISourceControl.getSourceOutputMediaType(
                         lAudioLoopBack,

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Omega_Red.Managers
 {
-    delegate void ButtonUpdateCallbackDelegate(ushort aButtons);
+    delegate void ButtonUpdateCallbackDelegate(ushort a_buttons);
 
     class AdditionalControlManager
     {

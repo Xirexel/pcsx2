@@ -58,6 +58,8 @@ namespace Omega_Red.Panels
 
         bool mIsPressed = false;
 
+        bool mTouchIsPressed = false;
+
         Point mOffsetPosition = new Point();
 
        
@@ -124,10 +126,20 @@ namespace Omega_Red.Panels
 
                 l_d_Y_axis = Math.Abs(l_d_Y_axis) >= 1.0 ? Math.Sign(l_d_Y_axis) : l_d_Y_axis;
 
-                
-                short l_x_axis = (short)(32767.0 * l_d_X_axis);
 
-                short l_y_axis = (short)(32767.0 * l_d_Y_axis);
+                double l_d_X_sensetive_axis = l_d_X_axis * 2.0;
+
+                double l_d_Y_sensetive_axis = l_d_Y_axis * 2.0;
+
+
+                l_d_X_sensetive_axis = Math.Abs(l_d_X_sensetive_axis) >= 1.0 ? Math.Sign(l_d_X_sensetive_axis) : l_d_X_sensetive_axis;
+
+                l_d_Y_sensetive_axis = Math.Abs(l_d_Y_sensetive_axis) >= 1.0 ? Math.Sign(l_d_Y_sensetive_axis) : l_d_Y_sensetive_axis;
+
+
+                short l_x_axis = (short)(32767.0 * l_d_X_sensetive_axis);
+
+                short l_y_axis = (short)(32767.0 * l_d_Y_sensetive_axis);
 
                 double l_length = l_d_X_axis * l_d_X_axis + l_d_Y_axis * l_d_Y_axis;
 
@@ -171,6 +183,118 @@ namespace Omega_Red.Panels
 
         // Using a DependencyProperty as the backing store for Axises.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty AxisesProperty =
-            DependencyProperty.Register("Axises", typeof(PadInput.XY_Axises), typeof(AnalogStickPanel), new PropertyMetadata(new PadInput.XY_Axises() { m_x_axis = 0, m_y_axis = 0 }));                
+            DependencyProperty.Register("Axises", typeof(PadInput.XY_Axises), typeof(AnalogStickPanel), new PropertyMetadata(new PadInput.XY_Axises() { m_x_axis = 0, m_y_axis = 0 }));
+        
+        private void UserControl_PreviewTouchMove(object sender, TouchEventArgs e)
+        {
+            if (mTouchIsPressed)
+            {
+                var l_position = e.TouchDevice.GetTouchPoint(this).Position;
+
+                var l_leftDeltaPosition = l_position.X - mCenterX;
+
+                var l_topDeltaPosition = l_position.Y - mCenterY;
+
+                var l_newLeftPosition = (mInitCanvasLeft + l_leftDeltaPosition) - mOffsetPosition.X;
+
+                var l_newTopPosition = (mInitCanvasTop + l_topDeltaPosition) - mOffsetPosition.Y;
+
+                l_leftDeltaPosition = l_newLeftPosition - (mCenterX - mInitCanvasLeft) + mTouchEllipse.Width / 4;
+
+                l_topDeltaPosition = -(l_newTopPosition - (mCenterY - mInitCanvasTop) + mTouchEllipse.Height / 4);
+
+
+                double l_d_X_axis = ((double)l_leftDeltaPosition / (double)mCenterX);
+
+                double l_d_Y_axis = ((double)l_topDeltaPosition / (double)mCenterY);
+
+
+                l_d_X_axis = Math.Abs(l_d_X_axis) >= 1.0 ? Math.Sign(l_d_X_axis) : l_d_X_axis;
+
+                l_d_Y_axis = Math.Abs(l_d_Y_axis) >= 1.0 ? Math.Sign(l_d_Y_axis) : l_d_Y_axis;
+
+
+                short l_x_axis = (short)(32767.0 * l_d_X_axis);
+
+                short l_y_axis = (short)(32767.0 * l_d_Y_axis);
+
+                double l_length = l_d_X_axis * l_d_X_axis + l_d_Y_axis * l_d_Y_axis;
+
+                if (l_length < 0.1)
+                {
+                    l_x_axis = 0;
+
+                    l_y_axis = 0;
+                }
+
+                double l_delta = 1.0;
+
+                if (l_length > 1.0)
+                {
+                    l_delta = Math.Sqrt(l_length);
+
+                    l_d_X_axis /= l_delta;
+
+                    l_d_Y_axis /= l_delta;
+                }
+
+                l_newLeftPosition = mInitCanvasLeft + (mCenterX * l_d_X_axis);
+
+                l_newTopPosition = mInitCanvasTop - (mCenterY * l_d_Y_axis);
+
+
+                Axises = new PadInput.XY_Axises() { m_x_axis = l_x_axis, m_y_axis = l_y_axis };
+
+
+                Canvas.SetLeft(mTouchEllipse, l_newLeftPosition);
+
+                Canvas.SetTop(mTouchEllipse, l_newTopPosition);
+            }
+        }
+
+        private void UserControl_PreviewTouchCheck(object sender, TouchEventArgs e, MouseButtonState state)
+        {
+            mTouchIsPressed = state == MouseButtonState.Pressed;
+
+            if (mTouchIsPressed)
+            {
+                var l_position = e.TouchDevice.GetTouchPoint(this).Position;
+
+                mOffsetPosition.X = l_position.X - mCenterX;
+
+                mOffsetPosition.Y = l_position.Y - mCenterY;
+
+                e.TouchDevice.Capture(this, CaptureMode.SubTree);
+            }
+            else
+            {
+                int timestamp = new TimeSpan(DateTime.Now.Ticks).Milliseconds;
+                MouseButton l_mouseButton = MouseButton.Left;
+
+                MouseButtonEventArgs l_mouseUpEvent = new MouseButtonEventArgs(Mouse.PrimaryDevice, timestamp, l_mouseButton);
+                l_mouseUpEvent.RoutedEvent = Control.MouseUpEvent;
+                l_mouseUpEvent.Source = mTouchEllipse;
+
+                mTouchEllipse.RaiseEvent(l_mouseUpEvent);
+
+                Canvas.SetLeft(mTouchEllipse, mInitCanvasLeft);
+
+                Canvas.SetTop(mTouchEllipse, mInitCanvasTop);
+
+                e.TouchDevice.Capture(null);
+
+                Axises = new PadInput.XY_Axises() { m_x_axis = 0, m_y_axis = 0 };
+            }
+        }
+
+        private void UserControl_PreviewTouchDown(object sender, TouchEventArgs e)
+        {
+            UserControl_PreviewTouchCheck(sender, e, MouseButtonState.Pressed);
+        }
+
+        private void UserControl_PreviewTouchUp(object sender, TouchEventArgs e)
+        {
+            UserControl_PreviewTouchCheck(sender, e, MouseButtonState.Released);
+        }
     }
 }

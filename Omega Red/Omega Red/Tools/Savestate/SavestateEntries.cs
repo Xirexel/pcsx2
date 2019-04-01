@@ -411,4 +411,115 @@ namespace Omega_Red.Tools.Savestate
 
 	    public bool IsRequired() { return false; }
     };
+
+    class SavestateEntry_PPSSPPSState : IBaseSavestateEntry
+    {
+        private string m_TempFilePath = "";
+        
+        public SavestateEntry_PPSSPPSState(string a_TempFilePath = "")
+        {
+            m_TempFilePath = a_TempFilePath;
+        }
+
+        public string GetFilename()
+        {
+            return "PPSSPPSState";
+        }
+
+        public void FreezeOut(ISaveStateBase writer)
+        {
+            if (File.Exists(m_TempFilePath))
+            {
+                using (var lFileStream = File.OpenRead(m_TempFilePath))
+                {
+                    using (var stream = new MemoryStream((int)lFileStream.Length))
+                    {
+                        var lLength = (int)lFileStream.Length;
+
+                        byte[] ltempData = new byte[100];
+
+                        while (lLength > 0)
+                        {
+                            var l_readLength = lFileStream.Read(ltempData, 0, ltempData.Length);
+
+                            stream.Write(ltempData, 0, l_readLength);
+
+                            lLength -= l_readLength;
+                        }
+                        
+                        stream.Position = 0; 
+
+                        writer.Freeze(stream.ToArray());
+                    }
+                }
+            }
+        }
+        
+        public void FreezeIn(ILoadStateBase reader)
+        {
+            if (File.Exists(m_TempFilePath))
+            {
+                File.Delete(m_TempFilePath);
+            }
+
+            using (var lFileStream = File.OpenWrite(m_TempFilePath))
+            {
+                var l_data = reader.read();
+
+                lFileStream.Write(l_data, 0, l_data.Length);
+            }
+        }
+    }
+    
+    class SavestateEntry_PPSSPPInternalStructures : IBaseSavestateEntry
+    {
+        public string GetFilename()
+        {
+            return "PCSX2 Internal Structures.dat";
+        }
+
+        public void FreezeOut(ISaveStateBase writer)
+        {
+            FreezeBios(writer);
+        }
+
+        private void FreezeBios(ISaveStateBase a_writer)
+        {
+            a_writer.FreezeTag("BIOS");
+
+            // Check the BIOS, and issue a warning if the bios for this state
+            // doesn't match the bios currently being used (chances are it'll still
+            // work fine, but some games are very picky).
+
+            a_writer.Freeze(1);
+
+            byte[] biosdesc = new byte[256];
+
+            var l_bytes = Encoding.ASCII.GetBytes("PPSSPP");
+
+            l_bytes.CopyTo(biosdesc, 0);
+
+            a_writer.Freeze(biosdesc);
+
+        }
+
+        public void FreezeIn(ILoadStateBase reader)
+        {
+            PCSX2LibNative.Instance.setFreezeInternalsFunc(reader.read());
+        }
+
+        public uint Parser(ILoadStateBase reader)
+        {
+            uint l_checkSum = 0;
+
+            var l_data = reader.read();
+
+            if (l_data != null && l_data.Length >= 36)
+            {
+                l_checkSum = BitConverter.ToUInt32(l_data, 32);
+            }
+
+            return l_checkSum;
+        }
+    }
 }

@@ -58,7 +58,8 @@
     <sys:String x:Key="MediaOutputTypeStreamNotSupportingTitle">Freeware не поддерживается</sys:String>
     <sys:String x:Key="TouchPadScaleTitle">Масштаб сенсорного контроллера:</sys:String>
     <sys:String x:Key="RenderingSchemaTitle">Схема рендеринга:</sys:String>
-
-    
-
+    <sys:String x:Key="IsFXAATitle">Включить FXAA</sys:String>
+    <sys:String x:Key="SavingTitle">Сохранение...</sys:String>
+    <sys:String x:Key="BiosTipTitle">Биос отсутствует, архив доступен по ссылке:</sys:String>
+    <sys:String x:Key="IsoTipTitle">Диск отсутствует, диски доступены по ссылкам:</sys:String>
 </ResourceDictionary>

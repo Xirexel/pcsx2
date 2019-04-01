@@ -36,9 +36,9 @@ namespace Omega_Red.Panels
 
         private const int Format = (int)D3DFMT.D3DFMT_X8R8G8B8;
 
-        private static uint m_width = 1280;// 800; 
+        public static uint WIDTH = 1280;// 800; 
 
-        private static uint m_height = 720;// 600;
+        public static uint HEIGHT = 720;// 600;
 
         private class D3D9Image : D3DImage
         {
@@ -97,8 +97,8 @@ namespace Omega_Red.Panels
             {
 
                 return device.CreateTexture(
-                    m_width,
-                    m_height,
+                    WIDTH,
+                    HEIGHT,
                     1,
                     1,  //D3DUSAGE_RENDERTARGET
                     Format, 

@@ -27,7 +27,7 @@ namespace Omega_Red.ViewModels
     {
         private void exit()
         {
-            if(App.Current.MainWindow != null)
+            if (App.Current.MainWindow != null)
                 App.Current.MainWindow.Close();
         }
 

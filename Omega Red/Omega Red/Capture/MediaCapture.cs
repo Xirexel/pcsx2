@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Capture.Interop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,11 +38,7 @@ namespace Omega_Red.Capture
         private MethodInfo m_GetVersion = null;
         
         private string m_TempFileName = "";
-
-        public object UpdateCallbackDelegate { get { return mUpdateCallbackDelegate; } }
-
-        private object mUpdateCallbackDelegate = null;
-
+                
         private static MediaCapture m_Instance = null;
 
         public static MediaCapture Instance { get { if (m_Instance == null) m_Instance = new MediaCapture(); return m_Instance; } }
@@ -104,16 +101,13 @@ namespace Omega_Red.Capture
                             m_Stop = l_CaptureType.GetMethod("stop");
 
                             m_GetVersion = l_CaptureType.GetMethod("getVersion");
-
-                            var l_UpdateCallbackDelegateProp = l_CaptureType.GetProperty("UpdateCallbackDelegate");
-
-                            if (l_UpdateCallbackDelegateProp != null)
-                                mUpdateCallbackDelegate = l_UpdateCallbackDelegateProp.GetMethod.Invoke(m_CaptureObj, null);
-
+                            
                             m_GetVersion.Invoke(m_CaptureObj, new object[] { m_Version_XMLstring });
                         }
                     }
                 }
+
+
             }
             catch (System.Exception exc)
             {
@@ -149,10 +143,9 @@ namespace Omega_Red.Capture
                 if (m_Start == null)
                     break;
 
-                mFileExtention = m_Start.Invoke(m_CaptureObj, new object[] { 
-                    Omega_Red.Tools.ModuleControl.getRenderingTexture(),
-                    Omega_Red.Tools.ModuleControl.getAudioCaptureProcessor(),
-                    //"",
+                mFileExtention = m_Start.Invoke(m_CaptureObj, new object[] {
+                    CaptureTargetTexture.Instance.CaptureNative.ToString(),
+                    Omega_Red.Tools.PCSX2Controller.Instance.getAudioCaptureProcessor(),
                     m_TempFileName,
                     Omega_Red.Properties.Settings.Default.CompressionQuality}) as string;                
 

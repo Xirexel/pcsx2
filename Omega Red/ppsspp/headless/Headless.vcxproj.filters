@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Headless.cpp" />
+    <ClCompile Include="Compare.cpp" />
+    <ClCompile Include="..\ext\glew\glew.c" />
+    <ClCompile Include="WindowsHeadlessHost.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Windows\W32Util\Misc.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Windows\GPU\D3D11Context.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="StubHost.cpp" />
+    <ClCompile Include="SDLHeadlessHost.cpp">
+      <Filter>Other Platforms</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="headless.txt" />
+    <None Include="..\test.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="StubHost.h" />
+    <ClInclude Include="Compare.h" />
+    <ClInclude Include="WindowsHeadlessHost.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="SDLHeadlessHost.h">
+      <Filter>Other Platforms</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Windows">
+      <UniqueIdentifier>{28215e85-3e11-4a8a-8b4d-3e355b85a542}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Other Platforms">
+      <UniqueIdentifier>{d34ba935-dcca-4f21-a869-5d0b3bba7478}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

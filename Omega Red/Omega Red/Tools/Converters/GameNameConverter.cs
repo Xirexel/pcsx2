@@ -27,7 +27,7 @@ namespace Omega_Red.Tools.Converters
         public object Convert(object value, Type targetType,
             object parameter, CultureInfo culture)
         {
-            string l_result = "";
+            string l_result = value as String;
 
             var l_gameData = GameIndex.Instance.convert(value as String);
 

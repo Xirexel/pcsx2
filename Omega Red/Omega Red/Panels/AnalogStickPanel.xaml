@@ -10,7 +10,10 @@
              Height="120"
                 PreviewMouseDown="Ellipse_MouseCheck"
                      PreviewMouseUp="Ellipse_MouseCheck"
-                     PreviewMouseMove="Ellipse_MouseMove">
+                     PreviewMouseMove="Ellipse_MouseMove"
+             PreviewTouchDown="UserControl_PreviewTouchDown"
+             PreviewTouchMove="UserControl_PreviewTouchMove"
+             PreviewTouchUp="UserControl_PreviewTouchUp">
     <Grid>
         <Ellipse Stroke="{DynamicResource StandardBorderBrush}" StrokeThickness="{DynamicResource ButtonBorderThickness}"/>
         <Ellipse Stroke="{DynamicResource PadBorderBrush}" Margin="2" StrokeThickness="{DynamicResource PadBorderThickness}"/>
@@ -39,6 +42,9 @@
                      StrokeThickness="{DynamicResource PadBorderThickness}">
                 <Ellipse.Triggers>
                     <EventTrigger RoutedEvent="Ellipse.MouseDown">
+                        <BeginStoryboard Storyboard="{StaticResource SwitchPressedButtonBrushStoryboard}" />
+                    </EventTrigger>
+                    <EventTrigger RoutedEvent="Ellipse.TouchDown">
                         <BeginStoryboard Storyboard="{StaticResource SwitchPressedButtonBrushStoryboard}" />
                     </EventTrigger>
                     <EventTrigger RoutedEvent="Ellipse.MouseUp">

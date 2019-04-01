@@ -8,6 +8,7 @@
              ClipToBounds="True">
     <Grid>
         <ListView Style="{DynamicResource InfoListView}"/>
+        <ContentPresenter Content="{Binding TipInfo}" Visibility="{Binding VisibilityTipInfo}" />
         <Grid
             Margin="10,10,30,0"
             HorizontalAlignment="Right"

@@ -37,6 +37,16 @@ namespace Omega_Red.ViewModels
             ConfigManager.Instance.SwitchControlModeEvent += Instance_SwitchControlModeEvent;
 
             ConfigManager.Instance.SwitchTopmostEvent += Instance_SwitchTopmostEvent;
+
+            PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+        }
+
+        private void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum obj)
+        {
+            if (PCSX2Controller.Instance.IsoInfo != null && PCSX2Controller.Instance.IsoInfo.GameType == Models.GameType.PSP)
+                VisibilityDiskState = Visibility.Collapsed;
+            else
+                VisibilityDiskState = Visibility.Visible;
         }
 
         void Instance_SwitchTopmostEvent(bool obj)
@@ -221,20 +231,14 @@ namespace Omega_Red.ViewModels
                 return l_checkBox;
             }
         }
-
-        public Visibility EnableRenderingConfig {
-            get
-            {
-                return App.m_is_enable_rendering_mode? Visibility.Visible: Visibility.Collapsed;
-            }
-        }
-
-        
+                       
         public double SoundLevel
         {
             get
             {
                 ModuleControl.Instance.setVolume(Settings.Default.SoundLevel);
+
+                PPSSPPControl.Instance.setAudioVolume(Settings.Default.SoundLevel);
 
                 return Settings.Default.SoundLevel;
             }
@@ -243,6 +247,8 @@ namespace Omega_Red.ViewModels
                 Settings.Default.SoundLevel = value;
 
                 ModuleControl.Instance.setVolume(Settings.Default.SoundLevel);
+
+                PPSSPPControl.Instance.setAudioVolume(Settings.Default.SoundLevel);
 
                 Settings.Default.Save();
 
@@ -256,6 +262,8 @@ namespace Omega_Red.ViewModels
             {
                 ModuleControl.Instance.setIsMuted(Settings.Default.IsMuted);
 
+                PPSSPPControl.Instance.setIsMuted(Settings.Default.IsMuted);
+
                 return Settings.Default.IsMuted;
             }
             set
@@ -263,6 +271,8 @@ namespace Omega_Red.ViewModels
                 Settings.Default.IsMuted = value;
 
                 ModuleControl.Instance.setIsMuted(Settings.Default.IsMuted);
+
+                PPSSPPControl.Instance.setIsMuted(Settings.Default.IsMuted);
 
                 Settings.Default.Save();
 
@@ -273,6 +283,42 @@ namespace Omega_Red.ViewModels
         public Visibility VisibilityState
         {
             get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
+        }
+        
+        public bool IsFXAA
+        {
+            get
+            {
+                ModuleControl.Instance.setIsFXAA(Settings.Default.IsFXAA);
+
+                return Settings.Default.IsFXAA;
+            }
+            set
+            {
+                Settings.Default.IsFXAA = value;
+
+                Settings.Default.Save();
+
+                ModuleControl.Instance.setIsFXAA(Settings.Default.IsFXAA);
+
+                RaisePropertyChangedEvent("IsFXAA");
+            }
+        }
+
+        private Visibility mVisibilityDiskState = Visibility.Visible;
+
+        public Visibility VisibilityDiskState
+        {
+            get
+            {
+                return mVisibilityDiskState;
+            }
+            set
+            {
+                mVisibilityDiskState = value;
+
+                RaisePropertyChangedEvent("VisibilityDiskState");
+            }
         }
     }
 }

@@ -89,6 +89,16 @@ namespace Omega_Red.Tools
             update();
         }
 
+        public void enable(bool a_state)
+        {
+            if(a_state)
+                m_state.dwPacketNumber = 0;
+            else
+                m_state.dwPacketNumber = uint.MaxValue;
+
+            update();
+        }
+
         private void update()
         {
             Marshal.StructureToPtr(m_state, m_Ptr, false);

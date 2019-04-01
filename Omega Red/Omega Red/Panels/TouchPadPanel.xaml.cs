@@ -148,6 +148,8 @@ namespace Omega_Red.Panels
         {
             if (e != null && e.OriginalSource is FrameworkElement && (e.OriginalSource as FrameworkElement).Tag != null)
             {
+                (e.OriginalSource as Button).Background = App.Current.Resources["UnpressedButtonBrush"] as Brush;
+
                 UInt16 l_key = UInt16.Parse((e.OriginalSource as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
                 PadInput.Instance.removeKey(l_key);
@@ -202,26 +204,36 @@ namespace Omega_Red.Panels
         {
             if (sender != null && sender is FrameworkElement && (sender as FrameworkElement).Tag != null)
             {
+                (sender as Button).Background = App.Current.Resources["PressedButtonBrush"] as Brush;
+
                 UInt16 l_key = UInt16.Parse((sender as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
                 PadInput.Instance.setKey(l_key);
             }
         }
 
+        private void Button_PreviewTouchDown(object sender, TouchEventArgs e)
+        {
+            if (sender != null && sender is FrameworkElement && (sender as FrameworkElement).Tag != null)
+            {
+                (sender as Button).Background = App.Current.Resources["PressedButtonBrush"] as Brush;
 
+                UInt16 l_key = UInt16.Parse((sender as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
+                PadInput.Instance.setKey(l_key);
+            }
+        }
 
+        private void Button_PreviewTouchUp(object sender, TouchEventArgs e)
+        {          
+            if (sender != null && sender is FrameworkElement && (sender as FrameworkElement).Tag != null)
+            {
+                (sender as Button).Background = App.Current.Resources["UnpressedButtonBrush"] as Brush;              
+                
+                UInt16 l_key = UInt16.Parse((sender as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
-        //public double ScaledWidth
-        //{
-        //    get { return (double)GetValue(ScaledWidthProperty); }
-        //    set { SetValue(ScaledWidthProperty, value); }
-        //}
-
-        //// Using a DependencyProperty as the backing store for ScaledWidth.  This enables animation, styling, binding, etc...
-        //public static readonly DependencyProperty ScaledWidthProperty =
-        //    DependencyProperty.Register("ScaledWidth", typeof(double), typeof(UserControl), new PropertyMetadata(0));
-
-
+                PadInput.Instance.removeKey(l_key);
+            }
+        }
     }
 }

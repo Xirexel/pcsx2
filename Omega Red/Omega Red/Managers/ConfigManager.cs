@@ -198,8 +198,7 @@ namespace Omega_Red.Managers
 
                 _renderingSchemaCollection.Add("Default");
 
-                if (App.m_is_enable_rendering_mode)
-                    _renderingSchemaCollection.Add("Tessellated");
+                _renderingSchemaCollection.Add("Tessellated");
 
                 mRenderingSchemaModeView = CollectionViewSource.GetDefaultView(_renderingSchemaCollection);
 

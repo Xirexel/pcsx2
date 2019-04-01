@@ -259,6 +259,8 @@ namespace Omega_Red.Managers
         {
             if (a_PadControlInfo != null)
             {
+                PadInput.Instance.enable(a_PadControlInfo.Title_Key == "TouchPadTitle");
+
                 mPadControlInfo = a_PadControlInfo;
 
                 if (ShowTouchPadPanelEvent != null)
