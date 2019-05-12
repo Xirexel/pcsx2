@@ -17,14 +17,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace Omega_Red.Capture
 {
     class MediaCapture
     {
-
         private StringBuilder m_Version_XMLstring = new StringBuilder();
 
         private Assembly m_MediaCaptureAssembly = null;
@@ -145,7 +148,7 @@ namespace Omega_Red.Capture
 
                 mFileExtention = m_Start.Invoke(m_CaptureObj, new object[] {
                     CaptureTargetTexture.Instance.CaptureNative.ToString(),
-                    Omega_Red.Tools.PCSX2Controller.Instance.getAudioCaptureProcessor(),
+                    AudioCaptureTarget.Instance.RegisterAction,
                     m_TempFileName,
                     Omega_Red.Properties.Settings.Default.CompressionQuality}) as string;                
 

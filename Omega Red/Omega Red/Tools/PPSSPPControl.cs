@@ -42,16 +42,22 @@ namespace Omega_Red.Tools
                        
             ThreadStart innerCallStart = new ThreadStart(()=> {
 
-                PPSSPPNative.Instance.launch(a_filepath, m_VideoPanelHandler, Capture.CaptureTargetTexture.Instance.CaptureHandler, Tools.PadInput.Instance.Hanler, szStickDirectory);
-
-                if (a_callBackDel != null)
-                    a_callBackDel();
+                PPSSPPNative.Instance.launch(
+                    a_filepath, 
+                    m_VideoPanelHandler, 
+                    Capture.CaptureTargetTexture.Instance.CaptureHandler,
+                    Tools.PadInput.Instance.Hanler,
+                    Capture.AudioCaptureTarget.Instance.DataCallback,
+                    szStickDirectory);
 
                 m_is_launched = true;
 
                 setAudioVolume(m_Audiolevel);
 
                 setIsMuted(m_is_muted);
+
+                if (a_callBackDel != null)
+                    a_callBackDel();
 
             });
 
@@ -153,14 +159,6 @@ namespace Omega_Red.Tools
                     setAudioVolume(0.0f);
                 else
                     setAudioVolume(m_Audiolevel);
-        }
-
-        public string getAudioCaptureProcessor()
-        {
-            if (m_is_launched)
-                    return PPSSPPNative.Instance.getAudioCaptureProcessor().ToString();
-                else
-                    return "";
         }
     }
 }

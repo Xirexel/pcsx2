@@ -4,15 +4,120 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:panels="clr-namespace:Omega_Red.Panels" 
+             xmlns:viewModels="clr-namespace:Omega_Red.ViewModels"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid Background="Black" PreviewMouseMove="Grid_PreviewMouseMove">
         <Grid.RowDefinitions>
-            <RowDefinition Height="3*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="2*"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
-        <MediaElement x:Name="mVideoPlayer"  Grid.RowSpan="2" LoadedBehavior="Manual" UnloadedBehavior="Manual"/>
-        <Viewbox VerticalAlignment="Bottom" Grid.Row="1" Margin="30">
+        <MediaElement x:Name="mVideoPlayer" Grid.RowSpan="3" LoadedBehavior="Manual" UnloadedBehavior="Manual"/>
+        <Viewbox VerticalAlignment="Top" Visibility="{Binding IsVisibilityGoogleAccount}" IsEnabled="{Binding GoogleAccountIsEnabled}" Grid.Row="0" HorizontalAlignment="Left">
+                <Viewbox.DataContext>
+                <viewModels:SocialNetworksViewModel/>
+            </Viewbox.DataContext>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Viewbox Margin="80,80,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
+                    <Grid>
+                        <CheckBox x:Name="mYouTubeChkBx" Style="{DynamicResource StateCheckBox}" Unchecked="CheckBox_Checked" Checked="CheckBox_Checked" Grid.Column="1">
+                            <Image Source="/Assests/Images/Register_youtube2.png" 
+                                   Stretch="Uniform" 
+                                   Height="128" 
+                                   Width="128"/>
+                        </CheckBox>
+                        <Grid Visibility="{Binding IsVisibilityYouTubeVideo}">
+                            <panels:ProgressBanner/>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Horizontal">
+                                <TextBlock Text="{Binding YouTubeVideoUploadingProgress, StringFormat={}{0:0.0}}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource MainForegroundBrush}" />
+                                <TextBlock Text="%" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource MainForegroundBrush}" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Viewbox>
+
+                <Border Visibility="Hidden" x:Name="m_YouTubeVideoMetaDataPanel" Grid.Row="1" Margin="80,0,-86,-218" Background="{DynamicResource MainBackgroundBrush}" 
+                            BorderBrush="{DynamicResource StandardBorderBrush}" 
+                            BorderThickness="{DynamicResource StandardBorderThickness}"
+                                CornerRadius="{DynamicResource StandardCornerRadius}">
+
+                    <Grid Margin="10,10,10,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <Grid.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="22"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Margin" Value="0,5"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+                                </Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="FontSize" Value="20"/>
+                                    <Setter Property="Margin" Value="0,5"/>
+                                </Style>
+
+                                
+                            </Grid.Resources>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="350"/>
+                                <ColumnDefinition Width="500"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" FontWeight="Bold" TextWrapping="Wrap" Text="{DynamicResource YouTubeVideoTitle}"/>
+                            <TextBlock Grid.Row="1" FontWeight="Bold" TextWrapping="Wrap" Text="{DynamicResource YouTubeVideoDescriptionTitle}"/>
+                            <TextBlock Grid.Row="2" FontWeight="Bold" TextWrapping="Wrap" Text="{DynamicResource YouTubeVideoTagsTitle}"/>
+                            <TextBlock Grid.Row="3" FontWeight="Bold" TextWrapping="Wrap" Text="{DynamicResource YouTubeVideoCategoryIdTitle}"/>
+                            <TextBlock Grid.Row="4" FontWeight="Bold" TextWrapping="Wrap" Text="{DynamicResource YouTubeVideoPrivacyStatusTitle}"/>
+
+
+                            <TextBox x:Name="mVideoTitleTxtbx" Grid.Row="0" Grid.Column="1" Text=""/>
+                            <TextBox x:Name="mVideoDescriptionTxtbx" Grid.Row="1" Grid.Column="1" Text=""/>
+                            <TextBox x:Name="mVideoTagsTxtbx" Grid.Row="2" Grid.Column="1" Text=""/>
+                            <TextBox x:Name="mVideoCategoryIdTxtbx" Grid.Row="3" Grid.Column="1" Text=""/>
+                            <ComboBox x:Name="mVideoPrivacyStatusCmbbx" Grid.Row="4" Grid.Column="1" SelectedIndex="0" >
+                                <ComboBoxItem>
+                                    <TextBlock Margin="0" Text="private"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <TextBlock Margin="0" Text="public" />
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <TextBlock Margin="0" Text="unlisted" />
+                                </ComboBoxItem>
+                            </ComboBox>    
+                        </Grid>
+
+                        <Button Style="{DynamicResource BaseBtn}" Click="Button_Click" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Grid.Row="1" Width="90" Height="90" 
+                                 Command="{Binding SendVideoToYouTubeCommand}"                                
+                                CommandParameter="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Grid}, 
+                                   AncestorLevel=1}}">
+                            <TextBlock Margin="8" FontSize="20" FontWeight="Bold" Text="{DynamicResource SendTitle}" 
+                                           Foreground="{DynamicResource MainForegroundBrush}"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
+            </Grid>
+        </Viewbox>
+        <Viewbox VerticalAlignment="Bottom" Grid.Row="2" Margin="30">
             <!--<Grid x:Name="mControlPanel" HorizontalAlignment="Stretch" Opacity="0.5"
                   Width="{Binding RelativeSource={RelativeSource  
                            FindAncestor, 

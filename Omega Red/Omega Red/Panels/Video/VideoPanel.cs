@@ -34,7 +34,7 @@ namespace Omega_Red.Panels
             D3DFMT_X8R8G8B8             = 22
         }
 
-        private const int Format = (int)D3DFMT.D3DFMT_X8R8G8B8;
+        private const int Format = (int)D3DFMT.D3DFMT_A8R8G8B8;
 
         public static uint WIDTH = 1280;// 800; 
 
@@ -187,6 +187,21 @@ namespace Omega_Red.Panels
 
                 l_encoder.QualityLevel = 75;
 
+                Array lPixels = Array.CreateInstance(typeof(Byte), l_bitmap.PixelWidth * 4 * l_bitmap.PixelHeight);
+
+                l_bitmap.CopyPixels(lPixels, l_bitmap.PixelWidth * 4, 0);
+                
+                l_bitmap = BitmapSource.Create(
+                    l_bitmap.PixelWidth,
+                    l_bitmap.PixelHeight,
+                    l_bitmap.DpiX,
+                    l_bitmap.DpiY,
+                    PixelFormats.Bgr32,
+                    null,
+                    lPixels,
+                    l_bitmap.PixelWidth * 4
+                    );
+                    
                 l_encoder.Frames.Add(BitmapFrame.Create(l_bitmap));
 
                 using (var outputStream = new MemoryStream())

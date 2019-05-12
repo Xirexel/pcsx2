@@ -147,16 +147,23 @@ namespace Omega_Red.Tools.Savestate
             {
                 var lAttr = root.SelectSingleNode("@Date");
 
-                if(lAttr != null)
+                if(lAttr != null && !string.IsNullOrWhiteSpace(lAttr.Value))
                 {
-                    mDate = lAttr.Value;
+                    mDate = lAttr.Value.Replace('.','/');
                 }
                 
                 lAttr = root.SelectSingleNode("@DurationInSeconds");
 
-                if (lAttr != null)
+                if (lAttr != null && !string.IsNullOrWhiteSpace(lAttr.Value))
                 {
-                    Double.TryParse(lAttr.Value, out mDurationInSeconds);
+                    string lvalue = lAttr.Value;
+
+                    var lsplitList = lAttr.Value.Split(new char[] { '.', ',' });
+
+                    if (lsplitList != null && lsplitList.Length > 0)
+                        lvalue = lsplitList[0];
+
+                    Double.TryParse(lvalue, out mDurationInSeconds);
                 }
             }
 

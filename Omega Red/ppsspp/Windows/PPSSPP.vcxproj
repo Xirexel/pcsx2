@@ -364,7 +364,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="AudioCaptureProcessor.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="GPU\D3D11Context.cpp" />
     <ClCompile Include="Debugger\BreakpointWindow.cpp" />
@@ -472,7 +471,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="AudioCaptureProcessor.h" />
     <ClInclude Include="dllmain.h" />
     <ClInclude Include="GPU\D3D11Context.h" />
     <ClInclude Include="Debugger\BreakpointWindow.h" />

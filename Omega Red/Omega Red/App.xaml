@@ -6,7 +6,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary x:Name="mColourSchemes" Source="ColourSchemes/Default.xaml"/>
-                <ResourceDictionary Source="Styles/Styles.xaml"/>
+                <ResourceDictionary x:Name="mStyles" Source="Styles/Styles.xaml"/>
                 <ResourceDictionary x:Name="mCaptions" Source="Captions/BaseCaptions.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

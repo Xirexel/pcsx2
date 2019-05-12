@@ -388,7 +388,7 @@ namespace Omega_Red.Managers
                     {
                         l_IsoInfo.Title = l_info.Item1;
 
-                        l_IsoInfo.GameDiscType = "PSP Disk";
+                        l_IsoInfo.GameDiscType = "PSP Disc";
 
                         l_IsoInfo.GameType = GameType.PSP;
 
@@ -417,6 +417,26 @@ namespace Omega_Red.Managers
         public void createItem()
         {
             addIsoInfo();
+        }
+
+        public void persistItemAsync(object a_Item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void loadItemAsync(object a_Item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool accessPersistItem(object a_Item)
+        {
+            return true;
+        }
+
+        public bool accessLoadItem(object a_Item)
+        {
+            return true;
         }
 
         public System.ComponentModel.ICollectionView Collection

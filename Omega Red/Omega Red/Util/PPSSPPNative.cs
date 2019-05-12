@@ -14,7 +14,13 @@ namespace Omega_Red.Util
     {
         
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        delegate void FirstDelegate([MarshalAs(UnmanagedType.LPWStr)]String szCmdLine, IntPtr a_parent, IntPtr a_CaptureHandler, IntPtr a_TouchPadHandler, [MarshalAs(UnmanagedType.LPWStr)]String szStickDirectory);
+        delegate void FirstDelegate(
+            [MarshalAs(UnmanagedType.LPWStr)]String szCmdLine,
+            IntPtr a_parent, 
+            IntPtr a_CaptureHandler,
+            IntPtr a_TouchPadHandler,
+            [MarshalAs(UnmanagedType.FunctionPtr)] Capture.SetDataCallback a_setAudioDataCallback,
+            [MarshalAs(UnmanagedType.LPWStr)]String szStickDirectory);
         
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         delegate void SecondDelegate();
@@ -27,13 +33,6 @@ namespace Omega_Red.Util
         
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         delegate void FifthDelegate(float a_level);
-
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        delegate IntPtr SixthDeleage();
-
-
-        
-
 
 
         // Init
@@ -62,10 +61,7 @@ namespace Omega_Red.Util
             public SecondDelegate Resume;
 
             // Установить гоомкость
-            public FifthDelegate SetAudioVolume;
-            
-            // Получить указатель на процессор аудио захвата
-            public SixthDeleage GetAudioCaptureProcessor;
+            public FifthDelegate SetAudioVolume;            
         }
 
 
@@ -148,13 +144,13 @@ namespace Omega_Red.Util
             }
         }
 
-        public void launch(string szCmdLine, IntPtr a_VideoPanelHandler, IntPtr a_CaptureHandler, IntPtr a_TouchPadHandler, string szStickDirectory)
+        public void launch(string szCmdLine, IntPtr a_VideoPanelHandler, IntPtr a_CaptureHandler, IntPtr a_TouchPadHandler, Capture.SetDataCallback a_setAudioDataCallback, string szStickDirectory)
         {
             if (!m_IsInitialized)
                 return;
 
             if (m_PPSSPPFunctions.Launch != null)
-                m_PPSSPPFunctions.Launch(szCmdLine, a_VideoPanelHandler, a_CaptureHandler, a_TouchPadHandler, szStickDirectory);
+                m_PPSSPPFunctions.Launch(szCmdLine, a_VideoPanelHandler, a_CaptureHandler, a_TouchPadHandler, a_setAudioDataCallback, szStickDirectory);
         }
 
         public void getGameInfo(string a_filename, out string a_title, out string a_id)
@@ -241,27 +237,11 @@ namespace Omega_Red.Util
             if (m_PPSSPPFunctions.Shutdown != null)
                 m_PPSSPPFunctions.Shutdown();
         }
-
-        public IntPtr getAudioCaptureProcessor()
-        {
-            IntPtr l_result = IntPtr.Zero;
-
-            if (!m_IsInitialized)
-                return l_result;
-
-            if (m_PPSSPPFunctions.GetAudioCaptureProcessor != null)
-                l_result = m_PPSSPPFunctions.GetAudioCaptureProcessor();
-
-            return l_result;
-        }
-
+        
         public void release()
         {
             if(m_LibLoader != null)
                 m_LibLoader.release();
-        }
-
-
-        
+        }                       
     }
 }

@@ -270,7 +270,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Visibility"  Value="Hidden" />
+                            <Setter Property="Visibility"  Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IsPressed"  Value="True">
                             <Setter Property="Background"  Value="{DynamicResource PressedButtonBrush}" />
@@ -318,6 +318,40 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Visibility"  Value="Hidden" />
+                        </Trigger>
+                        <Trigger Property="IsPressed"  Value="True">
+                            <Setter Property="Background"  Value="{DynamicResource PressedButtonBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <Style x:Key="DriveBtn" TargetType="Button">
+        <Setter Property="Margin" Value="5,0" />
+        <Setter Property="Padding" Value="6" />
+        <Setter Property="Width" Value="30" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="Background" Value="{DynamicResource UnpressedButtonBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StandardBorderBrush}"/>
+        <Setter Property="Command" Value="{Binding SyncCommand}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Ellipse Fill="{TemplateBinding Background}" 
+                                 Stroke="{TemplateBinding BorderBrush}" 
+                                 StrokeThickness="{DynamicResource ButtonBorderThickness}"/>
+                        <Viewbox Margin="5">
+                            <ContentPresenter/>
+                        </Viewbox>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity"  Value="0.5" />
                         </Trigger>
                         <Trigger Property="IsPressed"  Value="True">
                             <Setter Property="Background"  Value="{DynamicResource PressedButtonBrush}" />

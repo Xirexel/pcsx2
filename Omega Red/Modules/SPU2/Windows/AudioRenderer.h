@@ -1,8 +1,5 @@
 #pragma once
 
-#include "Common\CaptureManagerTypeInfo.h"
-#include "Common\ComPtrCustom.h"
-
 class AudioRenderer
 {
 public:
@@ -16,8 +13,6 @@ private:
 	bool m_is_muted;
 
     double m_volume;
-
-	CComPtrCustom<ICaptureProcessor> m_ICaptureProcessor;
 };
 
 extern AudioRenderer g_AudioRenderer;

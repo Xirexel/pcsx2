@@ -273,12 +273,7 @@ namespace Omega_Red.Tools
                 }
             }
         }
-
-//        [patches = 70D26E09]
-//    // change TLSNDDRV RPC to blocking, better would be to move the wait to the top of the function
-//    patch=0,EE,00290408,word,24060000
-//[/patches]
-
+        
         public GameData convert(string a_disc_serial)
         {
             GameData l_result = null;

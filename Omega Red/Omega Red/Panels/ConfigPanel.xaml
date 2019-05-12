@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:p="clr-namespace:Omega_Red.Properties"   
+             xmlns:viewModels="clr-namespace:Omega_Red.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="300">
@@ -22,6 +23,22 @@
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <WrapPanel Background="{DynamicResource LockScreenForegroundBrush}">
+            <Border>
+                <StackPanel Margin="5">
+                    <TextBlock Text="{DynamicResource SocialNetworksTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
+                    <Grid Margin="5,0,5,0">
+                        <Grid.DataContext>
+                            <viewModels:SocialNetworksViewModel/>
+                        </Grid.DataContext>
+                        <CheckBox Style="{DynamicResource StateCheckBox}" IsChecked="{Binding GoogleAccountIsChecked}">
+                            <Image Source="/Assests/Images/Register_google.png" 
+                                       Stretch="Uniform" 
+                                       Height="64" 
+                                       Width="64"/>
+                        </CheckBox>
+                    </Grid>
+                </StackPanel>
+            </Border>
             <Border>
                 <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
                     <TextBlock Text="{DynamicResource DisplayModeTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
@@ -85,14 +102,14 @@
                 <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ColourSchemaCollection}" Margin="5,0,5,5"/>
                 </StackPanel>
             </Border>
-            <Border Visibility="{Binding VisibilityDiskState}">
+            <Border>
                 <StackPanel Margin="5">
                 <TextBlock Text="{DynamicResource RenderingSchemaTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
                 <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding RenderingSchemaCollection}" Margin="5,0,5,5"/>
                 <ContentPresenter Content="{Binding RenderingConfig}" Margin="5,0,5,5"/>
                 </StackPanel>
             </Border>
-            <Border Visibility="{Binding VisibilityDiskState}">
+            <Border>
                 <StackPanel Margin="5" VerticalAlignment="Center">
                 <CheckBox Margin="5" IsChecked="{Binding IsFXAA}" VerticalContentAlignment="Center">
                     <TextBlock Text="{DynamicResource IsFXAATitle}" TextWrapping="Wrap" TextAlignment="Center" Foreground="Black"/>

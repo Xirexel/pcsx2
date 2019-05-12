@@ -189,11 +189,11 @@
                 _stream.Close();
                 _transport.Close();
             }
-            catch (ObjectDisposedException error)
+            catch (ObjectDisposedException)
             {
                 //_logger.Warn("Object Disposed", error);
             }
-            catch (Exception error)
+            catch (Exception)
             {
                 //_logger.Warn("Unknow Error", error);
 //                throw;

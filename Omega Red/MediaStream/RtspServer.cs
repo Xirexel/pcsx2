@@ -104,11 +104,11 @@ public class RtspServer : IDisposable
                 newListener.Start();
             }
         }
-        catch (SocketException error)
+        catch (SocketException)
         {
             // _logger.Warn("Got an error listening, I have to handle the stopping which also throw an error", error);
         }
-        catch (Exception error)
+        catch (Exception)
         {
             // _logger.Error("Got an error listening...", error);
             throw;

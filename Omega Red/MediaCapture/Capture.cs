@@ -20,14 +20,12 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
 namespace MediaCapture
 {
-    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    public delegate void UpdateCallback();
-
     public class Capture
     {
         Guid StreamingCBR = new Guid("8F6FF1B6-534E-49C0-B2A8-16D534EAF135");
@@ -36,42 +34,21 @@ namespace MediaCapture
 
         private ISession mISession = null;
 
+        private Action<Action<IntPtr, uint>> m_RegisterAction = null;
+
         private static Capture m_Instance = null;
-
-        public UpdateCallback UpdateCallbackDelegate { get { return mUpdateCallbackDelegate; } }
-
-        private UpdateCallback mUpdateCallbackDelegate = null;
-
-        private UpdateCallback mUpdateCallbackDelegateInner = null;
-        
+                
         public static Capture Instance { get { if (m_Instance == null) m_Instance = new Capture(); return m_Instance; } }
 
         private Capture()
         {
             try
             {
-                try
-                {
-                    mCaptureManager = new CaptureManager("CaptureManager.dll");
-                }
-                catch (Exception)
-                {
-                    mCaptureManager = new CaptureManager();
-                }
-
-                mUpdateCallbackDelegate =
-                () =>
-                {
-                    //lock (this)
-                    //{
-                    //    if (mUpdateCallbackDelegateInner != null)
-                    //        mUpdateCallbackDelegateInner();
-                    //}
-                };
+                mCaptureManager = new CaptureManager("CaptureManager.dll");
             }
-            catch (System.Exception)
+            catch (Exception)
             {
-
+                mCaptureManager = new CaptureManager();
             }
         }
 
@@ -97,7 +74,11 @@ namespace MediaCapture
 
         }
 
-        public string start(string a_PtrDirectX11Source, string a_PtrAudioCaptureProcessor, string a_FilePath, uint a_CompressionQuality)
+        public string start(
+            string a_PtrDirectX11Source,
+            Action<Action<IntPtr, uint>> a_RegisterAction, 
+            string a_FilePath, 
+            uint a_CompressionQuality)
         {
 
             string l_FileExtention = "";
@@ -155,12 +136,10 @@ namespace MediaCapture
 
                 if (l_SinkControl == null)
                     break;
-
-                UpdateCallback lUpdateCallbackDelegateInner = null;
-
+                
                 if(!string.IsNullOrEmpty(a_PtrDirectX11Source))
                 {
-                    var l_VideoCaptureProcessor = VideoTextureCaptureProcessor.createCaptureProcessor(a_PtrDirectX11Source, ref lUpdateCallbackDelegateInner);
+                    var l_VideoCaptureProcessor = VideoTextureCaptureProcessor.createCaptureProcessor(a_PtrDirectX11Source);
 
                     if (l_VideoCaptureProcessor == null)
                         break;
@@ -173,20 +152,11 @@ namespace MediaCapture
                         break;
                 }
 
-                object l_AudioCaptureProcessor = null;
+                if (m_RegisterAction == null)
+                    m_RegisterAction = a_RegisterAction;
 
-                if (!string.IsNullOrEmpty(a_PtrAudioCaptureProcessor))
-                {
-                    int l_ptrValue = 0;
-
-                    if(int.TryParse(a_PtrAudioCaptureProcessor, out l_ptrValue))
-                    {
-                        IntPtr l_ptr = new IntPtr(l_ptrValue);
-
-                        l_AudioCaptureProcessor = Marshal.GetObjectForIUnknown(l_ptr);
-                    }
-                }
-
+                object l_AudioCaptureProcessor = AudioCaptureProcessor.createCaptureProcessor(m_RegisterAction);
+                
                 // Audio Source
 
                 string lAudioLoopBack = null;
@@ -213,7 +183,7 @@ namespace MediaCapture
                 }
                 else
                 {
-                    lAudioLoopBack = string.IsNullOrWhiteSpace(a_PtrAudioCaptureProcessor)? "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack": a_PtrAudioCaptureProcessor;
+                    lAudioLoopBack = "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack";
                     
                     l_ISourceControl.getSourceOutputMediaType(
                         lAudioLoopBack,
@@ -475,9 +445,6 @@ namespace MediaCapture
                     }
                 }
 
-
-
-
                 var lSessionControl = mCaptureManager.createSessionControl();
 
                 if (lSessionControl == null)
@@ -492,12 +459,7 @@ namespace MediaCapture
                 mISession.registerUpdateStateDelegate(UpdateStateDelegate);
 
                 mISession.startSession(0, Guid.Empty);
-
-                lock (this)
-                {
-                    mUpdateCallbackDelegateInner = lUpdateCallbackDelegateInner;
-                }
-
+                
             } while (false);
 
             if (lOutputNodes != null)
@@ -578,12 +540,6 @@ namespace MediaCapture
         {
             if (mISession == null)
                 return;
-
-            lock (this)
-            {
-                mUpdateCallbackDelegateInner = null;
-            }
-
 
             mISession.stopSession();
 

@@ -357,7 +357,7 @@ namespace Omega_Red.Managers
 
                 m_colourSchemaResource = (ResourceDictionary)XamlReader.Load(lStream);
 
-                if (m_languageResource != null)
+                if (m_colourSchemaResource != null)
                 {
                     App.Current.Resources.MergedDictionaries.Add(m_colourSchemaResource);
 

@@ -24,6 +24,14 @@ namespace Omega_Red.Managers
     {
         void removeItem(object a_Item);
 
+        void persistItemAsync(object a_Item);
+
+        void loadItemAsync(object a_Item);
+
+        bool accessPersistItem(object a_Item);
+
+        bool accessLoadItem(object a_Item);
+
         void createItem();
 
         System.ComponentModel.ICollectionView Collection { get; }

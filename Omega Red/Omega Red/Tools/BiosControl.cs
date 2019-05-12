@@ -568,7 +568,7 @@ namespace Omega_Red.Tools
                 //    }
                 //}
 	        }
-	        catch (Exception ex)
+	        catch (Exception )
 	        {
                 //// Rethrow as a Bios Load Failure, so that the user interface handling the exceptions
                 //// can respond to it appropriately.

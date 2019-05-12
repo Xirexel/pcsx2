@@ -191,9 +191,6 @@
     <ClCompile Include="OmegaRedinputDevice.cpp">
       <Filter>Windows\Input</Filter>
     </ClCompile>
-    <ClCompile Include="AudioCaptureProcessor.cpp">
-      <Filter>Windows</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Debugger\CtrlDisAsmView.h">
@@ -353,9 +350,6 @@
       <Filter>Windows\System</Filter>
     </ClInclude>
     <ClInclude Include="dllmain.h" />
-    <ClInclude Include="AudioCaptureProcessor.h">
-      <Filter>Windows</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="icon1.ico">

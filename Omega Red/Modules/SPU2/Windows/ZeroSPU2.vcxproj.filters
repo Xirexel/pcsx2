@@ -45,9 +45,6 @@
     <ClCompile Include="AudioRendererControl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AudioCaptureProcessor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Targets\dsound51.h">
@@ -75,9 +72,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AudioRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AudioCaptureProcessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Common\BaseUnknown.h">

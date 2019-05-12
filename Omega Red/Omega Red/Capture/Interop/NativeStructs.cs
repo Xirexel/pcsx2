@@ -9,6 +9,9 @@ namespace Omega_Red.Capture.Interop
 {
     internal static class NativeStructs
     {
+
+        public static uint DXGI_FORMAT_B8G8R8A8_UNORM = 87;
+
         public static uint DXGI_FORMAT_B8G8R8X8_UNORM = 88;
 
         public static uint D3D11_BIND_RENDER_TARGET = 0x20;

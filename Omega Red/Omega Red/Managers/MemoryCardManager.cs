@@ -283,6 +283,26 @@ namespace Omega_Red.Managers
             addMemoryCardInfo();
         }
 
+        public void persistItemAsync(object a_Item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void loadItemAsync(object a_Item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool accessPersistItem(object a_Item)
+        {
+            return true;
+        }
+
+        public bool accessLoadItem(object a_Item)
+        {
+            return true;
+        }
+
         public ICollectionView Collection
         {
             get { return mCustomerView; }

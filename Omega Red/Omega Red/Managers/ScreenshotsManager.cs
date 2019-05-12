@@ -232,7 +232,25 @@ namespace Omega_Red.Managers
 
             _screenshotInfoCollection.Add(a_ScreenshotInfo);
         }
-        
+
+        public void persistItemAsync(object a_Item)
+        {
+        }
+
+        public void loadItemAsync(object a_Item)
+        {
+        }
+
+        public bool accessPersistItem(object a_Item)
+        {
+            return true;
+        }
+
+        public bool accessLoadItem(object a_Item)
+        {
+            return true;
+        }
+
         public ICollectionView Collection
         {
             get { return mCustomerView; }

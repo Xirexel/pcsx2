@@ -35,6 +35,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using Omega_Red.Properties;
 
 namespace Omega_Red
 {
@@ -101,6 +102,9 @@ namespace Omega_Red
             do
             {
 
+                if (Settings.Default.GoogleAccountIsChecked)
+                    SocialNetworks.GoogleAccountManager.Instance.tryAuthorize();
+
                 if (!ModuleManager.Instance.isInit)
                 {
                     break;
@@ -115,7 +119,7 @@ namespace Omega_Red
                 {
                     break;
                 }
-                               
+
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate()
                 {
 
@@ -134,8 +138,9 @@ namespace Omega_Red
 
                     ModuleControl.Instance.setWindowHandler(wih.Handle);
 
-                    PCSX2Controller.Instance.updateInitilize();
+                    SocialNetworks.GoogleAccountManager.Instance.sendEvent();
 
+                    PCSX2Controller.Instance.updateInitilize();
                 });
 
             } while (false);

@@ -9,13 +9,14 @@
     <sys:Double x:Key="PadBorderThickness">5</sys:Double>
     <sys:Double x:Key="BlurRadius">1</sys:Double>
     <sys:Double x:Key="TouchDragBtnWidth">34</sys:Double>
-    <sys:Double x:Key="ItemWidth">280</sys:Double>
+    <sys:Double x:Key="ItemWidth">290</sys:Double>
     <sys:Double x:Key="StandardOpacity">0.75</sys:Double>
     <FontWeight x:Key="StandardFontWeight">Bold</FontWeight>
     <sys:Double x:Key="StandardFontSize">15</sys:Double>
     <sys:Double x:Key="TitleFontSize">22</sys:Double>
     <FontWeight x:Key="TitleFontWeight">Bold</FontWeight>
     <sys:Double x:Key="AboutFontSize">22</sys:Double>
+    <sys:Double x:Key="ProgressFontSize">20</sys:Double>
     <sys:Double x:Key="TouchPadWidth">300</sys:Double>
     
 </ResourceDictionary> 

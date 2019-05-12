@@ -17,7 +17,6 @@
  */
 
 #include "dsound51.h"
-#include "AudioCaptureProcessor.h"
 HWND hWMain = NULL;
 
 LPDIRECTSOUND lpDS;
@@ -32,6 +31,8 @@ DSBCAPS             dsbcaps;
 unsigned long LastWrite = 0xffffffff;
 unsigned long LastWriteS = 0xffffffff;
 unsigned long LastPlay = 0;
+
+extern SetDataCallback g_setAudioData;
 
 LONG CurrentVolume = DSBVOLUME_MAX;
 
@@ -255,6 +256,6 @@ void DSSoundFeedVoiceData(unsigned char* pSound,long lBytes)
 	if(LastWrite >= SOUNDSIZE) LastWrite -= SOUNDSIZE;
 	LastPlay = cplay;
 		
-    if (g_ISourceRequestResult)
-        g_ISourceRequestResult->setData(pSound, lBytes, TRUE);
+    if (g_setAudioData != nullptr)
+        g_setAudioData(pSound, lBytes);
 }

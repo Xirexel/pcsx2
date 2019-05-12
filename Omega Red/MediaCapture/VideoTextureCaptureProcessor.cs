@@ -24,12 +24,10 @@ namespace MediaCapture
     class VideoTextureCaptureProcessor : ICaptureProcessor
     {
         string mPresentationDescriptor = "";
-
-        ISourceRequestResult mISourceRequestResult = null;
-        
+                
         private VideoTextureCaptureProcessor() { }
 
-        static public ICaptureProcessor createCaptureProcessor(string a_PtrDirectX11Source, ref UpdateCallback aUpdateCallbackDelegate)
+        static public ICaptureProcessor createCaptureProcessor(string a_PtrDirectX11Source)
         {
             if (string.IsNullOrEmpty(a_PtrDirectX11Source))
                 return null;
@@ -68,15 +66,7 @@ namespace MediaCapture
             lPresentationDescriptor = lPresentationDescriptor.Replace("{Temp_Capture_Texture}", a_PtrDirectX11Source);                  
 
             lICaptureProcessor.mPresentationDescriptor = lPresentationDescriptor;
-
-
-            aUpdateCallbackDelegate =
-            () =>
-            {
-                if (lICaptureProcessor.mISourceRequestResult != null)
-                    lICaptureProcessor.mISourceRequestResult.setData(IntPtr.Zero, 0, 1);
-            };
-       
+                               
             return lICaptureProcessor;
         }
 
@@ -115,7 +105,6 @@ namespace MediaCapture
 
         public void sourceRequest(ISourceRequestResult aISourceRequestResult)
         {
-            mISourceRequestResult = aISourceRequestResult;
         }
 
         public void start(long aStartPositionInHundredNanosecondUnits, ref Guid aGUIDTimeFormat)

@@ -119,39 +119,44 @@
             </Viewbox>
 
             <Viewbox Grid.Row="1" Grid.Column="2" VerticalAlignment="Top">
-                <CheckBox Style="{DynamicResource MediaRecorderCheckBox}" Margin="10">
-                    <CheckBox.DataContext>
+                <Grid>
+                    <Grid.DataContext>
                         <viewModels:MediaRecorderInfoViewModel/>
-                    </CheckBox.DataContext>
-                    <CheckBox.Triggers>
-                        <EventTrigger RoutedEvent="CheckBox.Checked">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <ColorAnimationUsingKeyFrames
+                    </Grid.DataContext>
+                    <CheckBox Style="{DynamicResource MediaRecorderCheckBox}" Margin="10">
+                        <CheckBox.Triggers>
+                            <EventTrigger RoutedEvent="CheckBox.Checked">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimationUsingKeyFrames
                                         Storyboard.TargetProperty="(Control.Background).(SolidColorBrush.Color)"
                                         BeginTime="00:00:00" 
                                          AutoReverse="True"
                                         RepeatBehavior="Forever">
-                                        <LinearColorKeyFrame KeyTime="00:00:00" Value="#FFFF0000"/>
-                                        <LinearColorKeyFrame KeyTime="00:00:00.75" Value="#00FF0000"/>
-                                    </ColorAnimationUsingKeyFrames>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                        <EventTrigger RoutedEvent="CheckBox.Unchecked">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <ColorAnimationUsingKeyFrames
+                                            <LinearColorKeyFrame KeyTime="00:00:00" Value="#FFFF0000"/>
+                                            <LinearColorKeyFrame KeyTime="00:00:00.75" Value="#00FF0000"/>
+                                        </ColorAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="CheckBox.Unchecked">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimationUsingKeyFrames
                                         Storyboard.TargetProperty="(Control.Background).(SolidColorBrush.Color)"
                                         BeginTime="00:00:00" 
                                          FillBehavior="HoldEnd">
-                                        <LinearColorKeyFrame KeyTime="00:00:00" Value="#FF00FF00"/>
-                                    </ColorAnimationUsingKeyFrames>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </CheckBox.Triggers>
-                </CheckBox>
+                                            <LinearColorKeyFrame KeyTime="00:00:00" Value="#FF00FF00"/>
+                                        </ColorAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </CheckBox.Triggers>
+                    </CheckBox>
+                    <Viewbox Visibility="{Binding LockVisibility}">
+                        <panels:ProgressBanner/>
+                    </Viewbox>
+                </Grid>
             </Viewbox>
             
             <Viewbox Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Top">

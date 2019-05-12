@@ -28,6 +28,7 @@ using System.Threading;
 using Omega_Red.Managers;
 using Omega_Red.Properties;
 using System.IO;
+using System.Globalization;
 
 namespace Omega_Red.Tools
 {    
@@ -307,7 +308,7 @@ namespace Omega_Red.Tools
         {
             if (m_Status == StatusEnum.Paused)
             {
-                a_SaveStateInfo.Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+                a_SaveStateInfo.Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.CreateSpecificCulture("en-US"));
 
                 a_SaveStateInfo.Duration = mGameSessionDuration.ToString(@"dd\.hh\:mm\:ss");
 
@@ -732,25 +733,6 @@ namespace Omega_Red.Tools
 
                 mGameSessionDuration = new TimeSpan();
             }
-        }
-
-        public string getAudioCaptureProcessor()
-        {
-            string l_result = "";
-
-            if (m_IsoInfo != null)
-            {
-                if (m_IsoInfo.GameType == GameType.PSP)
-                {
-                    l_result = PPSSPPControl.Instance.getAudioCaptureProcessor();
-                }
-                else
-                {
-                    l_result = Omega_Red.Tools.ModuleControl.getAudioCaptureProcessor();
-                };
-            }
-
-            return l_result;
         }
     }
 }

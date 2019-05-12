@@ -136,7 +136,6 @@
     <ClCompile Include="..\Targets\dsound51.cpp" />
     <ClCompile Include="..\Targets\SoundTargets.cpp" />
     <ClCompile Include="..\voices.cpp" />
-    <ClCompile Include="AudioCaptureProcessor.cpp" />
     <ClCompile Include="AudioRenderer.cpp" />
     <ClCompile Include="AudioRendererControl.cpp" />
     <ClCompile Include="Interface.cpp" />
@@ -149,7 +148,6 @@
     <ClInclude Include="..\Targets\dsound51.h" />
     <ClInclude Include="..\misc.h" />
     <ClInclude Include="..\reg.h" />
-    <ClInclude Include="AudioCaptureProcessor.h" />
     <ClInclude Include="AudioRenderer.h" />
     <ClInclude Include="Common\BaseUnknown.h" />
     <ClInclude Include="resource.h" />

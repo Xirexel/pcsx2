@@ -62,4 +62,18 @@
     <sys:String x:Key="SavingTitle">Сохранение...</sys:String>
     <sys:String x:Key="BiosTipTitle">Биос отсутствует, архив доступен по ссылке:</sys:String>
     <sys:String x:Key="IsoTipTitle">Диск отсутствует, диски доступены по ссылкам:</sys:String>
+    <sys:String x:Key="SocialNetworksTitle">Регистрация:</sys:String>
+    <sys:String x:Key="UploadTitle">Сохранить</sys:String>
+    <sys:String x:Key="LoadTitle">Загрузить</sys:String>
+    <sys:String x:Key="UploadingProgressTitle">Прогресс сохранения в облако:</sys:String>
+    <sys:String x:Key="DownloadingProgressTitle">Прогресс загрузки из облака:</sys:String>
+    <sys:String x:Key="DrivesaveTitle">Облачное сохранение</sys:String>
+    <sys:String x:Key="YouTubeVideoTitle">Заголовок видео:</sys:String>
+    <sys:String x:Key="YouTubeVideoDescriptionTitle">Описание видео:</sys:String>
+    <sys:String x:Key="YouTubeVideoTagsTitle">Ссылки для видео:</sys:String>
+    <sys:String x:Key="YouTubeVideoCategoryIdTitle">Идентификационный номер категории для видео:</sys:String>
+    <sys:String x:Key="YouTubeVideoPrivacyStatusTitle">Категория доступа для видео:</sys:String>
+    <sys:String x:Key="SendTitle">Отправить</sys:String>
+    
+
 </ResourceDictionary>

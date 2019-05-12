@@ -72,6 +72,8 @@ namespace Omega_Red.Panels
 
                 l_HideControlTimer.Stop();
             };
+
+            mVideoPlayer.Volume = 0.25;
         }
 
         void update(Status aStatus)
@@ -128,6 +130,8 @@ namespace Omega_Red.Panels
             Stop();
 
             mVideoPlayer.Close();
+
+            mYouTubeChkBx.IsChecked = false;
         }
 
         public void Stop()
@@ -160,9 +164,11 @@ namespace Omega_Red.Panels
 
             mVideoPlayer.Source = a_UriMediaFile;
 
-            mVideoPlayer.Position = TimeSpan.FromMilliseconds(0);
+            mVideoTitleTxtbx.Tag = a_UriMediaFile;
 
-            mVideoPlayer.Volume = 0.25;            
+            mVideoPlayer.Position = TimeSpan.FromMilliseconds(0);
+         
+            mVideoTitleTxtbx.Text = System.IO.Path.GetFileNameWithoutExtension(a_UriMediaFile.OriginalString);
 
             Play();
         }
@@ -246,5 +252,14 @@ namespace Omega_Red.Panels
             l_HideControlTimer.Start();
         }
 
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            m_YouTubeVideoMetaDataPanel.Visibility = (bool)(sender as CheckBox).IsChecked? Visibility.Visible : Visibility.Hidden;
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            mYouTubeChkBx.IsChecked = false;
+        }
     }
 }

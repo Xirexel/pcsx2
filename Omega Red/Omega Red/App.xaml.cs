@@ -36,14 +36,44 @@ namespace Omega_Red
             OffScreen
         }
 
-        public static bool m_is_ppsspp = false;
+        public static bool m_is_exit = false;
 
         public static AppType m_AppType = AppType.Screen;
                
         public App()
         {
-            Startup += (object sender, StartupEventArgs e)=>
+            var lDirectory = Path.GetDirectoryName(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+
+            var lMainDirInfo = Directory.GetParent(lDirectory);
+
+            lMainDirInfo = Directory.GetParent(lMainDirInfo.FullName);
+
+            if (File.Exists(lMainDirInfo.FullName + @"\Config.xml"))
             {
+                if (File.Exists(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath))
+                    File.Delete(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+                else
+                {
+                    var lMainDirectory = Path.GetDirectoryName(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+
+                    System.IO.Directory.CreateDirectory(lMainDirectory);
+                }
+
+                File.Copy(lMainDirInfo.FullName + @"\Config.xml", ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+            }
+
+            Settings.Default.PropertyChanged += (sender, e) =>
+            {
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).SaveAs(
+                        lMainDirInfo.FullName + @"\Config.xml", ConfigurationSaveMode.Full);
+                });
+
+            };
+
+            Startup += (object sender, StartupEventArgs e)=>
+            {                
                 this.StartupUri = new Uri("pack://application:,,,/Omega Red;component/MainWindow.xaml");
 
                 using (Process p = Process.GetCurrentProcess())
@@ -58,18 +88,21 @@ namespace Omega_Red
                         this.StartupUri = new Uri("pack://application:,,,/Omega Red;component/OffScreenWindow.xaml");
                     }
                 }
-            };  
+            };
+
+            InitializeComponent();
         }
         
         private void Application_Exit(object sender, ExitEventArgs e)
         {
+            m_is_exit = true;
+
+            Capture.MediaCapture.Instance.stop();
 
             Capture.OffScreenStream.Instance.stopServer();
 
             PCSX2Controller.Instance.Stop(true);
-
-            PPSSPPControl.Instance.close();
-
+            
             Thread.Sleep(1500);
 
             PCSX2LibNative.Instance.SysThreadBase_CancelFunc();

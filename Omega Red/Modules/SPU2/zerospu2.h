@@ -36,6 +36,8 @@
 #include <vector>
 using namespace std;
 
+typedef void(__stdcall *SetDataCallback)(void *, UINT32);
+
 extern FILE *spu2Log;
 extern string s_strIniPath;
 

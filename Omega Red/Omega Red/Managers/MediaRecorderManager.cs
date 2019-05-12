@@ -143,6 +143,8 @@ namespace Omega_Red.Managers
 
         public static MediaRecorderManager Instance { get { if (m_Instance == null) m_Instance = new MediaRecorderManager(); return m_Instance; } }
 
+        public event Action<bool> ChangeLockEvent;
+
         public MediaOutputType MediaOutputType { get; set; }
 
         private MediaRecorderManager()
@@ -154,9 +156,9 @@ namespace Omega_Red.Managers
                 switch (obj)
                 {
                     case PCSX2Controller.StatusEnum.Stopped:
-                    case PCSX2Controller.StatusEnum.Paused:
                         StartStop(false);
                         break;
+                    case PCSX2Controller.StatusEnum.Paused:
                     case PCSX2Controller.StatusEnum.NoneInitilized:
                     case PCSX2Controller.StatusEnum.Initilized:
                     case PCSX2Controller.StatusEnum.Started:
@@ -240,38 +242,55 @@ namespace Omega_Red.Managers
                 
         public void StartStop(Object aState)
         {
-            if (aState is Boolean)
+            var t = new Thread(() =>
             {
-                if ((bool)aState)
-                {
-                    switch (MediaOutputType)
-                    {
-                        case MediaOutputType.Capture:
-                            MediaCapture.Instance.start();
-                            break;
-                        case MediaOutputType.Stream:
-                            MediaStream.Instance.start();
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                else
-                {
-                    switch (MediaOutputType)
-                    {
-                        case MediaOutputType.Capture:
-                            MediaCapture.Instance.stop();
-                            break;
-                        case MediaOutputType.Stream:
-                            MediaStream.Instance.stop();
-                            break;
-                        default:
-                            break;
-                    }
-                }
+                ChangeLockEvent(true);
 
-            }
+                try
+                {
+
+                    if (aState is Boolean)
+                    {
+                        if ((bool)aState)
+                        {
+                            switch (MediaOutputType)
+                            {
+                                case MediaOutputType.Capture:
+                                    MediaCapture.Instance.start();
+                                    break;
+                                case MediaOutputType.Stream:
+                                    MediaStream.Instance.start();
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        else
+                        {
+
+                            switch (MediaOutputType)
+                            {
+                                case MediaOutputType.Capture:
+                                    MediaCapture.Instance.stop();
+                                    break;
+                                case MediaOutputType.Stream:
+                                    MediaStream.Instance.stop();
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    ChangeLockEvent(false);
+                }
+            });
+
+            t.SetApartmentState(ApartmentState.MTA);
+            
+            t.Start();
         }
         
         public void removeItem(object a_Item)
@@ -326,7 +345,30 @@ namespace Omega_Red.Managers
 
             l_MediaRecorderInfo.DateTime = DateTime.Now;
 
-            _mediaRecorderInfoCollection.Add(l_MediaRecorderInfo);
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                _mediaRecorderInfoCollection.Add(l_MediaRecorderInfo);
+            });
+        }
+
+        public void persistItemAsync(object a_Item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void loadItemAsync(object a_Item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool accessPersistItem(object a_Item)
+        {
+            return true;
+        }
+
+        public bool accessLoadItem(object a_Item)
+        {
+            return true;
         }
 
         public System.ComponentModel.ICollectionView Collection

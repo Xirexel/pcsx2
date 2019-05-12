@@ -10,7 +10,7 @@
         <ListView Style="{DynamicResource InfoListView}"/>
         <ContentPresenter Content="{Binding TipInfo}" Visibility="{Binding VisibilityTipInfo}" />
         <Grid
-            Margin="10,10,30,0"
+            Margin="10,10,20,0"
             HorizontalAlignment="Right"
                 VerticalAlignment="Bottom">
             <Ellipse HorizontalAlignment="Center"

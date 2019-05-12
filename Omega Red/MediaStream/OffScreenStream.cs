@@ -20,11 +20,7 @@ namespace MediaStream
 
         private static OffScreenStream m_Instance = null;
 
-        public UpdateCallback UpdateCallbackDelegate { get { return mUpdateCallbackDelegate; } }
-
-        private UpdateCallback mUpdateCallbackDelegate = null;
-
-        private UpdateCallback mUpdateCallbackDelegateInner = null;
+        private Action<Action<IntPtr, uint>> m_RegisterAction = null;
 
         public static OffScreenStream Instance { get { if (m_Instance == null) m_Instance = new OffScreenStream(); return m_Instance; } }
 
@@ -58,17 +54,7 @@ namespace MediaStream
                 catch (Exception)
                 {
                     mCaptureManager = new CaptureManager();
-                }
-                
-                mUpdateCallbackDelegate =
-                () =>
-                {
-                    //lock (this)
-                    //{
-                    //    if (mUpdateCallbackDelegateInner != null)
-                    //        mUpdateCallbackDelegateInner();
-                    //}
-                };
+                }                
             }
             catch (System.Exception)
             {
@@ -163,7 +149,11 @@ namespace MediaStream
 
 
 
-        public string start(string a_PtrDirectX11Source, string a_PtrAudioCaptureProcessor, string a_File, uint a_CompressionQuality)
+        public string start(
+            string a_PtrDirectX11Source,
+            Action<Action<IntPtr, uint>> a_RegisterAction,
+            string a_FilePath,
+            uint a_CompressionQuality)
         {
             string l_FileExtention = "";
 
@@ -209,10 +199,8 @@ namespace MediaStream
 
                 if (l_SinkControl == null)
                     break;
-
-                UpdateCallback lUpdateCallbackDelegateInner = null;
-
-                var l_VideoCaptureProcessor = VideoTextureCaptureProcessor.createCaptureProcessor(a_PtrDirectX11Source, ref lUpdateCallbackDelegateInner);
+                
+                var l_VideoCaptureProcessor = VideoTextureCaptureProcessor.createCaptureProcessor(a_PtrDirectX11Source);
 
                 if (l_VideoCaptureProcessor == null)
                     break;
@@ -377,7 +365,7 @@ namespace MediaStream
 
 
                 lSourceMediaNodeList.Add(l_VideoSourceNode);
-                
+
 
 
 
@@ -385,20 +373,11 @@ namespace MediaStream
 
                 // Audio Source
 
-                object l_AudioCaptureProcessor = null;
 
-                if (!string.IsNullOrEmpty(a_PtrAudioCaptureProcessor))
-                {
-                    int l_ptrValue = 0;
+                if (m_RegisterAction == null)
+                    m_RegisterAction = a_RegisterAction;
 
-                    if (int.TryParse(a_PtrAudioCaptureProcessor, out l_ptrValue))
-                    {
-                        IntPtr l_ptr = new IntPtr(l_ptrValue);
-
-                        l_AudioCaptureProcessor = Marshal.GetObjectForIUnknown(l_ptr);
-                    }
-                }
-
+                object l_AudioCaptureProcessor = AudioCaptureProcessor.createCaptureProcessor(m_RegisterAction);
 
 
 
@@ -426,7 +405,7 @@ namespace MediaStream
                 }
                 else
                 {
-                    lAudioLoopBack = a_PtrAudioCaptureProcessor;// "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack";
+                    lAudioLoopBack = "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack";
 
                     l_ISourceControl.getSourceOutputMediaType(
                         lAudioLoopBack,
@@ -516,11 +495,6 @@ namespace MediaStream
                 mISession.registerUpdateStateDelegate(UpdateStateDelegate);
 
                 mISession.startSession(0, Guid.Empty);
-
-                lock (this)
-                {
-                    mUpdateCallbackDelegateInner = lUpdateCallbackDelegateInner;
-                }
                 
             } while (false);
 
@@ -694,13 +668,7 @@ namespace MediaStream
         {
             if (mISession == null)
                 return;
-
-            lock (this)
-            {
-                mUpdateCallbackDelegateInner = null;
-            }
-
-
+                       
             mISession.stopSession();
 
             mISession.closeSession();

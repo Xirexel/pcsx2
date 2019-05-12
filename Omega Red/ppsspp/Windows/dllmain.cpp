@@ -70,7 +70,6 @@
 #include <d3d11_1.h>
 
 #include "./GPU/ComPtrCustom.h"
-#include "./Windows/AudioCaptureProcessor.h"
 
 
 static std::string langRegion;
@@ -82,8 +81,8 @@ extern WindowsAudioBackend *winAudioBackend;
 
 
 void *g_TouchPadHandler;
-ICaptureProcessor* g_ICaptureProcessor;
 
+SetDataCallback g_setAudioData = nullptr;
 
 
 #ifdef _WIN32
@@ -157,7 +156,7 @@ std::vector<std::wstring> GetWideCmdLine()
     return wideArgs;
 }
 
-extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND a_CaptureHandler, void *a_TouchPadHandler, LPWSTR szStickDirectory)
+extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND a_CaptureHandler, void *a_TouchPadHandler, SetDataCallback a_setAudioData, LPWSTR szStickDirectory)
 {
     g_TouchPadHandler = a_TouchPadHandler;
 
@@ -167,10 +166,10 @@ extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND
 
     MainWindow::SetCaptureHWND(a_CaptureHandler);
 
-	auto l = ConvertWStringToUTF8(szStickDirectory);	
-	
-    g_ICaptureProcessor = new AudioCaptureProcessor();
+	auto l = ConvertWStringToUTF8(szStickDirectory);
 
+    g_setAudioData = a_setAudioData;
+	
 	g_Config.memStickDirectory = l;
 
 	g_Config.flash0Directory = l;
@@ -245,10 +244,10 @@ extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND
     MainWindow::Show(NULL);
 
     //initialize custom controls
-    CtrlDisAsmView::init();
-    CtrlMemView::init();
-    CtrlRegisterList::init();
-    CGEDebugger::Init();
+    //CtrlDisAsmView::init();
+    //CtrlMemView::init();
+    //CtrlRegisterList::init();
+    //CGEDebugger::Init();
 
     // Emu thread (and render thread, if any) is always running!
     // Only OpenGL uses an externally managed render thread (due to GL's single-threaded context design). Vulkan
@@ -259,7 +258,7 @@ extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND
 	while (GetUIState() != UISTATE_INGAME) {
 		Sleep(200);
     }
-
+	
     return 0;
 }
 
@@ -281,6 +280,8 @@ extern "C" void __stdcall Save(LPSTR a_filename)
     });
 
 	l_lock_condition.wait_for(l_lock, 50 * 100ms);
+
+	Sleep(500);
 }
 
 extern "C" void __stdcall Load(LPSTR a_filename)
@@ -706,7 +707,7 @@ extern "C" void __stdcall Shutdown()
 
     net::Shutdown();
 
-	g_ICaptureProcessor->Release();
+	g_setAudioData = nullptr;
 }
 
 extern "C" void __stdcall Pause()
@@ -724,11 +725,4 @@ extern void setVolume(float a_level);
 extern "C" void __stdcall SetAudioVolume(float a_level)
 {
     setVolume(a_level);
-}
-
-extern "C" void* __stdcall GetAudioCaptureProcessor()
-{
-    return g_ICaptureProcessor;
-}
-
-
+} 

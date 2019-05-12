@@ -17,8 +17,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace Omega_Red.ViewModels
 {
@@ -32,9 +35,9 @@ namespace Omega_Red.ViewModels
                 switch (obj)
                 {
                     case PCSX2Controller.StatusEnum.Stopped:
-                    case PCSX2Controller.StatusEnum.Paused:
                         IsCheckedStatus = false;
                         break;
+                    case PCSX2Controller.StatusEnum.Paused:
                     case PCSX2Controller.StatusEnum.NoneInitilized:
                     case PCSX2Controller.StatusEnum.Initilized:
                     case PCSX2Controller.StatusEnum.Started:
@@ -42,6 +45,21 @@ namespace Omega_Red.ViewModels
                         break;
                 }
             
+            };
+
+            Omega_Red.Managers.MediaRecorderManager.Instance.ChangeLockEvent += (a_state) => {
+
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    if (a_state)
+                    {
+                        LockVisibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        LockVisibility = Visibility.Collapsed;
+                    }
+                });
             };
         }
 
@@ -68,7 +86,19 @@ namespace Omega_Red.ViewModels
                 RaisePropertyChangedEvent("IsCheckedStatus");
             }
         }
-                
+
+        private System.Windows.Visibility mLockVisibility = System.Windows.Visibility.Collapsed;
+
+        public System.Windows.Visibility LockVisibility
+        {
+            get { return mLockVisibility; }
+            set
+            {
+                mLockVisibility = value;
+                RaisePropertyChangedEvent("LockVisibility");
+            }
+        }
+
         protected override Managers.IManager Manager
         {
             get { return Omega_Red.Managers.MediaRecorderManager.Instance; }

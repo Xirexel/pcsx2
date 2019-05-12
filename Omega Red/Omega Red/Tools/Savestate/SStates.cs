@@ -24,6 +24,7 @@ using Omega_Red.Util;
 using Omega_Red.Models;
 using Omega_Red.Panels;
 using System.Windows.Media.Imaging;
+using System.Globalization;
 
 namespace Omega_Red.Tools.Savestate
 {
@@ -121,7 +122,9 @@ namespace Omega_Red.Tools.Savestate
 
                             DateTime lDateTime = DateTime.Now;
 
-                            if (DateTime.TryParse(lTimeTulpe.Item1, out lDateTime))
+                            if (DateTime.TryParseExact(lTimeTulpe.Item1, "dd/MM/yyyy HH:mm:ss", CultureInfo.CreateSpecificCulture("en-US"), DateTimeStyles.None, out lDateTime))
+                                l_result.DateTime = lDateTime;
+                            else if (DateTime.TryParseExact(lTimeTulpe.Item1, "dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out lDateTime))
                                 l_result.DateTime = lDateTime;
                             else
                                 l_result.DateTime = DateTime.Now;

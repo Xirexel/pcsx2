@@ -15,7 +15,10 @@
 #include "Functiondiscoverykeys_devpkey.h"
 
 
-#include "AudioCaptureProcessor.h"
+
+extern SetDataCallback g_setAudioData;
+
+extern bool g_isActive;
 
 // Includes some code from https://msdn.microsoft.com/en-us/library/dd370810%28VS.85%29.aspx?f=255&MSPPError=-2147217396
 
@@ -394,13 +397,13 @@ void WASAPIAudioThread::Run() {
 						ptr[i * chans + 1] = (float)shortBuf_[i * 2 + 1] * (1.0f / 32768.0f);
 					}
                 }
-                if (g_ISourceRequestResult)
-                    g_ISourceRequestResult->setData(shortBuf_, pNumAvFrames << 2, TRUE);
+                if (g_setAudioData != nullptr)
+                    g_setAudioData(shortBuf_, pNumAvFrames << 2);
 				break;
 			case Format::PCM16:
                 callback_((short *)pData, pNumAvFrames, 16, sampleRate_, 2);
-                if (g_ISourceRequestResult)
-                    g_ISourceRequestResult->setData(pData, pNumAvFrames << 2, TRUE);
+                if (g_setAudioData != nullptr)
+                    g_setAudioData(pData, pNumAvFrames << 2);
 				break;
 			}
 		}

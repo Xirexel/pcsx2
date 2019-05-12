@@ -30,7 +30,9 @@ namespace Omega_Red.Models
     public class SaveStateInfo
     {
         public bool     IsAutosave { get; set; }
-        public bool     IsQuicksave { get; set; }        
+        public bool     IsQuicksave { get; set; }
+        public bool     IsCloudOnlysave { get; set; }
+        public bool     IsCloudsave { get; set; }
         public bool     Focusable { get { return false; } }
         public string Date { get; set; }
         public DateTime DateTime { get; set; }

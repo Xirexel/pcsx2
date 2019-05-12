@@ -102,6 +102,42 @@ namespace Omega_Red.ViewModels
             }); }
         }
 
+        public ICommand SyncCommand
+        {
+            get
+            {
+                return new DelegateCommand<object>((object a_Item) => {
+
+                    var l_ContextMenu = getItemTemplate(Application.Current.Resources, "SyncMenu") as ContextMenu;
+
+                    dynamic l_CommandObject = new System.Dynamic.ExpandoObject();
+
+                    l_CommandObject.PersistCommand = new DelegateCommand(() =>
+                    {
+                        l_ContextMenu.IsOpen = false;
+                        Manager.persistItemAsync(a_Item);
+                    },()=> {
+                        return Manager.accessPersistItem(a_Item);
+                    });
+
+                    l_CommandObject.LoadCommand = new DelegateCommand(() =>
+                    {
+                        l_ContextMenu.IsOpen = false;
+                        Manager.loadItemAsync(a_Item);
+                    }, () => {
+                        return Manager.accessLoadItem(a_Item);
+                    });
+
+                    l_ContextMenu.DataContext = l_CommandObject;
+
+                    l_ContextMenu.IsOpen = true;
+
+                }, () => {
+                    return App.m_AppType == App.AppType.Screen;
+                });
+            }
+        }
+
         public ICollectionView Collection
         {
             get

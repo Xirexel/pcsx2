@@ -44,5 +44,46 @@
     </Style>
 
     <ContextMenu x:Key="ConfirmMenu"/>
-    
+
+
+    <Style x:Key="SyncContextMenu" TargetType="{x:Type ContextMenu}">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Grid.IsSharedSizeScope" Value="true" />
+        <Setter Property="HasDropShadow" Value="True" />
+        <Setter Property="Background" Value="{DynamicResource MainBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StandardBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="{DynamicResource DropShadowColor}"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ContextMenu}">
+                    <Border Background="Transparent" Padding="10">
+                        <Border Background="{TemplateBinding Background}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{DynamicResource StandardBorderThickness}"
+                                CornerRadius="{DynamicResource StandardCornerRadius}">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Style="{DynamicResource BaseBtn}" Width="90" Height="90" Command="{Binding PersistCommand}">
+                                    <TextBlock Margin="8" FontSize="20" FontWeight="Bold" Text="{DynamicResource UploadTitle}" 
+                                           Foreground="{TemplateBinding Foreground}"/>
+                                </Button>
+                                <Button Style="{DynamicResource BaseBtn}" Width="90" Height="90" Command="{Binding LoadCommand}">
+                                    <TextBlock Margin="8" FontSize="20" FontWeight="Bold" Text="{DynamicResource LoadTitle}" 
+                                           Foreground="{TemplateBinding Foreground}"/>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <ContextMenu Style="{StaticResource SyncContextMenu}" x:Key="SyncMenu"/>
+
 </ResourceDictionary>

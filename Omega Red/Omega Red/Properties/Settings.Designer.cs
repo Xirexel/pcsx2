@@ -274,5 +274,17 @@ namespace Omega_Red.Properties {
                 this["IsFXAA"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool GoogleAccountIsChecked {
+            get {
+                return ((bool)(this["GoogleAccountIsChecked"]));
+            }
+            set {
+                this["GoogleAccountIsChecked"] = value;
+            }
+        }
     }
 }

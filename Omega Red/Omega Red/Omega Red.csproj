@@ -42,13 +42,41 @@
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Omega_Red.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Google.Apis, Version=1.38.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.1.38.2\lib\net45\Google.Apis.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.Auth, Version=1.38.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Auth.1.38.2\lib\net45\Google.Apis.Auth.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.Auth.PlatformServices, Version=1.38.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Auth.1.38.2\lib\net45\Google.Apis.Auth.PlatformServices.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.Core, Version=1.38.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Core.1.38.2\lib\net45\Google.Apis.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.Drive.v3, Version=1.38.2.1566, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Drive.v3.1.38.2.1566\lib\net45\Google.Apis.Drive.v3.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.PlatformServices, Version=1.38.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.1.38.2\lib\net45\Google.Apis.PlatformServices.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.YouTube.v3, Version=1.38.2.1572, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.YouTube.v3.1.38.2.1572\lib\net45\Google.Apis.YouTube.v3.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -68,6 +96,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Capture\AudioCaptureTarget.cs" />
     <Compile Include="Capture\CaptureTargetTexture.cs" />
     <Compile Include="Capture\Interop\ComInterface.cs" />
     <Compile Include="Capture\Interop\D3D11Texture2D.cs" />
@@ -81,6 +110,11 @@
     <Compile Include="Managers\IManager.cs" />
     <Compile Include="Managers\MediaRecorderManager.cs" />
     <Compile Include="Capture\MediaCapture.cs" />
+    <Compile Include="Panels\ProgressBanner.xaml.cs">
+      <DependentUpon>ProgressBanner.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="SocialNetworks\GoogleAccountManager.cs" />
     <Compile Include="Tools\PPSSPPControl.cs" />
     <Compile Include="Util\PPSSPPNative.cs" />
     <Compile Include="Models\BiosInfo.cs" />
@@ -130,6 +164,7 @@
     <Compile Include="Panels\DisplayVideoPanel.xaml.cs">
       <DependentUpon>DisplayVideoPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Util\StringStream.cs" />
     <Compile Include="ViewModels\AutoSaveStateViewModel.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="Managers\LockScreenManager.cs" />
@@ -203,6 +238,7 @@
     <Compile Include="Panels\ConfigPanel.xaml.cs">
       <DependentUpon>ConfigPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModels\SocialNetworksViewModel.cs" />
     <Compile Include="ViewModels\VideoDisplayViewModel.cs" />
     <Compile Include="Views\ListPanel.xaml.cs">
       <DependentUpon>ListPanel.xaml</DependentUpon>
@@ -262,6 +298,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="OffScreenWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\ProgressBanner.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -379,6 +419,7 @@
     <EmbeddedResource Include="Assests\GameIndex.dbf" />
     <EmbeddedResource Include="Assests\cheats_ws.zip" />
     <None Include="app.manifest" />
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -469,6 +510,15 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Modules\x86\PPSSPP.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\Register_youtube2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\Register_google.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\Google_Drive.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

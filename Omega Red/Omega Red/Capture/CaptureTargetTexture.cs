@@ -61,7 +61,7 @@ namespace Omega_Red.Capture
 
             lTextureDesc.Height = Panels.VideoPanel.HEIGHT;
 
-            lTextureDesc.Format = NativeStructs.DXGI_FORMAT_B8G8R8X8_UNORM;
+            lTextureDesc.Format = NativeStructs.DXGI_FORMAT_B8G8R8A8_UNORM;
 
             lTextureDesc.ArraySize = 1;
 

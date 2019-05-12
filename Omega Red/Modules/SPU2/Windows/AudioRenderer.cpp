@@ -1,7 +1,6 @@
 #include "../zerospu2.h"
 #include "../Targets/dsound51.h"
 #include "AudioRenderer.h"
-#include "AudioCaptureProcessor.h"
 #include "pugixml.hpp"
 #include <math.h>
 #include <sstream>
@@ -10,6 +9,8 @@
 #define DSBVOLUME_MAX 0
 
 AudioRenderer g_AudioRenderer;
+
+SetDataCallback g_setAudioData = nullptr;
 
 AudioRenderer::AudioRenderer(): 
 	m_is_muted(0)
@@ -47,10 +48,21 @@ void AudioRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 					SPU2setSettingsDir(nullptr);
 
 					SPU2init();
+					
+                    auto l_Attribute = l_ChildNode.attribute(L"CaptureHandler");
 
-					CComPtrCustom<ICaptureProcessor> l_ICaptureProcessor(new AudioCaptureProcessor());
+                    if (!l_Attribute.empty()) {
+                        auto l_value = l_Attribute.as_llong();
 
-					m_ICaptureProcessor = l_ICaptureProcessor;
+                        if (l_value != 0) {
+                            try {
+
+                                g_setAudioData = (SetDataCallback)l_value;
+
+                            } catch (...) {
+                            }
+                        }
+                    }
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Open")
 				{
@@ -90,9 +102,7 @@ void AudioRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 				{
 					SPU2shutdown();
 
-					m_ICaptureProcessor.Release();
-
-                    g_ISourceRequestResult.Release();
+					g_setAudioData = nullptr;
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"DoFreeze")
 				{
@@ -178,58 +188,58 @@ void AudioRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 			}
 
 		} 
-		else if (std::wstring(l_document.name()) == L"Commands") {
-            auto l_ChildNode = l_document.first_child();
+		//else if (std::wstring(l_document.name()) == L"Commands") {
+  //          auto l_ChildNode = l_document.first_child();
 
-            xml_document l_xmlResultDoc;
+  //          xml_document l_xmlResultDoc;
 
-            auto l_declNode = l_xmlResultDoc.append_child(node_declaration);
+  //          auto l_declNode = l_xmlResultDoc.append_child(node_declaration);
 
-            l_declNode.append_attribute(L"version") = L"1.0";
+  //          l_declNode.append_attribute(L"version") = L"1.0";
 
-            xml_node l_commentNode = l_xmlResultDoc.append_child(node_comment);
+  //          xml_node l_commentNode = l_xmlResultDoc.append_child(node_comment);
 
-            l_commentNode.set_value(L"XML Document of results");
+  //          l_commentNode.set_value(L"XML Document of results");
 
-            auto l_RootXMLElement = l_xmlResultDoc.append_child(L"Results");
+  //          auto l_RootXMLElement = l_xmlResultDoc.append_child(L"Results");
 
-            while (!l_ChildNode.empty()) {
-                auto l_resultXMLElement = l_RootXMLElement.append_child(L"Result");
+  //          while (!l_ChildNode.empty()) {
+  //              auto l_resultXMLElement = l_RootXMLElement.append_child(L"Result");
 
-                l_resultXMLElement.append_attribute(L"Command").set_value(l_ChildNode.name());
+  //              l_resultXMLElement.append_attribute(L"Command").set_value(l_ChildNode.name());
 
-                if (std::wstring(l_ChildNode.name()) == L"GetCaptureProcessor") {
-                    bool l_isValid = false;
+  //              if (std::wstring(l_ChildNode.name()) == L"GetCaptureProcessor") {
+  //                  bool l_isValid = false;
 
-                    if (m_ICaptureProcessor != nullptr) {
+  //                  if (m_ICaptureProcessor != nullptr) {
 
-                        wchar_t lvalue[256];
+  //                      wchar_t lvalue[256];
 
-                        _itow_s((DWORD)m_ICaptureProcessor.get(), lvalue, 10);
+  //                      _itow_s((DWORD)m_ICaptureProcessor.get(), lvalue, 10);
 
-                        l_resultXMLElement.append_attribute(L"Value").set_value(lvalue);
+  //                      l_resultXMLElement.append_attribute(L"Value").set_value(lvalue);
 
-                        l_isValid = true;
-                    }
+  //                      l_isValid = true;
+  //                  }
 
-                    l_resultXMLElement.append_attribute(L"State").set_value(l_isValid);
-                }
+  //                  l_resultXMLElement.append_attribute(L"State").set_value(l_isValid);
+  //              }
 
-                l_ChildNode = l_ChildNode.next_sibling();
-            }
+  //              l_ChildNode = l_ChildNode.next_sibling();
+  //          }
 
-            if (a_result != nullptr) {
-                std::wstringstream l_wstringstream;
+  //          if (a_result != nullptr) {
+  //              std::wstringstream l_wstringstream;
 
-                l_xmlResultDoc.print(l_wstringstream);
+  //              l_xmlResultDoc.print(l_wstringstream);
 
-                auto l_XMLDocumentString = l_wstringstream.str();
+  //              auto l_XMLDocumentString = l_wstringstream.str();
 
-                *a_result = new wchar_t[l_XMLDocumentString.size() + 1];
+  //              *a_result = new wchar_t[l_XMLDocumentString.size() + 1];
 
-                wcscpy_s(*a_result, l_XMLDocumentString.size() + 1, l_XMLDocumentString.c_str());
-            }
-        }
+  //              wcscpy_s(*a_result, l_XMLDocumentString.size() + 1, l_XMLDocumentString.c_str());
+  //          }
+  //      }
 	}
 }
 

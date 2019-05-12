@@ -70,3 +70,5 @@
 #include <fstream>
 
 #include "Common/Log.h"
+
+typedef void(__stdcall *SetDataCallback)(void*,  UINT32);

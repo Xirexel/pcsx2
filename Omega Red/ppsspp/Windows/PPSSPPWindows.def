@@ -8,6 +8,5 @@ EXPORTS
 	Pause						PRIVATE
 	Resume						PRIVATE
 	SetAudioVolume				PRIVATE
-	GetAudioCaptureProcessor	PRIVATE
 
 

@@ -75,9 +75,10 @@ namespace Omega_Red.Tools
                 switch (l_Module.ModuleType)
                 {
                     case ModuleManager.ModuleType.SPU2:
+                        setAudioRendererConfig(l_XmlDocument, l_PropertyNode);
                         break;
                     case ModuleManager.ModuleType.VideoRenderer:
-                        setVideoRendererConfig(l_Module, l_XmlDocument, l_PropertyNode);
+                        setVideoRendererConfig(l_XmlDocument, l_PropertyNode);
                         break;
                     case ModuleManager.ModuleType.DEV9:
                         break;
@@ -793,8 +794,20 @@ namespace Omega_Red.Tools
 
             return l_result;
         }
+        
+        private void setAudioRendererConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
+        {
+            if (m_VideoPanel == null)
+                return;
 
-        private void setVideoRendererConfig(ModuleManager.Module a_module, XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
+            var l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
+
+            l_Atrr.Value = Capture.AudioCaptureTarget.Instance.DataCallbackHandler.ToString();
+
+            a_PropertyNode.Attributes.Append(l_Atrr);
+        }
+
+        private void setVideoRendererConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
         {
             if (m_VideoPanel == null)
                 return;
