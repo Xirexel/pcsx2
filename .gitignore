@@ -46,12 +46,19 @@ Thumbs.db
 
 Debug.txt
 install_log.txt
+padLog.txt
 
 Debug
 Release
 Devel
 
 oprofile_data/
+
+# Recording Specific Ignores (pcsx2-rr)
+*.p2s
+*.p2m2
+*.p2m2_backup
+*.p2m2_SaveState.p2s
 
 # Visual Studio upgrades
 /Backup*
@@ -97,7 +104,6 @@ oprofile_data/
 !/pcsx2/gui/Resources/EmbeddedImage.h
 /plugins/GSdx/Template
 /plugins/USBqemu/Win32/bin
-/plugins/xpad/Template
 /plugins/zerospu2/Windows/dsound51.cpp
 /tools/bin
 /tools/GSDumpGUI/bin

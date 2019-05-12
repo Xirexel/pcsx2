@@ -51,7 +51,7 @@ void GSRendererOGL::SetupIA(const float& sx, const float& sy)
 	GSDeviceOGL* dev = (GSDeviceOGL*)m_dev;
 
 
-	if (UserHacks_WildHack && !isPackedUV_HackFlag && PRIM->TME && PRIM->FST) {
+	if (m_userhacks_wildhack && !m_isPackedUV_HackFlag && PRIM->TME && PRIM->FST) {
 		for(unsigned int i = 0; i < m_vertex.next; i++)
 			m_vertex.buff[i].UV &= 0x3FEF3FEF;
 	}
@@ -211,84 +211,24 @@ void GSRendererOGL::EmulateZbuffer()
 
 void GSRendererOGL::EmulateTextureShuffleAndFbmask()
 {
-	size_t count = m_vertex.next;
-	GSVertex* v = &m_vertex.buff[0];
+	// Uncomment to disable texture shuffle emulation.
+	// m_texture_shuffle = false;
 
 	if (m_texture_shuffle) {
 		m_ps_sel.shuffle = 1;
 		m_ps_sel.dfmt = 0;
 
-		const GIFRegXYOFFSET& o = m_context->XYOFFSET;
+		bool write_ba;
+		bool read_ba;
 
-		// vertex position is 8 to 16 pixels, therefore it is the 16-31 bits of the colors
-		int  pos = (v[0].XYZ.X - o.OFX) & 0xFF;
-		bool write_ba = (pos > 112 && pos < 136);
-		// Read texture is 8 to 16 pixels (same as above)
-		float tw = (float)(1u << m_context->TEX0.TW);
-		int tex_pos = (PRIM->FST) ? v[0].U : (int)(tw * v[0].ST.S);
-		tex_pos &= 0xFF;
-		m_ps_sel.read_ba = (tex_pos > 112 && tex_pos < 144);
-
-		// Convert the vertex info to a 32 bits color format equivalent
-		if (PRIM->FST) {
-			GL_INS("First vertex is  P: %d => %d    T: %d => %d", v[0].XYZ.X, v[1].XYZ.X, v[0].U, v[1].U);
-
-			for(size_t i = 0; i < count; i += 2) {
-				if (write_ba)
-					v[i].XYZ.X   -= 128u;
-				else
-					v[i+1].XYZ.X += 128u;
-
-				if (m_ps_sel.read_ba)
-					v[i].U       -= 128u;
-				else
-					v[i+1].U     += 128u;
-
-				// Height is too big (2x).
-				int tex_offset = v[i].V & 0xF;
-				GSVector4i offset(o.OFY, tex_offset, o.OFY, tex_offset);
-
-				GSVector4i tmp(v[i].XYZ.Y, v[i].V, v[i+1].XYZ.Y, v[i+1].V);
-				tmp = GSVector4i(tmp - offset).srl32(1) + offset;
-
-				v[i].XYZ.Y   = (uint16)tmp.x;
-				v[i].V       = (uint16)tmp.y;
-				v[i+1].XYZ.Y = (uint16)tmp.z;
-				v[i+1].V     = (uint16)tmp.w;
-			}
-		} else {
-			const float offset_8pix = 8.0f / tw;
-			GL_INS("First vertex is  P: %d => %d    T: %f => %f (offset %f)", v[0].XYZ.X, v[1].XYZ.X, v[0].ST.S, v[1].ST.S, offset_8pix);
-
-			for(size_t i = 0; i < count; i += 2) {
-				if (write_ba)
-					v[i].XYZ.X   -= 128u;
-				else
-					v[i+1].XYZ.X += 128u;
-
-				if (m_ps_sel.read_ba)
-					v[i].ST.S    -= offset_8pix;
-				else
-					v[i+1].ST.S  += offset_8pix;
-
-				// Height is too big (2x).
-				GSVector4i offset(o.OFY, o.OFY);
-
-				GSVector4i tmp(v[i].XYZ.Y, v[i+1].XYZ.Y);
-				tmp = GSVector4i(tmp - offset).srl32(1) + offset;
-
-				//fprintf(stderr, "Before %d, After %d\n", v[i+1].XYZ.Y, tmp.y);
-				v[i].XYZ.Y   = (uint16)tmp.x;
-				v[i].ST.T   /= 2.0f;
-				v[i+1].XYZ.Y = (uint16)tmp.y;
-				v[i+1].ST.T /= 2.0f;
-			}
-		}
+		ConvertSpriteTextureShuffle(write_ba, read_ba);
 
 		// If date is enabled you need to test the green channel instead of the
 		// alpha channel. Only enable this code in DATE mode to reduce the number
 		// of shader.
 		m_ps_sel.write_rg = !write_ba && m_context->TEST.DATE;
+
+		m_ps_sel.read_ba = read_ba;
 
 		// Please bang my head against the wall!
 		// 1/ Reduce the frame mask to a 16 bit format
@@ -302,10 +242,10 @@ void GSRendererOGL::EmulateTextureShuffleAndFbmask()
 		// 2 Select the new mask (Please someone put SSE here)
 		if (rg_mask != 0xFF) {
 			if (write_ba) {
-				GL_INS("Color shuffle %s => B", m_ps_sel.read_ba ? "B" : "R");
+				GL_INS("Color shuffle %s => B", read_ba ? "B" : "R");
 				m_om_csel.wb = 1;
 			} else {
-				GL_INS("Color shuffle %s => R", m_ps_sel.read_ba ? "B" : "R");
+				GL_INS("Color shuffle %s => R", read_ba ? "B" : "R");
 				m_om_csel.wr = 1;
 			}
 			if (rg_mask)
@@ -314,10 +254,10 @@ void GSRendererOGL::EmulateTextureShuffleAndFbmask()
 
 		if (ba_mask != 0xFF) {
 			if (write_ba) {
-				GL_INS("Color shuffle %s => A", m_ps_sel.read_ba ? "A" : "G");
+				GL_INS("Color shuffle %s => A", read_ba ? "A" : "G");
 				m_om_csel.wa = 1;
 			} else {
-				GL_INS("Color shuffle %s => G", m_ps_sel.read_ba ? "A" : "G");
+				GL_INS("Color shuffle %s => G", read_ba ? "A" : "G");
 				m_om_csel.wg = 1;
 			}
 			if (ba_mask)
@@ -839,6 +779,13 @@ void GSRendererOGL::EmulateTextureSampler(const GSTextureCache::Source* tex)
 	m_ps_sel.tcoffsethack = m_userhacks_tcoffset;
 	ps_cb.TC_OH_TS = GSVector4(1/16.0f, 1/16.0f, m_userhacks_tcoffset_x, m_userhacks_tcoffset_y) / WH.xyxy();
 
+	// Must be done after all coordinates math
+	if (m_context->HasFixedTEX0() && !PRIM->FST) {
+		m_ps_sel.invalid_tex0 = 1;
+		// Use invalid size to denormalize ST coordinate
+		ps_cb.WH.x = (float)(1 << m_context->stack.TEX0.TW);
+		ps_cb.WH.y = (float)(1 << m_context->stack.TEX0.TH);
+	}
 
 	// Only enable clamping in CLAMP mode. REGION_CLAMP will be done manually in the shader
 	m_ps_ssel.tau   = (wms != CLAMP_CLAMP);
@@ -958,7 +905,7 @@ GSRendererOGL::PRIM_OVERLAP GSRendererOGL::PrimitiveOverlap()
 	}
 #endif
 
-	//fprintf(stderr, "%d: Yes, code can be optimized (draw of %d vertices)\n", s_n, count);
+	// fprintf(stderr, "%d: Yes, code can be optimized (draw of %d vertices)\n", s_n, count);
 	return overlap;
 }
 
@@ -1074,15 +1021,21 @@ void GSRendererOGL::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sour
 	// Upscaling hack to avoid various line/grid issues
 	MergeSprite(tex);
 
-	// Always check if primitive overlap. The function will return PRIM_OVERLAP_UNKNOW for non sprite primitive
+	// Always check if primitive overlap as it is used in plenty of effects.
 	m_prim_overlap = PrimitiveOverlap();
-	if ((m_context->FRAME.Block() == m_context->TEX0.TBP0) && PRIM->TME && m_sw_blending && (m_prim_overlap != PRIM_OVERLAP_NO) && (m_vertex.next > 2)) {
-		if (m_context->FRAME.FBMSK == 0x00FFFFFF) {
-			// Ratchet & Clank / Jak uses this pattern to compute the shadows. Alpha (multiplication) tfx is mostly equivalent to -1/+1 stencil operation
-			GL_DBG("ERROR: Source and Target are the same! Let's sample the framebuffer");
+
+	// Detect framebuffer read that will need special handling
+	if ((m_context->FRAME.Block() == m_context->TEX0.TBP0) && PRIM->TME && m_sw_blending) {
+		if ((m_context->FRAME.FBMSK == 0x00FFFFFF) && (m_vt.m_primclass == GS_TRIANGLE_CLASS)) {
+			// This pattern is used by several games to emulate a stencil (shadow)
+			// Ratchet & Clank, Jak do alpha integer multiplication (tfx) which is mostly equivalent to +1/-1
+			// Tri-Ace (Star Ocean 3/RadiataStories/VP2) uses a palette to handle the +1/-1
+			GL_DBG("Source and Target are the same! Let's sample the framebuffer");
 			m_ps_sel.tex_is_fb = 1;
 			m_require_full_barrier = true;
-		} else {
+		} else if (m_prim_overlap != PRIM_OVERLAP_NO) {
+			// Note: It is fine if the texture fits in a single GS page. First access will cache
+			// the page in the GS texture buffer.
 			GL_INS("ERROR: Source and Target are the same!");
 		}
 	}
@@ -1090,7 +1043,6 @@ void GSRendererOGL::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sour
 	EmulateTextureShuffleAndFbmask();
 
 	// DATE: selection of the algorithm. Must be done before blending because GL42 is not compatible with blending
-
 	if (DATE) {
 		if (m_prim_overlap == PRIM_OVERLAP_NO || m_texture_shuffle) {
 			// It is way too complex to emulate texture shuffle with DATE. So just use
@@ -1138,7 +1090,6 @@ void GSRendererOGL::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sour
 					case ACC_DATE_NONE:
 					default:
 						GL_PERF("Inaccurate DATE with alpha %d-%d", m_vt.m_alpha.min, m_vt.m_alpha.max);
-						DATE = true;
 						break;
 				}
 			}
@@ -1347,6 +1298,14 @@ void GSRendererOGL::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sour
 
 	dev->SetupPipeline(m_vs_sel, m_gs_sel, m_ps_sel);
 
+	GSVector4i commitRect = ComputeBoundingBox(rtscale, rtsize);
+
+	if (rt)
+		rt->CommitRegion(GSVector2i(commitRect.z, commitRect.w));
+
+	if (ds)
+		ds->CommitRegion(GSVector2i(commitRect.z, commitRect.w));
+
 	if (DATE_GL42) {
 		GL_PUSH("Date GL42");
 		// It could be good idea to use stencil in the same time.
@@ -1466,4 +1425,11 @@ void GSRendererOGL::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sour
 
 		dev->Recycle(hdr_rt);
 	}
+}
+
+bool GSRendererOGL::IsDummyTexture() const
+{
+	// Texture is actually the frame buffer. Stencil emulation to compute shadow (Jak series/tri-ace game)
+	// Will hit the "m_ps_sel.tex_is_fb = 1" path in the draw
+	return (m_context->FRAME.Block() == m_context->TEX0.TBP0) && PRIM->TME && m_sw_blending && m_vt.m_primclass == GS_TRIANGLE_CLASS && (m_context->FRAME.FBMSK == 0x00FFFFFF);
 }

@@ -259,13 +259,16 @@ namespace GLLoader {
 	{
 		int max_ext = 0;
 		glGetIntegerv(GL_NUM_EXTENSIONS, &max_ext);
+		for (GLint i = 0; i < max_ext; i++) {
+			std::string ext{(const char*)glGetStringi(GL_EXTENSIONS, i)};
+			GLExtension::Set(ext);
+			//fprintf(stderr, "DEBUG ext: %s\n", ext.c_str());
+		}
 
-		if (glGetStringi && max_ext) {
-			for (GLint i = 0; i < max_ext; i++) {
-				std::string ext{(const char*)glGetStringi(GL_EXTENSIONS, i)};
-				GLExtension::Set(ext);
-				//fprintf(stderr, "DEBUG ext: %s\n", ext.c_str());
-			}
+		// Disable sparse by default (Note AMD is completely broken).
+		// AMD issue tracker https://community.amd.com/thread/237558
+		if (true) {
+			GLExtension::Set("GL_ARB_sparse_texture", false);
 		}
 
 		// Mandatory for both renderer
@@ -394,7 +397,9 @@ namespace GLLoader {
 		}
 
 		// Can fit in 128x64 but 128x128 is enough
-		found_compatible_sparse_depth = is_sparse2_compatible("GL_DEPTH32F_STENCIL8", GL_DEPTH32F_STENCIL8, 128, 128);
+		// Disable sparse depth for AMD. Bad driver strikes again.
+		// driver reports a compatible sparse format for depth texture but it isn't attachable to a frame buffer.
+		found_compatible_sparse_depth = !vendor_id_amd && is_sparse2_compatible("GL_DEPTH32F_STENCIL8", GL_DEPTH32F_STENCIL8, 128, 128);
 
 		fprintf_once(stdout, "INFO sparse color texture is %s\n", found_compatible_GL_ARB_sparse_texture2 ? "available" : "NOT SUPPORTED");
 		fprintf_once(stdout, "INFO sparse depth texture is %s\n", found_compatible_sparse_depth ? "available" : "NOT SUPPORTED");

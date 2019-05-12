@@ -29,7 +29,9 @@ GSRendererHW::GSRendererHW(GSTextureCache* tc)
 	, m_custom_height(1024)
 	, m_reset(false)
 	, m_upscale_multiplier(1)
+	, m_disable_ts_half_bottom(false)
 	, m_tc(tc)
+	, m_src(nullptr)
 	, m_userhacks_tcoffset(false)
 	, m_userhacks_tcoffset_x(0)
 	, m_userhacks_tcoffset_y(0)
@@ -40,6 +42,8 @@ GSRendererHW::GSRendererHW(GSTextureCache* tc)
 	m_upscale_multiplier = theApp.GetConfigI("upscale_multiplier");
 	m_large_framebuffer  = theApp.GetConfigB("large_framebuffer");
 	m_accurate_date = theApp.GetConfigI("accurate_date");
+	m_disable_ts_half_bottom = theApp.GetConfigB("disable_ts_half_bottom");
+
 	if (theApp.GetConfigB("UserHacks")) {
 		m_userhacks_enabled_gs_mem_clear = !theApp.GetConfigB("UserHacks_Disable_Safe_Features");
 		m_userHacks_enabled_unscale_ptln = !theApp.GetConfigB("UserHacks_Disable_Safe_Features");
@@ -189,44 +193,46 @@ void GSRendererHW::SetGameCRC(uint32 crc, int options)
 	{
 		switch (CRC::Lookup(crc).title)
 		{
-		case CRC::AceCombatZero:
-		case CRC::AceCombat4:
-		case CRC::AceCombat5:
-		case CRC::ApeEscape2:
-		case CRC::Barnyard:
-		case CRC::BrianLaraInternationalCricket:
-		case CRC::DarkCloud:
-		case CRC::DestroyAllHumans:
-		case CRC::DestroyAllHumans2:
-		case CRC::FIFA03:
-		case CRC::FIFA04:
-		case CRC::FIFA05:
-		case CRC::HarryPotterATCOS:
-		case CRC::HarryPotterATHBP:
-		case CRC::HarryPotterATPOA:
-		case CRC::HarryPotterOOTP:
-		case CRC::Jak1:
-		case CRC::Jak3:
-		case CRC::LegacyOfKainDefiance:
-		case CRC::NicktoonsUnite:
-		case CRC::RatchetAndClank:
-		case CRC::RatchetAndClank2:
-		case CRC::RatchetAndClank3:
-		case CRC::RatchetAndClank4:
-		case CRC::RatchetAndClank5:
-		case CRC::RickyPontingInternationalCricket:
-		case CRC::Quake3Revolution:
-		case CRC::Shox:
-		case CRC::SoulReaver2:
-		case CRC::TheIncredibleHulkUD:
-		case CRC::TombRaiderAnniversary:
-		case CRC::TribesAerialAssault:
-		case CRC::Whiplash:
-			m_mipmap = static_cast<int>(HWMipmapLevel::Basic);
-			break;
-		default:
-			m_mipmap = static_cast<int>(HWMipmapLevel::Off);
-			break;
+			case CRC::AceCombatZero:
+			case CRC::AceCombat4:
+			case CRC::AceCombat5:
+			case CRC::ApeEscape2:
+			case CRC::Barnyard:
+			case CRC::BrianLaraInternationalCricket:
+			case CRC::DarkCloud:
+			case CRC::DestroyAllHumans:
+			case CRC::DestroyAllHumans2:
+			case CRC::FIFA03:
+			case CRC::FIFA04:
+			case CRC::FIFA05:
+			case CRC::HarryPotterATCOS:
+			case CRC::HarryPotterATHBP:
+			case CRC::HarryPotterATPOA:
+			case CRC::HarryPotterOOTP:
+			// Disable Automatic mipmapping for Jak games for now, it seems to cause a hard crash.
+			// Issue https://github.com/PCSX2/pcsx2/issues/2916
+			// case CRC::Jak1:
+			// case CRC::Jak3:
+			case CRC::LegacyOfKainDefiance:
+			case CRC::NicktoonsUnite:
+			case CRC::RatchetAndClank:
+			case CRC::RatchetAndClank2:
+			case CRC::RatchetAndClank3:
+			case CRC::RatchetAndClank4:
+			case CRC::RatchetAndClank5:
+			case CRC::RickyPontingInternationalCricket:
+			case CRC::Quake3Revolution:
+			case CRC::Shox:
+			case CRC::SoulReaver2:
+			case CRC::TheIncredibleHulkUD:
+			case CRC::TombRaiderAnniversary:
+			case CRC::TribesAerialAssault:
+			case CRC::Whiplash:
+				m_mipmap = static_cast<int>(HWMipmapLevel::Basic);
+				break;
+			default:
+				m_mipmap = static_cast<int>(HWMipmapLevel::Off);
+				break;
 		}
 	}
 }
@@ -425,6 +431,118 @@ void GSRendererHW::Lines2Sprites()
 
 		m_vertex.head = m_vertex.tail = m_vertex.next = count * 2;
 		m_index.tail = count * 3;
+	}
+}
+
+// Fix the vertex position/tex_coordinate from 16 bits color to 32 bits color
+void GSRendererHW::ConvertSpriteTextureShuffle(bool& write_ba, bool& read_ba)
+{
+	size_t count = m_vertex.next;
+	GSVertex* v = &m_vertex.buff[0];
+	const GIFRegXYOFFSET& o = m_context->XYOFFSET;
+
+	// vertex position is 8 to 16 pixels, therefore it is the 16-31 bits of the colors
+	int  pos = (v[0].XYZ.X - o.OFX) & 0xFF;
+	write_ba = (pos > 112 && pos < 136);
+
+	// Read texture is 8 to 16 pixels (same as above)
+	float tw = (float)(1u << m_context->TEX0.TW);
+	int tex_pos = (PRIM->FST) ? v[0].U : (int)(tw * v[0].ST.S);
+	tex_pos &= 0xFF;
+	read_ba = (tex_pos > 112 && tex_pos < 144);
+
+	// Here's the idea
+	// TS effect is 16 bits but we emulate it on a 32 bits format
+	// Normally this means we need to divide size by 2.
+	//
+	// Some games do two TS effects on each half of the buffer.
+	// This makes a mess for us in the TC because we end up with two targets
+	// when we only want one, thus half screen bug.
+	//
+	// 32bits emulation means we can do the effect once but double the size.
+	// Test cases: Crash Twinsantiy and DBZ BT3
+	int height_delta = m_src->m_valid_rect.height() - m_r.height();
+	// Test Case: NFS: HP2 splits the effect h:256 and h:192 so 64
+	bool half_bottom = abs(height_delta) <= 64 && !m_disable_ts_half_bottom;
+
+	if (PRIM->FST) {
+		GL_INS("First vertex is  P: %d => %d    T: %d => %d", v[0].XYZ.X, v[1].XYZ.X, v[0].U, v[1].U);
+
+		for(size_t i = 0; i < count; i += 2) {
+			if (write_ba)
+				v[i].XYZ.X   -= 128u;
+			else
+				v[i+1].XYZ.X += 128u;
+
+			if (read_ba)
+				v[i].U       -= 128u;
+			else
+				v[i+1].U     += 128u;
+
+			if (!half_bottom){
+				// Height is too big (2x).
+				int tex_offset = v[i].V & 0xF;
+				GSVector4i offset(o.OFY, tex_offset, o.OFY, tex_offset);
+
+				GSVector4i tmp(v[i].XYZ.Y, v[i].V, v[i + 1].XYZ.Y, v[i + 1].V);
+				tmp = GSVector4i(tmp - offset).srl32(1) + offset;
+
+				v[i].XYZ.Y = (uint16)tmp.x;
+				v[i].V = (uint16)tmp.y;
+				v[i + 1].XYZ.Y = (uint16)tmp.z;
+				v[i + 1].V = (uint16)tmp.w;
+			}
+		}
+	} else {
+		const float offset_8pix = 8.0f / tw;
+		GL_INS("First vertex is  P: %d => %d    T: %f => %f (offset %f)", v[0].XYZ.X, v[1].XYZ.X, v[0].ST.S, v[1].ST.S, offset_8pix);
+
+		for(size_t i = 0; i < count; i += 2) {
+			if (write_ba)
+				v[i].XYZ.X   -= 128u;
+			else
+				v[i+1].XYZ.X += 128u;
+
+			if (read_ba)
+				v[i].ST.S    -= offset_8pix;
+			else
+				v[i+1].ST.S  += offset_8pix;
+
+			if (!half_bottom) {
+				// Height is too big (2x).
+				GSVector4i offset(o.OFY, o.OFY);
+
+				GSVector4i tmp(v[i].XYZ.Y, v[i + 1].XYZ.Y);
+				tmp = GSVector4i(tmp - offset).srl32(1) + offset;
+
+				//fprintf(stderr, "Before %d, After %d\n", v[i+1].XYZ.Y, tmp.y);
+				v[i].XYZ.Y = (uint16)tmp.x;
+				v[i].ST.T /= 2.0f;
+				v[i + 1].XYZ.Y = (uint16)tmp.y;
+				v[i + 1].ST.T /= 2.0f;
+			}
+		}
+	}
+
+	// Update vertex trace too. Avoid issue to compute bounding box
+	if (write_ba)
+		m_vt.m_min.p.x -= 8.0f;
+	else
+		m_vt.m_max.p.x += 8.0f;
+
+	if (!half_bottom) {
+		float delta_Y = m_vt.m_max.p.y - m_vt.m_min.p.y;
+		m_vt.m_max.p.y -= delta_Y / 2.0f;
+	}
+
+	if (read_ba)
+		m_vt.m_min.t.x -= 8.0f;
+	else
+		m_vt.m_max.t.x += 8.0f;
+
+	if (!half_bottom) {
+		float delta_T = m_vt.m_max.t.y - m_vt.m_min.t.y;
+		m_vt.m_max.t.y -= delta_T / 2.0f;
 	}
 }
 
@@ -702,6 +820,10 @@ void GSRendererHW::Draw()
 	GSDrawingContext* context = m_context;
 	const GSLocalMemory::psm_t& tex_psm = GSLocalMemory::m_psm[m_context->TEX0.PSM];
 
+	// Fix TEX0 size
+	if(PRIM->TME && !IsMipMapActive())
+		m_context->ComputeFixedTEX0(m_vt.m_min.t.xyxy(m_vt.m_max.t), m_vt.IsLinear());
+
 	// skip alpha test if possible
 	// Note: do it first so we know if frame/depth writes are masked
 
@@ -783,7 +905,7 @@ void GSRendererHW::Draw()
 		ds_tex = ds->m_texture;
 	}
 
-	GSTextureCache::Source* tex = NULL;
+	m_src = nullptr;
 	m_texture_shuffle = false;
 
 	if(PRIM->TME)
@@ -863,7 +985,7 @@ void GSRendererHW::Draw()
 
 		GetTextureMinMax(r, TEX0, MIP_CLAMP, m_vt.IsLinear());
 
-		tex = tex_psm.depth ? m_tc->LookupDepthSource(TEX0, env.TEXA, r) : m_tc->LookupSource(TEX0, env.TEXA, r);
+		m_src = tex_psm.depth ? m_tc->LookupDepthSource(TEX0, env.TEXA, r) : m_tc->LookupSource(TEX0, env.TEXA, r);
 
 		// Round 2
 		if (IsMipMapActive() && m_mipmap == 2 && !tex_psm.depth) {
@@ -886,7 +1008,7 @@ void GSRendererHW::Draw()
 
 				GetTextureMinMax(r, MIP_TEX0, MIP_CLAMP, m_vt.IsLinear());
 
-				tex->UpdateLayer(MIP_TEX0, r, layer - m_lod.x);
+				m_src->UpdateLayer(MIP_TEX0, r, layer - m_lod.x);
 			}
 
 			m_vt.m_min.t = tmin;
@@ -898,7 +1020,7 @@ void GSRendererHW::Draw()
 		//
 		// Both input and output are 16 bits and texture was initially 32 bits!
 		m_texture_shuffle = (GSLocalMemory::m_psm[context->FRAME.PSM].bpp == 16) && (tex_psm.bpp == 16)
-			&& draw_sprite_tex && tex->m_32_bits_fmt;
+			&& draw_sprite_tex && m_src->m_32_bits_fmt;
 
 		// Shadow_of_memories_Shadow_Flickering (Okami mustn't call this code)
 		if (m_texture_shuffle && m_vertex.next < 3 && PRIM->FST && (m_context->FRAME.FBMSK == 0)) {
@@ -919,7 +1041,7 @@ void GSRendererHW::Draw()
 		// Texture shuffle is not yet supported with strange clamp mode
 		ASSERT(!m_texture_shuffle || (context->CLAMP.WMS < 3 && context->CLAMP.WMT < 3));
 
-		if (tex->m_target && m_context->TEX0.PSM == PSM_PSMT8 && single_page && draw_sprite_tex) {
+		if (m_src->m_target && m_context->TEX0.PSM == PSM_PSMT8 && single_page && draw_sprite_tex) {
 			GL_INS("Channel shuffle effect detected (2nd shot)");
 			m_channel_shuffle = true;
 		} else {
@@ -947,7 +1069,7 @@ void GSRendererHW::Draw()
 			m_context->Dump(m_dump_root+s);
 		}
 
-		if(s_savet && s_n >= s_saven && tex)
+		if(s_savet && s_n >= s_saven && m_src)
 		{
 			s = format("%05d_f%lld_itex_%05x_%s_%d%d_%02x_%02x_%02x_%02x.dds",
 				s_n, frame, (int)context->TEX0.TBP0, psm_str(context->TEX0.PSM),
@@ -955,13 +1077,13 @@ void GSRendererHW::Draw()
 				(int)context->CLAMP.MINU, (int)context->CLAMP.MAXU,
 				(int)context->CLAMP.MINV, (int)context->CLAMP.MAXV);
 
-			tex->m_texture->Save(m_dump_root+s);
+			m_src->m_texture->Save(m_dump_root+s);
 
-			if(tex->m_palette)
+			if(m_src->m_palette)
 			{
 				s = format("%05d_f%lld_itpx_%05x_%s.dds", s_n, frame, context->TEX0.CBP, psm_str(context->TEX0.CPSM));
 
-				tex->m_palette->Save(m_dump_root+s);
+				m_src->m_palette->Save(m_dump_root+s);
 			}
 		}
 
@@ -984,15 +1106,15 @@ void GSRendererHW::Draw()
 	}
 
 	// The rectangle of the draw
-	GSVector4i r = GSVector4i(m_vt.m_min.p.xyxy(m_vt.m_max.p)).rintersect(GSVector4i(context->scissor.in));
+	m_r = GSVector4i(m_vt.m_min.p.xyxy(m_vt.m_max.p)).rintersect(GSVector4i(context->scissor.in));
 
-	if(m_hacks.m_oi && !(this->*m_hacks.m_oi)(rt_tex, ds_tex, tex))
+	if(m_hacks.m_oi && !(this->*m_hacks.m_oi)(rt_tex, ds_tex, m_src))
 	{
 		GL_INS("Warning skipping a draw call (%d)", s_n);
 		return;
 	}
 
-	if (!OI_BlitFMV(rt, tex, r)) {
+	if (!OI_BlitFMV(rt, m_src, m_r)) {
 		GL_INS("Warning skipping a draw call (%d)", s_n);
 		return;
 	}
@@ -1005,7 +1127,7 @@ void GSRendererHW::Draw()
 				&& !m_context->TEST.ATE // no alpha test
 				&& (!m_context->TEST.ZTE || m_context->TEST.ZTST == ZTST_ALWAYS) // no depth test
 				&& (m_vt.m_eq.rgba == 0xFFFF) // constant color write
-				&& r.x == 0 && r.y == 0) { // Likely full buffer write
+				&& m_r.x == 0 && m_r.y == 0) { // Likely full buffer write
 
 			OI_GsMemClear();
 
@@ -1056,7 +1178,7 @@ void GSRendererHW::Draw()
 
 	//
 
-	DrawPrims(rt_tex, ds_tex, tex);
+	DrawPrims(rt_tex, ds_tex, m_src);
 
 	//
 
@@ -1068,20 +1190,20 @@ void GSRendererHW::Draw()
 
 	// Help to detect rendering outside of the framebuffer
 #if _DEBUG
-	if (m_upscale_multiplier * r.z > m_width) {
-		GL_INS("ERROR: RT width is too small only %d but require %d", m_width, m_upscale_multiplier * r.z);
+	if (m_upscale_multiplier * m_r.z > m_width) {
+		GL_INS("ERROR: RT width is too small only %d but require %d", m_width, m_upscale_multiplier * m_r.z);
 	}
-	if (m_upscale_multiplier * r.w > m_height) {
-		GL_INS("ERROR: RT height is too small only %d but require %d", m_height, m_upscale_multiplier * r.w);
+	if (m_upscale_multiplier * m_r.w > m_height) {
+		GL_INS("ERROR: RT height is too small only %d but require %d", m_height, m_upscale_multiplier * m_r.w);
 	}
 #endif
 
 	if(fm != 0xffffffff && rt)
 	{
 		//rt->m_valid = rt->m_valid.runion(r);
-		rt->UpdateValidity(r);
+		rt->UpdateValidity(m_r);
 
-		m_tc->InvalidateVideoMem(context->offset.fb, r, false);
+		m_tc->InvalidateVideoMem(context->offset.fb, m_r, false);
 
 		m_tc->InvalidateVideoMemType(GSTextureCache::DepthStencil, context->FRAME.Block());
 	}
@@ -1089,9 +1211,9 @@ void GSRendererHW::Draw()
 	if(zm != 0xffffffff && ds)
 	{
 		//ds->m_valid = ds->m_valid.runion(r);
-		ds->UpdateValidity(r);
+		ds->UpdateValidity(m_r);
 
-		m_tc->InvalidateVideoMem(context->offset.zb, r, false);
+		m_tc->InvalidateVideoMem(context->offset.zb, m_r, false);
 
 		m_tc->InvalidateVideoMemType(GSTextureCache::RenderTarget, context->ZBUF.Block());
 	}
@@ -1224,15 +1346,22 @@ void GSRendererHW::OI_DoubleHalfClear(GSTexture* rt, GSTexture* ds)
 		// If both buffers are side by side we can expect a fast clear in on-going
 		if (half <= (base + written_pages)) {
 			uint32 color = v[1].RGBAQ.u32[0];
+			bool clear_depth = (m_context->FRAME.FBP > m_context->ZBUF.ZBP);
 
-			GL_INS("OI_DoubleHalfClear: base %x half %x. w_pages %d h_pages %d fbw %d. Color %x", base << 5, half << 5, w_pages, h_pages, m_context->FRAME.FBW, color);
+			GL_INS("OI_DoubleHalfClear:%s: base %x half %x. w_pages %d h_pages %d fbw %d. Color %x",
+					clear_depth ? "depth" : "target", base << 5, half << 5, w_pages, h_pages, m_context->FRAME.FBW, color);
 
-			if (m_context->FRAME.FBP > m_context->ZBUF.ZBP) {
+			// Commit texture with a factor 2 on the height
+			GSTexture* t = clear_depth ? ds : rt;
+			GSVector4i commitRect = ComputeBoundingBox(t->GetScale(), t->GetSize());
+			t->CommitRegion(GSVector2i(commitRect.z, 2 * commitRect.w));
+
+			if (clear_depth) {
 				// Only pure clear are supported for depth
 				ASSERT(color == 0);
-				m_dev->ClearDepth(ds);
+				m_dev->ClearDepth(t);
 			} else {
-				m_dev->ClearRenderTarget(rt, color);
+				m_dev->ClearRenderTarget(t, color);
 			}
 		}
 	}
@@ -1457,7 +1586,8 @@ bool GSRendererHW::OI_FFX(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* 
 	if((FBP == 0x00d00 || FBP == 0x00000) && ZBP == 0x02100 && PRIM->TME && TBP == 0x01a00 && m_context->TEX0.PSM == PSM_PSMCT16S)
 	{
 		// random battle transition (z buffer written directly, clear it now)
-
+		if(ds)
+			ds->Commit(); // Don't bother to save few MB for a single game
 		m_dev->ClearDepth(ds);
 	}
 
@@ -1508,6 +1638,7 @@ bool GSRendererHW::OI_RozenMaidenGebetGarden(GSTexture* rt, GSTexture* ds, GSTex
 
 			if(GSTextureCache::Target* tmp_rt = m_tc->LookupTarget(TEX0, m_width, m_height, GSTextureCache::RenderTarget, true))
 			{
+				tmp_rt->m_texture->Commit(); // Don't bother to save few MB for a single game
 				m_dev->ClearRenderTarget(tmp_rt->m_texture, 0);
 			}
 
@@ -1525,6 +1656,7 @@ bool GSRendererHW::OI_RozenMaidenGebetGarden(GSTexture* rt, GSTexture* ds, GSTex
 
 			if(GSTextureCache::Target* tmp_ds = m_tc->LookupTarget(TEX0, m_width, m_height, GSTextureCache::DepthStencil, true))
 			{
+				tmp_ds->m_texture->Commit(); // Don't bother to save few MB for a single game
 				m_dev->ClearDepth(tmp_ds->m_texture);
 			}
 
@@ -1540,19 +1672,12 @@ bool GSRendererHW::OI_StarWarsForceUnleashed(GSTexture* rt, GSTexture* ds, GSTex
 	uint32 FBP = m_context->FRAME.Block();
 	uint32 FPSM = m_context->FRAME.PSM;
 
-	if(!PRIM->TME)
-	{
-		if(FPSM == PSM_PSMCT24 && FBP == 0x2bc0)
-		{
-			m_dev->ClearDepth(ds);
-
-			return false;
-		}
-	}
-	else if(PRIM->TME)
+	if(PRIM->TME)
 	{
 		if((FBP == 0x0 || FBP == 0x01180) && FPSM == PSM_PSMCT32 && (m_vt.m_eq.z && m_vt.m_max.p.z == 0))
 		{
+			if(ds)
+				ds->Commit(); // Don't bother to save few MB for a single game
 			m_dev->ClearDepth(ds);
 		}
 	}
@@ -1637,6 +1762,8 @@ bool GSRendererHW::OI_SuperManReturns(GSTexture* rt, GSTexture* ds, GSTextureCac
 	ASSERT((v->RGBAQ.A << 24 | v->RGBAQ.B << 16 | v->RGBAQ.G << 8 | v->RGBAQ.R) == (int)v->XYZ.Z);
 
 	// Do a direct write
+	if(rt)
+		rt->Commit(); // Don't bother to save few MB for a single game
 	m_dev->ClearRenderTarget(rt, GSVector4(m_vt.m_min.c));
 
 	m_tc->InvalidateVideoMemType(GSTextureCache::DepthStencil, ctx->FRAME.Block());
@@ -1671,6 +1798,8 @@ bool GSRendererHW::OI_ArTonelico2(GSTexture* rt, GSTexture* ds, GSTextureCache::
 
 	if (m_vertex.next == 2 && !PRIM->TME && m_context->FRAME.FBW == 10 && v->XYZ.Z == 0 && m_context->TEST.ZTST == ZTST_ALWAYS) {
 		GL_INS("OI_ArTonelico2");
+		if(ds)
+			ds->Commit(); // Don't bother to save few MB for a single game
 		m_dev->ClearDepth(ds);
 	}
 

@@ -77,22 +77,6 @@ CRC::Game CRC::m_games[] =
 	{0x21068223, Okami, US, 0},
 	{0x891F223F, Okami, EU, 0}, // PAL DE, ES & FR.
 	{0xC5DEFEA0, Okami, JP, 0},
-	{0x086273D2, MetalGearSolid3, EU, 0}, // - PAL UK & FR
-	{0x26A6E286, MetalGearSolid3, DE, 0},
-	{0x9F185CE1, MetalGearSolid3, EU, 0},
-	{0x98D4BC93, MetalGearSolid3, ES, 0},
-	{0x79ED26AD, MetalGearSolid3, EU, 0},
-	{0x5E31EA42, MetalGearSolid3, EU, 0},
-	{0xD7ED797D, MetalGearSolid3, DE, 0},
-	{0x053D2239, MetalGearSolid3, US, 0}, // Metal Gear Solid 3 Subsistence disc1
-	{0x01B2FA7F, MetalGearSolid3, US, 0}, // Metal Gear Solid 3 Subsistence disc2
-	{0xAA31B5BF, MetalGearSolid3, US, 0},
-	{0x86BC3040, MetalGearSolid3, US, 0}, // Metal Gear Solid 3 Subsistence disc1
-	{0x0481AD8A, MetalGearSolid3, JP, 0},
-	{0xC69ACB6F, MetalGearSolid3, KO, 0}, // Metal Gear Solid 3 Snake Eater
-	{0xB0D195EF, MetalGearSolid3, KO, 0}, // Metal Gear Solid 3 Subsistence disc1
-	{0x3EBABC9C, MetalGearSolid3, KO, 0}, // Metal Gear Solid 3 Subsistence disc2
-	{0x8A5C25A7, MetalGearSolid3, ES, 0}, // Metal Gear Solid 3 Subsistence Spanish version
 	{0x278722BF, DBZBT2, EU, 0},
 	{0xFE961D28, DBZBT2, US, 0},
 	{0x0393B6BE, DBZBT2, EU, 0},
@@ -122,15 +106,6 @@ CRC::Game CRC::m_games[] =
 	{0x877F3436, SoTC, JP, 0},
 	{0xA17D6AAA, SoTC, KO, 0},
 	{0x877B3D35, SoTC, CH, 0},
-	{0x3122B508, OnePieceGrandAdventure, US, 0},
-	{0x8DF14A24, OnePieceGrandAdventure, EU, 0},
-	{0xE446C9F9, OnePieceGrandAdventure, KO, 0},
-	{0xCA2073B3, OnePieceGrandBattle, KO, 0},
-	{0x66953267, OnePieceGrandAdventure, JP, 0},
-	{0xE1674F57, OnePieceGrandBattle, EU, 0},
-	{0x947B933B, OnePieceGrandAdventure, US, 0},
-	{0xB049DD5E, OnePieceGrandBattle, US, 0},
-	{0x5D02CC5B, OnePieceGrandBattle, NoRegion, 0},
 	{0x6F8545DB, ICO, US, 0},
 	{0x48CDF317, ICO, US, 0}, // Demo
 	{0xB01A4C95, ICO, JP, 0},
@@ -247,18 +222,13 @@ CRC::Game CRC::m_games[] =
 	{0x71320CA8, Onimusha3, JP, 0},
 	{0xDAFFFB0D, Onimusha3, KO, 0},
 	{0xF442260C, MajokkoALaMode2, JP, 0},
+	{0xA616A6C2, TalesOfAbyss, US, 0},
 	{0x14FE77F7, TalesOfAbyss, US, 0},
 	{0x045D77E9, TalesOfAbyss, JPUNDUB, 0},
+	{0x14FD77F7, TalesOfAbyss, JPUNDUB, 0},
 	{0xAA5EC3A3, TalesOfAbyss, JP, 0},
 	{0xFB236A46, SonicUnleashed, US, 0},
 	{0x8C913264, SonicUnleashed, EU, 0},
-	{0x5C1EBD61, SimpsonsGame, EU, 0},
-	{0x5C1EBF61, SimpsonsGame, FR, 0},
-	{0x4C7BB3C8, SimpsonsGame, NoRegion, 0},
-	{0x4C94B32C, SimpsonsGame, NoRegion, 0},
-	{0x565B7E04, SimpsonsGame, IT, 0},
-	{0x206779D8, SimpsonsGame, EU, 0},
-	{0xBBE4D862, SimpsonsGame, US, 0},
 	{0xD71B57F4, Genji, US, 0},
 	{0xFADEBC45, Genji, EU, 0},
 	{0xB4776FC1, Genji, JP, 0},
@@ -319,6 +289,7 @@ CRC::Game CRC::m_games[] =
 	{0x518DD841, Sly2, KO, 0},
 	{0x07652DD9, Sly2, US, 0},
 	{0x5B93397F, Sly2, US, 0}, // E3 Demo
+	{0xA480549C, Sly2, US, 0}, // Prototype
 	{0xDD0B5E6C, Sly2, US, 0}, // Internal prototype disc
 	{0x615EA2DB, Sly2, JP, 0}, // Kaitou Sly Cooper 2
 	{0xFDA1CBF6, Sly2, EU, 0},
@@ -348,9 +319,6 @@ CRC::Game CRC::m_games[] =
 	{0xC5B75C7C, Oneechanbara2Special, JP, 0}, // cutie comment
 	{0xC725CC6C, Oneechanbara2Special, JP, 0},
 	{0x07608CA2, Oneechanbara2Special, EU, 0}, // Zombie Hunters 2
-	{0xC0659AD1, NarutimateAccel, JP, 0}, // cutie comment
-	{0xF3D9DFBE, NarutimateAccel, JP, 0},
-	{0x59739DDE, Naruto, JP, 0}, // cutie comment
 	{0xE0347841, XenosagaE3, JP, 0}, // cutie comment
 	{0xA4E88698, XenosagaE3, CH, 0},
 	{0x2088950A, XenosagaE3, US, 0},
@@ -361,8 +329,6 @@ CRC::Game CRC::m_games[] =
 	{0x958DCA28, ShadowofRome, EU, 0},
 	{0x57818AF6, ShadowofRome, US, 0},
 	{0x1E210E60, ShadowofRome, US, 0}, // Demo
-	{0xF21EE6E0, CrashNburn, US, 0},
-	{0x54A548B4, CrashNburn, EU, 0},
 	{0x694A998E, TombRaiderUnderworld, JP, 0}, // cutie comment
 	{0x8E214549, TombRaiderUnderworld, EU, 0},
 	{0x8E265148, TombRaiderUnderworld, RU, 0}, // Unofficial RU-version
@@ -375,6 +341,7 @@ CRC::Game CRC::m_games[] =
 	{0x05177ECE, TombRaiderLegend, EU, 0},
 	{0x879CDA5E, StarWarsForceUnleashed, US, 0},
 	{0x137C792E, StarWarsForceUnleashed, US, 0},
+	{0xCC9BFDE3, StarWarsForceUnleashed, JP, 0},
 	{0xDAF2145C, StarWarsForceUnleashed, EU, 0},
 	{0x25FC361B, DevilMayCry3, US, 0}, // SE
 	{0x2F7D8AD5, DevilMayCry3, US, 0},

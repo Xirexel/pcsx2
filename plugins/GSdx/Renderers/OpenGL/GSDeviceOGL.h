@@ -301,8 +301,9 @@ public:
 				uint32 automatic_lod:1;
 				uint32 manual_lod:1;
 				uint32 point_sampler:1;
+				uint32 invalid_tex0:1; // Lupin the 3rd
 
-				uint32 _free2:10;
+				uint32 _free2:9;
 			};
 
 			uint64 key;
@@ -562,6 +563,8 @@ public:
 	void OMSetRenderTargets(GSTexture* rt, GSTexture* ds, const GSVector4i* scissor = NULL) final;
 	void OMSetColorMaskState(OMColorMaskSelector sel = OMColorMaskSelector());
 
+	virtual bool HasColorSparse() { return GLLoader::found_compatible_GL_ARB_sparse_texture2; }
+	virtual bool HasDepthSparse() { return GLLoader::found_compatible_sparse_depth; }
 
 	void CreateTextureFX();
 	GLuint CompileVS(VSSelector sel);

@@ -25,16 +25,11 @@
 GSRendererDX11::GSRendererDX11()
 	: GSRendererHW(new GSTextureCache11(this))
 {
+	m_sw_blending = theApp.GetConfigI("accurate_blending_unit_d3d11");
 	if (theApp.GetConfigB("UserHacks"))
-	{
-		UserHacks_AlphaHack    = theApp.GetConfigB("UserHacks_AlphaHack");
 		UserHacks_AlphaStencil = theApp.GetConfigB("UserHacks_AlphaStencil");
-	}
 	else
-	{
-		UserHacks_AlphaHack    = false;
 		UserHacks_AlphaStencil = false;
-	}
 
 	ResetStates();
 }
@@ -91,7 +86,7 @@ void GSRendererDX11::SetupIA(const float& sx, const float& sy)
 	{
 		GSVector4i::storent(ptr, m_vertex.buff, sizeof(GSVertex) * m_vertex.next);
 
-		if (UserHacks_WildHack && !isPackedUV_HackFlag)
+		if (m_userhacks_wildhack && !m_isPackedUV_HackFlag)
 		{
 			GSVertex* RESTRICT d = (GSVertex*)ptr;
 
@@ -218,83 +213,50 @@ void GSRendererDX11::EmulateZbuffer()
 
 void GSRendererDX11::EmulateTextureShuffleAndFbmask()
 {
-	size_t count = m_vertex.next;
-	GSVertex* v = &m_vertex.buff[0];
+	// FBmask blend level selection.
+	// We do this becaue:
+	// 1. D3D sucks.
+	// 2. FB copy is slow, especially on triangle primitives which is unplayable with some games.
+	// 3. SW blending isn't implemented yet.
+	bool enable_fbmask_emulation = false;
+	switch (m_sw_blending)
+	{
+		case ACC_BLEND_HIGH_D3D11:
+			// Fully enable Fbmask emulation like on opengl, note misses sw blending to work as opengl on some games (Genji).
+			// Debug
+			enable_fbmask_emulation = true;
+			break;
+		case ACC_BLEND_MEDIUM_D3D11:
+			// Enable Fbmask emulation excluding triangle class because it is quite slow.
+			// Exclude 0x80000000 because Genji needs sw blending, otherwise it breaks some effects.
+			enable_fbmask_emulation = ((m_vt.m_primclass != GS_TRIANGLE_CLASS) && (m_context->FRAME.FBMSK != 0x80000000));
+			break;
+		case ACC_BLEND_BASIC_D3D11:
+			// Enable Fbmask emulation excluding triangle class because it is quite slow.
+			// Exclude 0x80000000 because Genji needs sw blending, otherwise it breaks some effects.
+			// Also exclude fbmask emulation on texture shuffle just in case, it is probably safe tho.
+			enable_fbmask_emulation = (!m_texture_shuffle && (m_vt.m_primclass != GS_TRIANGLE_CLASS) && (m_context->FRAME.FBMSK != 0x80000000));
+			break;
+		case ACC_BLEND_NONE_D3D11:
+		default:
+			break;
+	}
+	
+
+	// Uncomment to disable texture shuffle emulation.
+	// m_texture_shuffle = false;
 
 	if (m_texture_shuffle)
 	{
 		m_ps_sel.shuffle = 1;
 		m_ps_sel.dfmt = 0;
 
-		const GIFRegXYOFFSET& o = m_context->XYOFFSET;
+		bool write_ba;
+		bool read_ba;
 
-		// vertex position is 8 to 16 pixels, therefore it is the 16-31 bits of the colors
-		int  pos = (v[0].XYZ.X - o.OFX) & 0xFF;
-		bool write_ba = (pos > 112 && pos < 136);
-		// Read texture is 8 to 16 pixels (same as above)
-		float tw = (float)(1u << m_context->TEX0.TW);
-		int tex_pos = (PRIM->FST) ? v[0].U : (int)(tw * v[0].ST.S);
-		tex_pos &= 0xFF;
-		m_ps_sel.read_ba = (tex_pos > 112 && tex_pos < 144);
+		ConvertSpriteTextureShuffle(write_ba, read_ba);
 
-		// Convert the vertex info to a 32 bits color format equivalent
-		if (PRIM->FST)
-		{
-
-			for(size_t i = 0; i < count; i += 2)
-			{
-				if (write_ba)
-					v[i].XYZ.X   -= 128u;
-				else
-					v[i+1].XYZ.X += 128u;
-
-				if (m_ps_sel.read_ba)
-					v[i].U       -= 128u;
-				else
-					v[i+1].U     += 128u;
-
-				// Height is too big (2x).
-				int tex_offset = v[i].V & 0xF;
-				GSVector4i offset(o.OFY, tex_offset, o.OFY, tex_offset);
-
-				GSVector4i tmp(v[i].XYZ.Y, v[i].V, v[i+1].XYZ.Y, v[i+1].V);
-				tmp = GSVector4i(tmp - offset).srl32(1) + offset;
-
-				v[i].XYZ.Y   = (uint16)tmp.x;
-				v[i].V       = (uint16)tmp.y;
-				v[i+1].XYZ.Y = (uint16)tmp.z;
-				v[i+1].V     = (uint16)tmp.w;
-			}
-		}
-		else
-		{
-			const float offset_8pix = 8.0f / tw;
-
-			for(size_t i = 0; i < count; i += 2)
-			{
-				if (write_ba)
-					v[i].XYZ.X   -= 128u;
-				else
-					v[i+1].XYZ.X += 128u;
-
-				if (m_ps_sel.read_ba)
-					v[i].ST.S    -= offset_8pix;
-				else
-					v[i+1].ST.S  += offset_8pix;
-
-				// Height is too big (2x).
-				GSVector4i offset(o.OFY, o.OFY);
-
-				GSVector4i tmp(v[i].XYZ.Y, v[i+1].XYZ.Y);
-				tmp = GSVector4i(tmp - offset).srl32(1) + offset;
-
-				//fprintf(stderr, "Before %d, After %d\n", v[i+1].XYZ.Y, tmp.y);
-				v[i].XYZ.Y   = (uint16)tmp.x;
-				v[i].ST.T   /= 2.0f;
-				v[i+1].XYZ.Y = (uint16)tmp.y;
-				v[i+1].ST.T /= 2.0f;
-			}
-		}
+		m_ps_sel.read_ba = read_ba;
 
 		// Please bang my head against the wall!
 		// 1/ Reduce the frame mask to a 16 bit format
@@ -310,45 +272,74 @@ void GSRendererDX11::EmulateTextureShuffleAndFbmask()
 		{
 			if (write_ba)
 			{
+				// fprintf(stderr, "Color shuffle %s => B\n", read_ba ? "B" : "R");
 				m_om_bsel.wb = 1;
 			}
 			else
 			{
+				// fprintf(stderr, "Color shuffle %s => R"\n, read_ba ? "B" : "R");
 				m_om_bsel.wr = 1;
 			}
-		}
-		else if ((fbmask & 0xFF) != 0xFF)
-		{
-#ifdef _DEBUG
-			fprintf(stderr, "Please fix me! wb %u wr %u\n", m_om_bsel.wb, m_om_bsel.wr);
-#endif
-			//ASSERT(0);
+			if (rg_mask)
+				m_ps_sel.fbmask = 1;
 		}
 
 		if (ba_mask != 0xFF)
 		{
 			if (write_ba)
 			{
+				// fprintf(stderr, "Color shuffle %s => A"\n, read_ba ? "A" : "G");
 				m_om_bsel.wa = 1;
 			}
 			else
 			{
+				// fprintf(stderr, "Color shuffle %s => G"\n, read_ba ? "A" : "G");
 				m_om_bsel.wg = 1;
 			}
+			if (ba_mask)
+				m_ps_sel.fbmask = 1;
 		}
-		else if ((fbmask & 0xFF) != 0xFF)
+
+		if (m_ps_sel.fbmask && enable_fbmask_emulation)
 		{
-#ifdef _DEBUG
-			fprintf(stderr, "Please fix me! wa %u wg %u\n", m_om_bsel.wa, m_om_bsel.wg);
-#endif
-			//ASSERT(0);
+			// fprintf(stderr, "FBMASK SW emulated fb_mask:%x on tex shuffle\n", fbmask);
+			ps_cb.FbMask.r = rg_mask;
+			ps_cb.FbMask.g = rg_mask;
+			ps_cb.FbMask.b = ba_mask;
+			ps_cb.FbMask.a = ba_mask;
+			m_bind_rtsample = true;
+		}
+		else
+		{
+			m_ps_sel.fbmask = 0;
 		}
 	}
 	else
 	{
 		m_ps_sel.dfmt = GSLocalMemory::m_psm[m_context->FRAME.PSM].fmt;
 
-		m_om_bsel.wrgba = ~GSVector4i::load((int)m_context->FRAME.FBMSK).eq8(GSVector4i::xffffffff()).mask();
+		GSVector4i fbmask_v = GSVector4i::load((int)m_context->FRAME.FBMSK);
+		int ff_fbmask = fbmask_v.eq8(GSVector4i::xffffffff()).mask();
+		int zero_fbmask = fbmask_v.eq8(GSVector4i::zero()).mask();
+
+		m_om_bsel.wrgba = ~ff_fbmask; // Enable channel if at least 1 bit is 0
+
+		m_ps_sel.fbmask = enable_fbmask_emulation && (~ff_fbmask & ~zero_fbmask & 0xF);
+
+		if (m_ps_sel.fbmask)
+		{
+			ps_cb.FbMask = fbmask_v.u8to32();
+			// Only alpha is special here, I think we can take a very unsafe shortcut
+			// Alpha isn't blended on the GS but directly copyied into the RT.
+			//
+			// Behavior is clearly undefined however there is a high probability that
+			// it will work. Masked bit will be constant and normally the same everywhere
+			// RT/FS output/Cached value.
+
+			/*fprintf(stderr, "FBMASK SW emulated fb_mask:%x on %d bits format\n", m_context->FRAME.FBMSK,
+				(GSLocalMemory::m_psm[m_context->FRAME.PSM].fmt == 2) ? 16 : 32);*/
+			m_bind_rtsample = true;
+		}
 	}
 }
 
@@ -487,7 +478,6 @@ void GSRendererDX11::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache:
 	// Effect is really a channel shuffle effect so let's cheat a little
 	if (m_channel_shuffle)
 	{
-		// FIXME: Slot 4 - unbind texture when it isn't used.
 		dev->PSSetShaderResource(4, tex->m_from_target);
 		// Replace current draw with a fullscreen sprite
 		//
@@ -678,6 +668,15 @@ void GSRendererDX11::EmulateTextureSampler(const GSTextureCache::Source* tex)
 	m_ps_sel.tcoffsethack = m_userhacks_tcoffset;
 	ps_cb.TC_OffsetHack = GSVector4(m_userhacks_tcoffset_x, m_userhacks_tcoffset_y).xyxy() / WH.xyxy();
 
+	// Must be done after all coordinates math
+	if (m_context->HasFixedTEX0() && !PRIM->FST)
+	{
+		m_ps_sel.invalid_tex0 = 1;
+		// Use invalid size to denormalize ST coordinate
+		ps_cb.WH.x = (float)(1 << m_context->stack.TEX0.TW);
+		ps_cb.WH.y = (float)(1 << m_context->stack.TEX0.TH);
+	}
+
 	// Only enable clamping in CLAMP mode. REGION_CLAMP will be done manually in the shader
 	m_ps_ssel.tau = (wms != CLAMP_CLAMP);
 	m_ps_ssel.tav = (wmt != CLAMP_CLAMP);
@@ -686,6 +685,8 @@ void GSRendererDX11::EmulateTextureSampler(const GSTextureCache::Source* tex)
 
 void GSRendererDX11::ResetStates()
 {
+	m_bind_rtsample = false;
+
 	m_vs_sel.key = 0;
 	m_gs_sel.key = 0;
 	m_ps_sel.key = 0;
@@ -725,14 +726,13 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 	EmulateTextureShuffleAndFbmask();
 
 	// DATE: selection of the algorithm.
-
 	if (DATE)
 	{
 		if (m_texture_shuffle)
 		{
-			// Direct3D doesn't support DATE_GL45 on m_texture_shuffle so keep using the old method.
-			// Let's leave the check in to ensure the next code cases are hit properly.
-			// fprintf(stderr, "Slow DATE with alpha %d-%d not supported on texture shuffle\n", m_vt.m_alpha.min, m_vt.m_alpha.max);
+			// DATE case not supported yet so keep using the old method.
+			// Leave the check in to make sure other DATE cases are triggered correctly.
+			// fprintf(stderr, "DATE with texture shuffle\n");
 		}
 		else if (m_om_bsel.wa && !m_context->TEST.ATE)
 		{
@@ -752,14 +752,11 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 			}
 			else if ((m_vt.m_primclass == GS_SPRITE_CLASS /*&& m_drawlist.size() < 50*/) || (m_index.tail < 100))
 			{
-				// Direct3D doesn't support Slow DATE_GL45.
-				// Let's make sure it triggers this check and continues to use the old DATE code to avoid any issues with Fast Accurate Date.
-				// m_drawlist.size() isn't supported on D3D so there will be more games hitting this code path,
-				// it should be fine with regular DATE since originally it ran with it anyway.
-				// Note: Potentially Alpha Stencil might emulate SLOW DATE to some degree. Perhaps some of the code can be implemented here.
+				// DATE case not supported yet so keep using the old method.
+				// Leave the check in to make sure other DATE cases are triggered correctly.
 				// fprintf(stderr, "Slow DATE with alpha %d-%d not supported\n", m_vt.m_alpha.min, m_vt.m_alpha.max);
 			}
-			else if (!UserHacks_AlphaStencil)
+			else
 			{
 				if (m_accurate_date)
 				{
@@ -768,7 +765,6 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 				}
 				else
 				{
-					// DATE is already true, no need for another check.
 					// fprintf(stderr, "Inaccurate DATE with alpha %d-%d\n", m_vt.m_alpha.min, m_vt.m_alpha.max);
 				}
 			}
@@ -805,6 +801,18 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 				//ASSERT(0);
 			}
 		}
+
+		// Color clip
+		if (m_env.COLCLAMP.CLAMP == 0 && rt)
+		{
+			// fprintf(stderr, "COLCLIP HDR mode ENABLED\n");
+			GSVector4 dRect(ComputeBoundingBox(rtscale, rtsize));
+			GSVector4 sRect = dRect / GSVector4(rtsize.x, rtsize.y).xyxy();
+			hdr_rt = dev->CreateRenderTarget(rtsize.x, rtsize.y, DXGI_FORMAT_R32G32B32A32_FLOAT);
+			// Warning: StretchRect must be called before BeginScene otherwise
+			// vertices will be overwritten. Trust me you don't want to do that.
+			dev->StretchRect(rt, sRect, hdr_rt, dRect, ShaderConvert_COPY, false);
+		}
 	}
 
 	if (m_ps_sel.dfmt == 1)
@@ -832,18 +840,6 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 	}
 
 	//
-
-	bool hdr_colclip = m_env.COLCLAMP.CLAMP == 0 && rt;
-	if (hdr_colclip)
-	{
-		// fprintf(stderr, "COLCLIP HDR mode ENABLED\n");
-		GSVector4 dRect(ComputeBoundingBox(rtscale, rtsize));
-		GSVector4 sRect = dRect / GSVector4(rtsize.x, rtsize.y).xyxy();
-		hdr_rt = dev->CreateRenderTarget(rtsize.x, rtsize.y, DXGI_FORMAT_R32G32B32A32_FLOAT);
-		// Warning: StretchRect must be called before BeginScene otherwise
-		// vertices will be overwritten. Trust me you don't want to do that.
-		dev->StretchRect(rt, sRect, hdr_rt, dRect, ShaderConvert_COPY, false);
-	}
 
 	dev->BeginScene();
 
@@ -898,17 +894,6 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 	m_ps_sel.clr1 = m_om_bsel.IsCLR1();
 	m_ps_sel.fba = m_context->FBA.FBA;
 
-	// FIXME: Purge aout with AlphaHack when FbMask emulation is added.
-	if (m_ps_sel.shuffle)
-	{
-		m_ps_sel.aout = 0;
-	}
-	else
-	{
-		m_ps_sel.aout = UserHacks_AlphaHack || (m_context->FRAME.FBMSK & 0xff000000) == 0x7f000000;
-	}
-	// END OF FIXME
-
 	if (PRIM->FGE)
 	{
 		m_ps_sel.fog = 1;
@@ -958,9 +943,11 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 		EmulateAtst(1, tex);
 	}
 
+	// FIXME: Purge it when remaining DATE cases in DATE selection are supported properly.
 	// Destination alpha pseudo stencil hack: use a stencil operation combined with an alpha test
 	// to only draw pixels which would cause the destination alpha test to fail in the future once.
 	// Unfortunately this also means only drawing those pixels at all, which is why this is a hack.
+	// It helps render transparency in Amagami, breaks a lot of other games.
 	if (UserHacks_AlphaStencil && DATE && !DATE_one && m_om_bsel.wa && !m_context->TEST.ATE)
 	{
 		// fprintf(stderr, "Alpha Stencil detected\n");
@@ -980,6 +967,7 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 		if (!(m_context->FBA.FBA && m_context->TEST.DATM == 1))
 			m_om_dssel.date_one = 1;
 	}
+	// END OF FIXME
 
 	if (tex)
 	{
@@ -988,6 +976,15 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 	else
 	{
 		m_ps_sel.tfx = 4;
+	}
+
+	if (m_bind_rtsample)
+	{
+		// Bind the RT.This way special effect can use it.
+		// Do not always bind the rt when it's not needed,
+		// only bind it when effects use it such as fbmask emulation currently
+		// because we copy the frame buffer and it is quite slow.
+		dev->PSSetShaderResource(3, rt);
 	}
 
 	if (m_game.title == CRC::ICO)

@@ -148,6 +148,12 @@
     <Filter Include="AppHost\Debugger">
       <UniqueIdentifier>{7a0a1104-f9ee-4cd1-aaba-f8267eba1658}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Recording">
+      <UniqueIdentifier>{7b917318-5a5e-44c0-8463-1dfab67f3b67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Recording\gui">
+      <UniqueIdentifier>{93e36831-627f-4529-b709-1f4bad398512}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Utilities\folderdesc.txt">
@@ -865,6 +871,27 @@
     <ClCompile Include="..\..\ps2\Iop\PsxBios.cpp">
       <Filter>System\Ps2\Iop</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Recording\InputRecording.cpp">
+      <Filter>Recording</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Recording\InputRecordingFile.cpp">
+      <Filter>Recording</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Recording\PadData.cpp">
+      <Filter>Recording</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Recording\RecordingControls.cpp">
+      <Filter>Recording</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Recording\RecordingInputManager.cpp">
+      <Filter>Recording</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Recording\NewRecordingFrame.cpp">
+      <Filter>Recording\gui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Recording\VirtualPad.cpp">
+      <Filter>Recording\gui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Patch.h">
@@ -1307,6 +1334,27 @@
     </ClInclude>
     <ClInclude Include="..\..\Mdec.h">
       <Filter>System\Ps2\Iop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Recording\InputRecording.h">
+      <Filter>Recording</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Recording\InputRecordingFile.h">
+      <Filter>Recording</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Recording\PadData.h">
+      <Filter>Recording</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Recording\RecordingControls.h">
+      <Filter>Recording</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Recording\RecordingInputManager.h">
+      <Filter>Recording</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Recording\NewRecordingFrame.h">
+      <Filter>Recording\gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Recording\VirtualPad.h">
+      <Filter>Recording\gui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

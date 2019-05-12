@@ -112,6 +112,13 @@ protected:
 	wxMenu&			m_menuMisc;
 	wxMenu&			m_menuDebug;
 
+	wxMenu&			m_menuCapture;
+	wxMenu&			m_submenuVideoCapture;
+
+#ifndef DISABLE_RECORDING
+	wxMenu&			m_menuRecording;
+#endif
+
 	wxMenu&			m_LoadStatesSubmenu;
 	wxMenu&			m_SaveStatesSubmenu;
 
@@ -122,6 +129,10 @@ protected:
 #endif
 
 	PerPluginMenuInfo	m_PluginMenuPacks[PluginId_Count];
+
+#ifndef DISABLE_RECORDING
+	bool			m_capturingVideo;
+#endif
 
 	virtual void DispatchEvent( const PluginEventType& plugin_evt );
 	virtual void DispatchEvent( const CoreThreadStatus& status );
@@ -173,6 +184,9 @@ protected:
 	void Menu_EnablePatches_Click(wxCommandEvent &event);
 	void Menu_EnableCheats_Click(wxCommandEvent &event);
 	void Menu_EnableWideScreenPatches_Click(wxCommandEvent &event);
+#ifndef DISABLE_RECORDING
+	void Menu_EnableRecordingTools_Click(wxCommandEvent &event);
+#endif
 	void Menu_EnableHostFs_Click(wxCommandEvent &event);
 
 	void Menu_BootCdvd_Click(wxCommandEvent &event);
@@ -181,8 +195,8 @@ protected:
 	void Menu_CdvdSource_Click(wxCommandEvent &event);
 	void Menu_LoadStates_Click(wxCommandEvent &event);
 	void Menu_SaveStates_Click(wxCommandEvent &event);
-	void Menu_LoadStateOther_Click(wxCommandEvent &event);
-	void Menu_SaveStateOther_Click(wxCommandEvent &event);
+	void Menu_LoadStateFromFile_Click(wxCommandEvent &event);
+	void Menu_SaveStateToFile_Click(wxCommandEvent &event);
 	void Menu_Exit_Click(wxCommandEvent &event);
 
 	void Menu_SuspendResume_Click(wxCommandEvent &event);
@@ -202,6 +216,18 @@ protected:
 	void Menu_ChangeLang(wxCommandEvent &event);
 	void Menu_ShowConsole_Stdio(wxCommandEvent &event);
 	void Menu_ShowAboutBox(wxCommandEvent &event);
+
+	void Menu_Capture_Video_Record_Click(wxCommandEvent &event);
+	void Menu_Capture_Video_Stop_Click(wxCommandEvent &event);
+	void VideoCaptureUpdate();
+	void Menu_Capture_Screenshot_Screenshot_Click(wxCommandEvent &event);
+
+#ifndef DISABLE_RECORDING
+	void Menu_Recording_New_Click(wxCommandEvent &event);
+	void Menu_Recording_Play_Click(wxCommandEvent &event);
+	void Menu_Recording_Stop_Click(wxCommandEvent &event);
+	void Menu_Recording_VirtualPad_Open_Click(wxCommandEvent &event);
+#endif
 
 	void _DoBootCdvd();
 	bool _DoSelectIsoBrowser( wxString& dest );

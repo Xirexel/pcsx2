@@ -230,6 +230,8 @@ SaveStateBase& SaveStateBase::FreezeInternals()
 	// to merit an HLE Bios sub-section... yet.
 	deci2Freeze();
 
+	InputRecordingFreeze();
+
 	if( IsLoading() )
 		PostLoadPrep();
 		

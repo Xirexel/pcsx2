@@ -126,10 +126,7 @@ protected:
 	GSTexture* m_merge;
 	GSTexture* m_weavebob;
 	GSTexture* m_blend;
-	GSTexture* m_shaderfx;
-	GSTexture* m_fxaa;
-	GSTexture* m_shadeboost;
-	GSTexture* m_1x1;
+	GSTexture* m_target_tmp;
 	GSTexture* m_current;
 	struct {size_t stride, start, count, limit;} m_vertex;
 	struct {size_t start, count, limit;} m_index;
@@ -170,11 +167,16 @@ public:
 	virtual void DrawIndexedPrimitive(int offset, int count) {}
 	virtual void EndScene();
 
+	virtual bool HasDepthSparse() { return false; }
+	virtual bool HasColorSparse() { return false; }
+
 	virtual void ClearRenderTarget(GSTexture* t, const GSVector4& c) {}
 	virtual void ClearRenderTarget(GSTexture* t, uint32 c) {}
 	virtual void ClearDepth(GSTexture* t) {}
 	virtual void ClearStencil(GSTexture* t, uint8 c) {}
 
+	GSTexture* CreateSparseRenderTarget(int w, int h, int format = 0);
+	GSTexture* CreateSparseDepthStencil(int w, int h, int format = 0);
 	GSTexture* CreateRenderTarget(int w, int h, int format = 0);
 	GSTexture* CreateDepthStencil(int w, int h, int format = 0);
 	GSTexture* CreateTexture(int w, int h, int format = 0);
@@ -200,7 +202,10 @@ public:
 	void ExternalFX();
 	virtual void RenderOsd(GSTexture* dt) {};
 
+	bool ResizeTexture(GSTexture** t, int type, int w, int h);
 	bool ResizeTexture(GSTexture** t, int w, int h);
+	bool ResizeTarget(GSTexture** t, int w, int h);
+	bool ResizeTarget(GSTexture** t);
 
 	bool IsRBSwapped() {return m_rbswapped;}
 

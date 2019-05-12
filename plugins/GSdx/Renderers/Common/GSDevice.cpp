@@ -31,10 +31,7 @@ GSDevice::GSDevice()
 	, m_merge(NULL)
 	, m_weavebob(NULL)
 	, m_blend(NULL)
-	, m_shaderfx(NULL)
-	, m_fxaa(NULL)
-	, m_shadeboost(NULL)
-	, m_1x1(NULL)
+	, m_target_tmp(NULL)
 	, m_current(NULL)
 	, m_frame(0)
 {
@@ -51,10 +48,7 @@ GSDevice::~GSDevice()
 	delete m_merge;
 	delete m_weavebob;
 	delete m_blend;
-	delete m_shaderfx;
-	delete m_fxaa;
-	delete m_shadeboost;
-	delete m_1x1;
+	delete m_target_tmp;
 }
 
 bool GSDevice::Create(const std::shared_ptr<GSWnd>& wnd)
@@ -74,19 +68,13 @@ bool GSDevice::Reset(int w, int h)
 	delete m_merge;
 	delete m_weavebob;
 	delete m_blend;
-	delete m_shaderfx;
-	delete m_fxaa;
-	delete m_shadeboost;
-	delete m_1x1;
+	delete m_target_tmp;
 
 	m_backbuffer = NULL;
 	m_merge = NULL;
 	m_weavebob = NULL;
 	m_blend = NULL;
-	m_shaderfx = NULL;
-	m_fxaa = NULL;
-	m_shadeboost = NULL;
-	m_1x1 = NULL;
+	m_target_tmp = NULL;
 
 	m_current = NULL; // current is special, points to other textures, no need to delete
 
@@ -175,6 +163,12 @@ void GSDevice::Recycle(GSTexture* t)
 {
 	if(t)
 	{
+#ifdef _DEBUG
+		// Uncommit saves memory but it means a futur allocation when we want to reuse the texture.
+		// Which is slow and defeat the purpose of the m_pool cache.
+		// However, it can help to spot part of texture that we forgot to commit
+		t->Uncommit();
+#endif
 		t->last_frame_used = m_frame;
 
 		m_pool.push_front(t);
@@ -213,6 +207,16 @@ void GSDevice::PurgePool()
 	}
 }
 
+GSTexture* GSDevice::CreateSparseRenderTarget(int w, int h, int format)
+{
+	return FetchSurface(HasColorSparse() ? GSTexture::SparseRenderTarget : GSTexture::RenderTarget, w, h, format);
+}
+
+GSTexture* GSDevice::CreateSparseDepthStencil(int w, int h, int format)
+{
+	return FetchSurface(HasDepthSparse() ? GSTexture::SparseDepthStencil : GSTexture::DepthStencil, w, h, format);
+}
+
 GSTexture* GSDevice::CreateRenderTarget(int w, int h, int format)
 {
 	return FetchSurface(GSTexture::RenderTarget, w, h, format);
@@ -245,20 +249,11 @@ GSTexture* GSDevice::GetCurrent()
 
 void GSDevice::Merge(GSTexture* sTex[3], GSVector4* sRect, GSVector4* dRect, const GSVector2i& fs, const GSRegPMODE& PMODE, const GSRegEXTBUF& EXTBUF, const GSVector4& c)
 {
-	if(m_merge == NULL || m_merge->GetSize() != fs)
-	{
-		Recycle(m_merge);
-
-		m_merge = CreateRenderTarget(fs.x, fs.y);
-	}
-
-	// TODO: m_1x1
-
 	// KH:COM crashes at startup when booting *through the bios* due to m_merge being NULL.
 	// (texture appears to be non-null, and is being re-created at a size around like 1700x340,
 	// dunno if that's relevant) -- air
 
-	if(m_merge)
+	if(ResizeTarget(&m_merge, fs.x, fs.y))
 	{
 		GSTexture* tex[3] = {NULL, NULL, NULL};
 
@@ -290,12 +285,7 @@ void GSDevice::Merge(GSTexture* sTex[3], GSVector4* sRect, GSVector4* dRect, con
 
 void GSDevice::Interlace(const GSVector2i& ds, int field, int mode, float yoffset)
 {
-	if(m_weavebob == NULL || m_weavebob->GetSize() != ds)
-	{
-		delete m_weavebob;
-
-		m_weavebob = CreateRenderTarget(ds.x, ds.y);
-	}
+	ResizeTarget(&m_weavebob, ds.x, ds.y);
 
 	if(mode == 0 || mode == 2) // weave or blend
 	{
@@ -307,12 +297,7 @@ void GSDevice::Interlace(const GSVector2i& ds, int field, int mode, float yoffse
 		{
 			// blend
 
-			if(m_blend == NULL || m_blend->GetSize() != ds)
-			{
-				delete m_blend;
-
-				m_blend = CreateRenderTarget(ds.x, ds.y);
-			}
+			ResizeTarget(&m_blend, ds.x, ds.y);
 
 			DoInterlace(m_weavebob, m_blend, 2, false, 0);
 
@@ -339,19 +324,13 @@ void GSDevice::ExternalFX()
 {
 	GSVector2i s = m_current->GetSize();
 
-	if (m_shaderfx == NULL || m_shaderfx->GetSize() != s)
-	{
-		delete m_shaderfx;
-		m_shaderfx = CreateRenderTarget(s.x, s.y);
-	}
-
-	if (m_shaderfx != NULL)
+	if (ResizeTarget(&m_target_tmp))
 	{
 		GSVector4 sRect(0, 0, 1, 1);
 		GSVector4 dRect(0, 0, s.x, s.y);
 
-		StretchRect(m_current, sRect, m_shaderfx, dRect, ShaderConvert_TRANSPARENCY_FILTER, false);
-		DoExternalFX(m_shaderfx, m_current);
+		StretchRect(m_current, sRect, m_target_tmp, dRect, ShaderConvert_TRANSPARENCY_FILTER, false);
+		DoExternalFX(m_target_tmp, m_current);
 	}
 }
 
@@ -359,19 +338,13 @@ void GSDevice::FXAA()
 {
 	GSVector2i s = m_current->GetSize();
 
-	if(m_fxaa == NULL || m_fxaa->GetSize() != s)
-	{
-		delete m_fxaa;
-		m_fxaa = CreateRenderTarget(s.x, s.y);
-	}
-
-	if(m_fxaa != NULL)
+	if(ResizeTarget(&m_target_tmp))
 	{
 		GSVector4 sRect(0, 0, 1, 1);
 		GSVector4 dRect(0, 0, s.x, s.y);
 
-		StretchRect(m_current, sRect, m_fxaa, dRect, ShaderConvert_TRANSPARENCY_FILTER, false);
-		DoFXAA(m_fxaa, m_current);
+		StretchRect(m_current, sRect, m_target_tmp, dRect, ShaderConvert_TRANSPARENCY_FILTER, false);
+		DoFXAA(m_target_tmp, m_current);
 	}
 }
 
@@ -379,23 +352,17 @@ void GSDevice::ShadeBoost()
 {
 	GSVector2i s = m_current->GetSize();
 
-	if(m_shadeboost == NULL || m_shadeboost->GetSize() != s)
-	{
-		delete m_shadeboost;
-		m_shadeboost = CreateRenderTarget(s.x, s.y);
-	}
-
-	if(m_shadeboost != NULL)
+	if(ResizeTarget(&m_target_tmp))
 	{
 		GSVector4 sRect(0, 0, 1, 1);
 		GSVector4 dRect(0, 0, s.x, s.y);
 
-		StretchRect(m_current, sRect, m_shadeboost, dRect, ShaderConvert_COPY, false);
-		DoShadeBoost(m_shadeboost, m_current);
+		StretchRect(m_current, sRect, m_target_tmp, dRect, ShaderConvert_COPY, false);
+		DoShadeBoost(m_target_tmp, m_current);
 	}
 }
 
-bool GSDevice::ResizeTexture(GSTexture** t, int w, int h)
+bool GSDevice::ResizeTexture(GSTexture** t, int type, int w, int h)
 {
 	if(t == NULL) {ASSERT(0); return false;}
 
@@ -405,12 +372,28 @@ bool GSDevice::ResizeTexture(GSTexture** t, int w, int h)
 	{
 		delete t2;
 
-		t2 = CreateTexture(w, h);
+		t2 = FetchSurface(type, w, h, 0);
 
 		*t = t2;
 	}
 
 	return t2 != NULL;
+}
+
+bool GSDevice::ResizeTexture(GSTexture** t, int w, int h)
+{
+	return ResizeTexture(t, GSTexture::Texture, w, h);
+}
+
+bool GSDevice::ResizeTarget(GSTexture** t, int w, int h)
+{
+	return ResizeTexture(t, GSTexture::RenderTarget, w, h);
+}
+
+bool GSDevice::ResizeTarget(GSTexture** t)
+{
+	GSVector2i s = m_current->GetSize();
+	return ResizeTexture(t, GSTexture::RenderTarget, s.x, s.y);
 }
 
 GSAdapter::operator std::string() const

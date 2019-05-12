@@ -296,11 +296,16 @@ void GSdxApp::Init()
 	m_gs_acc_date_level.push_back(GSSetting(2, "Full", "Slow"));
 
 	m_gs_acc_blend_level.push_back(GSSetting(0, "None", "Fastest"));
-	m_gs_acc_blend_level.push_back(GSSetting(1, "Basic", "Recommended low-end PC"));
+	m_gs_acc_blend_level.push_back(GSSetting(1, "Basic", "Recommended"));
 	m_gs_acc_blend_level.push_back(GSSetting(2, "Medium", ""));
-	m_gs_acc_blend_level.push_back(GSSetting(3, "High", "Recommended high-end PC"));
+	m_gs_acc_blend_level.push_back(GSSetting(3, "High", ""));
 	m_gs_acc_blend_level.push_back(GSSetting(4, "Full", "Very Slow"));
 	m_gs_acc_blend_level.push_back(GSSetting(5, "Ultra", "Ultra Slow"));
+
+	m_gs_acc_blend_level_d3d11.push_back(GSSetting(0, "None", "Fastest"));
+	m_gs_acc_blend_level_d3d11.push_back(GSSetting(1, "Basic", "Recommended"));
+	m_gs_acc_blend_level_d3d11.push_back(GSSetting(2, "Medium", "Debug"));
+	m_gs_acc_blend_level_d3d11.push_back(GSSetting(3, "High", "Debug"));
 
 	m_gs_tv_shaders.push_back(GSSetting(0, "None", ""));
 	m_gs_tv_shaders.push_back(GSSetting(1, "Scanline filter", ""));
@@ -308,6 +313,7 @@ void GSdxApp::Init()
 	m_gs_tv_shaders.push_back(GSSetting(3, "Triangular filter", ""));
 	m_gs_tv_shaders.push_back(GSSetting(4, "Wave filter", ""));
 
+	// PSX options that start with m_gpu.
 	m_gpu_renderers.push_back(GSSetting(static_cast<int8>(GPURendererType::D3D11_SW), "Direct3D 11", "Software"));
 	m_gpu_renderers.push_back(GSSetting(static_cast<int8>(GPURendererType::NULL_Renderer), "Null", ""));
 
@@ -331,21 +337,25 @@ void GSdxApp::Init()
 	m_gpu_scale.push_back(GSSetting(2 | (2 << 2), "H x 4 - V x 4", ""));
 
 	// Avoid to clutter the ini file with useless options
+#ifdef _WIN32
+	// Per OS option.
+	m_default_configuration["Adapter"]                                    = "default";
+	m_default_configuration["CaptureFileName"]                            = "";
+	m_default_configuration["CaptureVideoCodecDisplayName"]               = "";
+	m_default_configuration["dx_break_on_severity"]                       = "0";
+
+	// D3D Blending option
+	m_default_configuration["accurate_blending_unit_d3d11"]               = "1";
+
+	// OpenCL device. Windows only for now.
+	m_default_configuration["ocldev"]                                     = "";
 
 	// PSX option. Not supported on linux.
-#ifdef _WIN32
 	m_default_configuration["dithering"]                                  = "1";
 	m_default_configuration["ModeRefreshRate"]                            = "0";
 	m_default_configuration["scale_x"]                                    = "0";
 	m_default_configuration["scale_y"]                                    = "0";
 	m_default_configuration["windowed"]                                   = "1";
-#endif
-
-	// Per OS option
-#ifdef _WIN32
-	m_default_configuration["Adapter"]                                    = "default";
-	m_default_configuration["CaptureFileName"]                            = "";
-	m_default_configuration["CaptureVideoCodecDisplayName"]               = "";
 #else
 	m_default_configuration["linux_replay"]                               = "1";
 #endif
@@ -354,6 +364,7 @@ void GSdxApp::Init()
 	m_default_configuration["accurate_date"]                              = "1";
 	m_default_configuration["accurate_blending_unit"]                     = "1";
 	m_default_configuration["AspectRatio"]                                = "1";
+	m_default_configuration["autoflush_sw"]                               = "1";
 	m_default_configuration["capture_enabled"]                            = "0";
 	m_default_configuration["capture_out_dir"]                            = "/tmp/GSdx_Capture";
 	m_default_configuration["capture_threads"]                            = "4";
@@ -380,7 +391,6 @@ void GSdxApp::Init()
 	m_default_configuration["ModeHeight"]                                 = "480";
 	m_default_configuration["ModeWidth"]                                  = "640";
 	m_default_configuration["NTSC_Saturation"]                            = "1";
-	m_default_configuration["ocldev"]                                     = "";
 #ifdef _WIN32
 	m_default_configuration["osd_fontname"]                               = "C:\\Windows\\Fonts\\tahoma.ttf";
 #else
@@ -407,7 +417,7 @@ void GSdxApp::Init()
 	m_default_configuration["override_GL_ARB_multi_bind"]                 = "-1";
 	m_default_configuration["override_GL_ARB_shader_image_load_store"]    = "-1";
 	m_default_configuration["override_GL_ARB_shader_storage_buffer_object"] = "-1";
-	m_default_configuration["override_GL_ARB_sparse_texture"]             = "0";
+	m_default_configuration["override_GL_ARB_sparse_texture"]             = "-1";
 	m_default_configuration["override_GL_ARB_sparse_texture2"]            = "-1";
 	m_default_configuration["override_GL_ARB_texture_view"]               = "-1";
 	m_default_configuration["override_GL_ARB_vertex_attrib_binding"]      = "-1";
@@ -435,8 +445,10 @@ void GSdxApp::Init()
 	m_default_configuration["upscale_multiplier"]                         = "1";
 	m_default_configuration["UserHacks"]                                  = "0";
 	m_default_configuration["UserHacks_align_sprite_X"]                   = "0";
-	m_default_configuration["UserHacks_AlphaHack"]                        = "0";
+#ifdef _WIN32
+	// Direct3D only hacks.
 	m_default_configuration["UserHacks_AlphaStencil"]                     = "0";
+#endif
 	m_default_configuration["UserHacks_AutoFlush"]                        = "0";
 	m_default_configuration["UserHacks_DisableDepthSupport"]              = "0";
 	m_default_configuration["UserHacks_Disable_Safe_Features"]            = "0";
@@ -455,6 +467,7 @@ void GSdxApp::Init()
 	m_default_configuration["UserHacks_WildHack"]                         = "0";
 	m_default_configuration["wrap_gs_mem"]                                = "0";
 	m_default_configuration["vsync"]                                      = "0";
+	m_default_configuration["disable_ts_half_bottom"]                     = "0";
 }
 
 #if defined(__unix__)

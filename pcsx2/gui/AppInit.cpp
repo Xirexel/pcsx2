@@ -26,6 +26,10 @@
 
 #include "Debugger/DisassemblyDialog.h"
 
+#ifndef DISABLE_RECORDING
+#	include "Recording/VirtualPad.h"
+#endif
+
 #include <wx/cmdline.h>
 #include <wx/intl.h>
 #include <wx/stdpaths.h>
@@ -72,6 +76,17 @@ void Pcsx2App::OpenMainFrame()
 	DisassemblyDialog* disassembly = new DisassemblyDialog( mainFrame );
 	m_id_Disassembler = disassembly->GetId();
 
+#ifndef DISABLE_RECORDING
+	VirtualPad* virtualPad0 = new VirtualPad(mainFrame, wxID_ANY, wxEmptyString, 0);
+	m_id_VirtualPad[0] = virtualPad0->GetId();
+	
+	VirtualPad *virtualPad1 = new VirtualPad(mainFrame, wxID_ANY, wxEmptyString, 1);
+	m_id_VirtualPad[1] = virtualPad1->GetId();
+
+	NewRecordingFrame* newRecordingFrame = new NewRecordingFrame(mainFrame);
+	m_id_NewRecordingFrame = newRecordingFrame->GetId();
+#endif
+	
 	if (g_Conf->EmuOptions.Debugger.ShowDebuggerOnStart)
 		disassembly->Show();
 

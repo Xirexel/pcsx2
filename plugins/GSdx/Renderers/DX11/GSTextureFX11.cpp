@@ -207,7 +207,7 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 
 	if(i == m_ps.end())
 	{
-		std::string str[25];
+		std::string str[26];
 
 		str[0] = format("%d", sel.fst);
 		str[1] = format("%d", sel.wms);
@@ -220,7 +220,7 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 		str[8] = format("%d", sel.fog);
 		str[9] = format("%d", sel.clr1);
 		str[10] = format("%d", sel.fba);
-		str[11] = format("%d", sel.aout);
+		str[11] = format("%d", sel.fbmask);
 		str[12] = format("%d", sel.ltf);
 		str[13] = format("%d", sel.spritehack);
 		str[14] = format("%d", sel.tcoffsethack);
@@ -233,7 +233,8 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 		str[21] = format("%d", sel.dfmt);
 		str[22] = format("%d", sel.depth_fmt);
 		str[23] = format("%d", sel.fmt >> 2);
-		str[24] = format("%d", m_upscale_multiplier ? m_upscale_multiplier : 1);
+		str[24] = format("%d", sel.invalid_tex0);
+		str[25] = format("%d", m_upscale_multiplier ? m_upscale_multiplier : 1);
 
 		D3D_SHADER_MACRO macro[] =
 		{
@@ -248,7 +249,7 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 			{"PS_FOG", str[8].c_str()},
 			{"PS_CLR1", str[9].c_str()},
 			{"PS_FBA", str[10].c_str()},
-			{"PS_AOUT", str[11].c_str()},
+			{"PS_FBMASK", str[11].c_str()},
 			{"PS_LTF", str[12].c_str()},
 			{"PS_SPRITEHACK", str[13].c_str()},
 			{"PS_TCOFFSETHACK", str[14].c_str()},
@@ -261,7 +262,8 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 			{"PS_DFMT", str[21].c_str() },
 			{"PS_DEPTH_FMT", str[22].c_str() },
 			{"PS_PAL_FMT", str[23].c_str() },
-			{"PS_SCALE_FACTOR", str[24].c_str() },
+			{"PS_INVALID_TEX0", str[24].c_str() },
+			{"PS_SCALE_FACTOR", str[25].c_str() },
 			{NULL, NULL},
 		};
 
