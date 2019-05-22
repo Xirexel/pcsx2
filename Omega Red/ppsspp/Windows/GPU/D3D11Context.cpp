@@ -105,10 +105,10 @@ static void GetRes(HWND hWnd, int &xres, int &yres) {
 
 bool D3D11Context::Init(HINSTANCE hInst, HWND window, std::string *error_message)
 {
-    return Init(hInst, window, NULL, error_message);
+    return Init(hInst, NULL, window, NULL, error_message);
 }
 
-bool D3D11Context::Init(HINSTANCE hInst, HWND wnd, HWND captureTarget, std::string *error_message)
+bool D3D11Context::Init(HINSTANCE hInst, IUnknown *a_PtrUnkDirectX11Device, HWND wnd, HWND captureTarget, std::string *error_message)
 {
 	hWnd_ = wnd;
 	LoadD3D11Error result = LoadD3D11();
@@ -116,31 +116,48 @@ bool D3D11Context::Init(HINSTANCE hInst, HWND wnd, HWND captureTarget, std::stri
 	HRESULT hr = E_FAIL;
 	std::vector<std::string> adapterNames;
 	std::string chosenAdapterName;
-	if (result == LoadD3D11Error::SUCCESS) {
-		std::vector<IDXGIAdapter *> adapters;
-		int chosenAdapter = 0;
 
-		IDXGIFactory * pFactory = nullptr;
-		ptr_CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&pFactory);
+	if (a_PtrUnkDirectX11Device != nullptr) {
 
-		IDXGIAdapter *pAdapter;
-		for (UINT i = 0; pFactory->EnumAdapters(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; i++) {
-			adapters.push_back(pAdapter);
-			DXGI_ADAPTER_DESC desc;
-			pAdapter->GetDesc(&desc);
-			std::string str = ConvertWStringToUTF8(desc.Description);
-			adapterNames.push_back(str);
-			if (str == g_Config.sD3D11Device) {
-				chosenAdapter = i;
-			}
+		hr = a_PtrUnkDirectX11Device->QueryInterface(IID_PPV_ARGS(&device_));
+
+		if (device_ != nullptr)
+		{
+            device_->GetImmediateContext(&context_);
+
+			featureLevel_ = device_->GetFeatureLevel();
 		}
 
-		chosenAdapterName = adapterNames[chosenAdapter];
-		hr = CreateTheDevice(adapters[chosenAdapter]);
-		for (int i = 0; i < (int)adapters.size(); i++) {
-			adapters[i]->Release();
+		} else {
+
+        if (result == LoadD3D11Error::SUCCESS) {
+            std::vector<IDXGIAdapter *> adapters;
+            int chosenAdapter = 0;
+
+            IDXGIFactory *pFactory = nullptr;
+            ptr_CreateDXGIFactory(__uuidof(IDXGIFactory), (void **)&pFactory);
+
+            IDXGIAdapter *pAdapter;
+            for (UINT i = 0; pFactory->EnumAdapters(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; i++) {
+                adapters.push_back(pAdapter);
+                DXGI_ADAPTER_DESC desc;
+                pAdapter->GetDesc(&desc);
+                std::string str = ConvertWStringToUTF8(desc.Description);
+                adapterNames.push_back(str);
+                if (str == g_Config.sD3D11Device) {
+                    chosenAdapter = i;
+                }
+            }
+
+            chosenAdapterName = adapterNames[chosenAdapter];
+            hr = CreateTheDevice(adapters[chosenAdapter]);
+            for (int i = 0; i < (int)adapters.size(); i++) {
+                adapters[i]->Release();
+            }
+        }
+
+
 		}
-	}
 
 	if (FAILED(hr)) {
 		const char *defaultError = "Your GPU does not appear to support Direct3D 11.\n\nWould you like to try again using Direct3D 9 instead?";

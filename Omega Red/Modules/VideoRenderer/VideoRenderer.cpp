@@ -83,9 +83,26 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
                             }
                         }
                     }
+					
+                    void *l_DirectXDeviceNative = nullptr;
+
+                    l_Attribute = l_ChildNode.attribute(L"DirectXDeviceNative");
+
+                    if (!l_Attribute.empty() && !m_VideoRenderer) {
+                        auto l_value = l_Attribute.as_llong();
+
+                        if (l_value != 0) {
+                            try {
+
+                                l_DirectXDeviceNative = (void *)l_value;
+
+                            } catch (...) {
+                            }
+                        }
+                    }
 
                     if (l_SharedHandle != nullptr)
-                        init(l_SharedHandle, l_CaptureHandler);
+                        init(l_SharedHandle, l_CaptureHandler, l_DirectXDeviceNative);				
 
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Shutdown")
@@ -340,7 +357,7 @@ int innerGSshutdown()
 	return -1;
 }
 
-int VideoRenderer::init(void *sharedhandle, void *capturehandle)
+int VideoRenderer::init(void *sharedhandle, void *capturehandle, void *directXDeviceNative)
 {
     innerGSinit();
 
@@ -407,7 +424,7 @@ int VideoRenderer::init(void *sharedhandle, void *capturehandle)
 	
 	m_VideoRenderer->SetAspectRatio(m_AspectRatio);
 		
-	if (!m_VideoRenderer->CreateDevice(l_Device.get(), sharedhandle, capturehandle))
+	if (!m_VideoRenderer->CreateDevice(l_Device.get(), sharedhandle, capturehandle, directXDeviceNative))
 	{
 		// This probably means the user has DX11 configured with a video card that is only DX9
 		// compliant.  Cound mean drivr issues of some sort also, but to be sure, that's the most

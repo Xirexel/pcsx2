@@ -1,4 +1,4 @@
-﻿using Omega_Red.Capture.Interop;
+﻿using Omega_Red.Util.Interop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +9,6 @@ namespace Omega_Red.Capture
 {
     class CaptureTargetTexture
     {
-        private Direct3D11 m_device = null;
-
         private D3D11Texture2D m_target_texture = null;
 
         private DXGIResource m_resource = null;
@@ -20,7 +18,7 @@ namespace Omega_Red.Capture
         public IntPtr CaptureHandler { get { return m_shared_handler; } }
 
         public IntPtr CaptureNative { get { return m_target_texture.Native; } }
-
+        
 
         private static CaptureTargetTexture m_Instance = null;
 
@@ -39,21 +37,17 @@ namespace Omega_Red.Capture
 
         ~CaptureTargetTexture()
         {
-            if (m_device != null)
-                m_device.Dispose();
-
             if (m_target_texture != null)
                 m_target_texture.Dispose();
 
             if (m_resource != null)
-                m_resource.Dispose();            
+                m_resource.Dispose();
+
         }
 
         private void init()
         {
-
-            m_device = Interop.Direct3D11.Create();
-
+            
             NativeStructs.D3D11_TEXTURE2D_DESC lTextureDesc = new NativeStructs.D3D11_TEXTURE2D_DESC();
                        
 
@@ -81,7 +75,7 @@ namespace Omega_Red.Capture
 
             lTextureDesc.Usage = NativeStructs.D3D11_USAGE_DEFAULT;
 
-            m_target_texture = m_device.CreateTexture2D(lTextureDesc);
+            m_target_texture = Util.Direct3D11Device.Instance.Device.CreateTexture2D(lTextureDesc);
 
             m_resource = m_target_texture.getDXGIResource();
 

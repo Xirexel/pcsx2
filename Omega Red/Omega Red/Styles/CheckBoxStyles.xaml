@@ -145,7 +145,7 @@
         <Setter Property="Padding" Value="6" />
         <Setter Property="Width" Value="60" />
         <Setter Property="Height" Value="60" />
-        <Setter Property="Background" Value="{DynamicResource WhiteBackground}"/>
+        <Setter Property="Background" Value="{DynamicResource UnpressedButtonBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource MainBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource StandardBorderBrush}"/>
         <Setter Property="Template">
@@ -153,14 +153,14 @@
                 <ControlTemplate TargetType="CheckBox">
                     <Grid Margin="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Margin}" >
                         <Viewbox Stretch="Uniform">
-                            <Border x:Name="mBorder" Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}" Padding="10" BorderThickness="{DynamicResource StandardBorderThickness}" CornerRadius="{DynamicResource StandardCornerRadius}">
+                            <Border x:Name="mBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" Padding="10" BorderThickness="{DynamicResource StandardBorderThickness}" CornerRadius="{DynamicResource StandardCornerRadius}">
                                 <ContentPresenter/>
                             </Border>
                         </Viewbox>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="mBorder" Property="Background" Value="#FF80FF80" />
+                            <Setter TargetName="mBorder" Property="Background" Value="#10FF10" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.25" />

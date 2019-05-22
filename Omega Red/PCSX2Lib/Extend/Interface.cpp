@@ -1162,7 +1162,11 @@ static Pcsx2Config parsePcsx2Config(const wchar_t* a_config)
 
 PCSX2_EXPORT extern void STDAPICALLTYPE ApplySettingsFunc(const wchar_t* a_config)
 {
-	GetCoreThread().ApplySettings(parsePcsx2Config(a_config));
+    auto lPcsx2Config = parsePcsx2Config(a_config);
+
+	GetCoreThread().ApplySettings(lPcsx2Config);
+
+	SetGSConfig() = lPcsx2Config.GS;
 }
 
 PCSX2_EXPORT extern void STDAPICALLTYPE VTLB_Alloc_PpmapFinc()

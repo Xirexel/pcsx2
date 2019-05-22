@@ -44,12 +44,12 @@ void GSRendererProxy::setFXAA(BOOL a_value)
         m_fxaa = true;
 }
 
-bool GSRendererProxy::CreateDevice(GSDeviceProxy *dev, void *sharedhandle, void *capturehandle)
+bool GSRendererProxy::CreateDevice(GSDeviceProxy *dev, void *sharedhandle, void *capturehandle, void *directXDeviceNative)
 {
     ASSERT(dev);
     ASSERT(!m_dev);
 	
-    if (!dev->Create(m_wnd, sharedhandle, capturehandle)) {
+    if (!dev->Create(m_wnd, sharedhandle, capturehandle, directXDeviceNative)) {
         return false;
     }
 

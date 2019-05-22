@@ -103,6 +103,7 @@ extern ScreenManager *screenManager;
 
 namespace MainWindow
 {
+	IUnknown *unkDirectX11Device;
 	HWND hwndMain;
 	HWND hwndDisplay;
     HWND hwndCapture;
@@ -135,13 +136,24 @@ namespace MainWindow
 	LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 	LRESULT CALLBACK DisplayProc(HWND, UINT, WPARAM, LPARAM);
 
+    IUnknown *GetUnkDirectX11Device()
+    {
+        return unkDirectX11Device;
+    }
+
 	HWND GetHWND() {
 		return hwndMain;
 	}
 
+
 	HWND GetDisplayHWND() {
 		return hwndDisplay;
 	}
+
+	void SetUnkDirectX11Device(IUnknown * a_PtrUnkDirectX11Device)
+    {
+        unkDirectX11Device = a_PtrUnkDirectX11Device;
+    }
 
     void SetDisplayHWND(HWND hwnd)
     {

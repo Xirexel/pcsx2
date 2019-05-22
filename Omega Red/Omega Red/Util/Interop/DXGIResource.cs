@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Omega_Red.Capture.Interop
+namespace Omega_Red.Util.Interop
 {
     internal sealed class DXGIResource : IDisposable
     {

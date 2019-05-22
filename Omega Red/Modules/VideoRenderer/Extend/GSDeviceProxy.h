@@ -585,7 +585,7 @@ public:
     }
 
 	
-    bool Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, void *capturehandle);
+    bool Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, void *capturehandle, void *directXDeviceNative);
 	void setIsWired(BOOL a_value);
 
     void setIsTessellated(BOOL a_value);

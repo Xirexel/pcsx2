@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Omega_Red.Capture.Interop
+namespace Omega_Red.Util.Interop
 {
     internal sealed class Direct3D11 : IDisposable
     {
@@ -20,12 +20,16 @@ namespace Omega_Red.Capture.Interop
         private const uint D3D11_SDK_VERSION = 7;
 
         private ComInterface.ID3D11Device comObject;
+        private IntPtr native = IntPtr.Zero;
         private ComInterface.CreateTexture2D createTexture2D;
+
+        public IntPtr Native { get { return native; } }
 
         private Direct3D11(ComInterface.ID3D11Device a_object)
         {
             comObject = a_object;
             ComInterface.GetComMethod(this.comObject, 5, out this.createTexture2D);
+            native = Marshal.GetIUnknownForObject(comObject);
         }
 
         public void Dispose()

@@ -98,24 +98,28 @@
     </ApplicationDefinition>
     <Compile Include="Capture\AudioCaptureTarget.cs" />
     <Compile Include="Capture\CaptureTargetTexture.cs" />
-    <Compile Include="Capture\Interop\ComInterface.cs" />
-    <Compile Include="Capture\Interop\D3D11Texture2D.cs" />
-    <Compile Include="Capture\Interop\Direct3D11.cs" />
-    <Compile Include="Capture\Interop\DXGIResource.cs" />
-    <Compile Include="Capture\Interop\NativeMethods.cs" />
-    <Compile Include="Capture\Interop\NativeStructs.cs" />
+    <Compile Include="Util\Interop\ComInterface.cs" />
+    <Compile Include="Util\Interop\D3D11Texture2D.cs" />
+    <Compile Include="Util\Interop\Direct3D11.cs" />
+    <Compile Include="Util\Interop\DXGIResource.cs" />
+    <Compile Include="Util\Interop\NativeMethods.cs" />
+    <Compile Include="Util\Interop\NativeStructs.cs" />
     <Compile Include="Capture\MediaStream.cs" />
     <Compile Include="Capture\OffScreenStream.cs" />
     <Compile Include="Managers\AdditionalControlManager.cs" />
     <Compile Include="Managers\IManager.cs" />
     <Compile Include="Managers\MediaRecorderManager.cs" />
     <Compile Include="Capture\MediaCapture.cs" />
+    <Compile Include="Panels\AnalogTriggerPanel.xaml.cs">
+      <DependentUpon>AnalogTriggerPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Panels\ProgressBanner.xaml.cs">
       <DependentUpon>ProgressBanner.xaml</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="SocialNetworks\GoogleAccountManager.cs" />
     <Compile Include="Tools\PPSSPPControl.cs" />
+    <Compile Include="Util\Direct3D11Device.cs" />
     <Compile Include="Util\PPSSPPNative.cs" />
     <Compile Include="Models\BiosInfo.cs" />
     <Compile Include="Models\IsoInfo.cs" />
@@ -298,6 +302,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="OffScreenWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\AnalogTriggerPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

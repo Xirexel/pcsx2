@@ -10,6 +10,7 @@
 #include "Core/System.h"
 #include "MainWindowMenu.h"
 
+struct IUnknown;
 
 namespace MainWindow
 {
@@ -65,6 +66,8 @@ namespace MainWindow
 	void UpdateCommands();
 	void SetWindowTitle(const wchar_t *title);
 	void Redraw();
+    void SetUnkDirectX11Device(IUnknown *a_PtrUnkDirectX11Device);
+    IUnknown *GetUnkDirectX11Device();
 	HWND GetHWND();
 	HINSTANCE GetHInstance();
 	HWND GetDisplayHWND();

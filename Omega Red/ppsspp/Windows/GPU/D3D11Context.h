@@ -33,7 +33,7 @@ public:
 	D3D11Context();
     ~D3D11Context();
     bool Init(HINSTANCE hInst, HWND window, std::string *error_message) override;
-    bool Init(HINSTANCE hInst, HWND window, HWND captureTarget, std::string *error_message);
+    bool Init(HINSTANCE hInst, IUnknown* a_PtrUnkDirectX11Device, HWND window, HWND captureTarget, std::string *error_message);
 	void Shutdown() override;
 	void SwapInterval(int interval) override;
 	void SwapBuffers() override;

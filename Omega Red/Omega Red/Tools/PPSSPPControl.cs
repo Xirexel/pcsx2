@@ -43,7 +43,8 @@ namespace Omega_Red.Tools
             ThreadStart innerCallStart = new ThreadStart(()=> {
 
                 PPSSPPNative.Instance.launch(
-                    a_filepath, 
+                    a_filepath,
+                    Direct3D11Device.Instance.Native,
                     m_VideoPanelHandler, 
                     Capture.CaptureTargetTexture.Instance.CaptureHandler,
                     Tools.PadInput.Instance.Hanler,
@@ -159,6 +160,11 @@ namespace Omega_Red.Tools
                     setAudioVolume(0.0f);
                 else
                     setAudioVolume(m_Audiolevel);
+        }
+
+        public void setLimitFrame(bool a_state)
+        {
+            PPSSPPNative.Instance.setLimitFrame(a_state);
         }
     }
 }

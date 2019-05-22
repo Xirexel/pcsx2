@@ -16,6 +16,7 @@ namespace Omega_Red.Util
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         delegate void FirstDelegate(
             [MarshalAs(UnmanagedType.LPWStr)]String szCmdLine,
+            IntPtr a_DirectX11DeviceNative,
             IntPtr a_parent, 
             IntPtr a_CaptureHandler,
             IntPtr a_TouchPadHandler,
@@ -33,6 +34,11 @@ namespace Omega_Red.Util
         
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         delegate void FifthDelegate(float a_level);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        delegate void SixthDelegate(bool a_state);
+
+
 
 
         // Init
@@ -61,7 +67,9 @@ namespace Omega_Red.Util
             public SecondDelegate Resume;
 
             // Установить гоомкость
-            public FifthDelegate SetAudioVolume;            
+            public FifthDelegate SetAudioVolume;
+
+            public SixthDelegate SetLimitFrame;
         }
 
 
@@ -144,13 +152,13 @@ namespace Omega_Red.Util
             }
         }
 
-        public void launch(string szCmdLine, IntPtr a_VideoPanelHandler, IntPtr a_CaptureHandler, IntPtr a_TouchPadHandler, Capture.SetDataCallback a_setAudioDataCallback, string szStickDirectory)
+        public void launch(string szCmdLine, IntPtr a_DirectX11DeviceNative, IntPtr a_VideoPanelHandler, IntPtr a_CaptureHandler, IntPtr a_TouchPadHandler, Capture.SetDataCallback a_setAudioDataCallback, string szStickDirectory)
         {
             if (!m_IsInitialized)
                 return;
 
             if (m_PPSSPPFunctions.Launch != null)
-                m_PPSSPPFunctions.Launch(szCmdLine, a_VideoPanelHandler, a_CaptureHandler, a_TouchPadHandler, a_setAudioDataCallback, szStickDirectory);
+                m_PPSSPPFunctions.Launch(szCmdLine, a_DirectX11DeviceNative, a_VideoPanelHandler, a_CaptureHandler, a_TouchPadHandler, a_setAudioDataCallback, szStickDirectory);
         }
 
         public void getGameInfo(string a_filename, out string a_title, out string a_id)
@@ -227,6 +235,15 @@ namespace Omega_Red.Util
 
             if (m_PPSSPPFunctions.SetAudioVolume != null)
                 m_PPSSPPFunctions.SetAudioVolume(a_level);
+        }
+
+        public void setLimitFrame(bool a_state)
+        {
+            if (!m_IsInitialized)
+                return;
+
+            if (m_PPSSPPFunctions.SetLimitFrame != null)
+                m_PPSSPPFunctions.SetLimitFrame(a_state);
         }
 
         public void shutdown()

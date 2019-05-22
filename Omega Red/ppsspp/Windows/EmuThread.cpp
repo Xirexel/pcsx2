@@ -116,7 +116,7 @@ void MainThreadFunc() {
 		setCurrentThreadName("Emu");
 	}
 
-	host = new WindowsHost(MainWindow::GetHInstance(), MainWindow::GetHWND(), MainWindow::GetDisplayHWND(), MainWindow::GetCaptureHWND());
+	host = new WindowsHost(MainWindow::GetHInstance(), MainWindow::GetUnkDirectX11Device(), MainWindow::GetHWND(), MainWindow::GetDisplayHWND(), MainWindow::GetCaptureHWND());
 	host->SetWindowTitle(nullptr);
 
 	// We convert command line arguments to UTF-8 immediately.

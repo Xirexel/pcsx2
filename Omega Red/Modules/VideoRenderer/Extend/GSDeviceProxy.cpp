@@ -1821,7 +1821,7 @@ void GSDeviceProxy::setIsTessellated(BOOL a_value)
     m_is_tessellated = a_value;
 }
 
-bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, void *capturehandle)
+bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, void *capturehandle, void *directXDeviceNative)
 {
     if (!__super::Create(wnd)) {
         return false;

@@ -823,6 +823,15 @@ namespace Omega_Red.Tools
             l_Atrr.Value = Capture.CaptureTargetTexture.Instance.CaptureHandler.ToString();
 
             a_PropertyNode.Attributes.Append(l_Atrr);
+
+            if(Direct3D11Device.Instance.Native != IntPtr.Zero)
+            {
+                l_Atrr = a_XmlDocument.CreateAttribute("DirectXDeviceNative");
+
+                l_Atrr.Value = Direct3D11Device.Instance.Native.ToString();
+
+                a_PropertyNode.Attributes.Append(l_Atrr);
+            }            
         }
 
         private void setWindowHandlerOpenConfig(ModuleManager.Module a_module, XmlDocument a_XmlDocument, XmlNode a_PropertyNode)

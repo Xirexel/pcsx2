@@ -59,7 +59,7 @@ public:
 
     void DrawPrims(GSTexture *rt, GSTexture *ds, GSTextureCache::Source *tex) final;
 
-    bool CreateDevice(GSDeviceProxy *dev, void *sharedhandle, void *capturehandle);
+    bool CreateDevice(GSDeviceProxy *dev, void *sharedhandle, void *capturehandle, void *directXDeviceNative);
 	
     void setIsWired(BOOL a_value);
 

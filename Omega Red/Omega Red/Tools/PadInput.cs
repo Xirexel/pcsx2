@@ -73,6 +73,20 @@ namespace Omega_Red.Tools
             update();
         }
 
+        public void setLeftAnalogTrigger(byte a_value)
+        {
+            m_state.Gamepad.bLeftTrigger = a_value;
+
+            update();
+        }
+
+        public void setRightAnalogTrigger(byte a_value)
+        {
+            m_state.Gamepad.bRightTrigger = a_value;
+
+            update();
+        }
+
         public void setRightStickAxises(XY_Axises a_Axises)
         {
             m_state.Gamepad.sThumbRX = a_Axises.m_x_axis;

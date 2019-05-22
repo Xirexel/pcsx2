@@ -22,14 +22,17 @@
 #include <list>
 #include <memory>
 
+
 extern float g_mouseDeltaX;
 extern float g_mouseDeltaY;
 
 class GraphicsContext;
 
+struct IUnknown;
+
 class WindowsHost : public Host {
 public:
-    WindowsHost(HINSTANCE hInstance, HWND mainWindow, HWND displayWindow, HWND captureTarget);
+    WindowsHost(HINSTANCE hInstance, IUnknown *a_PtrUnkDirectX11Device, HWND mainWindow, HWND displayWindow, HWND captureTarget);
 
 	~WindowsHost() {
 		UpdateConsolePosition();
@@ -72,6 +75,7 @@ private:
 	void UpdateConsolePosition();
 
 	HINSTANCE hInstance_;
+    IUnknown * unkDirectX11Device_;
     HWND displayWindow_;
     HWND captureTarget_;
 	HWND mainWindow_;

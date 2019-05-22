@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,6 +29,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace Omega_Red.Panels
 {
@@ -47,6 +49,29 @@ namespace Omega_Red.Panels
             this.AddHandler(Button.MouseUpEvent, new RoutedEventHandler(Button_Release), true);
 
             this.AddHandler(Button.MouseLeaveEvent, new RoutedEventHandler(Button_Release), true);
+
+            PCSX2Controller.Instance.ChangeStatusEvent += (a_Status)=> {
+
+                if(a_Status == PCSX2Controller.StatusEnum.Stopped)
+                {
+                    LimitFrame = false;
+
+                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
+                    {
+                        IsEnabledLimitFrame = false;
+                    });
+                }
+
+                if (a_Status == PCSX2Controller.StatusEnum.Started)
+                {
+                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
+                    {
+                        IsEnabledLimitFrame = true;
+                    });
+                }
+            };
+
+            IsEnabledLimitFrame = false;
         }
 
         void Instance_SwitchDisplayModeEvent(bool obj)
@@ -228,12 +253,96 @@ namespace Omega_Red.Panels
         {          
             if (sender != null && sender is FrameworkElement && (sender as FrameworkElement).Tag != null)
             {
-                (sender as Button).Background = App.Current.Resources["UnpressedButtonBrush"] as Brush;              
-                
+                (sender as Button).Background = App.Current.Resources["UnpressedButtonBrush"] as Brush;
+
                 UInt16 l_key = UInt16.Parse((sender as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
                 PadInput.Instance.removeKey(l_key);
             }
         }
+
+
+
+
+
+
+
+        public byte LeftAnalogTrigger
+        {
+            get { return (byte)GetValue(LeftAnalogTriggerProperty); }
+            set { SetValue(LeftAnalogTriggerProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for LeftStickAxises.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty LeftAnalogTriggerProperty =
+            DependencyProperty.Register("LeftAnalogTrigger", typeof(byte), typeof(TouchPadPanel),
+            new PropertyMetadata((byte)0, new PropertyChangedCallback(OnLeftAnalogTriggerChanged)));
+
+        private static void OnLeftAnalogTriggerChanged(DependencyObject d,
+           DependencyPropertyChangedEventArgs e)
+        {
+            var l_value = (byte)e.NewValue;
+
+            Console.WriteLine(l_value);
+
+            PadInput.Instance.setLeftAnalogTrigger(l_value);
+        }
+
+
+
+
+        public byte RightAnalogTrigger
+        {
+            get { return (byte)GetValue(RightAnalogTriggerProperty); }
+            set { SetValue(RightAnalogTriggerProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for RightStickAxises.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty RightAnalogTriggerProperty =
+            DependencyProperty.Register("RightAnalogTrigger", typeof(byte), typeof(TouchPadPanel),
+            new PropertyMetadata((byte) 0, new PropertyChangedCallback(OnRightAnalogTriggerChanged)));
+
+        private static void OnRightAnalogTriggerChanged(DependencyObject d,
+           DependencyPropertyChangedEventArgs e)
+        {
+            var l_value = (byte)e.NewValue;
+
+            PadInput.Instance.setRightAnalogTrigger(l_value);
+        }
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            var lCheckBox = sender as CheckBox;
+
+            if(lCheckBox != null)
+                PCSX2Controller.Instance.setLimitFrame(!(bool)lCheckBox.IsChecked);
+        }
+
+
+
+
+
+        public bool LimitFrame
+        {
+            get { return (bool)GetValue(LimitFrameProperty); }
+            set { SetValue(LimitFrameProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for CurrentBorderThickness.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty LimitFrameProperty =
+            DependencyProperty.Register("LimitFrame", typeof(bool), typeof(TouchPadPanel), new PropertyMetadata(false));
+
+
+
+
+        public bool IsEnabledLimitFrame
+        {
+            get { return (bool)GetValue(IsEnabledLimitFrameProperty); }
+            set { SetValue(IsEnabledLimitFrameProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for CurrentBorderThickness.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty IsEnabledLimitFrameProperty =
+            DependencyProperty.Register("IsEnabledLimitFrame", typeof(bool), typeof(TouchPadPanel), new PropertyMetadata(false));
     }
 }

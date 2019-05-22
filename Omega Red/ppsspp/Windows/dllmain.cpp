@@ -156,11 +156,13 @@ std::vector<std::wstring> GetWideCmdLine()
     return wideArgs;
 }
 
-extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND a_CaptureHandler, void *a_TouchPadHandler, SetDataCallback a_setAudioData, LPWSTR szStickDirectory)
+extern "C" int __stdcall Launch(LPWSTR szCmdLine, IUnknown *a_PtrUnkDirectX11Device, HWND a_VideoPanelHandler, HWND a_CaptureHandler, void *a_TouchPadHandler, SetDataCallback a_setAudioData, LPWSTR szStickDirectory)
 {
     g_TouchPadHandler = a_TouchPadHandler;
 
     s_boot_file = szCmdLine;
+
+	MainWindow::SetUnkDirectX11Device(a_PtrUnkDirectX11Device);
 
     MainWindow::SetDisplayHWND(a_VideoPanelHandler);
 
@@ -258,6 +260,8 @@ extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND
 	while (GetUIState() != UISTATE_INGAME) {
 		Sleep(200);
     }
+
+	PSP_CoreParameter().unthrottle = false;
 	
     return 0;
 }
@@ -725,4 +729,10 @@ extern void setVolume(float a_level);
 extern "C" void __stdcall SetAudioVolume(float a_level)
 {
     setVolume(a_level);
+}
+
+extern "C" void __stdcall SetLimitFrame(bool a_limit)
+{
+    PSP_CoreParameter().unthrottle = !a_limit;
 } 
+

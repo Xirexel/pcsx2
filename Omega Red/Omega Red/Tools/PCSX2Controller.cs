@@ -734,5 +734,27 @@ namespace Omega_Red.Tools
                 mGameSessionDuration = new TimeSpan();
             }
         }
+
+        public void setLimitFrame(bool a_state)
+        {
+            if (m_IsoInfo != null)
+            {
+                if (m_IsoInfo.GameType == GameType.PSP)
+                {
+                    PPSSPPControl.Instance.setLimitFrame(a_state);
+                }
+                else
+                {
+                    PCSX2Controller.Instance.m_Pcsx2Config.GS.FrameLimitEnable = a_state;
+
+                    PCSX2LibNative.Instance.ApplySettings(PCSX2Controller.Instance.m_Pcsx2Config.serialize());
+                }
+
+                m_reloadSettings = true;
+
+                mGameSessionDuration = new TimeSpan();
+            }
+
+        }
     }
 }

@@ -76,8 +76,9 @@ static BOOL PostDialogMessage(Dialog *dialog, UINT message, WPARAM wParam = 0, L
 	return PostMessage(dialog->GetDlgHandle(), message, wParam, lParam);
 }
 
-WindowsHost::WindowsHost(HINSTANCE hInstance, HWND mainWindow, HWND displayWindow, HWND captureTarget)
-	: hInstance_(hInstance),
+WindowsHost::WindowsHost(HINSTANCE hInstance, IUnknown *a_PtrUnkDirectX11Device, HWND mainWindow, HWND displayWindow, HWND captureTarget)
+    : hInstance_(hInstance), 
+	unkDirectX11Device_(a_PtrUnkDirectX11Device),
 		mainWindow_(mainWindow), displayWindow_(displayWindow), captureTarget_(captureTarget)
 {
 	g_mouseDeltaX = 0;
@@ -121,7 +122,7 @@ bool WindowsHost::InitGraphics(std::string *error_message, GraphicsContext **ctx
 
 	graphicsContext = d3D11ContextContext;
 
-	if (d3D11ContextContext->Init(hInstance_, displayWindow_, captureTarget_, error_message)) {
+	if (d3D11ContextContext->Init(hInstance_, unkDirectX11Device_, displayWindow_, captureTarget_, error_message)) {
 		*ctx = graphicsContext;
 		gfx_ = graphicsContext;
 		return true;

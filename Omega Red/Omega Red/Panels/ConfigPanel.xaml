@@ -30,7 +30,7 @@
                         <Grid.DataContext>
                             <viewModels:SocialNetworksViewModel/>
                         </Grid.DataContext>
-                        <CheckBox Style="{DynamicResource StateCheckBox}" IsChecked="{Binding GoogleAccountIsChecked}">
+                        <CheckBox Style="{DynamicResource StateCheckBox}" Background="Transparent" IsChecked="{Binding GoogleAccountIsChecked}">
                             <Image Source="/Assests/Images/Register_google.png" 
                                        Stretch="Uniform" 
                                        Height="64" 

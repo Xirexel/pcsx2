@@ -8,5 +8,6 @@ EXPORTS
 	Pause						PRIVATE
 	Resume						PRIVATE
 	SetAudioVolume				PRIVATE
+	SetLimitFrame				PRIVATE
 
 

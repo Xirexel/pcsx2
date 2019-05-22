@@ -4,9 +4,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using static Omega_Red.Capture.Interop.NativeStructs;
+using static Omega_Red.Util.Interop.NativeStructs;
 
-namespace Omega_Red.Capture.Interop
+namespace Omega_Red.Util.Interop
 {
     internal sealed class ComInterface
     {

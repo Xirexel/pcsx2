@@ -23,7 +23,7 @@ class VideoRenderer
 
 	std::unique_ptr<GSRendererProxy> m_VideoRenderer;
 
-	int init(void *sharedhandle, void *capturehandle);
+	int init(void *sharedhandle, void *capturehandle, void *directXDeviceNative);
 
 	void shutdown();
 	

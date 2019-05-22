@@ -12,7 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Omega_Red.Capture.Interop;
+using Omega_Red.Util.Interop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
