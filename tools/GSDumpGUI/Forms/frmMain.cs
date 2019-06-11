@@ -186,6 +186,9 @@ namespace GSDumpGUI
                 Settings.GSDXDir = fbd.SelectedPath;
             Settings.Save();
             ReloadGsdxDlls();
+
+            // Auto select GSdx dll
+            _availableGsDlls.Selected = _availableGsDlls.Files.FirstOrDefault();
         }
 
         private void cmdBrowseDumps_Click(object sender, EventArgs e)
@@ -197,6 +200,9 @@ namespace GSDumpGUI
                 Settings.DumpDir = fbd.SelectedPath;
             Settings.Save();
             ReloadGsdxDumps();
+
+            // Auto select GS dump
+            _availableGsDumps.Selected = _availableGsDumps.Files.FirstOrDefault();
         }
 
         private void cmdRun_Click(object sender, EventArgs e)
@@ -257,8 +263,11 @@ namespace GSDumpGUI
             }
             var port = Program.Server.Port;
 
+            // dll path is mandatory for the two operations GSReplay and GSconfigure but dumpPath only for GSReplay
             var dllPath = _availableGsDlls.Selected.File.FullName;
-            var dumpPath = _availableGsDumps.Selected.File.FullName;
+            var dumpPath = _availableGsDumps.Selected?.File?.FullName;
+            if (string.IsNullOrWhiteSpace(dumpPath) && "GSReplay".Equals(Function))
+                throw new ArgumentException("You need to specify a dump path in case you want to replay a GsDump.", nameof(dumpPath));
 
             _gsdxLogger.Information("Start new gsdx instance");
             _gsdxLogger.Information($"\tdll: {dllPath}");
@@ -376,12 +385,18 @@ namespace GSDumpGUI
         {
             Settings.Save();
             ReloadGsdxDlls();
+
+            // Auto select GSdx dll
+            _availableGsDlls.Selected = _availableGsDlls.Files.FirstOrDefault();
         }
 
         private void txtDumpsDirectory_Leave(object sender, EventArgs e)
         {
             Settings.Save();
             ReloadGsdxDumps();
+
+            // Auto select GS dump
+            _availableGsDumps.Selected = _availableGsDumps.Files.FirstOrDefault();
         }
 
         private void lstProcesses_SelectedIndexChanged(object sender, EventArgs e)

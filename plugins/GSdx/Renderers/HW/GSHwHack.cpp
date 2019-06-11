@@ -1044,7 +1044,7 @@ bool GSC_ValkyrieProfile2(const GSFrameInfo& fi, int& skip)
 		}
 		if(fi.TME && fi.FPSM == fi.TPSM && fi.TPSM == PSM_PSMCT16 && fi.FBMSK == 0x03FFF)
 		{
-			skip = 1; // //garbage in cutscenes, doesn't remove completely, better use "Alpha Hack"
+			skip = 1; // //garbage in cutscenes, doesn't remove completely.
 		}*/
 		if(fi.TME && fi.FBP == fi.TBP0 && fi.FPSM == PSM_PSMCT32 && fi.TPSM == PSM_PSMT4HH)
 		{
@@ -1251,19 +1251,6 @@ bool GSC_GodOfWar(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
-bool GSC_GTASanAndreas(const GSFrameInfo& fi, int& skip)
-{
-	if(skip == 0)
-	{
-		if(fi.TME && (fi.FBP ==0x0a00 || fi.FBP ==0x08c0) && (fi.TBP0 ==0x1b80 || fi.TBP0 ==0x1a40) && fi.FPSM == fi.TPSM && fi.TPSM == PSM_PSMCT32)
-		{
-			skip = 1; // Ghosting
-		}
-	}
-
-	return true;
-}
-
 template<uptr state_addr>
 bool GSC_SMTNocturneDDS(const GSFrameInfo& fi, int& skip)
 {
@@ -1333,6 +1320,19 @@ bool GSC_Okami(const GSFrameInfo& fi, int& skip)
 		if(fi.TME && fi.FBP == 0x00e00 && fi.FPSM == PSM_PSMCT32 && fi.TBP0 == 0x03800 && fi.TPSM == PSM_PSMT4)
 		{
 			skip = 0;
+		}
+	}
+
+	return true;
+}
+
+bool GSC_RedDeadRevolver(const GSFrameInfo& fi, int& skip)
+{
+	if(skip == 0)
+	{
+		if(fi.FBP == 0x03700 && fi.FPSM == PSM_PSMCT32 && fi.TPSM == PSM_PSMCT24)
+		{
+			skip = 2; // Blur
 		}
 	}
 
@@ -1632,6 +1632,7 @@ void GSState::SetupCrcHack()
 		lut[CRC::FFX2] = GSC_FFXGames;
 		lut[CRC::FFX] = GSC_FFXGames;
 		lut[CRC::FFXII] = GSC_FFXGames;
+		lut[CRC::RedDeadRevolver] = GSC_RedDeadRevolver;
 		lut[CRC::ResidentEvil4] = GSC_ResidentEvil4;
 		lut[CRC::ShinOnimusha] = GSC_ShinOnimusha;
 		lut[CRC::SMTDDS1] = GSC_SMTNocturneDDS<0x203BA820>;
@@ -1641,7 +1642,6 @@ void GSState::SetupCrcHack()
 
 		// Upscaling issues
 		lut[CRC::GodOfWar] = GSC_GodOfWar;
-		lut[CRC::GTASanAndreas] = GSC_GTASanAndreas; // RW frame buffer. UserHacks_AutoFlush allow to emulate it correctly. Can be used as an upscaling hack.
 		lut[CRC::Okami] = GSC_Okami;
 	}
 

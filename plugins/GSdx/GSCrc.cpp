@@ -305,6 +305,9 @@ CRC::Game CRC::m_games[] =
 	{0xEB198738, LordOfTheRingsThirdAge, US, 0},
 	{0x614F4CF4, LordOfTheRingsThirdAge, EU, 0},
 	{0x37CD4279, LordOfTheRingsThirdAge, KO, 0},
+	{0xE169BAF8, RedDeadRevolver, US, 0},
+	{0xE2E67E23, RedDeadRevolver, EU, 0},
+	{0x87844524, RedDeadRevolver, RU, 0}, // Unofficial RU-version
 	{0x6DF62AEA, BleachBladeBattlers, JP, 0},
 	{0x6EB71AB0, BleachBladeBattlers, JP, 0}, // 2nd
 	{0x3A446111, CastlevaniaCoD, US, 0},
@@ -421,11 +424,6 @@ CRC::Game CRC::m_games[] =
 	{0x5AC7E79C, TouristTrophy, CH, 0}, // cutie comment
 	{0xFF9C0E93, TouristTrophy, US, 0},
 	{0xCA9AA903, TouristTrophy, EU, 0},
-	{0xA1B3F232, GTASanAndreas, EU, 0}, // cutie comment
-	{0xB440A8FE, GTASanAndreas, EU, 0},
-	{0x399A49CA, GTASanAndreas, US, 0},
-	{0x2C6BE434, GTASanAndreas, US, 0},
-	{0x60FE139C, GTASanAndreas, JP, 0},
 	{0xAEDAEE99, GodHand, JP, 0},
 	{0x6FB69282, GodHand, US, 0},
 	{0x924C4AA6, GodHand, KO, 0},
@@ -456,6 +454,7 @@ CRC::Game CRC::m_games[] =
 	{0x9184AAF1, Jak2, US, 0},
 	{0x12804727, Jak3, EU, 0},
 	{0x644CFD03, Jak3, US, 0},
+	{0x23F8D35B, Jak3, NoRegion, 0}, // EU Preview, US International
 	{0xDF659E77, JakX, EU, 0}, // Jak X: Combat Racing
 	{0x3091E6FB, JakX, US, 0},
 	{0x4653CA3E, HarleyDavidson, US, 0},
@@ -488,6 +487,7 @@ CRC::Game CRC::m_games[] =
 	{0x972611BB, FIFA05, US, 0},
 	{0x972719A3, FIFA05, EU, 0},
 	{0xC5473413, HarryPotterATCOS, NoRegion, 0}, // EU and US versions have the same CRC - Chamber Of Secrets
+	{0xE1963055, HarryPotterATCOS, JP, 0 }, // Harry Potter to Himitsu no Heya
 	{0xE90BE9F8, HarryPotterATCOS, JP, 0 }, // Coca Cola original Version
 	{0x9C3A84F4, HarryPotterATHBP, US, 0 }, // Half-Blood Prince
 	{0xCB598BC2, HarryPotterATHBP, EU, 0 },
