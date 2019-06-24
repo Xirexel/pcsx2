@@ -2,9 +2,9 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <sys:String x:Key="MainName">Красный Омега PS2 эмулятор</sys:String>
+    <sys:String x:Key="MainName">Красный Омега PS2/PSP эмулятор</sys:String>
     <sys:String x:Key="ControlTitle">Настройка</sys:String>
-    <sys:String x:Key="MediaTitle">Записи</sys:String>
+    <sys:String x:Key="MediaTitle">Медиа</sys:String>
     <sys:String x:Key="DisplayModeTitle">Режим отображения:</sys:String>
     <sys:String x:Key="ControlModeTitle">Режим управления:</sys:String>
     <sys:String x:Key="TopmostTitle">Установить окно поверх всех</sys:String>
@@ -13,6 +13,8 @@
     <sys:String x:Key="LanguageTitle">Текущий перевод</sys:String>
     <sys:String x:Key="ColourSchemaTitle">Цветовая схема</sys:String>
     <sys:String x:Key="CaptureManagerTitle">Поддерживает CaptureManager SDK</sys:String>
+    <sys:String x:Key="PCSX2Title">Поддерживает PCSX2</sys:String>
+    <sys:String x:Key="PPSSPPTitle">Поддерживает PPSSPP</sys:String>
     <sys:String x:Key="YesTitle">Выполнить</sys:String>
     <sys:String x:Key="NoTitle">Отменить</sys:String>
     <sys:String xml:space="preserve" x:Key="VersionTitle">Версия: </sys:String>
@@ -74,6 +76,14 @@
     <sys:String x:Key="YouTubeVideoCategoryIdTitle">Идентификационный номер категории для видео:</sys:String>
     <sys:String x:Key="YouTubeVideoPrivacyStatusTitle">Категория доступа для видео:</sys:String>
     <sys:String x:Key="SendTitle">Отправить</sys:String>
-    
-
+    <sys:String x:Key="CaptureModeTitle">Режим захвата:</sys:String>
+    <sys:String x:Key="MediaSourcesTitle">Медиа источники</sys:String>
+    <sys:String x:Key="YouTubeStreamTitle">Потоки</sys:String>
+    <sys:String x:Key="YouTubeStreamTitleTitle">Заголовок потока:</sys:String>
+    <sys:String x:Key="YouTubeStreamDescriptionTitle">Описание потока:</sys:String>
+    <sys:String x:Key="YouTubeBroadcastTitle">Трансляция</sys:String>
+    <sys:String x:Key="YouTubeBroadcastTitleTitle">Заголовок трансляции:</sys:String>
+    <sys:String x:Key="YouTubeBroadcastDescriptionTitle">Описание трансляции:</sys:String>
+    <sys:String x:Key="VideoStreamBitRateTitle">Видео битрате:</sys:String>
+    <sys:String x:Key="AudioStreamBitRateTitle">Аудио битрате:</sys:String>
 </ResourceDictionary>

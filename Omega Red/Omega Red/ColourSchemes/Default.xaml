@@ -6,6 +6,10 @@
     <SolidColorBrush x:Key="LockScreenForegroundBrush" Color="#FFFFFF" />
 
 
+    <SolidColorBrush x:Key="UnselectBrush" Color="#FF0000" />
+    <Color x:Key="SelectColor">#000000</Color>
+
+
     <SolidColorBrush x:Key="MainWindowBackgroundBrush" Color="#550101" />
     <SolidColorBrush x:Key="MainBackgroundBrush" Color="#FF0000" />
     <SolidColorBrush x:Key="StandardBorderBrush" Color="#0000FF" />

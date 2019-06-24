@@ -118,8 +118,10 @@ namespace Omega_Red.Tools.Savestate
 
             lAtrr = lXmlDocument.CreateAttribute("DurationInSeconds");
 
-            lAtrr.Value = mDurationInSeconds.ToString();
+            lAtrr.Value = String.Format("{0:0}", mDurationInSeconds);
 
+            Console.WriteLine(string.Format("save lAtrr.Value: {0}", lAtrr.Value));
+            
             rootNode.Attributes.Append(lAtrr);
 
             string mXmltext = "";
@@ -157,13 +159,30 @@ namespace Omega_Red.Tools.Savestate
                 if (lAttr != null && !string.IsNullOrWhiteSpace(lAttr.Value))
                 {
                     string lvalue = lAttr.Value;
-
-                    var lsplitList = lAttr.Value.Split(new char[] { '.', ',' });
+                    
+                    var lsplitList = lAttr.Value.Split(new char[] { '.', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
                     if (lsplitList != null && lsplitList.Length > 0)
-                        lvalue = lsplitList[0];
+                    {
+                        if(lsplitList.Length == 1)
+                            lvalue = lsplitList[0];
+                        else
+                        {
+                            lvalue = "";
 
+                            for (int i = 0; i < lsplitList.Length - 1; i++)
+                            {
+                                if (lsplitList[i].Contains('.') || lsplitList[i].Contains(','))
+                                    continue;
+
+                                lvalue += lsplitList[i];
+                            }
+                        }
+                    }
+                    
                     Double.TryParse(lvalue, out mDurationInSeconds);
+
+                    Console.WriteLine(string.Format("load lvalue: {0}, mDurationInSeconds: {1}", lvalue, mDurationInSeconds));
                 }
             }
 

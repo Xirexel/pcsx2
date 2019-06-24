@@ -286,5 +286,89 @@ namespace Omega_Red.Properties {
                 this["GoogleAccountIsChecked"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string YouTubeStreamSelectedId {
+            get {
+                return ((string)(this["YouTubeStreamSelectedId"]));
+            }
+            set {
+                this["YouTubeStreamSelectedId"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string YouTubeBroadcastSelectedId {
+            get {
+                return ((string)(this["YouTubeBroadcastSelectedId"]));
+            }
+            set {
+                this["YouTubeBroadcastSelectedId"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string StreamName {
+            get {
+                return ((string)(this["StreamName"]));
+            }
+            set {
+                this["StreamName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string StreamAddress {
+            get {
+                return ((string)(this["StreamAddress"]));
+            }
+            set {
+                this["StreamAddress"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public uint VideoBitRate {
+            get {
+                return ((uint)(this["VideoBitRate"]));
+            }
+            set {
+                this["VideoBitRate"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public uint AudioBitRate {
+            get {
+                return ((uint)(this["AudioBitRate"]));
+            }
+            set {
+                this["AudioBitRate"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string MediaSourceInfoCollection {
+            get {
+                return ((string)(this["MediaSourceInfoCollection"]));
+            }
+            set {
+                this["MediaSourceInfoCollection"] = value;
+            }
+        }
     }
 }

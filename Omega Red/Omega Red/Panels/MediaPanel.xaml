@@ -54,6 +54,23 @@
                     <ListView Style="{DynamicResource InfoListView}"/>
                 </Expander.Content>
             </Expander>
+            <Expander IsEnabled="{Binding IsEnabledMediaSources}">        
+                <Expander.DataContext>
+                    <viewModels:MediaSourcesInfoViewModel/>
+                </Expander.DataContext>
+                <Expander.Header>
+                    <TextBlock
+                        TextAlignment="Left"
+                        Text="{DynamicResource MediaSourcesTitle}" 
+                        FontSize="{DynamicResource TitleFontSize}" 
+                        FontWeight="{DynamicResource TitleFontWeight}"
+                        Foreground="{DynamicResource MainForegroundBrush}"
+                        />
+                </Expander.Header>
+                <Expander.Content>
+                    <views:ListPanel/>
+                </Expander.Content>
+            </Expander>
         </ItemsControl>
     </Grid>
 </UserControl>

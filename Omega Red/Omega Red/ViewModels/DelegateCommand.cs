@@ -36,6 +36,10 @@ namespace Omega_Red.ViewModels
 
             m_CheckStateDelegate = a_CheckStateDelegate;
         }
+        
+        public DelegateCommand(Action confirm, bool isAllowedConfirm)
+        {
+        }
 
         public void Execute(object parameter)
         {

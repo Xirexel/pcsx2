@@ -31,7 +31,7 @@ namespace Omega_Red.Tools
             ConfigManager.Instance.SwitchControlModeEvent += Instance_SwitchControlModeEvent;
         }
 
-        void Instance_SwitchControlModeEvent(bool obj)
+        protected void Instance_SwitchControlModeEvent(bool obj)
         {
             if (obj)
             {

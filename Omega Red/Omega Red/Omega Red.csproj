@@ -98,6 +98,35 @@
     </ApplicationDefinition>
     <Compile Include="Capture\AudioCaptureTarget.cs" />
     <Compile Include="Capture\CaptureTargetTexture.cs" />
+    <Compile Include="Managers\IStreamingManager.cs" />
+    <Compile Include="Managers\MediaSourcesManager.cs" />
+    <Compile Include="Managers\StreamingCaptureConfigManager.cs" />
+    <Compile Include="Managers\YouTubeBroadcastManager.cs" />
+    <Compile Include="Managers\YouTubeStreamManager.cs" />
+    <Compile Include="Models\MediaSourceInfo.cs" />
+    <Compile Include="Models\StreamingCaptureConfigInfo.cs" />
+    <Compile Include="Models\YouTubeBroadcastInfo.cs" />
+    <Compile Include="Models\YouTubeStreamInfo.cs" />
+    <Compile Include="Panels\DisplayControl.xaml.cs">
+      <DependentUpon>DisplayControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\MediaSourcePanel.xaml.cs">
+      <DependentUpon>MediaSourcePanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\StreamControlPanel.xaml.cs">
+      <DependentUpon>StreamControlPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\StreamingCaptureConfig.xaml.cs">
+      <DependentUpon>StreamingCaptureConfig.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\YouTubeStreamControl.xaml.cs">
+      <DependentUpon>YouTubeStreamControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="SocialNetworks\Google\YouTubeManager.cs" />
+    <Compile Include="Tools\Converters\BooleanToVisibilityConverter.cs" />
+    <Compile Include="Tools\Converters\InverseBooleanConverter.cs" />
+    <Compile Include="Tools\Converters\PrivacyStatusConvertor.cs" />
+    <Compile Include="Tools\Extensions.cs" />
     <Compile Include="Util\Interop\ComInterface.cs" />
     <Compile Include="Util\Interop\D3D11Texture2D.cs" />
     <Compile Include="Util\Interop\Direct3D11.cs" />
@@ -117,7 +146,7 @@
       <DependentUpon>ProgressBanner.xaml</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
-    <Compile Include="SocialNetworks\GoogleAccountManager.cs" />
+    <Compile Include="SocialNetworks\Google\GoogleAccountManager.cs" />
     <Compile Include="Tools\PPSSPPControl.cs" />
     <Compile Include="Util\Direct3D11Device.cs" />
     <Compile Include="Util\PPSSPPNative.cs" />
@@ -168,6 +197,7 @@
     <Compile Include="Panels\DisplayVideoPanel.xaml.cs">
       <DependentUpon>DisplayVideoPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Util\RTMPNative.cs" />
     <Compile Include="Util\StringStream.cs" />
     <Compile Include="ViewModels\AutoSaveStateViewModel.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
@@ -196,9 +226,7 @@
       <DependentUpon>PlayPanel.xaml</DependentUpon>
     </Compile>
     <Compile Include="Panels\Video\Interop\ComInterface.cs" />
-    <Compile Include="Panels\Video\Interop\Direct3D9.cs" />
     <Compile Include="Panels\Video\Interop\Direct3D9Ex.cs" />
-    <Compile Include="Panels\Video\Interop\Direct3DDevice9.cs" />
     <Compile Include="Panels\Video\Interop\Direct3DDevice9Ex.cs" />
     <Compile Include="Panels\Video\Interop\Direct3DSurface9.cs" />
     <Compile Include="Panels\Video\Interop\Direct3DTexture9.cs" />
@@ -231,6 +259,7 @@
     <Compile Include="ViewModels\ItemDataTemplateSelector.cs" />
     <Compile Include="ViewModels\LockScreenViewModel.cs" />
     <Compile Include="ViewModels\MediaRecorderInfoViewModel.cs" />
+    <Compile Include="ViewModels\MediaSourcesInfoViewModel.cs" />
     <Compile Include="ViewModels\MemoryCardInfoViewModel.cs" />
     <Compile Include="ViewModels\PadControlViewModel.cs" />
     <Compile Include="ViewModels\SaveStateViewModel.cs" />
@@ -243,7 +272,11 @@
       <DependentUpon>ConfigPanel.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\SocialNetworksViewModel.cs" />
+    <Compile Include="ViewModels\StreamControlViewModel.cs" />
+    <Compile Include="ViewModels\StreamingCaptureConfigViewModel.cs" />
     <Compile Include="ViewModels\VideoDisplayViewModel.cs" />
+    <Compile Include="ViewModels\YouTubeBroadcastViewModel.cs" />
+    <Compile Include="ViewModels\YouTubeStreamViewModel.cs" />
     <Compile Include="Views\ListPanel.xaml.cs">
       <DependentUpon>ListPanel.xaml</DependentUpon>
     </Compile>
@@ -309,6 +342,14 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Panels\DisplayControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\MediaSourcePanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Panels\ProgressBanner.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -316,6 +357,18 @@
     <Page Include="Panels\SoundControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Panels\StreamControlPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\StreamingCaptureConfig.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\YouTubeStreamControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Styles\ButtonStyles.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -350,6 +403,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Styles\Styles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\TabControlStyles.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -473,7 +530,6 @@
     <EmbeddedResource Include="Modules\x86\MemoryCard.dll" />
     <EmbeddedResource Include="Modules\x86\Pad.dll" />
     <EmbeddedResource Include="Modules\x86\PCSX2Lib.dll" />
-    <EmbeddedResource Include="Modules\x86\SPU2.dll" />
     <EmbeddedResource Include="Modules\x86\USB.dll" />
     <EmbeddedResource Include="Modules\x86\VideoRenderer.dll" />
   </ItemGroup>
@@ -527,6 +583,18 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assests\Images\Google_Drive.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\WebCam.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\Mic.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\x86\RTMP.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\x86\AudioRenderer.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

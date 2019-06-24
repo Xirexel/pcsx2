@@ -28,6 +28,8 @@ namespace Omega_Red.ViewModels
     {
         private System.Windows.Visibility mVisibility = System.Windows.Visibility.Visible;
 
+        private System.Windows.Visibility mVisibilityDisplayStreamConfigPanel = System.Windows.Visibility.Collapsed;
+
         private System.Windows.Visibility mVisibilityDisplayImagePanel = System.Windows.Visibility.Collapsed;
 
         private System.Windows.Visibility mVisibilityDisplayVideoPanel = System.Windows.Visibility.Collapsed;
@@ -50,6 +52,8 @@ namespace Omega_Red.ViewModels
             VisibilityDisplayAboutPanel = System.Windows.Visibility.Hidden;
 
             VisibilityDisplayVideoPanel = System.Windows.Visibility.Collapsed;
+
+            VisibilityDisplayStreamConfigPanel = Visibility.Collapsed;
         }
 
         void Instance_MessageEvent(string aMessage)
@@ -79,6 +83,9 @@ namespace Omega_Red.ViewModels
                 case LockScreenManager.Status.DisplayAbout:
                     VisibilityDisplayAboutPanel = System.Windows.Visibility.Visible;
                     break;
+                case LockScreenManager.Status.DisplayStreamConfig:
+                    VisibilityDisplayStreamConfigPanel = System.Windows.Visibility.Visible;
+                    break;                    
                 case LockScreenManager.Status.Starting:
                     var l_StartingTitle = App.Current.Resources["StartingTitle"];
                     Message = string.Format("{0}", l_StartingTitle);
@@ -139,6 +146,16 @@ namespace Omega_Red.ViewModels
             {
                 mVisibilityDisplayAboutPanel = value;
                 RaisePropertyChangedEvent("VisibilityDisplayAboutPanel");
+            }
+        }
+
+        public System.Windows.Visibility VisibilityDisplayStreamConfigPanel
+        {
+            get { return mVisibilityDisplayStreamConfigPanel; }
+            set
+            {
+                mVisibilityDisplayStreamConfigPanel = value;
+                RaisePropertyChangedEvent("VisibilityDisplayStreamConfigPanel");
             }
         }
 

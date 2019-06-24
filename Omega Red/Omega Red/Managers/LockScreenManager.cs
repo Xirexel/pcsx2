@@ -41,7 +41,8 @@ namespace Omega_Red.Managers
             Saving,
             DisplayImage,
             DisplayVideo,
-            DisplayAbout
+            DisplayAbout,
+            DisplayStreamConfig
         }
 
         private Image mIconImage = null;
@@ -153,6 +154,20 @@ namespace Omega_Red.Managers
             {
                 StatusEvent(Status.Show);
                 StatusEvent(Status.DisplayImage);
+
+                WpfAnimatedGif.ImageBehavior.GetAnimationController(mIconImage).Pause();
+            });
+        }
+
+        public void showStreamConfig()
+        {
+            if (MessageEvent == null)
+                return;
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                StatusEvent(Status.Show);
+                StatusEvent(Status.DisplayStreamConfig);
 
                 WpfAnimatedGif.ImageBehavior.GetAnimationController(mIconImage).Pause();
             });

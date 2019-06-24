@@ -7,7 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Omega_Red.Managers;
-using Omega_Red.SocialNetworks;
+using Omega_Red.SocialNetworks.Google;
 
 namespace Omega_Red.ViewModels
 {

@@ -675,7 +675,7 @@ void NativeInit(int argc, const char *argv[], const char *savegame_dir, const ch
 	if (skipLogo) {
 		screenManager->switchScreen(new EmuScreen(boot_filename));
 	} else {
-		screenManager->switchScreen(new LogoScreen());
+		//screenManager->switchScreen(new LogoScreen());
 	}
 
 	if (g_Config.bRemoteShareOnStartup && g_Config.bRemoteDebuggerOnStartup)

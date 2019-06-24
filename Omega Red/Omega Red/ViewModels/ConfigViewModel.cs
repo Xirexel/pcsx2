@@ -38,7 +38,14 @@ namespace Omega_Red.ViewModels
 
             ConfigManager.Instance.SwitchTopmostEvent += Instance_SwitchTopmostEvent;
 
+            ConfigManager.Instance.SwitchCaptureConfigEvent += Instance_SwitchCaptureConfigEvent;            
+
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+        }
+
+        private void Instance_SwitchCaptureConfigEvent(object obj)
+        {
+            CaptureConfig = obj;
         }
 
         private void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum obj)
@@ -79,6 +86,7 @@ namespace Omega_Red.ViewModels
         {
             get { return ConfigManager.Instance.ControlModeCollection; }
         }
+  
 
         public ICollectionView LanguageCollection
         {
@@ -320,5 +328,23 @@ namespace Omega_Red.ViewModels
                 RaisePropertyChangedEvent("VisibilityDiskState");
             }
         }
+
+
+        private Object mCaptureConfig = null;
+
+        public Object CaptureConfig
+        {
+            get
+            {
+                return mCaptureConfig;
+            }
+            set
+            {
+                mCaptureConfig = value;
+
+                RaisePropertyChangedEvent("CaptureConfig");
+            }
+        }
+
     }
 }

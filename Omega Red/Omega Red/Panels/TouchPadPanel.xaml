@@ -31,7 +31,9 @@
                                   Grid.ColumnSpan="{Binding GridColumnSpanContent}" 
                                   Grid.RowSpan="{Binding GridRowSpanContent}"
                                   >
-                    <ContentPresenter Content="{TemplateBinding Content}"/>
+                    <Viewbox>
+                        <ContentPresenter Content="{TemplateBinding Content}"/>
+                    </Viewbox>
                 </Border>
 
                 

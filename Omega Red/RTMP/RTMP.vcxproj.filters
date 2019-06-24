@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\librtmp">
+      <UniqueIdentifier>{3ff9c198-acf1-41fa-8ad4-f38c707ad96f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\librtmp">
+      <UniqueIdentifier>{56e0e4d8-4a0c-41da-8724-48d15d27a61b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common">
+      <UniqueIdentifier>{76a6e671-415d-4bd7-aa5f-7cc24e377709}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="librtmp\amf.c">
+      <Filter>Source Files\librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="librtmp\cencode.c">
+      <Filter>Source Files\librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="librtmp\hashswf.c">
+      <Filter>Source Files\librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="librtmp\log.c">
+      <Filter>Source Files\librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="librtmp\parseurl.c">
+      <Filter>Source Files\librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="librtmp\rtmp.c">
+      <Filter>Source Files\librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="flv-mux.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\pugixml.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RTMP.def">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="librtmp\amf.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="librtmp\bytes.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="librtmp\cencode.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="librtmp\dh.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="librtmp\dhgroups.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="librtmp\handshake.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="librtmp\http.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="librtmp\log.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="librtmp\md5.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="librtmp\rtmp.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="librtmp\rtmp_sys.h">
+      <Filter>Header Files\librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="flv-mux.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

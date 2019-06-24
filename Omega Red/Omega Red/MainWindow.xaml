@@ -67,7 +67,7 @@
     <Grid>
         <Grid>
             <panels:TouchPadPanel x:Name="m_PadPanel" >
-                <panels:VideoPanel HorizontalAlignment="Stretch"/>
+                <panels:DisplayControl HorizontalAlignment="Stretch"/>
             </panels:TouchPadPanel>
             <Border BorderBrush="{DynamicResource StandardBorderBrush}" 
                     CornerRadius="{DynamicResource StandardCornerRadius}" 

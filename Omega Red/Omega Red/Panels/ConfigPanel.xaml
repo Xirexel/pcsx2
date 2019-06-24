@@ -52,6 +52,13 @@
                 </StackPanel>
             </Border>
             <Border>
+                <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
+                    <TextBlock Text="{DynamicResource CaptureModeTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
+                    <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding MediaOutputTypeCollection}" Margin="5,0,5,5"/>
+                    <ContentPresenter Content="{Binding CaptureConfig}" Margin="5,0,5,5"/>
+                </StackPanel>
+            </Border>
+            <Border>
             <StackPanel Margin="5" VerticalAlignment="Center" Visibility="{Binding VisibilityState}">
                 <CheckBox Margin="5" IsChecked="{Binding Topmost}" VerticalContentAlignment="Center">
                     <TextBlock Text="{DynamicResource TopmostTitle}" TextWrapping="Wrap" TextAlignment="Center" Foreground="Black"/>
@@ -65,13 +72,6 @@
                         <TextBlock Text="{Binding Source={x:Static p:Settings.Default}, Path=CompressionQuality, StringFormat={}{0:#,#.0}, Mode=OneWay}" Foreground="Black" Margin="2,5"/>
                 </StackPanel>
                 <Slider ValueChanged="Slider_ValueChanged" TouchDown="Slider_TouchDown"  Value="{Binding Source={x:Static p:Settings.Default}, Path=CompressionQuality, Mode=TwoWay}"  Minimum="10" Maximum="99" Margin="10,0"/>
-                </StackPanel>
-            </Border>
-            <Border>
-                <StackPanel Margin="5" VerticalAlignment="Center" Visibility="Collapsed">
-                <TextBlock Text="Media output type:" TextAlignment="Center" Foreground="Black" Margin="5"/>
-                <ComboBox  IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding MediaOutputTypeCollection}" SelectedItem="{Binding MediaOutputConfig, Mode=OneWayToSource}" Margin="5,0,5,5"/>
-                <ContentPresenter Content="{Binding MediaOutputConfig}"/>
                 </StackPanel>
             </Border>
             <Border>

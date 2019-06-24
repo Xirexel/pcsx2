@@ -39,7 +39,7 @@ namespace Omega_Red.Tools
         {
             VideoRenderer = 0,
             Pad = 1,
-            SPU2 = 2,
+            AudioRenderer = 2,
             CDVD = 3,
             USB = 4,
 	        FW = 5,
@@ -87,7 +87,7 @@ namespace Omega_Red.Tools
 
             switch (a_ModuleType)
             {
-                case ModuleType.SPU2:
+                case ModuleType.AudioRenderer:
                     break;
                 case ModuleType.VideoRenderer:
                     l_result = "GS";
@@ -341,8 +341,8 @@ namespace Omega_Red.Tools
         }
 
         private List<Module> m_Modules = new List<Module>()
-        {            
-            new Module(ModuleType.SPU2),
+        {
+            new Module(ModuleType.AudioRenderer),
             new Module(ModuleType.VideoRenderer),
             new Module(ModuleType.DEV9),
             new Module(ModuleType.MemoryCard),
@@ -351,8 +351,8 @@ namespace Omega_Red.Tools
             new Module(ModuleType.USB),
             new Module(ModuleType.FW)    
         };
-        
 
+        
         private ModuleManager() { }
 
         private static ModuleManager m_Instance = null;

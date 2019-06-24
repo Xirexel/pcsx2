@@ -1,0 +1,5 @@
+LIBRARY "AudioRenderer"
+EXPORTS
+	getAPI			PRIVATE
+	execute			PRIVATE
+	releaseString	PRIVATE

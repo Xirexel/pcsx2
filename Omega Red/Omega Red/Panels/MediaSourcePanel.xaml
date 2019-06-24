@@ -1,0 +1,52 @@
+﻿<UserControl x:Class="Omega_Red.Panels.MediaSourcePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Omega_Red.Panels"
+             Background="Transparent"
+             MouseLeftButtonDown="UserControl_MouseLeftButtonDown"
+             MouseLeftButtonUp="UserControl_MouseLeftButtonUp"
+             MouseMove="UserControl_MouseMove"
+             MouseLeave="UserControl_MouseLeave"
+             BorderBrush="Red" BorderThickness="1"  
+             Width="100" Height="100"
+             ClipToBounds="True">
+    <Grid>
+        <Grid.ColumnDefinitions>
+        </Grid.ColumnDefinitions>
+        <ContentPresenter x:Name="m_ContentPresenter"/>
+        <!--<Button Style="{DynamicResource RemoveBtn}" Width="30" Height="30" Margin="5"/>-->
+        <Thumb VerticalAlignment="Bottom" HorizontalAlignment="Right" Background="Blue"
+      Width="20" Height="20" DragDelta="onDragDelta" x:Name="myThumb"
+      DragStarted="onDragStarted" DragCompleted="onDragCompleted"
+      >
+            <Thumb.Style>
+                <Style TargetType="Thumb">
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background"
+                                                Value="Yellow"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Thumb.Style>
+            <Thumb.Template>
+                <ControlTemplate>
+                    <Canvas>
+                        <Path Stroke="DarkGoldenRod" 
+                                  Fill="{Binding Background, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Thumb}}"
+                                  StrokeThickness="1"   
+Data="M 0,0 18,0 0,18  Z" >
+                        </Path>
+                        <Path Stroke="DarkGoldenRod" 
+                                  Fill="{Binding Background, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Thumb}}"
+                                  StrokeThickness="1"   
+Data="M 20,20 20,0 0,20  Z" >
+                        </Path>
+                    </Canvas>
+                </ControlTemplate>
+            </Thumb.Template>
+        </Thumb>
+    </Grid>
+</UserControl>

@@ -103,7 +103,12 @@ namespace Omega_Red
             {
 
                 if (Settings.Default.GoogleAccountIsChecked)
-                    SocialNetworks.GoogleAccountManager.Instance.tryAuthorize();
+                    SocialNetworks.Google.GoogleAccountManager.Instance.tryAuthorize();
+
+                if (!RTMPNative.Instance.isInit)
+                {
+                    break;
+                }
 
                 if (!ModuleManager.Instance.isInit)
                 {
@@ -120,28 +125,39 @@ namespace Omega_Red
                     break;
                 }
 
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate()
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)async delegate ()
                 {
 
-                    if (m_PadPanel.Content != null && m_PadPanel.Content is VideoPanel)
+                    if (m_PadPanel.Content != null && m_PadPanel.Content is DisplayControl)
                     {
-                        ModuleControl.Instance.setVideoPanel(m_PadPanel.Content as VideoPanel);
+                        ModuleControl.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
 
-                        PPSSPPControl.Instance.setVideoPanelHandler((m_PadPanel.Content as VideoPanel).SharedHandle);
+                        PPSSPPControl.Instance.setVideoPanelHandler(((m_PadPanel.Content as DisplayControl).VideoPanel).SharedHandle);
 
-                        Tools.Savestate.SStates.Instance.setVideoPanel(m_PadPanel.Content as VideoPanel);
+                        Tools.Savestate.SStates.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
 
-                        ScreenshotsManager.Instance.setVideoPanel(m_PadPanel.Content as VideoPanel);
+                        ScreenshotsManager.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
+
+                        MediaSourcesManager.Instance.DisplayControl = m_PadPanel.Content as DisplayControl;
                     }
 
                     var wih = new System.Windows.Interop.WindowInteropHelper(App.Current.MainWindow);
 
                     ModuleControl.Instance.setWindowHandler(wih.Handle);
 
-                    SocialNetworks.GoogleAccountManager.Instance.sendEvent();
+                    await MediaSourcesManager.Instance.loadAsync();
+
+                    SocialNetworks.Google.GoogleAccountManager.Instance.sendEvent();
 
                     PCSX2Controller.Instance.updateInitilize();
                 });
+                
+                Capture.MediaStream.Instance.setConnectionFunc(RTMPNative.Instance.Connect);
+
+                Capture.MediaStream.Instance.setDisconnectFunc(RTMPNative.Instance.Disconnect);
+
+                Capture.MediaStream.Instance.setWriteFunc(RTMPNative.Instance.Write);
+
 
             } while (false);
 

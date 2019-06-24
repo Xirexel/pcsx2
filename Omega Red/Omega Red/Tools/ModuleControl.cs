@@ -74,7 +74,7 @@ namespace Omega_Red.Tools
                 
                 switch (l_Module.ModuleType)
                 {
-                    case ModuleManager.ModuleType.SPU2:
+                    case ModuleManager.ModuleType.AudioRenderer:
                         setAudioRendererConfig(l_XmlDocument, l_PropertyNode);
                         break;
                     case ModuleManager.ModuleType.VideoRenderer:
@@ -481,7 +481,7 @@ namespace Omega_Red.Tools
 
                 switch (l_Module.ModuleType)
                 {
-                    case ModuleManager.ModuleType.SPU2:
+                    case ModuleManager.ModuleType.AudioRenderer:
                         break;
                     case ModuleManager.ModuleType.VideoRenderer:
                         if(!PCSX2LibNative.Instance.MTGS_IsSelfFunc())
@@ -535,7 +535,7 @@ namespace Omega_Red.Tools
 
                 switch (l_Module.ModuleType)
                 {
-                    case ModuleManager.ModuleType.SPU2:
+                    case ModuleManager.ModuleType.AudioRenderer:
                         break;
                     case ModuleManager.ModuleType.VideoRenderer:
                         PCSX2LibNative.Instance.MTGS_CancelFunc();
@@ -661,7 +661,7 @@ namespace Omega_Red.Tools
 
                 switch (l_Module.ModuleType)
                 {
-                    case ModuleManager.ModuleType.SPU2:
+                    case ModuleManager.ModuleType.AudioRenderer:
                         setWindowHandlerOpenConfig(l_Module, l_XmlDocument, l_PropertyNode);
                         break;
                     case ModuleManager.ModuleType.VideoRenderer:
@@ -725,7 +725,7 @@ namespace Omega_Red.Tools
 
             do
             {
-                var l_module = ModuleManager.Instance.getModule(Omega_Red.Tools.ModuleManager.ModuleType.SPU2);
+                var l_module = ModuleManager.Instance.getModule(Omega_Red.Tools.ModuleManager.ModuleType.AudioRenderer);
 
                 string l_commandResult = "";
 
@@ -996,82 +996,117 @@ namespace Omega_Red.Tools
 
         }
 
+        private double m_prevValue = -1;
+
+        private bool m_busySetVolume = false;
+
         public void setVolume(double a_value)
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.SPU2);
+            m_prevValue = a_value;
 
-            XmlDocument l_XmlDocument = new XmlDocument();
+            if (m_busySetVolume)
+                return;
 
-            XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+            m_busySetVolume = true;
 
-            l_XmlDocument.AppendChild(ldocNode);
+            m_prevValue = -1;
 
-            XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+            double l_currentValue = a_value;
 
-            XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Volume");
-
-
-
-            var l_Atrr = l_XmlDocument.CreateAttribute("Value");
-
-            l_Atrr.Value = String.Format("{0:0.##}", a_value * 100.0);
-
-            l_PropertyNode.Attributes.Append(l_Atrr);
-
-
-
-            rootNode.AppendChild(l_PropertyNode);
-
-            l_XmlDocument.AppendChild(rootNode);
-
-            using (var stringWriter = new StringWriter())
-            using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.AudioRenderer);
+            
+            System.Threading.ThreadPool.QueueUserWorkItem((object state) =>
             {
-                l_XmlDocument.WriteTo(xmlTextWriter);
+                do
+                {
 
-                xmlTextWriter.Flush();
+                    XmlDocument l_XmlDocument = new XmlDocument();
 
-                l_Module.execute(stringWriter.GetStringBuilder().ToString());
-            }
+                    XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+
+                    l_XmlDocument.AppendChild(ldocNode);
+
+                    XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+
+                    XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Volume");
+
+
+
+                    var l_Atrr = l_XmlDocument.CreateAttribute("Value");
+
+                    l_Atrr.Value = String.Format("{0:0.##}", l_currentValue * 100.0);
+
+                    l_PropertyNode.Attributes.Append(l_Atrr);
+
+
+
+                    rootNode.AppendChild(l_PropertyNode);
+
+                    l_XmlDocument.AppendChild(rootNode);
+
+                    using (var stringWriter = new StringWriter())
+                    using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+                    {
+                        l_XmlDocument.WriteTo(xmlTextWriter);
+
+                        xmlTextWriter.Flush();
+
+                        l_Module.execute(stringWriter.GetStringBuilder().ToString());
+                    }
+
+                    if (m_prevValue == -1)
+                        break;
+
+                    l_currentValue = m_prevValue;
+
+                } while (true);
+
+                m_busySetVolume = false;
+            });
+
         }
 
         public void setIsMuted(bool a_value)
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.SPU2);
+            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.AudioRenderer);
 
-            XmlDocument l_XmlDocument = new XmlDocument();
-
-            XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
-
-            l_XmlDocument.AppendChild(ldocNode);
-
-            XmlNode rootNode = l_XmlDocument.CreateElement("Config");
-
-            XmlNode l_PropertyNode = l_XmlDocument.CreateElement("IsMuted");
-
-
-
-            var l_Atrr = l_XmlDocument.CreateAttribute("Value");
-
-            l_Atrr.Value = (a_value ? 1 : 0).ToString();
-
-            l_PropertyNode.Attributes.Append(l_Atrr);
-
-
-
-            rootNode.AppendChild(l_PropertyNode);
-
-            l_XmlDocument.AppendChild(rootNode);
-
-            using (var stringWriter = new StringWriter())
-            using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+            System.Threading.ThreadPool.QueueUserWorkItem((object state) =>
             {
-                l_XmlDocument.WriteTo(xmlTextWriter);
+                XmlDocument l_XmlDocument = new XmlDocument();
 
-                xmlTextWriter.Flush();
+                XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
 
-                l_Module.execute(stringWriter.GetStringBuilder().ToString());
-            }
+                l_XmlDocument.AppendChild(ldocNode);
+
+                XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+
+                XmlNode l_PropertyNode = l_XmlDocument.CreateElement("IsMuted");
+
+
+
+                var l_Atrr = l_XmlDocument.CreateAttribute("Value");
+
+                l_Atrr.Value = (a_value ? 1 : 0).ToString();
+
+                l_PropertyNode.Attributes.Append(l_Atrr);
+
+
+
+                rootNode.AppendChild(l_PropertyNode);
+
+                l_XmlDocument.AppendChild(rootNode);
+
+                using (var stringWriter = new StringWriter())
+                using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+                {
+                    l_XmlDocument.WriteTo(xmlTextWriter);
+
+                    xmlTextWriter.Flush();
+
+                    l_Module.execute(stringWriter.GetStringBuilder().ToString());
+                }
+
+            });
         }
     }
 }

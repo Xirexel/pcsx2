@@ -13,6 +13,13 @@
     </UserControl.DataContext>
     <Grid Background="{DynamicResource LockScreenBackgroundBrush}" >
         <ContentPresenter Content="{Binding IconImage}" x:Name="mIconContent" Margin="100"/>
+        <Border Visibility="{Binding VisibilityDisplayStreamConfigPanel}">
+            <panels:StreamControlPanel>
+                <panels:StreamControlPanel.DataContext>
+                    <viewModels:StreamControlViewModel/>
+                </panels:StreamControlPanel.DataContext>
+            </panels:StreamControlPanel>
+        </Border>
         <Border Visibility="{Binding VisibilityDisplayImagePanel}">
             <panels:DisplayImagePanel>
                 <panels:DisplayImagePanel.DataContext>

@@ -37,13 +37,14 @@ namespace Omega_Red.Panels.Video.Interop
             return new Direct3DSurface9(obj);
         }
 
-        public Direct3DSurface9 CreateTexture(uint Width, uint Height, uint Levels, uint Usage, int Format, int Pool, ref IntPtr pSharedHandle)
+        public Direct3DTexture9 CreateTexture(uint Width, uint Height, uint Levels, uint Usage, int Format, int Pool)
         {
+            IntPtr handle = new IntPtr(0);
             ComInterface.IDirect3DTexture9 obj = null;
-            int result = this.createTexture(this.comObject, Width, Height, Levels, Usage, Format, Pool, out obj, ref pSharedHandle);
+            int result = this.createTexture(this.comObject, Width, Height, Levels, Usage, Format, Pool, out obj, ref handle);
             Marshal.ThrowExceptionForHR(result);
 
-            return null;
+            return new Direct3DTexture9(obj, handle);
         }
 
         private void Release()

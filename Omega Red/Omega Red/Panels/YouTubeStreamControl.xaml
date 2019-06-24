@@ -1,0 +1,118 @@
+﻿<UserControl x:Class="Omega_Red.Panels.YouTubeStreamControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Omega_Red.Panels"
+             xmlns:views="clr-namespace:Omega_Red.Views"
+             xmlns:converters="clr-namespace:Omega_Red.Tools.Converters"
+             mc:Ignorable="d" 
+             Height="500" Width="800">
+    <Grid>
+        <Grid.Resources>
+            <converters:PrivacyStatusConvertor x:Key="m_PrivacyStatusConvertor"/>
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <TextBlock FontSize="{DynamicResource AboutFontSize}" Foreground="{DynamicResource MainForegroundBrush}" Text="YouTube" HorizontalAlignment="Center"/>
+        <TabControl Grid.Row="1">
+            <TabItem DataContext="{Binding Broadcasts}" Header="{DynamicResource YouTubeBroadcastTitle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+                    <views:ListPanel
+                        BorderThickness="{DynamicResource StandardBorderThickness}" 
+                        BorderBrush="{DynamicResource StandardBorderBrush}" 
+                        Margin="10"/>
+                    <Grid Grid.Column="1" Margin="0,10,10,10">
+                        <StackPanel DataContext="{Binding SelectedItem}">
+                            <StackPanel.Resources>
+                                <Style TargetType="{x:Type TextBlock}">
+                                    <Setter Property="Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+                                    <Setter Property="FontSize" Value="20"/>
+                                    <Setter Property="Margin" Value="5"/>
+                                </Style>
+                            </StackPanel.Resources>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource YouTubeBroadcastTitleTitle}"/>
+                                <TextBox Grid.Column="1" Text="{Binding Title}" />
+                            </Grid>
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource YouTubeBroadcastDescriptionTitle}"/>
+                                <TextBox Grid.Column="1" Text="{Binding Description}" />
+                            </Grid>
+                            <ComboBox SelectedIndex="{Binding PrivacyStatus, 
+                                Converter={StaticResource m_PrivacyStatusConvertor}}" Margin="0,10,0,0" >
+                                <TextBlock Margin="0" Text="private"/>
+                                <TextBlock Margin="0" Text="public" />
+                                <TextBlock Margin="0" Text="unlisted" />
+                            </ComboBox>
+                        </StackPanel>
+                        <Grid Margin="0,10,0,0" IsEnabled="{Binding IsSyncEnabled}" >
+                            <Button Command="{Binding SyncCommand}"
+                                        CommandParameter="{Binding SelectedItem}"
+                                    Width="50" Height="50"
+                                        HorizontalAlignment="Right" Content="Update"/>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            <TabItem DataContext="{Binding Streams}" IsSelected="True" Header="{DynamicResource YouTubeStreamTitle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+                    <views:ListPanel
+                        BorderThickness="{DynamicResource StandardBorderThickness}" 
+                        BorderBrush="{DynamicResource StandardBorderBrush}" 
+                        Margin="10"/>
+                    <Grid Grid.Column="1" Margin="0,10,10,10">
+                        <Grid.Resources>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+                                <Setter Property="FontSize" Value="20"/>
+                            </Style>
+                        </Grid.Resources>
+                        <StackPanel DataContext="{Binding SelectedItem}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource YouTubeStreamTitleTitle}"/>
+                                <TextBox Grid.Column="1" Text="{Binding Title}" />
+                            </Grid>
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource YouTubeStreamDescriptionTitle}"/>
+                                <TextBox Grid.Column="1" Text="{Binding Description}" />
+                            </Grid>
+                        </StackPanel>
+                        <Grid Margin="0,10,0,0" IsEnabled="{Binding IsSyncEnabled}" >
+                            <Button Command="{Binding SyncCommand}"
+                                        CommandParameter="{Binding SelectedItem}"
+                                    Width="50" Height="50"
+                                        HorizontalAlignment="Right" Content="Update"/>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>     
+        </TabControl>
+    </Grid>
+</UserControl>

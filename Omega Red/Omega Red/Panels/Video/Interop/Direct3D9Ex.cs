@@ -44,17 +44,7 @@ namespace Omega_Red.Panels.Video.Interop
 
             return new Direct3DDevice9Ex(obj);
         }
-
-        public Direct3DDevice9 CreateDevice(uint Adapter, int DeviceType, IntPtr hFocusWindow, int BehaviorFlags,
-                                                NativeStructs.D3DPRESENT_PARAMETERS pPresentationParameters, NativeStructs.D3DDISPLAYMODEEX pFullscreenDisplayMode)
-        {
-            ComInterface.IDirect3DDevice9 obj = null;
-            int result = this.createDevice(this.comObject, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, out obj);
-            Marshal.ThrowExceptionForHR(result);
-
-            return new Direct3DDevice9(obj);
-        }
-
+        
         private void Release()
         {
             if (this.comObject != null)

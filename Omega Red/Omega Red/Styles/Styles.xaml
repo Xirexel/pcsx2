@@ -10,6 +10,7 @@
         <ResourceDictionary Source="CheckBoxStyles.xaml" />
         <ResourceDictionary Source="ComboBoxStyles.xaml" />
         <ResourceDictionary Source="ContextMenuStyles.xaml" />
-        <ResourceDictionary Source="SliderStyles.xaml" />        
+        <ResourceDictionary Source="SliderStyles.xaml" />
+        <ResourceDictionary Source="TabControlStyles.xaml" />        
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary> 

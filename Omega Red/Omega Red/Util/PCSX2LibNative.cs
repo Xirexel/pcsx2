@@ -334,7 +334,8 @@ namespace Omega_Red.Util
 
         public void release()
         {
-            m_LibLoader.release();
+            if (m_LibLoader != null)
+                m_LibLoader.release();
         }
         
         private Delegate parseFunction123(string a_func, Type a_type)
@@ -887,7 +888,7 @@ namespace Omega_Red.Util
 
             switch (a_Module.ModuleType)
 	        {
-                case ModuleManager.ModuleType.SPU2:
+                case ModuleManager.ModuleType.AudioRenderer:
                     if (m_PCSX2Modules.setSPU2 != null)
                         m_PCSX2Modules.setSPU2(a_Module.getPCSX2Lib_API());
                  break;

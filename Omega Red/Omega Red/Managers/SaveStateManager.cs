@@ -30,7 +30,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Threading;
-using Omega_Red.SocialNetworks;
+using Omega_Red.SocialNetworks.Google;
 
 namespace Omega_Red.Managers
 {

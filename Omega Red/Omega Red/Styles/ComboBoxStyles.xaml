@@ -137,6 +137,7 @@
                                 Margin="3,3,23,3"
                                 Focusable="True"                               
                                 Visibility="Hidden"
+                                Foreground="{TemplateBinding Foreground}"
                                 IsReadOnly="{TemplateBinding IsReadOnly}"/>
                         <Popup
                                 Name="Popup"
@@ -172,11 +173,11 @@
                         <Trigger SourceName="Popup" Property="Popup.AllowsTransparency" Value="true">
                             <Setter TargetName="DropDownBorder" Property="Margin" Value="0,0,0,0"/>
                         </Trigger>
-                        <!--<Trigger Property="IsEditable" Value="true">
+                        <Trigger Property="IsEditable" Value="True">
                             <Setter Property="IsTabStop" Value="false"/>
-                            <Setter TargetName="PART_EditableTextBox" Property="Visibility"    Value="Visible"/>
+                            <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
                             <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden"/>
-                        </Trigger>-->
+                        </Trigger>
                         <Trigger Property="IsEnabled" Value="True">
                             <Setter TargetName="ToggleButton" Property="Style" Value="{DynamicResource ComboBoxToggleButton}"/>
                         </Trigger>

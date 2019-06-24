@@ -53,7 +53,7 @@ namespace Omega_Red.Tools.Savestate
 	        new SavestateEntry_VU0prog(),
 	        new SavestateEntry_VU1prog(),
             new PluginSavestateEntry(ModuleManager.ModuleType.VideoRenderer),
-            new PluginSavestateEntry(ModuleManager.ModuleType.SPU2)
+            new PluginSavestateEntry(ModuleManager.ModuleType.AudioRenderer)
         };
 
         private List<IBaseSavestateEntry> m_PPSSPPSavestateEntries = new List<IBaseSavestateEntry>()

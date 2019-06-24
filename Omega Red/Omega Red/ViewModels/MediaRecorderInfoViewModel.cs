@@ -35,7 +35,7 @@ namespace Omega_Red.ViewModels
                 switch (obj)
                 {
                     case PCSX2Controller.StatusEnum.Stopped:
-                        IsCheckedStatus = false;
+                        //IsCheckedStatus = false;
                         break;
                     case PCSX2Controller.StatusEnum.Paused:
                     case PCSX2Controller.StatusEnum.NoneInitilized:
@@ -61,6 +61,17 @@ namespace Omega_Red.ViewModels
                     }
                 });
             };
+
+
+
+
+            Omega_Red.Managers.MediaRecorderManager.Instance.RecordingStateEvent += (a_state) => {
+
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    IsCheckedStatus = a_state;
+                });
+            };
         }
 
 
@@ -70,7 +81,7 @@ namespace Omega_Red.ViewModels
             {
                 return new DelegateCommand<Object>(Omega_Red.Managers.MediaRecorderManager.Instance.StartStop, () =>
                 {
-                    return PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Started;
+                    return Managers.MediaRecorderManager.Instance.isRecodingAllowed();
                 });
             }
         }

@@ -1,0 +1,6 @@
+LIBRARY "RTMP"
+EXPORTS
+
+	Connect
+	Disconnect
+	Write

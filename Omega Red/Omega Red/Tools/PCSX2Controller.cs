@@ -751,10 +751,7 @@ namespace Omega_Red.Tools
                 }
 
                 m_reloadSettings = true;
-
-                mGameSessionDuration = new TimeSpan();
             }
-
         }
     }
 }

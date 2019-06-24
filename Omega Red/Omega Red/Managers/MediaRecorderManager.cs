@@ -14,6 +14,7 @@
 
 using Omega_Red.Capture;
 using Omega_Red.Models;
+using Omega_Red.Panels;
 using Omega_Red.Properties;
 using Omega_Red.Tools;
 using System;
@@ -45,95 +46,55 @@ namespace Omega_Red.Managers
 
     class MediaOutputTypeInfo
     {
-        public MediaOutputType Value { get; set; }
 
-        public override string ToString()
+        TextBlock mTitle = new TextBlock();
+
+        public MediaOutputTypeInfo(MediaOutputType aValue)
         {
-            return Value == MediaOutputType.Capture ? App.Current.Resources["MediaOutputTypeCaptureTitle"] as String :
-                App.Current.Resources["MediaOutputTypeStreamTitle"] as String;
+            Value = aValue;
         }
 
+        private void refresh()
+        {
+            switch (Value)
+            {
+                case MediaOutputType.Capture:
+                    mTitle.SetResourceReference(TextBlock.TextProperty, "MediaOutputTypeCaptureTitle");
+                    break;
+                case MediaOutputType.Stream:
+                    mTitle.SetResourceReference(TextBlock.TextProperty, "MediaOutputTypeStreamTitle");
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public MediaOutputType Value { get; private set; }
+        
         public object InfoPanel ()
         {            
             if(Value == MediaOutputType.Stream)
             {
-
-                TextBlock lTextBlock = new TextBlock();
-
-                var lVersion = Capture.MediaStream.Instance.CaptureManagerVersion;
-
-                if (lVersion.Contains("Freeware"))
-                {
-                    lTextBlock.Text = App.Current.Resources["MediaOutputTypeStreamNotSupportingTitle"] as String;
-                }
-                else
-                {
-
-                    var lHyperlink = new Hyperlink();
-
-                    lHyperlink.Inlines.Add(@"rtsp://127.0.0.1:8554");
-
-                    lHyperlink.Click += delegate (object sender, RoutedEventArgs e)
-                    {
-                        var lHyperlink1 = sender as Hyperlink;
-
-                        if (lHyperlink1 == null)
-                            return;
-
-                        var lRun = lHyperlink1.Inlines.FirstInline as Run;
-
-                        if (lRun == null)
-                            return;
-
-                        Clipboard.SetText(lRun.Text);
-
-                        TextBlock linfoTextBlock = new TextBlock();
-
-                        Popup mPopupCopy = new Popup();
-
-                        linfoTextBlock.Padding = new Thickness(7);
-
-                        linfoTextBlock.Foreground = Brushes.Black;
-
-                        linfoTextBlock.Background = Brushes.LightBlue;
-
-                        linfoTextBlock.FontSize = 20;
-
-                        linfoTextBlock.Text = "Copying of " + lRun.Text + " to clipboard.";
-
-                        mPopupCopy.Child = linfoTextBlock;
-
-                        mPopupCopy.PlacementTarget = lTextBlock;
-
-                        mPopupCopy.PopupAnimation = PopupAnimation.Slide;
-
-                        mPopupCopy.IsOpen = true;
-
-                        DoubleAnimation fadeInAnimation = new DoubleAnimation(1.0, new Duration(TimeSpan.FromMilliseconds(1000)));
-
-                        fadeInAnimation.Completed += delegate (object sender1, EventArgs e1)
-                        {
-                            mPopupCopy.IsOpen = false;
-                        };
-                        fadeInAnimation.BeginTime = TimeSpan.FromMilliseconds(0);
-                        mPopupCopy.Opacity = 0.0;
-                        mPopupCopy.BeginAnimation(UIElement.OpacityProperty, (AnimationTimeline)fadeInAnimation.GetAsFrozen());
-                    };
-
-                    lTextBlock.Inlines.Add(lHyperlink);
-                }
-
-                lTextBlock.Margin = new Thickness(10, 0, 0, 0);
-
-                return lTextBlock;
+                return MediaRecorderManager.Instance.mInfoPanel;
             }
 
             return null;
+        }
+
+        public override string ToString()
+        {
+            refresh();
+
+            if (mTitle != null)
+                return mTitle.Text;
+
+            return base.ToString();
         }
     }
 
     class MediaRecorderManager : IManager
     {
+        public StreamingCaptureConfig mInfoPanel = new StreamingCaptureConfig();
 
         private ICollectionView mCustomerView = null;
 
@@ -145,29 +106,45 @@ namespace Omega_Red.Managers
 
         public event Action<bool> ChangeLockEvent;
 
-        public MediaOutputType MediaOutputType { get; set; }
+        public event Action<bool> RecordingStateEvent;
+
+        private MediaOutputType MediaOutputType { get; set; }
+
+        public bool IsAllowedStreaming { get; set; }
+
+        public void setMediaOutputType(MediaOutputType a_MediaOutputType)
+        {
+            MediaOutputType = a_MediaOutputType;
+                       
+            switch (a_MediaOutputType)
+            {
+                case MediaOutputType.Capture:
+                    IsAllowedStreaming = false;
+                    break;
+                case MediaOutputType.Stream:
+                    IsAllowedStreaming = !string.IsNullOrWhiteSpace(Settings.Default.StreamName);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public bool isRecodingAllowed()
+        {
+            if (MediaOutputType == MediaOutputType.Capture)
+                return true;
+
+            if (MediaOutputType == MediaOutputType.Stream)
+            {
+                return IsAllowedStreaming;
+            }
+
+            return false;
+        }
+
 
         private MediaRecorderManager()
-        {
-
-            PCSX2Controller.Instance.ChangeStatusEvent += (PCSX2Controller.StatusEnum obj) =>
-            {
-
-                switch (obj)
-                {
-                    case PCSX2Controller.StatusEnum.Stopped:
-                        StartStop(false);
-                        break;
-                    case PCSX2Controller.StatusEnum.Paused:
-                    case PCSX2Controller.StatusEnum.NoneInitilized:
-                    case PCSX2Controller.StatusEnum.Initilized:
-                    case PCSX2Controller.StatusEnum.Started:
-                    default:
-                        break;
-                }
-
-            };
-
+        {            
             if (string.IsNullOrEmpty(Settings.Default.VideosFolder))
                 Settings.Default.VideosFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos) + @"\Omega Red\";
 
@@ -264,9 +241,13 @@ namespace Omega_Red.Managers
                                 default:
                                     break;
                             }
+
+                            MediaSourcesManager.Instance.openSources();
                         }
                         else
                         {
+
+                            MediaSourcesManager.Instance.closeSources();
 
                             switch (MediaOutputType)
                             {
@@ -279,6 +260,9 @@ namespace Omega_Red.Managers
                                 default:
                                     break;
                             }
+
+                            if (RecordingStateEvent != null)
+                                RecordingStateEvent(false);
                         }
                     }
                 }
@@ -292,7 +276,42 @@ namespace Omega_Red.Managers
             
             t.Start();
         }
-        
+               
+        public async Task<string> getCollectionOfSourcesAsync()
+        {
+            string lresult = await Task.Run(() =>
+            {
+                string linnerresult = "";
+
+                AutoResetEvent lBlockEvent = new AutoResetEvent(false);
+
+                var t = new Thread(() =>
+                {
+                    try
+                    {
+                        linnerresult = MediaStream.Instance.getCollectionOfSources();
+
+                        linnerresult = MediaCapture.Instance.getCollectionOfSources();
+                    }
+                    finally
+                    {
+                        lBlockEvent.Set();
+                    }
+                });
+
+                t.SetApartmentState(ApartmentState.MTA);
+
+                t.Start();
+
+                lBlockEvent.WaitOne();
+
+                return linnerresult;
+            }
+                );
+
+            return lresult;
+        }
+
         public void removeItem(object a_Item)
         {
             var l_MediaRecorderInfo = a_Item as MediaRecorderInfo;
@@ -353,12 +372,10 @@ namespace Omega_Red.Managers
 
         public void persistItemAsync(object a_Item)
         {
-            throw new NotImplementedException();
         }
 
         public void loadItemAsync(object a_Item)
         {
-            throw new NotImplementedException();
         }
 
         public bool accessPersistItem(object a_Item)
@@ -374,6 +391,223 @@ namespace Omega_Red.Managers
         public System.ComponentModel.ICollectionView Collection
         {
             get { return mCustomerView; }
+        }
+
+        public async Task<bool> addSource(string a_SymbolicLink, uint a_MediaTypeIndex, IntPtr a_RenderTarget)
+        {
+            bool lresult = await Task.Run(() =>
+            {
+                bool linnerresult = false;
+
+                AutoResetEvent lBlockEvent = new AutoResetEvent(false);
+
+                var t = new Thread(() =>
+                {
+                    try
+                    {
+                        switch (MediaOutputType)
+                        {
+                            case MediaOutputType.Capture:
+                                linnerresult = MediaCapture.Instance.addSource(a_SymbolicLink, a_MediaTypeIndex, a_RenderTarget);
+                                break;
+                            case MediaOutputType.Stream:
+                                linnerresult = MediaStream.Instance.addSource(a_SymbolicLink, a_MediaTypeIndex, a_RenderTarget);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    finally
+                    {
+                        lBlockEvent.Set();
+                    }
+                });
+
+                t.SetApartmentState(ApartmentState.MTA);
+
+                t.Start();
+
+                lBlockEvent.WaitOne();
+
+                return linnerresult;
+            }
+                );
+            
+            return lresult;
+        }
+        
+        public async Task removeSource(string a_SymbolicLink)
+        {
+            await Task.Run(() =>
+            {
+                AutoResetEvent lBlockEvent = new AutoResetEvent(false);
+
+                var t = new Thread(() =>
+                {
+                    try
+                    {
+                        switch (MediaOutputType)
+                        {
+                            case MediaOutputType.Capture:
+                                MediaCapture.Instance.removeSource(a_SymbolicLink);
+                                break;
+                            case MediaOutputType.Stream:
+                                MediaStream.Instance.removeSource(a_SymbolicLink);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    finally
+                    {
+                        lBlockEvent.Set();
+                    }
+                });
+
+                t.SetApartmentState(ApartmentState.MTA);
+
+                t.Start();
+
+                lBlockEvent.WaitOne();
+            }
+                );
+        }
+
+        public async void setPosition(string a_SymbolicLink, float aLeft, float aRight, float aTop, float aBottom)
+        {
+            await Task.Run(() =>
+            {
+                AutoResetEvent lBlockEvent = new AutoResetEvent(false);
+
+                var t = new Thread(() =>
+                {
+                    try
+                    {
+                        switch (MediaOutputType)
+                        {
+                            case MediaOutputType.Capture:
+                                MediaCapture.Instance.setPosition(a_SymbolicLink, aLeft, aRight, aTop, aBottom);
+                                break;
+                            case MediaOutputType.Stream:
+                                MediaStream.Instance.setPosition(a_SymbolicLink, aLeft, aRight, aTop, aBottom);                   
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    finally
+                    {
+                        lBlockEvent.Set();
+                    }
+                });
+
+                t.SetApartmentState(ApartmentState.MTA);
+
+                t.Start();
+
+                lBlockEvent.WaitOne();
+                }
+            );
+        }
+        
+        public int currentAvalableVideoMixers()
+        {
+            switch (MediaOutputType)
+            {
+                case MediaOutputType.Capture:
+                    return MediaCapture.Instance.currentAvalableVideoMixers();
+                case MediaOutputType.Stream:
+                    return MediaStream.Instance.currentAvalableVideoMixers();
+                default:
+                    return 0;
+            }
+        }
+
+        public int currentAvalableAudioMixers()
+        {
+            switch (MediaOutputType)
+            {
+                case MediaOutputType.Capture:
+                    return MediaCapture.Instance.currentAvalableAudioMixers();
+                case MediaOutputType.Stream:
+                    return MediaStream.Instance.currentAvalableAudioMixers();
+                default:
+                    return 0;
+            }
+        }
+
+        public async void setOpacity(string a_SymbolicLink, float a_value)
+        {
+            await Task.Run(() =>
+            {
+                AutoResetEvent lBlockEvent = new AutoResetEvent(false);
+
+                var t = new Thread(() =>
+                {
+                    try
+                    {
+                        switch (MediaOutputType)
+                        {
+                            case MediaOutputType.Capture:
+                                MediaCapture.Instance.setOpacity(a_SymbolicLink, a_value);
+                                break;
+                            case MediaOutputType.Stream:
+                                MediaStream.Instance.setOpacity(a_SymbolicLink, a_value);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    finally
+                    {
+                        lBlockEvent.Set();
+                    }
+                });
+
+                t.SetApartmentState(ApartmentState.MTA);
+
+                t.Start();
+
+                lBlockEvent.WaitOne();
+            }
+            );
+        }
+
+        public async void setRelativeVolume(string a_SymbolicLink, float a_value)
+        {
+            await Task.Run(() =>
+            {
+                AutoResetEvent lBlockEvent = new AutoResetEvent(false);
+
+                var t = new Thread(() =>
+                {
+                    try
+                    {
+                        switch (MediaOutputType)
+                        {
+                            case MediaOutputType.Capture:
+                                MediaCapture.Instance.setRelativeVolume(a_SymbolicLink, a_value);
+                                break;
+                            case MediaOutputType.Stream:
+                                MediaStream.Instance.setRelativeVolume(a_SymbolicLink, a_value);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    finally
+                    {
+                        lBlockEvent.Set();
+                    }
+                });
+
+                t.SetApartmentState(ApartmentState.MTA);
+
+                t.Start();
+
+                lBlockEvent.WaitOne();
+            }
+            );
         }
     }
 }

@@ -2,9 +2,9 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <sys:String x:Key="MainName">Omega Red PS2 emulator</sys:String>
+    <sys:String x:Key="MainName">Omega Red PS2/PSP emulator</sys:String>
     <sys:String x:Key="ControlTitle">Config</sys:String>
-    <sys:String x:Key="MediaTitle">Records</sys:String>
+    <sys:String x:Key="MediaTitle">Media</sys:String>
     <sys:String x:Key="DisplayModeTitle">Display mode:</sys:String>
     <sys:String x:Key="ControlModeTitle">Control mode:</sys:String>
     <sys:String x:Key="TopmostTitle">Set on top all windows</sys:String>
@@ -13,6 +13,8 @@
     <sys:String x:Key="LanguageTitle">Current language:</sys:String>
     <sys:String x:Key="ColourSchemaTitle">Current colour schema:</sys:String>
     <sys:String x:Key="CaptureManagerTitle">Powered by CaptureManager SDK</sys:String>
+    <sys:String x:Key="PCSX2Title">Powered by PCSX2</sys:String>
+    <sys:String x:Key="PPSSPPTitle">Powered by PPSSPP</sys:String>
     <sys:String x:Key="YesTitle">Confirm</sys:String>
     <sys:String xml:space="preserve" x:Key="NoTitle">Cancel </sys:String>
     <sys:String xml:space="preserve" x:Key="VersionTitle">Version: </sys:String>
@@ -74,4 +76,14 @@
     <sys:String x:Key="YouTubeVideoCategoryIdTitle">CategoryId of video:</sys:String>
     <sys:String x:Key="YouTubeVideoPrivacyStatusTitle">Privacy status of video:</sys:String>
     <sys:String x:Key="SendTitle">Upload</sys:String>
+    <sys:String x:Key="CaptureModeTitle">Capture mode:</sys:String>
+    <sys:String x:Key="MediaSourcesTitle">Media sources</sys:String>
+    <sys:String x:Key="YouTubeStreamTitle">Streams</sys:String>
+    <sys:String x:Key="YouTubeStreamTitleTitle">Stream' title:</sys:String>
+    <sys:String x:Key="YouTubeStreamDescriptionTitle">Stream' description:</sys:String>
+    <sys:String x:Key="YouTubeBroadcastTitle">Broadcasts</sys:String>
+    <sys:String x:Key="YouTubeBroadcastTitleTitle">Broadcasts' title:</sys:String>
+    <sys:String x:Key="YouTubeBroadcastDescriptionTitle">Broadcasts' description:</sys:String>
+    <sys:String x:Key="VideoStreamBitRateTitle">Video bitrate:</sys:String>
+    <sys:String x:Key="AudioStreamBitRateTitle">Audio bitrate:</sys:String>
 </ResourceDictionary>

@@ -39,7 +39,23 @@ namespace Omega_Red.Capture
         private MethodInfo m_Stop = null;
 
         private MethodInfo m_GetVersion = null;
-        
+
+        private MethodInfo m_GetCollectionOfSources = null;
+
+        private MethodInfo m_AddSource = null;
+
+        private MethodInfo m_RemoveSource = null;
+
+        private MethodInfo m_SetPosition = null;
+
+        private MethodInfo m_SetOpacity = null;
+
+        private MethodInfo m_SetRelativeVolume = null;
+
+        private MethodInfo m_CurrentAvalableVideoMixers = null;
+
+        private MethodInfo m_CurrentAvalableAudioMixers = null;
+
         private string m_TempFileName = "";
                 
         private static MediaCapture m_Instance = null;
@@ -104,13 +120,32 @@ namespace Omega_Red.Capture
                             m_Stop = l_CaptureType.GetMethod("stop");
 
                             m_GetVersion = l_CaptureType.GetMethod("getVersion");
+
+                            m_GetCollectionOfSources = l_CaptureType.GetMethod("getCollectionOfSources");
+
+                            m_AddSource = l_CaptureType.GetMethod("addSource");
+
+                            m_RemoveSource = l_CaptureType.GetMethod("removeSource");
+
+                            m_SetPosition = l_CaptureType.GetMethod("setPosition");
+
+                            m_SetOpacity = l_CaptureType.GetMethod("setOpacity");
+
+                            m_SetRelativeVolume = l_CaptureType.GetMethod("setRelativeVolume");
+
+
+                            m_CurrentAvalableVideoMixers = l_CaptureType.GetMethod("currentAvalableVideoMixers");
+
+                            m_CurrentAvalableAudioMixers = l_CaptureType.GetMethod("currentAvalableAudioMixers");
+
                             
+
                             m_GetVersion.Invoke(m_CaptureObj, new object[] { m_Version_XMLstring });
                         }
                     }
                 }
 
-
+                
             }
             catch (System.Exception exc)
             {
@@ -189,6 +224,157 @@ namespace Omega_Red.Capture
             } while (false);
 
             return l_result;
+        }
+
+        public string getCollectionOfSources()
+        {
+            string l_result = "";
+
+            do
+            {
+                
+                if (m_CaptureObj == null)
+                    break;
+
+                if (m_GetCollectionOfSources == null)
+                    break;
+                               
+                StringBuilder l_Sources_XMLstring = new StringBuilder();
+
+                m_GetCollectionOfSources.Invoke(m_CaptureObj, new object[] { l_Sources_XMLstring });
+
+                if (l_Sources_XMLstring.Length > 0)
+                    l_result = l_Sources_XMLstring.ToString();
+
+            } while (false);
+
+            return l_result;
+        }
+
+        public bool addSource(string a_SymbolicLink, uint a_MediaTypeIndex, IntPtr a_RenderTarget)
+        {
+            bool lresult = false;
+
+            do
+            {
+
+                if (m_CaptureObj == null)
+                    break;
+
+                if (m_AddSource == null)
+                    break;
+
+                lresult = (bool)m_AddSource.Invoke(m_CaptureObj, new object[] { a_SymbolicLink, a_MediaTypeIndex, a_RenderTarget });
+                
+            } while (false);
+
+            return lresult;
+        }
+
+        public void removeSource(string a_SymbolicLink)
+        {
+            do
+            {
+
+                if (m_CaptureObj == null)
+                    break;
+
+                if (m_RemoveSource == null)
+                    break;
+
+                m_RemoveSource.Invoke(m_CaptureObj, new object[] { a_SymbolicLink });
+                
+            } while (false);
+        }
+
+        public void setPosition(string a_SymbolicLink, float aLeft, float aRight, float aTop, float aBottom)
+        {
+            do
+            {
+
+                if (m_CaptureObj == null)
+                    break;
+
+                if (m_SetPosition == null)
+                    break;
+
+                m_SetPosition.Invoke(m_CaptureObj, new object[] { a_SymbolicLink, aLeft, aRight, aTop, aBottom });
+
+            } while (false);
+        }
+
+        public int currentAvalableVideoMixers()
+        {
+            int lresult = 0;
+
+            do
+            {
+
+                if (m_CaptureObj == null)
+                    break;
+
+                if (m_CurrentAvalableVideoMixers == null)
+                    break;
+
+                lresult = (int)m_CurrentAvalableVideoMixers.Invoke(m_CaptureObj, new object[] { });
+
+            } while (false);
+
+            return lresult;
+        }
+
+        public int currentAvalableAudioMixers()
+        {
+            int lresult = 0;
+
+            do
+            {
+
+                if (m_CaptureObj == null)
+                    break;
+
+                if (m_CurrentAvalableAudioMixers == null)
+                    break;
+
+                lresult = (int)m_CurrentAvalableAudioMixers.Invoke(m_CaptureObj, new object[] { });
+
+            } while (false);
+
+            return lresult;
+        }
+
+        public void setOpacity(string a_SymbolicLink, float a_value)
+        {
+            do
+            {
+
+                if (m_CaptureObj == null)
+                    break;
+
+                if (m_SetOpacity == null)
+                    break;
+
+                m_SetOpacity.Invoke(m_CaptureObj, new object[] { a_SymbolicLink, a_value });
+
+            } while (false);
+
+        }
+
+        public void setRelativeVolume(string a_SymbolicLink, float a_value)
+        {
+            do
+            {
+
+                if (m_CaptureObj == null)
+                    break;
+
+                if (m_SetRelativeVolume == null)
+                    break;
+
+                m_SetRelativeVolume.Invoke(m_CaptureObj, new object[] { a_SymbolicLink, a_value });
+
+            } while (false);
+
         }
     }
 }

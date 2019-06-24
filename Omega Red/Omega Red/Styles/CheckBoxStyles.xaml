@@ -177,4 +177,42 @@
         </Setter>
     </Style>
 
+
+    <Style x:Key="MainStateCheckBox" TargetType="CheckBox">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="6" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Background" Value="{DynamicResource UnpressedButtonBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource MainBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StandardBorderBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Grid Margin="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Margin}" >
+                        <Viewbox Stretch="Uniform">
+                            <Grid>
+                                <Ellipse x:Name="mBorder" Width="30" Height="30" Fill="{TemplateBinding Background}" Stroke="{TemplateBinding BorderBrush}" StrokeThickness="4" />
+                            </Grid>
+                        </Viewbox>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="mBorder" Property="Fill" Value="{DynamicResource PressedButtonBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.25" />
+                        </Trigger>
+                        <!--<DataTrigger Binding="{Binding Status}" Value="Stopped" >
+                            <Setter Property="IsChecked" Value="False" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Status}" Value="Started" >
+                            <Setter Property="IsChecked" Value="True" />
+                        </DataTrigger>-->
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

@@ -1,5 +1,0 @@
-LIBRARY "SPU2"
-EXPORTS
-	getAPI			PRIVATE
-	execute			PRIVATE
-	releaseString	PRIVATE

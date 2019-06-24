@@ -26,7 +26,7 @@ using System.Windows.Media.Imaging;
 
 namespace Omega_Red.Panels
 {
-    internal class VideoPanel : System.Windows.Controls.ContentControl
+    internal class VideoPanel : System.Windows.Controls.ContentControl, IDisposable
     {
         enum D3DFMT
         {
@@ -36,21 +36,26 @@ namespace Omega_Red.Panels
 
         private const int Format = (int)D3DFMT.D3DFMT_A8R8G8B8;
 
+        public uint VideoWidth { get; private set; }
+        public uint VideoHeight { get; private set; }
+
         public static uint WIDTH = 1280;// 800; 
 
         public static uint HEIGHT = 720;// 600;
 
-        private class D3D9Image : D3DImage
+        private class D3D9Image : D3DImage, IDisposable
         {
             private Direct3DTexture9 texture;
 
+            private static Direct3DDevice9Ex direct3DDevice9Ex = null;
+
             private D3D9Image() { }
 
-            static public System.Tuple<D3DImage, IntPtr> createD3D9Image()
+            static public System.Tuple<D3DImage, IntPtr> createD3D9Image(uint aWidth, uint aHeight)
             {
                 D3D9Image lImageSource = new D3D9Image();
 
-                return lImageSource.init() ?
+                return lImageSource.init(aWidth, aHeight) ?
                     System.Tuple.Create<D3DImage, IntPtr>(lImageSource, lImageSource.texture.SharedHandle)
                     :
                     null;
@@ -61,7 +66,7 @@ namespace Omega_Red.Panels
                 return this.CopyBackBuffer();
             }
 
-            private bool init()
+            private bool init(uint aWidth, uint aHeight)
             {
                 bool lresult = false;
 
@@ -75,9 +80,11 @@ namespace Omega_Red.Panels
                         this.texture = null;
                     }
 
-                    using (var device = CreateDevice(NativeMethods.GetDesktopWindow()))
+                    var device = CreateDevice(NativeMethods.GetDesktopWindow());
+
+                    if (device != null)
                     {
-                        texture = GetSharedSurface(device);
+                        texture = GetSharedSurface(device, aWidth, aHeight);
 
                         Lock();
 
@@ -93,12 +100,12 @@ namespace Omega_Red.Panels
                 return lresult;
             }
 
-            private Direct3DTexture9 GetSharedSurface(Direct3DDevice9 device)
+            private Direct3DTexture9 GetSharedSurface(Direct3DDevice9Ex device, uint aWidth, uint aHeight)
             {
 
                 return device.CreateTexture(
-                    WIDTH,
-                    HEIGHT,
+                    aWidth,
+                    aHeight,
                     1,
                     1,  //D3DUSAGE_RENDERTARGET
                     Format, 
@@ -106,40 +113,56 @@ namespace Omega_Red.Panels
                     );                
             }
 
-            private static Direct3DDevice9 CreateDevice(IntPtr handle)
+            private static Direct3DDevice9Ex CreateDevice(IntPtr handle)
             {
-                const int D3D_SDK_VERSION = 32;
-                using (var d3d9 = Direct3D9Ex.Create(D3D_SDK_VERSION))
-                {
-                    var present = new NativeStructs.D3DPRESENT_PARAMETERS();
-
-                    try
+                if (direct3DDevice9Ex == null)
+                    using (var d3d9 = Direct3D9Ex.Create(32))
                     {
-                        var wih = new System.Windows.Interop.WindowInteropHelper(App.Current.MainWindow);
+                        var present = new NativeStructs.D3DPRESENT_PARAMETERS();
 
-                        if (wih.Handle != IntPtr.Zero)
-                            handle = wih.Handle;
+                        try
+                        {
+                            var wih = new System.Windows.Interop.WindowInteropHelper(App.Current.MainWindow);
+
+                            if (wih.Handle != IntPtr.Zero)
+                                handle = wih.Handle;
+                        }
+                        catch (Exception)
+                        {
+                        }
+
+                        present.BackBufferFormat = Format; 
+                        present.BackBufferHeight = 1;
+                        present.BackBufferWidth = 1;
+                        present.Windowed = 1; // TRUE
+                        present.SwapEffect = 1; // D3DSWAPEFFECT_DISCARD
+                        present.hDeviceWindow = handle;
+                        present.PresentationInterval = unchecked((int)0x80000000); // D3DPRESENT_INTERVAL_IMMEDIATE;
+
+                        direct3DDevice9Ex = d3d9.CreateDeviceEx(
+                            0, // D3DADAPTER_DEFAULT
+                            1, // D3DDEVTYPE_HAL
+                            handle,                        
+                            0x40 | 0x10,// D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_PUREDEVICE
+                            present,
+                            null);
                     }
-                    catch (Exception)
-                    {
-                    }
 
-                    present.BackBufferFormat = Format; 
-                    present.BackBufferHeight = 1;
-                    present.BackBufferWidth = 1;
-                    present.Windowed = 1; // TRUE
-                    present.SwapEffect = 1; // D3DSWAPEFFECT_DISCARD
-                    present.hDeviceWindow = handle;
-                    present.PresentationInterval = unchecked((int)0x80000000); // D3DPRESENT_INTERVAL_IMMEDIATE;
+                return direct3DDevice9Ex;
+            }
 
-                    return d3d9.CreateDevice(
-                        0, // D3DADAPTER_DEFAULT
-                        1, // D3DDEVTYPE_HAL
-                        handle,                        
-                        0x40 | 0x10,// D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_PUREDEVICE
-                        present,
-                        null);
-                }
+            public void Dispose()
+            {
+                Lock();
+
+                this.SetBackBuffer(D3DResourceType.IDirect3DSurface9, IntPtr.Zero);
+
+                Unlock();
+
+                if(texture != null)
+                    texture.Dispose();
+
+                texture = null;
             }
         }
 
@@ -148,29 +171,72 @@ namespace Omega_Red.Panels
         private IntPtr sharedHandle = IntPtr.Zero;
 
         public IntPtr SharedHandle { get { return sharedHandle; } }
-        
+
+        public string SymbolicLink { get; private set; }
+
         public VideoPanel()
         {
-            var lTuple = D3D9Image.createD3D9Image();
+            VideoWidth = WIDTH;
 
-            if(lTuple != null)
+            VideoHeight = HEIGHT;
+
+            SymbolicLink = "";
+
+            var lTuple = D3D9Image.createD3D9Image(VideoWidth, VideoHeight);
+
+            if (lTuple != null)
             {
                 this.imageSource = lTuple.Item1;
 
                 this.sharedHandle = lTuple.Item2;
             }
-            
+
             if (this.imageSource != null)
             {
                 var image = new System.Windows.Controls.Image();
                 image.Stretch = System.Windows.Media.Stretch.Uniform;
                 image.Source = this.imageSource;
                 this.AddChild(image);
-                                
+
                 // To greatly reduce flickering we're only going to AddDirtyRect
                 // when WPF is rendering.
                 System.Windows.Media.CompositionTarget.Rendering += this.CompositionTargetRendering;
             }
+        }
+
+        public VideoPanel(uint aWidth, uint aHeight, string a_SymbolicLink)
+        {
+            VideoWidth = aWidth;
+
+            VideoHeight = aHeight;
+
+            SymbolicLink = a_SymbolicLink;
+
+            var lTuple = D3D9Image.createD3D9Image(aWidth, aHeight);
+
+            if (lTuple != null)
+            {
+                this.imageSource = lTuple.Item1;
+
+                this.sharedHandle = lTuple.Item2;
+            }
+
+            if (this.imageSource != null)
+            {
+                var image = new System.Windows.Controls.Image();
+                image.Stretch = System.Windows.Media.Stretch.Uniform;
+                image.Source = this.imageSource;
+                this.AddChild(image);
+
+                // To greatly reduce flickering we're only going to AddDirtyRect
+                // when WPF is rendering.
+                System.Windows.Media.CompositionTarget.Rendering += this.CompositionTargetRendering;
+            }
+        }        
+
+        ~VideoPanel()
+        {
+
         }
 
         public byte[] takeScreenshot()
@@ -232,6 +298,16 @@ namespace Omega_Red.Panels
                 this.imageSource.AddDirtyRect(new Int32Rect(0, 0, this.imageSource.PixelWidth, this.imageSource.PixelHeight));
                 this.imageSource.Unlock();
             }
+        }
+
+        public void Dispose()
+        {
+            var lIDisposable = imageSource as IDisposable;
+
+            this.imageSource = null;
+
+            if (lIDisposable != null)
+                lIDisposable.Dispose();
         }
     }
 }

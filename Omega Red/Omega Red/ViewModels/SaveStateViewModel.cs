@@ -15,7 +15,7 @@
 using Omega_Red.Managers;
 using Omega_Red.Models;
 using Omega_Red.Properties;
-using Omega_Red.SocialNetworks;
+using Omega_Red.SocialNetworks.Google;
 using Omega_Red.Tools;
 using Omega_Red.Tools.Savestate;
 using System;

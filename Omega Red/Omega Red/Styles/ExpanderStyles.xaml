@@ -7,5 +7,10 @@
         <Setter Property="FontSize" Value="19"/>
         <Setter Property="Margin" Value="5" />
         <Setter Property="Padding" Value="5" />
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.5"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 </ResourceDictionary>
