@@ -113,15 +113,8 @@ void GSRendererDX11::EmulateAtst(const int pass, const GSTextureCache::Source* t
 	switch (atst)
 	{
 		case ATST_LESS:
-			if (tex && tex->m_spritehack_t)
-			{
-				m_ps_sel.atst = 0;
-			}
-			else
-			{
-				ps_cb.FogColor_AREF.a = (float)m_context->TEST.AREF - 0.1f;
-				m_ps_sel.atst = 1;
-			}
+			ps_cb.FogColor_AREF.a = (float)m_context->TEST.AREF - 0.1f;
+			m_ps_sel.atst = 1;
 			break;
 		case ATST_LEQUAL:
 			ps_cb.FogColor_AREF.a = (float)m_context->TEST.AREF - 0.1f + 1.0f;
@@ -193,7 +186,7 @@ void GSRendererDX11::EmulateZbuffer()
 			if (m_vt.m_min.p.z > max_z)
 			{
 #ifdef _DEBUG
-				fprintf(stdout, "Bad Z size on %s buffers\n", psm_str(m_context->ZBUF.PSM));
+				fprintf(stdout, "%d: Bad Z size on %s buffers\n", s_n, psm_str(m_context->ZBUF.PSM));
 #endif
 				m_om_dssel.ztst = ZTST_ALWAYS;
 			}
@@ -205,7 +198,7 @@ void GSRendererDX11::EmulateZbuffer()
 	if (m_om_dssel.ztst == ZTST_GEQUAL && m_vt.m_eq.z && v[0].XYZ.Z == max_z)
 	{
 #ifdef _DEBUG
-		fprintf(stdout, "Optimize Z test GEQUAL to ALWAYS (%s)\n", psm_str(m_context->ZBUF.PSM));
+		fprintf(stdout, "%d: Optimize Z test GEQUAL to ALWAYS (%s)\n", s_n, psm_str(m_context->ZBUF.PSM));
 #endif
 		m_om_dssel.ztst = ZTST_ALWAYS;
 	}
@@ -272,12 +265,12 @@ void GSRendererDX11::EmulateTextureShuffleAndFbmask()
 		{
 			if (write_ba)
 			{
-				// fprintf(stderr, "Color shuffle %s => B\n", read_ba ? "B" : "R");
+				// fprintf(stderr, "%d: Color shuffle %s => B\n", s_n, read_ba ? "B" : "R");
 				m_om_bsel.wb = 1;
 			}
 			else
 			{
-				// fprintf(stderr, "Color shuffle %s => R"\n, read_ba ? "B" : "R");
+				// fprintf(stderr, "%d: Color shuffle %s => R\n", s_n, read_ba ? "B" : "R");
 				m_om_bsel.wr = 1;
 			}
 			if (rg_mask)
@@ -288,12 +281,12 @@ void GSRendererDX11::EmulateTextureShuffleAndFbmask()
 		{
 			if (write_ba)
 			{
-				// fprintf(stderr, "Color shuffle %s => A"\n, read_ba ? "A" : "G");
+				// fprintf(stderr, "%d: Color shuffle %s => A\n", s_n, read_ba ? "A" : "G");
 				m_om_bsel.wa = 1;
 			}
 			else
 			{
-				// fprintf(stderr, "Color shuffle %s => G"\n, read_ba ? "A" : "G");
+				// fprintf(stderr, "%d: Color shuffle %s => G\n", s_n, read_ba ? "A" : "G");
 				m_om_bsel.wg = 1;
 			}
 			if (ba_mask)
@@ -302,7 +295,7 @@ void GSRendererDX11::EmulateTextureShuffleAndFbmask()
 
 		if (m_ps_sel.fbmask && enable_fbmask_emulation)
 		{
-			// fprintf(stderr, "FBMASK SW emulated fb_mask:%x on tex shuffle\n", fbmask);
+			// fprintf(stderr, "%d: FBMASK SW emulated fb_mask:%x on tex shuffle\n", s_n, fbmask);
 			ps_cb.FbMask.r = rg_mask;
 			ps_cb.FbMask.g = rg_mask;
 			ps_cb.FbMask.b = ba_mask;
@@ -336,7 +329,7 @@ void GSRendererDX11::EmulateTextureShuffleAndFbmask()
 			// it will work. Masked bit will be constant and normally the same everywhere
 			// RT/FS output/Cached value.
 
-			/*fprintf(stderr, "FBMASK SW emulated fb_mask:%x on %d bits format\n", m_context->FRAME.FBMSK,
+			/*fprintf(stderr, "%d: FBMASK SW emulated fb_mask:%x on %d bits format\n", s_n, m_context->FRAME.FBMSK,
 				(GSLocalMemory::m_psm[m_context->FRAME.PSM].fmt == 2) ? 16 : 32);*/
 			m_bind_rtsample = true;
 		}
@@ -355,7 +348,7 @@ void GSRendererDX11::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache:
 	{
 		if (m_game.title == CRC::GT4 || m_game.title == CRC::GT3 || m_game.title == CRC::GTConcept || m_game.title == CRC::TouristTrophy)
 		{
-			// fprintf(stderr, "Gran Turismo RGB Channel\n");
+			// fprintf(stderr, "%d: Gran Turismo RGB Channel\n", s_n);
 			m_ps_sel.channel = ChannelFetch_RGB;
 			m_context->TEX0.TFX = TFX_DECAL;
 			*rt = tex->m_from_target;
@@ -365,7 +358,7 @@ void GSRendererDX11::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache:
 			if (m_context->FRAME.FBW == 1)
 			{
 				// Used in stages: Secret Garden, Acid Rain, Moonlit Wilderness
-				// fprintf(stderr, "Tekken5 RGB Channel\n");
+				// fprintf(stderr, "%d: Tekken5 RGB Channel\n", s_n);
 				m_ps_sel.channel = ChannelFetch_RGB;
 				m_context->FRAME.FBMSK = 0xFF000000;
 				// 12 pages: 2 calls by channel, 3 channels, 1 blit
@@ -387,12 +380,12 @@ void GSRendererDX11::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache:
 			if ((m_context->FRAME.FBMSK & 0xFF0000) == 0xFF0000)
 			{
 				// Green channel is masked
-				// fprintf(stderr, "Tales Of Abyss Crazyness (MSB 16b depth to Alpha)\n");
+				// fprintf(stderr, "%d: Tales Of Abyss Crazyness (MSB 16b depth to Alpha)\n", s_n);
 				m_ps_sel.tales_of_abyss_hle = 1;
 			}
 			else
 			{
-				// fprintf(stderr, "Urban Chaos Crazyness (Green extraction)\n");
+				// fprintf(stderr, "%d: Urban Chaos Crazyness (Green extraction)\n", s_n);
 				m_ps_sel.urban_chaos_hle = 1;
 			}
 		}
@@ -404,14 +397,14 @@ void GSRendererDX11::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache:
 			//
 			// Note: Tales Of Abyss and Tekken5 could hit this path too. Those games are
 			// handled above.
-			// fprintf(stderr, "Maybe not a channel!\n");
+			// fprintf(stderr, "%d: Maybe not a channel!\n", s_n);
 			m_channel_shuffle = false;
 		}
 		else if (m_context->CLAMP.WMS == 3 && ((m_context->CLAMP.MAXU & 0x8) == 8))
 		{
 			// Read either blue or Alpha. Let's go for Blue ;)
 			// MGS3/Kill Zone
-			// fprintf(stderr, "Blue channel\n");
+			// fprintf(stderr, "%d: Blue channel\n", s_n);
 			m_ps_sel.channel = ChannelFetch_BLUE;
 		}
 		else if (m_context->CLAMP.WMS == 3 && ((m_context->CLAMP.MINU & 0x8) == 0))
@@ -445,32 +438,32 @@ void GSRendererDX11::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache:
 
 				if (blue_shift >= 0)
 				{
-					// fprintf(stderr, "Green/Blue channel (%d, %d)\n", blue_shift, green_shift);
+					// fprintf(stderr, "%d: Green/Blue channel (%d, %d)\n", s_n, blue_shift, green_shift);
 					m_ps_sel.channel = ChannelFetch_GXBY;
 					m_context->FRAME.FBMSK = 0x00FFFFFF;
 				}
 				else
 				{
-					// fprintf(stderr, "Green channel (wrong mask) (fbmask %x)\n", m_context->FRAME.FBMSK >> 24);
+					// fprintf(stderr, "%d: Green channel (wrong mask) (fbmask %x)\n", s_n, m_context->FRAME.FBMSK >> 24);
 					m_ps_sel.channel = ChannelFetch_GREEN;
 				}
 
 			}
 			else if (green)
 			{
-				// fprintf(stderr, "Green channel\n");
+				// fprintf(stderr, "%d: Green channel\n", s_n);
 				m_ps_sel.channel = ChannelFetch_GREEN;
 			}
 			else
 			{
 				// Pop
-				// fprintf(stderr, "Red channel\n");
+				// fprintf(stderr, "%d: Red channel\n", s_n);
 				m_ps_sel.channel = ChannelFetch_RED;
 			}
 		}
 		else
 		{
-			// fprintf(stderr, "Channel not supported\n");
+			// fprintf(stderr, "%d: Channel not supported\n", s_n);
 			m_channel_shuffle = false;
 		}
 	}
@@ -498,6 +491,101 @@ void GSRendererDX11::EmulateChannelShuffle(GSTexture** rt, const GSTextureCache:
 #ifdef _DEBUG
 		dev->PSSetShaderResource(4, NULL);
 #endif
+	}
+}
+
+void GSRendererDX11::EmulateBlending()
+{
+	// Partial port of OGL SW blending. Currently only works for accumulation blend.
+	const GIFRegALPHA& ALPHA = m_context->ALPHA;
+	bool sw_blending         = false;
+
+	// No blending so early exit
+	if (!(PRIM->ABE || (PRIM->AA1 && m_vt.m_primclass == GS_LINE_CLASS)))
+		return;
+
+	m_om_bsel.abe = 1;
+	m_om_bsel.a = ALPHA.A;
+	m_om_bsel.b = ALPHA.B;
+	m_om_bsel.c = ALPHA.C;
+	m_om_bsel.d = ALPHA.D;
+
+	if (m_env.PABE.PABE)
+	{
+		if (m_om_bsel.a == 0 && m_om_bsel.b == 1 && m_om_bsel.c == 0 && m_om_bsel.d == 1)
+		{
+			// this works because with PABE alpha blending is on when alpha >= 0x80, but since the pixel shader
+			// cannot output anything over 0x80 (== 1.0) blending with 0x80 or turning it off gives the same result
+
+			m_om_bsel.abe = 0;
+		}
+		else
+		{
+			//Breath of Fire Dragon Quarter triggers this in battles. Graphics are fine though.
+			//ASSERT(0);
+		}
+	}
+
+	uint8 blend_index  = uint8(((ALPHA.A * 3 + ALPHA.B) * 3 + ALPHA.C) * 3 + ALPHA.D);
+	int blend_flag = m_dev->GetBlendFlags(blend_index);
+
+	bool accumulation_blend = !!(blend_flag & BLEND_ACCU);
+
+	switch (m_sw_blending)
+	{
+		case ACC_BLEND_HIGH_D3D11:
+		case ACC_BLEND_MEDIUM_D3D11:
+		case ACC_BLEND_BASIC_D3D11:
+			sw_blending |= accumulation_blend;
+			// fall through
+		default: break;
+	}
+
+	if (m_env.COLCLAMP.CLAMP == 0)
+	{
+		// fprintf(stderr, "%d: COLCLIP HDR mode%s\n", s_n, accumulation_blend ? " with accumulation blend" : "");
+		if (accumulation_blend)
+			sw_blending = true;
+		m_ps_sel.hdr = 1;
+	}
+
+	if (sw_blending)
+	{
+		m_ps_sel.blend_a = ALPHA.A;
+		m_ps_sel.blend_b = ALPHA.B;
+		m_ps_sel.blend_c = ALPHA.C;
+		m_ps_sel.blend_d = ALPHA.D;
+
+		if (accumulation_blend)
+		{
+			m_om_bsel.accu_blend = 1;
+
+			if (ALPHA.A == 2) {
+				// The blend unit does a reverse subtraction so it means
+				// the shader must output a positive value.
+				// Replace 0 - Cs by Cs - 0
+				m_ps_sel.blend_a = ALPHA.B;
+				m_ps_sel.blend_b = 2;
+			}
+			// Remove the addition/substraction from the SW blending
+			m_ps_sel.blend_d = 2;
+		}
+		else
+		{
+			// We shouldn't hit this path as currently only accumulation blend is implemented
+			ASSERT(0);
+		}
+
+		// Require the fix alpha vlaue
+		if (ALPHA.C == 2)
+			ps_cb.Af.x = (float)ALPHA.FIX / 128.0f;
+	}
+	else
+	{
+		m_ps_sel.clr1 = !!(blend_flag & BLEND_C_CLR);
+		// FIXME: When doing HW blending with a 24 bit frambuffer and ALPHA.C == 1 (Ad) it should be handled
+		// as if Ad = 1.0f. As with OGL side it is probably best to set m_om_bsel.c = 1 (Af) and use
+		// AFIX = 0x80 (Af = 1.0f).
 	}
 }
 
@@ -642,7 +730,6 @@ void GSRendererDX11::EmulateTextureSampler(const GSTextureCache::Source* tex)
 
 	m_ps_sel.ltf = bilinear && shader_emulated_sampler;
 
-	m_ps_sel.spritehack = tex->m_spritehack_t;
 	m_ps_sel.point_sampler = !bilinear || shader_emulated_sampler;
 
 	GSVector4 TextureScale = GSVector4(0.0625f) / WH.xyxy();
@@ -735,7 +822,7 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 		{
 			// DATE case not supported yet so keep using the old method.
 			// Leave the check in to make sure other DATE cases are triggered correctly.
-			// fprintf(stderr, "DATE with texture shuffle\n");
+			// fprintf(stderr, "%d: DATE with texture shuffle\n", s_n);
 		}
 		else if (m_om_bsel.wa && !m_context->TEST.ATE)
 		{
@@ -744,31 +831,31 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 			if (m_context->TEST.DATM && m_vt.m_alpha.max < 128)
 			{
 				// Only first pixel (write 0) will pass (alpha is 1)
-				// fprintf(stderr, "Fast DATE with alpha %d-%d\n", m_vt.m_alpha.min, m_vt.m_alpha.max);
+				// fprintf(stderr, "%d: Fast DATE with alpha %d-%d\n", s_n, m_vt.m_alpha.min, m_vt.m_alpha.max);
 				DATE_one = true;
 			}
 			else if (!m_context->TEST.DATM && m_vt.m_alpha.min >= 128)
 			{
 				// Only first pixel (write 1) will pass (alpha is 0)
-				// fprintf(stderr, "Fast DATE with alpha %d-%d\n", m_vt.m_alpha.min, m_vt.m_alpha.max);
+				// fprintf(stderr, "%d: Fast DATE with alpha %d-%d\n", s_n, m_vt.m_alpha.min, m_vt.m_alpha.max);
 				DATE_one = true;
 			}
 			else if ((m_vt.m_primclass == GS_SPRITE_CLASS /*&& m_drawlist.size() < 50*/) || (m_index.tail < 100))
 			{
 				// DATE case not supported yet so keep using the old method.
 				// Leave the check in to make sure other DATE cases are triggered correctly.
-				// fprintf(stderr, "Slow DATE with alpha %d-%d not supported\n", m_vt.m_alpha.min, m_vt.m_alpha.max);
+				// fprintf(stderr, "%d: Slow DATE with alpha %d-%d not supported\n", s_n, m_vt.m_alpha.min, m_vt.m_alpha.max);
 			}
 			else
 			{
 				if (m_accurate_date)
 				{
-					// fprintf(stderr, "Fast Accurate DATE with alpha %d-%d\n", m_vt.m_alpha.min, m_vt.m_alpha.max);
+					// fprintf(stderr, "%d: Fast Accurate DATE with alpha %d-%d\n", s_n, m_vt.m_alpha.min, m_vt.m_alpha.max);
 					DATE_one = true;
 				}
 				else
 				{
-					// fprintf(stderr, "Inaccurate DATE with alpha %d-%d\n", m_vt.m_alpha.min, m_vt.m_alpha.max);
+					// fprintf(stderr, "%d: Inaccurate DATE with alpha %d-%d\n", s_n, m_vt.m_alpha.min, m_vt.m_alpha.max);
 				}
 			}
 		}
@@ -779,43 +866,19 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 	}
 
 	// Blend
-
-	if (!IsOpaque())
+	if (!IsOpaque() && rt)
 	{
-		m_om_bsel.abe = PRIM->ABE || PRIM->AA1 && m_vt.m_primclass == GS_LINE_CLASS;
+		EmulateBlending();
+	}
 
-		m_om_bsel.a = m_context->ALPHA.A;
-		m_om_bsel.b = m_context->ALPHA.B;
-		m_om_bsel.c = m_context->ALPHA.C;
-		m_om_bsel.d = m_context->ALPHA.D;
-
-		if (m_env.PABE.PABE)
-		{
-			if (m_om_bsel.a == 0 && m_om_bsel.b == 1 && m_om_bsel.c == 0 && m_om_bsel.d == 1)
-			{
-				// this works because with PABE alpha blending is on when alpha >= 0x80, but since the pixel shader
-				// cannot output anything over 0x80 (== 1.0) blending with 0x80 or turning it off gives the same result
-
-				m_om_bsel.abe = 0;
-			}
-			else
-			{
-				//Breath of Fire Dragon Quarter triggers this in battles. Graphics are fine though.
-				//ASSERT(0);
-			}
-		}
-
-		// Color clip
-		if (m_env.COLCLAMP.CLAMP == 0 && rt)
-		{
-			// fprintf(stderr, "COLCLIP HDR mode ENABLED\n");
-			GSVector4 dRect(ComputeBoundingBox(rtscale, rtsize));
-			GSVector4 sRect = dRect / GSVector4(rtsize.x, rtsize.y).xyxy();
-			hdr_rt = dev->CreateRenderTarget(rtsize.x, rtsize.y, DXGI_FORMAT_R32G32B32A32_FLOAT);
-			// Warning: StretchRect must be called before BeginScene otherwise
-			// vertices will be overwritten. Trust me you don't want to do that.
-			dev->StretchRect(rt, sRect, hdr_rt, dRect, ShaderConvert_COPY, false);
-		}
+	if (m_ps_sel.hdr)
+	{
+		GSVector4 dRect(ComputeBoundingBox(rtscale, rtsize));
+		GSVector4 sRect = dRect / GSVector4(rtsize.x, rtsize.y).xyxy();
+		hdr_rt = dev->CreateRenderTarget(rtsize.x, rtsize.y, DXGI_FORMAT_R32G32B32A32_FLOAT);
+		// Warning: StretchRect must be called before BeginScene otherwise
+		// vertices will be overwritten. Trust me you don't want to do that.
+		dev->StretchRect(rt, sRect, hdr_rt, dRect, ShaderConvert_COPY, false);
 	}
 
 	if (m_ps_sel.dfmt == 1)
@@ -894,7 +957,6 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 		}
 	}
 
-	m_ps_sel.clr1 = m_om_bsel.IsCLR1();
 	m_ps_sel.fba = m_context->FBA.FBA;
 
 	if (PRIM->FGE)
@@ -918,7 +980,7 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 	bool ate_RGB_then_ZA = false;
 	if (ate_first_pass & ate_second_pass)
 	{
-		// fprintf(stdout, "Complex Alpha Test\n");
+		// fprintf(stdout, "%d: Complex Alpha Test\n", s_n);
 		bool commutative_depth = (m_om_dssel.ztst == ZTST_GEQUAL && m_vt.m_eq.z) || (m_om_dssel.ztst == ZTST_ALWAYS);
 		bool commutative_alpha = (m_context->ALPHA.C != 1); // when either Alpha Src or a constant
 
@@ -928,14 +990,14 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 
 	if (ate_RGBA_then_Z)
 	{
-		// fprintf(stdout, "Alternate ATE handling: ate_RGBA_then_Z\n");
+		// fprintf(stdout, "%d: Alternate ATE handling: ate_RGBA_then_Z\n", s_n);
 		// Render all color but don't update depth
 		// ATE is disabled here
 		m_om_dssel.zwe = false;
 	}
 	else if (ate_RGB_then_ZA)
 	{
-		// fprintf(stdout, "Alternate ATE handling: ate_RGB_then_ZA\n");
+		// fprintf(stdout, "%d: Alternate ATE handling: ate_RGB_then_ZA\n", s_n);
 		// Render RGB color but don't update depth/alpha
 		// ATE is disabled here
 		m_om_dssel.zwe = false;
@@ -953,18 +1015,14 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 	// It helps render transparency in Amagami, breaks a lot of other games.
 	if (UserHacks_AlphaStencil && DATE && !DATE_one && !m_texture_shuffle && m_om_bsel.wa && !m_context->TEST.ATE)
 	{
-		// fprintf(stderr, "Alpha Stencil detected\n");
+		// fprintf(stderr, "%d: Alpha Stencil detected\n", s_n);
 		if (!m_context->FBA.FBA)
 		{
 			if (m_context->TEST.DATM == 0)
 				m_ps_sel.atst = 2; // >=
 			else
-			{
-				if (tex && tex->m_spritehack_t)
-					m_ps_sel.atst = 0; // <
-				else
-					m_ps_sel.atst = 1; // <
-			}
+				m_ps_sel.atst = 1; // <
+
 			ps_cb.FogColor_AREF.a = (float)0x80;
 		}
 		if (!(m_context->FBA.FBA && m_context->TEST.DATM == 1))

@@ -310,14 +310,6 @@ CRC::Game CRC::m_games[] =
 	{0x87844524, RedDeadRevolver, RU, 0}, // Unofficial RU-version
 	{0x6DF62AEA, BleachBladeBattlers, JP, 0},
 	{0x6EB71AB0, BleachBladeBattlers, JP, 0}, // 2nd
-	{0x3A446111, CastlevaniaCoD, US, 0},
-	{0xF321BC38, CastlevaniaCoD, EU, 0},
-	{0x950876FA, CastlevaniaCoD, KO, 0},
-	{0x237B84D3, CastlevaniaCoD, CH, 0},
-	{0x28270F7D, CastlevaniaLoI, US, 0},
-	{0x306CDADA, CastlevaniaLoI, EU, 0},
-	{0xA36CFF6C, CastlevaniaLoI, JP, 0},
-	{0x9A93FE5D, CastlevaniaLoI, KO, 0},
 	{0xCBB87BF9, EvangelionJo, JP, 0}, // cutie comment
 	{0xC5B75C7C, Oneechanbara2Special, JP, 0}, // cutie comment
 	{0xC725CC6C, Oneechanbara2Special, JP, 0},
@@ -374,10 +366,6 @@ CRC::Game CRC::m_games[] =
 	{0x43AB7214, TalesOfLegendia, US, 0},
 	{0x1F8640E0, TalesOfLegendia, JP, 0},
 	{0xE4F5DA2B, TalesOfLegendia, KO, 0},
-	{0xA79B0491, NanoBreaker, JP, 0},
-	{0x98C7B76D, NanoBreaker, US, 0},
-	{0x7098BE76, NanoBreaker, KO, 0},
-	{0x9B89F425, NanoBreaker, EU, 0},
 	{0x519E816B, Kunoichi, US, 0}, // Nightshade
 	{0x3FB419FD, Kunoichi, JP, 0},
 	{0x086D198E, Kunoichi, CH, 0},
@@ -452,9 +440,10 @@ CRC::Game CRC::m_games[] =
 	{0x472E7699, Jak1, US, 0},
 	{0x2479F4A9, Jak2, EU, 0},
 	{0x9184AAF1, Jak2, US, 0},
+	{0xA2034C69, Jak2, US, 0}, // Demo
 	{0x12804727, Jak3, EU, 0},
 	{0x644CFD03, Jak3, US, 0},
-	{0x23F8D35B, Jak3, NoRegion, 0}, // EU Preview, US International
+	{0x23F8D35B, Jak3, NoRegion, 0}, // EU Preview, US Internal test build
 	{0xDF659E77, JakX, EU, 0}, // Jak X: Combat Racing
 	{0x3091E6FB, JakX, US, 0},
 	{0x4653CA3E, HarleyDavidson, US, 0},
@@ -494,6 +483,7 @@ CRC::Game CRC::m_games[] =
 	{0x51E019BC, HarryPotterATPOA, NoRegion, 0 }, // EU and US versions have the same CRC - Prisoner of Azkaban
 	{0x99A8B4FF, HarryPotterATPOA, KO, 0 },
 	{0xA8901AD6, HarryPotterATPOA, JP, 0 }, // Harry Potter to Azkaban no Shuujin
+	{0x51E417AA, HarryPotterATPOA, EU, 0 },
 	{0x4C01B1B0, HarryPotterOOTP, US, 0}, // Order Of The Phoenix
 	{0x01A9BF0E, HarryPotterOOTP, EU, 0},
 	{0x230CB71D, SoulReaver2, US, 0},

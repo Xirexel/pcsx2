@@ -128,12 +128,8 @@ void GSRendererOGL::EmulateAtst(const int pass, const GSTextureCache::Source* te
 
 	switch (atst) {
 		case ATST_LESS:
-			if (tex && tex->m_spritehack_t) {
-				m_ps_sel.atst = 0;
-			} else {
-				ps_cb.FogColor_AREF.a = (float)m_context->TEST.AREF - 0.1f;
-				m_ps_sel.atst = 1;
-			}
+			ps_cb.FogColor_AREF.a = (float)m_context->TEST.AREF - 0.1f;
+			m_ps_sel.atst = 1;
 			break;
 		case ATST_LEQUAL:
 			ps_cb.FogColor_AREF.a = (float)m_context->TEST.AREF - 0.1f + 1.0f;
@@ -482,7 +478,7 @@ void GSRendererOGL::EmulateBlending(bool DATE_GL42)
 
 	// Compute the blending equation to detect special case
 	uint8 blend_index  = uint8(((ALPHA.A * 3 + ALPHA.B) * 3 + ALPHA.C) * 3 + ALPHA.D);
-	int blend_flag = GSDeviceOGL::m_blendMapOGL[blend_index].bogus;
+	int blend_flag = dev->GetBlendFlags(blend_index);
 
 	// SW Blend is (nearly) free. Let's use it.
 	bool impossible_or_free_blend = (blend_flag & (BLEND_NO_BAR|BLEND_A_MAX|BLEND_ACCU)) // Blend doesn't requires the costly barrier

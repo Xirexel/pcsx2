@@ -29,12 +29,6 @@
 #include "GSShaderOGL.h"
 #include "GLState.h"
 
-// A couple of flag to determine the blending behavior
-#define BLEND_A_MAX		(0x100) // Impossible blending uses coeff bigger than 1
-#define BLEND_C_CLR		(0x200) // Clear color blending (use directly the destination color as blending factor)
-#define BLEND_NO_BAR	(0x400) // don't require texture barrier for the blending (because the RT is not used)
-#define BLEND_ACCU		(0x800) // Allow to use a mix of SW and HW blending to keep the best of the 2 worlds
-
 #ifdef ENABLE_OGL_DEBUG_MEM_BW
 extern uint64 g_real_texture_upload_byte;
 extern uint64 g_vertex_upload_byte;
@@ -401,15 +395,10 @@ public:
 		MiscConstantBuffer() {memset(this, 0, sizeof(*this));}
 	};
 
-	struct OGLBlend {uint16 bogus, op, src, dst;};
-	static const OGLBlend m_blendMapOGL[3*3*3*3 + 1];
-	static const int m_NO_BLEND;
-	static const int m_MERGE_BLEND;
-
 	static int m_shader_inst;
 	static int m_shader_reg;
 
-	private:
+private:
 	int m_force_texture_clear;
 	int m_mipmap;
 	TriFiltering m_filter;
@@ -506,7 +495,9 @@ public:
 	void OMAttachDs(GSTextureOGL* ds = NULL);
 	void OMSetFBO(GLuint fbo);
 
-	public:
+	uint16 ConvertBlendEnum(uint16 generic) final;
+
+public:
 	GSShaderOGL* m_shader;
 
 	GSDeviceOGL();
@@ -543,7 +534,8 @@ public:
 	void CopyRectConv(GSTexture* sTex, GSTexture* dTex, const GSVector4i& r, bool at_origin);
 	void StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, int shader = 0, bool linear = true) final;
 	void StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, GLuint ps, bool linear = true);
-	void StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, GLuint ps, int bs, bool linear = true);
+	void StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, bool red, bool green, bool blue, bool alpha);
+	void StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, GLuint ps, int bs, OMColorMaskSelector cms, bool linear = true);
 
 	void SetupDATE(GSTexture* rt, GSTexture* ds, const GSVertexPT1* vertices, bool datm);
 

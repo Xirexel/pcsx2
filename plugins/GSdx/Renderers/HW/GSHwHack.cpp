@@ -578,8 +578,9 @@ bool GSC_DevilMayCry3(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
 	{
-		if(Dx_only && fi.TME && fi.FBP == 0x01800 && fi.FPSM == PSM_PSMCT16 && fi.TBP0 == 0x01000 && fi.TPSM == PSM_PSMZ16)
+		if(fi.TME && fi.FBP == 0x01800 && fi.FPSM == PSM_PSMCT16 && fi.TBP0 == 0x01000 && fi.TPSM == PSM_PSMZ16)
 		{
+			// Texture shuffle/depth not handled properly.
 			skip = 32;
 		}
 		if(fi.TME && fi.FBP == 0x01800 && fi.FPSM == PSM_PSMZ32 && fi.TBP0 == 0x0800 && fi.TPSM == PSM_PSMT8H)
@@ -764,27 +765,6 @@ bool GSC_SakuraWarsSoLongMyLove(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
-bool GSC_SonicUnleashed(const GSFrameInfo& fi, int& skip)
-{
-	if(skip == 0)
-	{
-		if(fi.TME && fi.FPSM == PSM_PSMCT16S && fi.TBP0 == 0x00000 && fi.TPSM == PSM_PSMCT16)
-		{
-			// Improper Texture shuffle emulation.
-			skip = 1000; // shadow
-		}
-	}
-	else
-	{
-		if(fi.TME && fi.FBP == 0x00000 && fi.FPSM == PSM_PSMCT16 && fi.TPSM == PSM_PSMCT16S)
-		{
-			skip = 2;
-		}
-	}
-
-	return true;
-}
-
 bool GSC_FightingBeautyWulong(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
@@ -952,29 +932,6 @@ bool GSC_YakuzaGames(const GSFrameInfo& fi, int& skip)
 // Correctly emulated on OpenGL but can be used as potential speed hack
 ////////////////////////////////////////////////////////////////////////////////
 
-bool GSC_HauntingGround(const GSFrameInfo& fi, int& skip)
-{
-	if(skip == 0)
-	{
-		if(fi.TME && (fi.FBP ==0x2200) && (fi.TBP0 ==0x3a80) && fi.FPSM == fi.TPSM && fi.TPSM == PSM_PSMCT32)
-		{
-			skip = 1; // Blur
-		}
-		else if(fi.TME)
-		{
-			// depth textures (bully, mgs3s1 intro, Front Mission 5)
-			if( (fi.TPSM == PSM_PSMZ32 || fi.TPSM == PSM_PSMZ24 || fi.TPSM == PSM_PSMZ16 || fi.TPSM == PSM_PSMZ16S) ||
-				// General, often problematic post processing
-				(GSUtil::HasSharedBits(fi.FBP, fi.FPSM, fi.TBP0, fi.TPSM)) )
-			{
-				skip = 1;
-			}
-		}
-	}
-
-	return true;
-}
-
 bool GSC_GetaWayGames(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
@@ -982,19 +939,6 @@ bool GSC_GetaWayGames(const GSFrameInfo& fi, int& skip)
 		if((fi.FBP == 0 || fi.FBP == 0x1180 || fi.FBP == 0x1400) && fi.TPSM == PSM_PSMT8H && fi.FBMSK == 0)
 		{
 			skip = 1; // Removes fog wall.
-		}
-	}
-
-	return true;
-}
-
-bool GSC_NanoBreaker(const GSFrameInfo& fi, int& skip)
-{
-	if(skip == 0)
-	{
-		if(fi.TME && fi.FBP == 0x0 && fi.FPSM == PSM_PSMCT32 && (fi.TBP0 == 0x03800 || fi.TBP0 == 0x03900) && fi.TPSM == PSM_PSMCT16S)
-		{
-			skip = 2; // Removes shadows
 		}
 	}
 
@@ -1114,31 +1058,6 @@ bool GSC_SlyGames(const GSFrameInfo& fi, int& skip)
 		if(fi.TME && fi.FPSM == fi.TPSM && fi.TPSM == PSM_PSMCT16 && fi.FBMSK == 0x03FFF)
 		{
 			skip = 3;
-		}
-	}
-
-	return true;
-}
-
-bool GSC_CastlevaniaGames(const GSFrameInfo& fi, int& skip)
-{
-	if(skip == 0)
-	{
-		// This hack removes the shadows and globally darker image
-		// I think there are 2 issues on GSdx
-		//
-		// 1/ potential not correctly supported colclip.
-		//
-		// 2/ use of a 32 bits format to emulate a 16 bit formats
-		// For example, if you blend 64 time the value 4 on a dark destination pixels
-		//
-		// FMT32: 4*64 = 256 <= white pixels
-		//
-		// FMT16: output of blending will always be 0 because the 3 lsb of color is dropped.
-		//		  Therefore the pixel remains dark !!!
-		if(fi.TME && fi.FBP == 0 && fi.TBP0 && fi.TPSM == 10 && fi.FBMSK == 0xFFFFFF)
-		{
-			skip = 2;
 		}
 	}
 
@@ -1578,7 +1497,6 @@ void GSState::SetupCrcHack()
 		// Texture shuffle
 		lut[CRC::BigMuthaTruckers] = GSC_BigMuthaTruckers;
 		lut[CRC::DeathByDegreesTekkenNinaWilliams] = GSC_DeathByDegreesTekkenNinaWilliams; // + Upscaling issues
-		lut[CRC::SonicUnleashed] = GSC_SonicUnleashed;
 
 		// Upscaling hacks
 		lut[CRC::Bully] = GSC_Bully;
@@ -1601,22 +1519,12 @@ void GSState::SetupCrcHack()
 		lut[CRC::GetaWayBlackMonday] = GSC_GetaWayGames; // Blending High
 		lut[CRC::TenchuFS] = GSC_TenchuGames;
 		lut[CRC::TenchuWoH] = GSC_TenchuGames;
-
-		// Accumulation blend
-		lut[CRC::NanoBreaker] = GSC_NanoBreaker;
+		lut[CRC::Sly2] = GSC_SlyGames; // SW blending on fbmask + Upscaling issue
+		lut[CRC::Sly3] = GSC_SlyGames; // SW blending on fbmask + Upscaling issue
 
 		// Needs testing
 		lut[CRC::Grandia3] = GSC_Grandia3;
-		lut[CRC::HauntingGround] = GSC_HauntingGround; // + Texture cache issue + Date
 		lut[CRC::XenosagaE3] = GSC_XenosagaE3;
-
-		// These games might requires accurate fbmask
-		lut[CRC::Sly2] = GSC_SlyGames; // + Upscaling issue
-		lut[CRC::Sly3] = GSC_SlyGames; // + Upscaling issue
-
-		// These games require accurate_colclip (perf)
-		lut[CRC::CastlevaniaCoD] = GSC_CastlevaniaGames;
-		lut[CRC::CastlevaniaLoI] = GSC_CastlevaniaGames;
 
 		// These games emulate a stencil buffer with the alpha channel of the RT (too slow to move to Aggressive)
 		// Needs at least Basic Blending,

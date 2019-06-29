@@ -68,10 +68,6 @@ const char* dialog_message(int ID, bool* updateText) {
 			return "Might fix some misaligned fog, bloom, or blend effect.\n"
 				"The preferred option is Normal (Vertex) as it is most likely to resolve misalignment issues.\n"
 				"The special cases are only useful in a couple of games like Captain Tsubasa.";
-		case IDC_SPRITEHACK:
-			return "Helps getting rid of black inner lines in some filtered sprites."
-				" Half option is the preferred one. Use it for Mana Khemia or Ar tonelico for example."
-				" Full can be used for Tales of Destiny.";
 		case IDC_WILDHACK:
 			return "Lowers the GS precision to avoid gaps between pixels when upscaling.\n"
 				"Fixes the text on Wild Arms games.";
@@ -155,7 +151,9 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Disables accurate Unscale Point and Line rendering.\n"
 				"It can help Xenosaga games.\n\n"
 				"Disables accurate GS Memory Clearing to be done on the CPU, and let only the GPU handle it.\n"
-				"It can help Kingdom Hearts games.";
+				"It can help Kingdom Hearts games.\n\n"
+				"Disables special Nvidia hack.\n"
+				"It can help SOTC, Fatal Frame games and possibly others too.";
 		case IDC_MEMORY_WRAPPING:
 			return "Emulates GS memory wrapping accurately. This fixes issues where part of the image is cut-off by block shaped sections such as the FMVs in Wallace & Gromit: The Curse of the Were-Rabbit and Thrillville.\n\n"
 				"Note: This hack can have a small impact on performance.";
