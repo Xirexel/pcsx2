@@ -53,7 +53,7 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Full:\nFor an optimal experience with Direct3D.\n\n"
 				"Aggressive:\nUse more aggressive CRC hacks.\n"
 				"Removes effects in some games which make the image appear sharper/clearer.\n"
-				"Affected games: AC4, DBZBT 2 & 3, FF games, GOW games, OnimushaDoD, RE4, SoTC, SMT3, SMTDDS1, SMTDDS2.\n"
+				"Affected games: AC4, DBZBT 2 & 3, FF games, GOW games, OnimushaDoD, RDRevolver, RE4, SoTC, SMT3, SMTDDS1, SMTDDS2.\n"
 				"Works as a speedhack for: BleachBB, Kunoichi, Steambot Chronicles.";
 		case IDC_SKIPDRAWHACK:
 		case IDC_SKIPDRAWHACKEDIT:
@@ -208,7 +208,7 @@ const char* dialog_message(int ID, bool* updateText) {
 				"It is intended for slow computer.\n\n"
 				"Basic:\nEmulate correctly some of the effects with a limited speed penalty.\n"
 				"This is the recommended setting.\n\n"
-				"Medium:\nExtend it to color shuffling. Performance impact remains reasonable..\n"
+				"Medium:\nExtend it to color shuffling. Performance impact remains reasonable.\n"
 				"It is intended for debug.\n\n"
 				"High:\nExtend it to triangle based primitives. It is ultra slow!\n"
 				"It is intended for debug.\n\n"
