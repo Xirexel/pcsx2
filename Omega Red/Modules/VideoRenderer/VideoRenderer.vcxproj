@@ -60,6 +60,8 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\common\include;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common\zlib;$(SolutionDir)..\3rdparty;$(SolutionDir)..\3rdparty\freetype\include;$(SolutionDir)..\3rdparty\xz\xz\src\liblzma\api;$(SolutionDir)..\3rdparty\baseclasses;$(SolutionDir)..\plugins\GSdx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MultiThreaded</RuntimeLibrary>
+      <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</IntrinsicFunctions>
+      <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</IntrinsicFunctions>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>VideoRenderer.def</ModuleDefinitionFile>
@@ -78,6 +80,7 @@
   <ItemGroup>
     <ClCompile Include="Extend\GS.cpp" />
     <ClCompile Include="Extend\GSCapture.cpp" />
+    <ClCompile Include="Extend\GSDeviceProxy_add.cpp" />
     <ClCompile Include="Extend\GSDump.cpp" />
     <ClCompile Include="Extend\GSdx.cpp" />
     <ClCompile Include="Extend\GSPng.cpp" />
@@ -136,6 +139,7 @@
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Common\GSVertexList.cpp" />
     <!--ClCompile Include="..\..\..\plugins\GSdx\Renderers\SW\GSVertexSW.cpp" /-->
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Common\GSVertexTrace.cpp" />
+    <ClCompile Include="Extend\GSRendererProxy_add.cpp" />
     <ClCompile Include="Extend\GSTextureSW.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -237,6 +241,7 @@
     <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUSetupPrimCodeGenerator.h" />
     <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUState.h" />
     <ClInclude Include="..\..\..\plugins\GSdx\PSX\GPUVertex.h" />
+    <ClInclude Include="lzma.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="..\..\..\plugins\GSdx\svnrev.h" />
     <ClInclude Include="..\..\..\plugins\GSdx\resource.h" />
@@ -275,6 +280,9 @@
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)Common\zlib\zlib.vcxproj">
       <Project>{E5FE1E52-6785-4F5B-8303-7B18121DEF21}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\MemoryManager\MemoryManager.vcxproj">
+      <Project>{1691294c-24f6-452d-9554-feb49c1c1c22}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

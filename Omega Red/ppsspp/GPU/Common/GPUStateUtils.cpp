@@ -40,6 +40,17 @@ bool CanUseHardwareTransform(int prim) {
 	return !gstate.isModeThrough() && prim != GE_PRIM_RECTANGLES;
 }
 
+bool IsStencilTestOutputDisabled() {
+	// The mask applies on all stencil ops.
+	if (gstate.isStencilTestEnabled() && (gstate.pmska & 0xFF) != 0xFF) {
+		if (gstate.FrameBufFormat() == GE_FORMAT_565) {
+			return true;
+		}
+		return gstate.getStencilOpZPass() == GE_STENCILOP_KEEP && gstate.getStencilOpZFail() == GE_STENCILOP_KEEP && gstate.getStencilOpSFail() == GE_STENCILOP_KEEP;
+	}
+	return true;
+}
+
 bool NeedsTestDiscard() {
 	// We assume this is called only when enabled and not trivially true (may also be for color testing.)
 	if (gstate.isStencilTestEnabled() && (gstate.pmska & 0xFF) != 0xFF)
@@ -169,7 +180,7 @@ const bool nonAlphaDestFactors[16] = {
 };
 
 ReplaceAlphaType ReplaceAlphaWithStencil(ReplaceBlendType replaceBlend) {
-	if (!gstate.isStencilTestEnabled() || gstate.isModeClear()) {
+	if (IsStencilTestOutputDisabled() || gstate.isModeClear()) {
 		return REPLACE_ALPHA_NO;
 	}
 
@@ -509,7 +520,7 @@ float DepthSliceFactor() {
 }
 
 // This is used for float values which might not be integers, but are in the integer scale of 65535.
-static float ToScaledDepthFromInteger(float z) {
+float ToScaledDepthFromIntegerScale(float z) {
 	if (!gstate_c.Supports(GPU_SUPPORTS_ACCURATE_DEPTH)) {
 		return z * (1.0f / 65535.0f);
 	}
@@ -523,10 +534,6 @@ static float ToScaledDepthFromInteger(float z) {
 		const float offset = 0.5f * (depthSliceFactor - 1.0f) * (1.0f / depthSliceFactor);
 		return z * (1.0f / depthSliceFactor) * (1.0f / 65535.0f) + offset;
 	}
-}
-
-float ToScaledDepth(u16 z) {
-	return ToScaledDepthFromInteger((float)(int)z);
 }
 
 float FromScaledDepth(float z) {
@@ -571,10 +578,17 @@ void ConvertViewportAndScissor(bool useBufferedRendering, float renderWidth, flo
 	// This is a bit of a hack as the render buffer isn't always that size
 	// We always scissor on non-buffered so that clears don't spill outside the frame.
 	out.scissorEnable = true;
-	out.scissorX = renderX + displayOffsetX + scissorX1 * renderWidthFactor;
-	out.scissorY = renderY + displayOffsetY + scissorY1 * renderHeightFactor;
-	out.scissorW = (scissorX2 - scissorX1) * renderWidthFactor;
-	out.scissorH = (scissorY2 - scissorY1) * renderHeightFactor;
+	if (scissorX2 < scissorX1 || scissorY2 < scissorY1) {
+		out.scissorX = 0;
+		out.scissorY = 0;
+		out.scissorW = 0;
+		out.scissorH = 0;
+	} else {
+		out.scissorX = renderX + displayOffsetX + scissorX1 * renderWidthFactor;
+		out.scissorY = renderY + displayOffsetY + scissorY1 * renderHeightFactor;
+		out.scissorW = (scissorX2 - scissorX1) * renderWidthFactor;
+		out.scissorH = (scissorY2 - scissorY1) * renderHeightFactor;
+	}
 
 	int curRTWidth = gstate_c.curRTWidth;
 	int curRTHeight = gstate_c.curRTHeight;
@@ -587,8 +601,8 @@ void ConvertViewportAndScissor(bool useBufferedRendering, float renderWidth, flo
 		out.viewportY = renderY + displayOffsetY;
 		out.viewportW = curRTWidth * renderWidthFactor;
 		out.viewportH = curRTHeight * renderHeightFactor;
-		out.depthRangeMin = ToScaledDepthFromInteger(0);
-		out.depthRangeMax = ToScaledDepthFromInteger(65536);
+		out.depthRangeMin = ToScaledDepthFromIntegerScale(0);
+		out.depthRangeMax = ToScaledDepthFromIntegerScale(65536);
 	} else {
 		// These we can turn into a glViewport call, offset by offsetX and offsetY. Math after.
 		float vpXScale = gstate.getViewportXScale();
@@ -697,11 +711,11 @@ void ConvertViewportAndScissor(bool useBufferedRendering, float renderWidth, flo
 		if (!gstate_c.Supports(GPU_SUPPORTS_ACCURATE_DEPTH)) {
 			zScale = 1.0f;
 			zOffset = 0.0f;
-			out.depthRangeMin = ToScaledDepthFromInteger(vpZCenter - vpZScale);
-			out.depthRangeMax = ToScaledDepthFromInteger(vpZCenter + vpZScale);
+			out.depthRangeMin = ToScaledDepthFromIntegerScale(vpZCenter - vpZScale);
+			out.depthRangeMax = ToScaledDepthFromIntegerScale(vpZCenter + vpZScale);
 		} else {
-			out.depthRangeMin = ToScaledDepthFromInteger(minz);
-			out.depthRangeMax = ToScaledDepthFromInteger(maxz);
+			out.depthRangeMin = ToScaledDepthFromIntegerScale(minz);
+			out.depthRangeMax = ToScaledDepthFromIntegerScale(maxz);
 		}
 
 		// OpenGL will clamp these for us anyway, and Direct3D will error if not clamped.
@@ -988,7 +1002,7 @@ void ConvertBlendState(GenericBlendState &blendState, bool allowShaderBlend) {
 
 	int constantAlpha = 255;
 	BlendFactor constantAlphaGL = BlendFactor::ONE;
-	if (gstate.isStencilTestEnabled() && replaceAlphaWithStencil == REPLACE_ALPHA_NO) {
+	if (!IsStencilTestOutputDisabled() && replaceAlphaWithStencil == REPLACE_ALPHA_NO) {
 		switch (ReplaceAlphaWithStencilType()) {
 		case STENCIL_VALUE_UNIFORM:
 			constantAlpha = gstate.getStencilTestRef();
@@ -1156,8 +1170,14 @@ void ConvertBlendState(GenericBlendState &blendState, bool allowShaderBlend) {
 			blendState.setFactors(glBlendFuncA, glBlendFuncB, BlendFactor::ONE, BlendFactor::ZERO);
 			break;
 		}
-	} else if (gstate.isStencilTestEnabled()) {
-		switch (ReplaceAlphaWithStencilType()) {
+	} else if (!IsStencilTestOutputDisabled()) {
+		StencilValueType stencilValue = ReplaceAlphaWithStencilType();
+		if (stencilValue == STENCIL_VALUE_UNIFORM && constantAlpha == 0x00) {
+			stencilValue = STENCIL_VALUE_ZERO;
+		} else if (stencilValue == STENCIL_VALUE_UNIFORM && constantAlpha == 0xFF) {
+			stencilValue = STENCIL_VALUE_ONE;
+		}
+		switch (stencilValue) {
 		case STENCIL_VALUE_KEEP:
 			blendState.setFactors(glBlendFuncA, glBlendFuncB, BlendFactor::ZERO, BlendFactor::ONE);
 			break;
@@ -1324,12 +1344,12 @@ static void ConvertStencilFunc5551(GenericStencilFuncState &state) {
 }
 
 void ConvertStencilFuncState(GenericStencilFuncState &state) {
-	state.enabled = gstate.isStencilTestEnabled() && !g_Config.bDisableStencilTest;
+	state.enabled = gstate.isStencilTestEnabled();
 	if (!state.enabled)
 		return;
 
 	// The PSP's mask is reversed (bits not to write.)
-	state.writeMask = (~gstate.pmska) & 0xFF;
+	state.writeMask = (~gstate.getStencilWriteMask()) & 0xFF;
 
 	state.sFail = gstate.getStencilOpSFail();
 	state.zFail = gstate.getStencilOpZFail();

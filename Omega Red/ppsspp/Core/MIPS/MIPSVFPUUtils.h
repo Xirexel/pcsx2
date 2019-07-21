@@ -35,6 +35,7 @@ inline int Xpose(int v) {
 
 // Some games depend on exact values, but sinf() and cosf() aren't always precise.
 // Stepping down to [0, 2pi) helps, but we also check common exact-result values.
+// TODO: cos(1) and sin(2) should be -0.0, but doing that gives wrong results (possibly from floorf.)
 
 inline float vfpu_sin(float angle) {
 	angle -= floorf(angle * 0.25f) * 4.f;
@@ -113,11 +114,68 @@ enum VectorSize {
 };
 
 enum MatrixSize {
+	M_1x1 = 1,
 	M_2x2 = 2,
 	M_3x3 = 3,
 	M_4x4 = 4,
 	M_Invalid = -1
 };
+
+inline u32 VFPU_SWIZZLE(int x, int y, int z, int w) {
+	return (x << 0) | (y << 2) | (z << 4) | (w << 6);
+}
+
+inline u32 VFPU_MASK(int x, int y, int z, int w) {
+	return (x << 0) | (y << 1) | (z << 2) | (w << 3);
+}
+
+inline u32 VFPU_ANY_SWIZZLE() {
+	return 0x000000FF;
+}
+
+inline u32 VFPU_ABS(int x, int y, int z, int w) {
+	return VFPU_MASK(x, y, z, w) << 8;
+}
+
+inline u32 VFPU_CONST(int x, int y, int z, int w) {
+	return VFPU_MASK(x, y, z, w) << 12;
+}
+
+inline u32 VFPU_NEGATE(int x, int y, int z, int w) {
+	return VFPU_MASK(x, y, z, w) << 16;
+}
+
+enum class VFPUConst {
+	NONE = -1,
+	ZERO,
+	ONE,
+	TWO,
+	HALF,
+	THREE,
+	THIRD,
+	FOURTH,
+	SIXTH,
+};
+
+inline u32 VFPU_MAKE_CONSTANTS(VFPUConst x, VFPUConst y, VFPUConst z, VFPUConst w) {
+	u32 result = 0;
+	if (x != VFPUConst::NONE) {
+		// This sets the constant flag and the swizzle/abs flags for the right constant.
+		result |= (((int)x & 3) << 0) | (((int)x & 4) << 6) | (1 << 12);
+	}
+	if (y != VFPUConst::NONE) {
+		result |= (((int)y & 3) << 2) | (((int)y & 4) << 7) | (1 << 13);
+	}
+	if (z != VFPUConst::NONE) {
+		result |= (((int)z & 3) << 4) | (((int)z & 4) << 8) | (1 << 14);
+	}
+	if (w != VFPUConst::NONE) {
+		result |= (((int)w & 3) << 6) | (((int)w & 4) << 9) | (1 << 15);
+	}
+	return result;
+}
+
+u32 VFPURewritePrefix(int ctrl, u32 remove, u32 add);
 
 void ReadMatrix(float *rd, MatrixSize size, int reg);
 void WriteMatrix(const float *rs, MatrixSize size, int reg);
@@ -183,5 +241,7 @@ inline int TransposeMatrixReg(int matrixReg) {
 	return matrixReg ^ 0x20;
 }
 int GetVectorOverlap(int reg1, VectorSize size1, int reg2, VectorSize size2);
+
+bool GetVFPUCtrlMask(int reg, u32 *mask);
 
 float Float16ToFloat32(unsigned short l);

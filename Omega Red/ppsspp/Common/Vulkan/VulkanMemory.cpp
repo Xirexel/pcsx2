@@ -23,9 +23,8 @@
 #include "base/timeutil.h"
 #include "math/math_util.h"
 
-VulkanPushBuffer::VulkanPushBuffer(VulkanContext *vulkan, size_t size) : device_(vulkan->GetDevice()), buf_(0), offset_(0), size_(size), writePtr_(nullptr) {
-	vulkan->MemoryTypeFromProperties(0xFFFFFFFF, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &memoryTypeIndex_);
-
+VulkanPushBuffer::VulkanPushBuffer(VulkanContext *vulkan, size_t size, VkBufferUsageFlags usage)
+		: vulkan_(vulkan), size_(size), usage_(usage) {
 	bool res = AddBuffer();
 	assert(res);
 }
@@ -36,43 +35,42 @@ VulkanPushBuffer::~VulkanPushBuffer() {
 
 bool VulkanPushBuffer::AddBuffer() {
 	BufInfo info;
+	VkDevice device = vulkan_->GetDevice();
 
 	VkBufferCreateInfo b{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	b.size = size_;
 	b.flags = 0;
-	b.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	b.usage = usage_;
 	b.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	b.queueFamilyIndexCount = 0;
 	b.pQueueFamilyIndices = nullptr;
 
-	VkResult res = vkCreateBuffer(device_, &b, nullptr, &info.buffer);
+	VkResult res = vkCreateBuffer(device, &b, nullptr, &info.buffer);
 	if (VK_SUCCESS != res) {
 		_assert_msg_(G3D, false, "vkCreateBuffer failed! result=%d", (int)res);
 		return false;
 	}
 
-	// Make validation happy.
+	// Get the buffer memory requirements. None of this can be cached!
 	VkMemoryRequirements reqs;
-	vkGetBufferMemoryRequirements(device_, info.buffer, &reqs);
-	// TODO: We really should use memoryTypeIndex here..
+	vkGetBufferMemoryRequirements(device, info.buffer, &reqs);
 
 	// Okay, that's the buffer. Now let's allocate some memory for it.
 	VkMemoryAllocateInfo alloc{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
-	// TODO: Should check here that memoryTypeIndex_ matches reqs.memoryTypeBits.
-	alloc.memoryTypeIndex = memoryTypeIndex_;
 	alloc.allocationSize = reqs.size;
+	vulkan_->MemoryTypeFromProperties(reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc.memoryTypeIndex);
 
-	res = vkAllocateMemory(device_, &alloc, nullptr, &info.deviceMemory);
+	res = vkAllocateMemory(device, &alloc, nullptr, &info.deviceMemory);
 	if (VK_SUCCESS != res) {
 		_assert_msg_(G3D, false, "vkAllocateMemory failed! size=%d result=%d", (int)reqs.size, (int)res);
-		vkDestroyBuffer(device_, info.buffer, nullptr);
+		vkDestroyBuffer(device, info.buffer, nullptr);
 		return false;
 	}
-	res = vkBindBufferMemory(device_, info.buffer, info.deviceMemory, 0);
+	res = vkBindBufferMemory(device, info.buffer, info.deviceMemory, 0);
 	if (VK_SUCCESS != res) {
 		ELOG("vkBindBufferMemory failed! result=%d", (int)res);
-		vkFreeMemory(device_, info.deviceMemory, nullptr);
-		vkDestroyBuffer(device_, info.buffer, nullptr);
+		vkFreeMemory(device, info.deviceMemory, nullptr);
+		vkDestroyBuffer(device, info.buffer, nullptr);
 		return false;
 	}
 
@@ -137,7 +135,7 @@ size_t VulkanPushBuffer::GetTotalSize() const {
 
 void VulkanPushBuffer::Map() {
 	_dbg_assert_(G3D, !writePtr_);
-	VkResult res = vkMapMemory(device_, buffers_[buf_].deviceMemory, 0, size_, 0, (void **)(&writePtr_));
+	VkResult res = vkMapMemory(vulkan_->GetDevice(), buffers_[buf_].deviceMemory, 0, size_, 0, (void **)(&writePtr_));
 	_dbg_assert_(G3D, writePtr_);
 	assert(VK_SUCCESS == res);
 }
@@ -152,7 +150,7 @@ void VulkanPushBuffer::Unmap() {
 	range.memory = buffers_[buf_].deviceMemory;
 	vkFlushMappedMemoryRanges(device_, 1, &range);
 	*/
-	vkUnmapMemory(device_, buffers_[buf_].deviceMemory);
+	vkUnmapMemory(vulkan_->GetDevice(), buffers_[buf_].deviceMemory);
 	writePtr_ = nullptr;
 }
 
@@ -191,14 +189,8 @@ size_t VulkanDeviceAllocator::Allocate(const VkMemoryRequirements &reqs, VkDevic
 	assert(!destroyed_);
 	uint32_t memoryTypeIndex;
 	bool pass = vulkan_->MemoryTypeFromProperties(reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memoryTypeIndex);
-	assert(pass);
 	if (!pass) {
-		return ALLOCATE_FAILED;
-	}
-	if (memoryTypeIndex_ == UNDEFINED_MEMORY_TYPE) {
-		memoryTypeIndex_ = memoryTypeIndex;
-	} else if (memoryTypeIndex_ != memoryTypeIndex) {
-		assert(memoryTypeIndex_ == memoryTypeIndex);
+		ELOG("Failed to pick an appropriate memory type (req: %08x)", reqs.memoryTypeBits);
 		return ALLOCATE_FAILED;
 	}
 
@@ -213,6 +205,8 @@ size_t VulkanDeviceAllocator::Allocate(const VkMemoryRequirements &reqs, VkDevic
 		// This helps us "creep forward", and also spend less time allocating.
 		const size_t actualSlab = (lastSlab_ + i) % numSlabs;
 		Slab &slab = slabs_[actualSlab];
+		if (slab.memoryTypeIndex != memoryTypeIndex)
+			continue;
 		size_t start = slab.nextFree;
 
 		while (start < slab.usage.size()) {
@@ -227,7 +221,7 @@ size_t VulkanDeviceAllocator::Allocate(const VkMemoryRequirements &reqs, VkDevic
 	}
 
 	// Okay, we couldn't fit it into any existing slabs.  We need a new one.
-	if (!AllocateSlab(size)) {
+	if (!AllocateSlab(size, memoryTypeIndex)) {
 		return ALLOCATE_FAILED;
 	}
 
@@ -401,16 +395,17 @@ void VulkanDeviceAllocator::ExecuteFree(FreeInfo *userdata) {
 	delete userdata;
 }
 
-bool VulkanDeviceAllocator::AllocateSlab(VkDeviceSize minBytes) {
+bool VulkanDeviceAllocator::AllocateSlab(VkDeviceSize minBytes, int memoryTypeIndex) {
 	assert(!destroyed_);
 	if (!slabs_.empty() && minSlabSize_ < maxSlabSize_) {
 		// We're allocating an additional slab, so rachet up its size.
+		// TODO: Maybe should not do this when we are allocating a new slab due to memoryTypeIndex not matching?
 		minSlabSize_ <<= 1;
 	}
 
 	VkMemoryAllocateInfo alloc{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
 	alloc.allocationSize = minSlabSize_;
-	alloc.memoryTypeIndex = memoryTypeIndex_;
+	alloc.memoryTypeIndex = memoryTypeIndex;
 
 	while (alloc.allocationSize < minBytes) {
 		alloc.allocationSize <<= 1;
@@ -427,6 +422,7 @@ bool VulkanDeviceAllocator::AllocateSlab(VkDeviceSize minBytes) {
 
 	slabs_.resize(slabs_.size() + 1);
 	Slab &slab = slabs_[slabs_.size() - 1];
+	slab.memoryTypeIndex = memoryTypeIndex;
 	slab.deviceMemory = deviceMemory;
 	slab.usage.resize((size_t)(alloc.allocationSize >> SLAB_GRAIN_SHIFT));
 

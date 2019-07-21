@@ -68,8 +68,8 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <panels:AnalogTriggerPanel Margin="0,-100,0,10" Title="L2" AnalogValue="{Binding LeftAnalogTrigger, Mode=TwoWay}" FlowDirection="RightToLeft"/>
-                            <Button Tag="100" Grid.Row="1" Style="{DynamicResource ShoulderPadButtonStyle}" Visibility="{Binding TouchPadPanelVisibility}"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown">
-                                <TextBlock Foreground="{DynamicResource PadBorderBrush}" FontWeight="{DynamicResource StandardFontWeight}" FontSize="30" Text="L1"/>
+                            <Button Tag="100" Grid.Row="1" HorizontalAlignment="Left" Margin="80,-20,0,10" Width="80" Height="80" Style="{DynamicResource PadButtonStyle}" Visibility="{Binding TouchPadPanelVisibility}"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown">
+                                <TextBlock Foreground="{DynamicResource PadBorderBrush}" FontWeight="{DynamicResource StandardFontWeight}" FontSize="40" Margin="2,0,0,3" Text="L1"/>
                             </Button>
 
                             <Grid Visibility="{Binding TouchPadPanelVisibility}"
@@ -145,9 +145,8 @@
                             </Grid.RowDefinitions>
 
                             <panels:AnalogTriggerPanel Margin="0,-100,0,10" Title="R2" AnalogValue="{Binding RightAnalogTrigger, Mode=TwoWay}" />
-                            <Button Tag="200" Grid.Row="1" Style="{DynamicResource ShoulderPadButtonStyle}" Visibility="{Binding TouchPadPanelVisibility}"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown">
-
-                                <TextBlock Foreground="{DynamicResource PadBorderBrush}" FontWeight="{DynamicResource StandardFontWeight}" FontSize="30" Text="R1"/>
+                            <Button Tag="200" Grid.Row="1" Margin="0,-20,80,10" Width="80" Height="80" HorizontalAlignment="Right" Style="{DynamicResource PadButtonStyle}" Visibility="{Binding TouchPadPanelVisibility}"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown">
+                                <TextBlock Foreground="{DynamicResource PadBorderBrush}" FontWeight="{DynamicResource StandardFontWeight}" FontSize="40" Margin="3,0,0,3" Text="R1"/>
                             </Button>
 
                             <Grid Visibility="{Binding TouchPadPanelVisibility}"

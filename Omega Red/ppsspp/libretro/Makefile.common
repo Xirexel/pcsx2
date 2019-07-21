@@ -188,6 +188,7 @@ SOURCES_CXX += \
 	$(GPUDIR)/Software/Lighting.cpp \
 	$(GPUDIR)/Software/Rasterizer.cpp \
 	$(GPUDIR)/GLES/DepalettizeShaderGLES.cpp \
+	$(GPUDIR)/GLES/DepthBufferGLES.cpp \
 	$(GPUDIR)/GLES/VertexShaderGeneratorGLES.cpp \
 	$(GPUDIR)/GLES/DrawEngineGLES.cpp \
 	$(GPUDIR)/GLES/GPU_GLES.cpp \
@@ -216,6 +217,7 @@ SOURCES_CXX += \
 	$(EXTDIR)/glslang/glslang/MachineIndependent/preprocessor/PpContext.cpp \
 	$(EXTDIR)/glslang/glslang/MachineIndependent/preprocessor/PpScanner.cpp \
 	$(EXTDIR)/glslang/glslang/MachineIndependent/preprocessor/PpTokens.cpp \
+	$(EXTDIR)/glslang/glslang/MachineIndependent/attribute.cpp \
 	$(EXTDIR)/glslang/glslang/MachineIndependent/Constant.cpp \
 	$(EXTDIR)/glslang/glslang/MachineIndependent/InfoSink.cpp \
 	$(EXTDIR)/glslang/glslang/MachineIndependent/Initialize.cpp \
@@ -241,11 +243,14 @@ SOURCES_CXX += \
 	$(EXTDIR)/glslang/SPIRV/GlslangToSpv.cpp \
 	$(EXTDIR)/glslang/SPIRV/Logger.cpp \
 	$(EXTDIR)/glslang/SPIRV/SpvBuilder.cpp \
+	$(EXTDIR)/glslang/SPIRV/SpvPostProcess.cpp \
 	$(EXTDIR)/SPIRV-Cross/spirv_cfg.cpp \
 	$(EXTDIR)/SPIRV-Cross/spirv_cross.cpp \
 	$(EXTDIR)/SPIRV-Cross/spirv_cross_util.cpp \
 	$(EXTDIR)/SPIRV-Cross/spirv_glsl.cpp \
-   $(EXTDIR)/SPIRV-Cross/spirv_hlsl.cpp
+	$(EXTDIR)/SPIRV-Cross/spirv_hlsl.cpp \
+	$(EXTDIR)/SPIRV-Cross/spirv_parser.cpp \
+	$(EXTDIR)/SPIRV-Cross/spirv_cross_parsed_ir.cpp
 
 ifeq ($(PLATFORM_EXT), win32)
 SOURCES_CXX += $(COMMONDIR)/MemArenaWin32.cpp \
@@ -409,6 +414,7 @@ SOURCES_CXX += $(NATIVEDIR)/math/dataconv.cpp \
 	       $(COREDIR)/HLE/sceSsl.cpp \
 	       $(COREDIR)/HLE/sceUmd.cpp \
 	       $(COREDIR)/HLE/sceUsb.cpp \
+	       $(COREDIR)/HLE/sceUsbAcc.cpp \
 	       $(COREDIR)/HLE/sceUsbCam.cpp \
 	       $(COREDIR)/HLE/sceUtility.cpp \
 	       $(COREDIR)/HLE/sceVaudio.cpp \
@@ -454,6 +460,7 @@ SOURCES_CXX += $(NATIVEDIR)/math/dataconv.cpp \
 	       $(COREDIR)/MemMap.cpp \
 	       $(COREDIR)/MemMapFunctions.cpp \
 	       $(COREDIR)/PSPLoaders.cpp \
+	       $(COREDIR)/Replay.cpp \
 	       $(COREDIR)/Reporting.cpp \
 	       $(COREDIR)/SaveState.cpp \
 	       $(COREDIR)/Screenshot.cpp \
@@ -581,7 +588,6 @@ SOURCES_C += $(EXTDIR)/udis86/decode.c \
 
 
 SOURCES_CXX += \
-	$(COMMONDIR)/Vulkan/SPIRVDisasm.cpp \
 	$(COMMONDIR)/Vulkan/VulkanContext.cpp \
 	$(COMMONDIR)/Vulkan/VulkanDebug.cpp \
 	$(COMMONDIR)/Vulkan/VulkanImage.cpp \
@@ -645,7 +651,8 @@ SOURCES_CXX += \
    $(NATIVEDIR)/thin3d/thin3d_d3d9.cpp \
    $(NATIVEDIR)/thin3d/thin3d_d3d11.cpp \
    $(NATIVEDIR)/thin3d/d3dx9_loader.cpp \
-   $(NATIVEDIR)/thin3d/d3d11_loader.cpp
+   $(NATIVEDIR)/thin3d/d3d11_loader.cpp \
+   $(NATIVEDIR)/thin3d/d3d9_d3dcompiler_loader.cpp
 
 INCFLAGS += -I$(CORE_DIR)/dx9sdk/Include -I$(CORE_DIR)/dx9sdk/Include/DX11
 
@@ -675,7 +682,7 @@ SOURCES_C += \
 endif
 
 GIT_VERSION_SRC = $(CORE_DIR)/git-version.cpp
-GIT_VERSION := $(shell git describe --always || echo v1.4.2-git)
+GIT_VERSION := $(shell git describe --always || echo v1.7.0-git)
 GIT_VERSION_NO_UPDATE = $(findstring 1,$(shell grep -s PPSSPP_GIT_VERSION_NO_UPDATE $(GIT_VERSION_SRC)))
 ifneq (,$(findstring $(GIT_VERSION),$(shell grep -s char $(GIT_VERSION_SRC))))
    GIT_VERSION_NO_UPDATE = 1

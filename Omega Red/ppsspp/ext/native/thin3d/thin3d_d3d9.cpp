@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <cstdint>
 
+#include "ppsspp_config.h"
+
 #ifdef _DEBUG
 #define D3D_DEBUG_INFO
 #endif
@@ -10,15 +12,26 @@
 #ifdef USE_CRT_DBG
 #undef new
 #endif
+
+#if PPSSPP_API(D3DX9)
 #include <d3dx9.h>
 #ifdef USE_CRT_DBG
 #define new DBG_NEW
+#endif
+#include "thin3d/d3dx9_loader.h"
+
+// They are the same types, just different names.
+#define LPD3D_SHADER_MACRO LPD3DXMACRO
+#define LPD3DINCLUDE LPD3DXINCLUDE
+#define LPD3DBLOB LPD3DXBUFFER
+#elif PPSSPP_API(D3D9_D3DCOMPILER)
+#include <D3Dcompiler.h>
+#include "thin3d/d3d9_d3dcompiler_loader.h"
 #endif
 
 #include "base/logging.h"
 #include "math/lin/matrix4x4.h"
 #include "thin3d/thin3d.h"
-#include "thin3d/d3dx9_loader.h"
 #include "gfx/d3d9_state.h"
 
 namespace Draw {
@@ -154,7 +167,6 @@ public:
 	D3DSTENCILOP stencilZFail;
 	D3DSTENCILOP stencilPass;
 	D3DCMPFUNC stencilCompareOp;
-	uint8_t stencilReference;
 	uint8_t stencilCompareMask;
 	uint8_t stencilWriteMask;
 	void Apply(LPDIRECT3DDEVICE9 device) {
@@ -170,7 +182,6 @@ public:
 			device->SetRenderState(D3DRS_STENCILPASS, stencilPass);
 			device->SetRenderState(D3DRS_STENCILFUNC, stencilCompareOp);
 			device->SetRenderState(D3DRS_STENCILMASK, stencilCompareMask);
-			device->SetRenderState(D3DRS_STENCILREF, stencilReference);
 			device->SetRenderState(D3DRS_STENCILWRITEMASK, stencilWriteMask);
 		}
 	}
@@ -465,7 +476,7 @@ public:
 		return caps_;
 	}
 	uint32_t GetSupportedShaderLanguages() const override {
-		return (uint32_t)ShaderLanguage::HLSL_D3D9 | (uint32_t)ShaderLanguage::HLSL_D3D9_BYTECODE;
+		return (uint32_t)ShaderLanguage::HLSL_D3D9;
 	}
 	uint32_t GetDataFormatSupport(DataFormat fmt) const override;
 
@@ -523,6 +534,7 @@ public:
 	void SetScissorRect(int left, int top, int width, int height) override;
 	void SetViewports(int count, Viewport *viewports) override;
 	void SetBlendFactor(float color[4]) override;
+	void SetStencilRef(uint8_t ref) override;
 
 	void Draw(int vertexCount, int offset) override;
 	void DrawIndexed(int vertexCount, int offset) override;
@@ -604,7 +616,7 @@ D3D9Context::D3D9Context(IDirect3D9 *d3d, IDirect3D9Ex *d3dEx, int adapterId, ID
 	} else {
 		strcpy(shadeLangVersion_, "N/A");
 	}
-
+	caps_.deviceID = identifier_.DeviceId;
 	caps_.multiViewport = false;
 	caps_.anisoSupported = true;
 	caps_.depthRangeMinusOneToOne = false;
@@ -684,7 +696,6 @@ DepthStencilState *D3D9Context::CreateDepthStencilState(const DepthStencilStateD
 	ds->stencilFail = stencilOpToD3D9[(int)desc.front.failOp];
 	ds->stencilZFail = stencilOpToD3D9[(int)desc.front.depthFailOp];
 	ds->stencilWriteMask = desc.front.writeMask;
-	ds->stencilReference = desc.front.reference;
 	ds->stencilCompareMask = desc.front.compareMask;
 	return ds;
 }
@@ -966,15 +977,23 @@ void D3D9Context::SetBlendFactor(float color[4]) {
 	device_->SetRenderState(D3DRS_BLENDFACTOR, r | (g << 8) | (b << 16) | (a << 24));
 }
 
+void D3D9Context::SetStencilRef(uint8_t ref) {
+	device_->SetRenderState(D3DRS_STENCILREF, (DWORD)ref);
+}
+
 bool D3D9ShaderModule::Compile(LPDIRECT3DDEVICE9 device, const uint8_t *data, size_t size) {
-	LPD3DXMACRO defines = nullptr;
-	LPD3DXINCLUDE includes = nullptr;
+	LPD3D_SHADER_MACRO defines = nullptr;
+	LPD3DINCLUDE includes = nullptr;
 	DWORD flags = 0;
-	LPD3DXBUFFER codeBuffer = nullptr;
-	LPD3DXBUFFER errorBuffer = nullptr;
+	LPD3DBLOB codeBuffer = nullptr;
+	LPD3DBLOB errorBuffer = nullptr;
 	const char *source = (const char *)data;
 	const char *profile = stage_ == ShaderStage::FRAGMENT ? "ps_2_0" : "vs_2_0";
+#if PPSSPP_API(D3DX9)
 	HRESULT hr = dyn_D3DXCompileShader(source, (UINT)strlen(source), defines, includes, "main", profile, flags, &codeBuffer, &errorBuffer, nullptr);
+#elif PPSSPP_API(D3D9_D3DCOMPILER)
+	HRESULT hr = dyn_D3DCompile(source, (UINT)strlen(source), nullptr, defines, includes, "main", profile, 0, 0, &codeBuffer, &errorBuffer);
+#endif
 	if (FAILED(hr)) {
 		const char *error = errorBuffer ? (const char *)errorBuffer->GetBufferPointer() : "(no errorbuffer returned)";
 		if (hr == ERROR_MOD_NOT_FOUND) {
@@ -1184,11 +1203,19 @@ void D3D9Context::HandleEvent(Event ev, int width, int height, void *param1, voi
 }
 
 DrawContext *T3DCreateDX9Context(IDirect3D9 *d3d, IDirect3D9Ex *d3dEx, int adapterId, IDirect3DDevice9 *device, IDirect3DDevice9Ex *deviceEx) {
+#if PPSSPP_API(D3DX9)
 	int d3dx_ver = LoadD3DX9Dynamic();
 	if (!d3dx_ver) {
 		ELOG("Failed to load D3DX9!");
 		return NULL;
 	}
+#elif PPSSPP_API(D3D9_D3DCOMPILER)
+	bool result = LoadD3DCompilerDynamic();
+	if (!result) {
+		ELOG("Failed to load D3DCompiler!");
+		return NULL;
+	}
+#endif
 	return new D3D9Context(d3d, d3dEx, adapterId, device, deviceEx);
 }
 

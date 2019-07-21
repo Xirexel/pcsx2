@@ -54,6 +54,9 @@ enum {
 	VIRTKEY_RECORD = 0x40000016,
 	VIRTKEY_SPEED_CUSTOM1 = 0x40000017,
 	VIRTKEY_SPEED_CUSTOM2 = 0x40000018,
+	VIRTKEY_TEXTURE_DUMP = 0x40000019,
+	VIRTKEY_TEXTURE_REPLACE = 0x4000001A,
+	VIRTKEY_SCREENSHOT = 0x4000001B,
 	VIRTKEY_LAST,
 	VIRTKEY_COUNT = VIRTKEY_LAST - VIRTKEY_FIRST
 };
@@ -85,6 +88,7 @@ class IniFile;
 
 namespace KeyMap {
 	extern KeyMapping g_controllerMap;
+	extern int g_controllerMapGeneration;
 
 	// Key & Button names
 	struct KeyMap_IntStrPair {

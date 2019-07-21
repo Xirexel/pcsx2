@@ -19,28 +19,42 @@ class wxStringTokenizer
 
 	int m_cont = 0;
 
+    void parsString(const wxString &str, const wxChar &delim)
+    {
+
+        std::wstring l_str(str);
+
+        size_t l_pos = l_str.find(delim);
+
+        while (l_pos != std::wstring::npos) {
+            auto l_tempStr = l_str.substr(0, l_pos);
+
+            m_wxArrayString.Add(l_tempStr.c_str());
+
+            l_str = l_str.substr(l_pos + 1, l_str.size());
+
+            l_pos = l_str.find(delim);
+        }
+
+        if (l_str.size() > 0)
+            m_wxArrayString.Add(l_str.c_str());
+    }
+
 public:
 
-	wxStringTokenizer(const wxString& str, const wxChar& delim){
-		
-		std::wstring l_str(str);
-		
-		size_t l_pos = l_str.find(delim);
+	wxStringTokenizer(const wxString &str,
+                                         const wxString &delims,
+                                         wxStringTokenizerMode mode)
+    {
+        std::wstring l_delims(delims);
 
-		while (l_pos != std::wstring::npos)
-		{
-			auto l_tempStr = l_str.substr(0, l_pos);
-
-			m_wxArrayString.Add(l_tempStr.c_str());
-
-			l_str = l_str.substr(l_pos + 1, l_str.size());
-
-			l_pos = l_str.find(delim);
+		for (auto &l_delim : l_delims) {
+            parsString(str, l_delim);
 		}
+    }
 
-		if (l_str.size() > 0)
-			m_wxArrayString.Add(l_str.c_str());
-
+	wxStringTokenizer(const wxString& str, const wxChar& delim){
+        parsString(str, delim);
 	}
 
 	bool HasMoreTokens()

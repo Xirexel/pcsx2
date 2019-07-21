@@ -42,7 +42,7 @@ public:
 		renderManager_ = (GLRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
 		SetGPUBackend(GPUBackend::OPENGL);
 		bool success = draw_->CreatePresets();
-		assert(success);
+		_assert_msg_(G3D, success, "Failed to compile preset shaders");
 	}
 	~IOSGraphicsContext() {
 		delete draw_;
@@ -51,7 +51,7 @@ public:
 		return draw_;
 	}
 	void ThreadStart() override {
-		renderManager_->ThreadStart();
+		renderManager_->ThreadStart(draw_);
 	}
 
 	bool ThreadFrame() override {
@@ -574,6 +574,12 @@ static GraphicsContext *graphicsContext;
 	NativeKey(key);
 }
 
+// Enables tapping for edge area.
+-(UIRectEdge)preferredScreenEdgesDeferringSystemGestures
+{
+	return UIRectEdgeAll;
+}
+
 - (void)setupController:(GCController *)controller
 {
 	self.gameController = controller;
@@ -686,6 +692,10 @@ static GraphicsContext *graphicsContext;
 #endif
 
 @end
+
+void OpenDirectory(const char *path) {
+	// Unsupported
+}
 
 void LaunchBrowser(char const* url)
 {

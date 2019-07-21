@@ -225,76 +225,10 @@ void VideoRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
                         }
                     }
                 }
-
-
 				
-
 				l_ChildNode = l_ChildNode.next_sibling();
 			}
 		}
-		//else if (std::wstring(l_document.name()) == L"Commands")
-		//{
-		//	auto l_ChildNode = l_document.first_child();
-
-		//	xml_document l_xmlResultDoc;
-
-		//	auto l_declNode = l_xmlResultDoc.append_child(node_declaration);
-
-		//	l_declNode.append_attribute(L"version") = L"1.0";
-
-		//	xml_node l_commentNode = l_xmlResultDoc.append_child(node_comment);
-
-		//	l_commentNode.set_value(L"XML Document of results");
-
-		//	auto l_RootXMLElement = l_xmlResultDoc.append_child(L"Results");
-
-		//	while (!l_ChildNode.empty())
-		//	{
-		//		auto l_resultXMLElement = l_RootXMLElement.append_child(L"Result");
-
-		//		l_resultXMLElement.append_attribute(L"Command").set_value(l_ChildNode.name());
-
-		//		if (std::wstring(l_ChildNode.name()) == L"GetRenderingTexture")
-		//		{
-		//			bool l_isValid = false;
-
-		//			if (m_VideoRenderer != nullptr)
-		//			{
-		//				CComPtr<IUnknown> l_UnkRenderingTexture;
-
-		//				auto l_result = m_VideoRenderer->getRenderingTexture(&l_UnkRenderingTexture);
-
-		//				if (SUCCEEDED(l_result) && l_UnkRenderingTexture)
-		//				{
-		//					wchar_t lvalue[256];
-
-		//					_itow_s((DWORD)l_UnkRenderingTexture.p, lvalue, 10);
-
-		//					l_resultXMLElement.append_attribute(L"Value").set_value(lvalue);
-
-		//					l_isValid = true;
-		//				}
-		//			}
-
-		//			l_resultXMLElement.append_attribute(L"State").set_value(l_isValid);
-		//		}
-
-		//		l_ChildNode = l_ChildNode.next_sibling();
-		//	}
-
-		//	if (a_result != nullptr)
-		//	{
-		//		std::wstringstream l_wstringstream;
-
-		//		l_xmlResultDoc.print(l_wstringstream);
-
-		//		auto l_XMLDocumentString = l_wstringstream.str();
-
-		//		*a_result = new wchar_t[l_XMLDocumentString.size() + 1];
-
-		//		wcscpy_s(*a_result, l_XMLDocumentString.size() + 1, l_XMLDocumentString.c_str());
-		//	}
-		//}
 	}
 }
 

@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace MediaStream
 {
     class RtmpClient
@@ -18,7 +19,12 @@ namespace MediaStream
         //Запись на RTMP сервер.
         public static Action<int, int, IntPtr, int, uint, int, int> Write;
 
+        //Проверка соединения с сервером.
+        public static Func<int, bool> ConnectedFunc;
 
+        private const uint CleanPoint = 1;
+
+        private Action<bool> m_isConnected;
 
         private int m_handler = -1;
 
@@ -30,7 +36,7 @@ namespace MediaStream
                 Disconnect(m_handler);
         }
 
-        public static RtmpClient createInstance(string a_streamsXml, string a_url)
+        public static RtmpClient createInstance(string a_streamsXml, string a_url, Action<bool> a_isConnected)
         {
             RtmpClient l_instance = null;
 
@@ -42,6 +48,7 @@ namespace MediaStream
 
                     l_instance.m_handler = Connect(a_streamsXml, a_url);
 
+                    l_instance.m_isConnected = a_isConnected;
 
                 } while (false);
 
@@ -61,11 +68,23 @@ namespace MediaStream
         public void sendVideoData(int sampleTime, IntPtr buf, int size, uint sampleflags, int streamIdx)
         {
             Write(m_handler, sampleTime, buf, size, sampleflags, streamIdx, 1);
+
+            if (sampleflags == CleanPoint)
+                checkConnection();
         }
 
         public void sendAudioData(int sampleTime, IntPtr buf, int size, uint sampleflags, int streamIdx)
         {
             Write(m_handler, sampleTime, buf, size, sampleflags, streamIdx, 0);
+        }
+
+        private void checkConnection()
+        {
+            if(ConnectedFunc != null)
+            {
+                if(m_handler != -1 && m_isConnected != null)
+                    m_isConnected(ConnectedFunc(m_handler));
+            }
         }
     }
 }

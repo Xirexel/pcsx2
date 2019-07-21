@@ -66,9 +66,6 @@ static bool FixFilenameCase(const std::string &path, std::string &filename)
 	}
 
 	//TODO: lookup filename in cache for "path"
-
-	struct dirent_large { struct dirent entry; char padding[FILENAME_MAX+1]; } diren;
-	struct dirent_large;
 	struct dirent *result = NULL;
 
 	DIR *dirp = opendir(path.c_str());
@@ -77,7 +74,7 @@ static bool FixFilenameCase(const std::string &path, std::string &filename)
 
 	bool retValue = false;
 
-	while (!readdir_r(dirp, (dirent*) &diren, &result) && result)
+	while ((result = readdir(dirp)))
 	{
 		if (strlen(result->d_name) != filenameSize)
 			continue;
@@ -155,6 +152,10 @@ bool FixPathCase(std::string& basePath, std::string &path, FixPathCaseBehavior b
 DirectoryFileSystem::DirectoryFileSystem(IHandleAllocator *_hAlloc, std::string _basePath, int _flags) : basePath(_basePath), flags(_flags) {
 	File::CreateFullPath(basePath);
 	hAlloc = _hAlloc;
+}
+
+DirectoryFileSystem::~DirectoryFileSystem() {
+	CloseAll();
 }
 
 std::string DirectoryFileHandle::GetLocalPath(std::string& basePath, std::string localpath)
@@ -281,8 +282,10 @@ bool DirectoryFileHandle::Open(std::string &basePath, std::string &fileName, Fil
 
 #if HOST_IS_CASE_SENSITIVE
 	if (!success && !(access & FILEACCESS_CREATE)) {
-		if (!FixPathCase(basePath,fileName, FPC_PATH_MUST_EXIST) )
-			return 0;  // or go on and attempt (for a better error code than just 0?)
+		if (!FixPathCase(basePath, fileName, FPC_PATH_MUST_EXIST)) {
+			error = SCE_KERNEL_ERROR_ERRNO_FILE_NOT_FOUND;
+			return false;
+		}
 		fullName = GetLocalPath(basePath,fileName); 
 		const char *fullNameC = fullName.c_str();
 
@@ -446,14 +449,10 @@ void DirectoryFileHandle::Close()
 
 void DirectoryFileSystem::CloseAll() {
 	for (auto iter = entries.begin(); iter != entries.end(); ++iter) {
+		INFO_LOG(FILESYS, "DirectoryFileSystem::CloseAll(): Force closing %d (%s)", (int)iter->first, iter->second.guestFilename.c_str());
 		iter->second.hFile.Close();
 	}
-
 	entries.clear();
-}
-
-DirectoryFileSystem::~DirectoryFileSystem() {
-	CloseAll();
 }
 
 std::string DirectoryFileSystem::GetLocalPath(std::string localpath) {

@@ -255,8 +255,12 @@ namespace Reporting
 		// TODO: Do we care about OS version?
 #if defined(__ANDROID__)
 		return "Android";
+#elif defined(_WIN64) && defined(_M_ARM64)
+		return "Windows ARM64";
 #elif defined(_WIN64)
 		return "Windows 64";
+#elif defined(_WIN32) && defined(_M_ARM)
+		return "Windows ARM32";
 #elif defined(_WIN32)
 		return "Windows";
 #elif defined(IOS)
@@ -458,11 +462,11 @@ namespace Reporting
 	bool IsSupported()
 	{
 		// Disabled when using certain hacks, because they make for poor reports.
-		if (g_Config.bTimerHack)
-			return false;
 		if (CheatsInEffect())
 			return false;
 		if (g_Config.iLockedCPUSpeed != 0)
+			return false;
+		if (g_Config.uJitDisableFlags != 0)
 			return false;
 		// Don't allow builds without version info from git.  They're useless for reporting.
 		if (strcmp(PPSSPP_GIT_VERSION, "unknown") == 0)

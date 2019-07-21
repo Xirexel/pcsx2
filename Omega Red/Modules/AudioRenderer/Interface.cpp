@@ -2,7 +2,6 @@
 #include "Pcsx2Defs.h"
 #include "PCSX2Lib_API.h"
 #include "AudioRenderer.h"
-
 extern PCSX2Lib::API::SPU2_API g_API;
 
 PCSX2_EXPORT_C_(PCSX2Lib::API::SPU2_API*) getAPI()

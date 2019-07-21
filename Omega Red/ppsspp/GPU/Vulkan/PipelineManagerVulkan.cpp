@@ -112,12 +112,16 @@ static int SetupVertexAttribs(VkVertexInputAttributeDescription attrs[], const D
 	return count;
 }
 
-static int SetupVertexAttribsPretransformed(VkVertexInputAttributeDescription attrs[]) {
+static int SetupVertexAttribsPretransformed(VkVertexInputAttributeDescription attrs[], bool needsUV, bool needsColor1) {
 	int count = 0;
 	VertexAttribSetup(&attrs[count++], DEC_FLOAT_4, 0, PspAttributeLocation::POSITION);
-	VertexAttribSetup(&attrs[count++], DEC_FLOAT_3, 16, PspAttributeLocation::TEXCOORD);
+	if (needsUV) {
+		VertexAttribSetup(&attrs[count++], DEC_FLOAT_3, 16, PspAttributeLocation::TEXCOORD);
+	}
 	VertexAttribSetup(&attrs[count++], DEC_U8_4, 28, PspAttributeLocation::COLOR0);
-	VertexAttribSetup(&attrs[count++], DEC_U8_4, 32, PspAttributeLocation::COLOR1);
+	if (needsColor1) {
+		VertexAttribSetup(&attrs[count++], DEC_U8_4, 32, PspAttributeLocation::COLOR1);
+	}
 	return count;
 }
 
@@ -131,7 +135,7 @@ static VulkanPipeline *CreateVulkanPipeline(VkDevice device, VkPipelineCache pip
 	PROFILE_THIS_SCOPE("pipelinebuild");
 	bool useBlendConstant = false;
 
-	VkPipelineColorBlendAttachmentState blend0 = {};
+	VkPipelineColorBlendAttachmentState blend0{};
 	blend0.blendEnable = key.blendEnable;
 	if (key.blendEnable) {
 		blend0.colorBlendOp = (VkBlendOp)key.blendOpColor;
@@ -170,7 +174,7 @@ static VulkanPipeline *CreateVulkanPipeline(VkDevice device, VkPipelineCache pip
 		dss.depthWriteEnable = key.depthWriteEnable;
 	}
 
-	VkDynamicState dynamicStates[8];
+	VkDynamicState dynamicStates[8]{};
 	int numDyn = 0;
 	if (key.blendEnable &&
 		  (UsesBlendConstant(key.srcAlpha) || UsesBlendConstant(key.srcColor) || UsesBlendConstant(key.destAlpha) || UsesBlendConstant(key.destColor))) {
@@ -204,16 +208,14 @@ static VulkanPipeline *CreateVulkanPipeline(VkDevice device, VkPipelineCache pip
 	ms.pSampleMask = nullptr;
 	ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-	VkPipelineShaderStageCreateInfo ss[2];
+	VkPipelineShaderStageCreateInfo ss[2]{};
 	ss[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	ss[0].pNext = nullptr;
 	ss[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
 	ss[0].pSpecializationInfo = nullptr;
 	ss[0].module = vs->GetModule();
 	ss[0].pName = "main";
 	ss[0].flags = 0;
 	ss[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	ss[1].pNext = nullptr;
 	ss[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 	ss[1].pSpecializationInfo = nullptr;
 	ss[1].module = fs->GetModule();
@@ -233,7 +235,6 @@ static VulkanPipeline *CreateVulkanPipeline(VkDevice device, VkPipelineCache pip
 	inputAssembly.flags = 0;
 	inputAssembly.topology = (VkPrimitiveTopology)key.topology;
 	inputAssembly.primitiveRestartEnable = false;
-
 	int vertexStride = 0;
 
 	int offset = 0;
@@ -243,11 +244,13 @@ static VulkanPipeline *CreateVulkanPipeline(VkDevice device, VkPipelineCache pip
 		attributeCount = SetupVertexAttribs(attrs, *decFmt);
 		vertexStride = decFmt->stride;
 	} else {
-		attributeCount = SetupVertexAttribsPretransformed(attrs);
+		bool needsUV = vs->GetID().Bit(VS_BIT_DO_TEXTURE);
+		bool needsColor1 = vs->GetID().Bit(VS_BIT_LMODE);
+		attributeCount = SetupVertexAttribsPretransformed(attrs, needsUV, needsColor1);
 		vertexStride = 36;
 	}
 
-	VkVertexInputBindingDescription ibd;
+	VkVertexInputBindingDescription ibd{};
 	ibd.binding = 0;
 	ibd.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 	ibd.stride = vertexStride;
@@ -292,7 +295,12 @@ static VulkanPipeline *CreateVulkanPipeline(VkDevice device, VkPipelineCache pip
 	VkPipeline pipeline;
 	VkResult result = vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipe, nullptr, &pipeline);
 	if (result != VK_SUCCESS) {
-		_assert_msg_(G3D, false, "Failed creating graphics pipeline! result='%s'", VulkanResultToString(result));
+		if (result == VK_INCOMPLETE) {
+			// Bad return value seen on Adreno in Burnout :(  Try to ignore?
+			// TODO: Log all the information we can here!
+		} else {
+			_dbg_assert_msg_(G3D, false, "Failed creating graphics pipeline! result='%s'", VulkanResultToString(result));
+		}
 		ERROR_LOG(G3D, "Failed creating graphics pipeline! result='%s'", VulkanResultToString(result));
 		// Create a placeholder to avoid creating over and over if something is broken.
 		VulkanPipeline *nullPipeline = new VulkanPipeline();
@@ -676,7 +684,7 @@ bool PipelineManagerVulkan::LoadCache(FILE *file, bool loadRawPipelineCache, Sha
 			WARN_LOG(G3D, "Bad Vulkan pipeline cache header - ignoring");
 			return false;
 		}
-		if (0 != memcmp(header->uuid, vulkan_->GetPhysicalDeviceProperties(vulkan_->GetCurrentPhysicalDevice()).pipelineCacheUUID, VK_UUID_SIZE)) {
+		if (0 != memcmp(header->uuid, vulkan_->GetPhysicalDeviceProperties().properties.pipelineCacheUUID, VK_UUID_SIZE)) {
 			// Wrong hardware/driver/etc.
 			WARN_LOG(G3D, "Bad Vulkan pipeline cache UUID - ignoring");
 			return false;

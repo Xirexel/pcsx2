@@ -35,6 +35,7 @@ struct GSVertexShader11Proxy
 
 class GSDeviceProxy : public GSDevice
 {
+
 public:
 #pragma pack(push, 1)
 
@@ -106,8 +107,10 @@ public:
         GSVector4 MinF_TA;
         GSVector4i MskFix;
         GSVector4i ChannelShuffle;
+        GSVector4i FbMask;
 
         GSVector4 TC_OffsetHack;
+        GSVector4 Af;
 
         PSConstantBuffer()
         {
@@ -118,6 +121,8 @@ public:
             MinF_TA = GSVector4::zero();
             MskFix = GSVector4i::zero();
             ChannelShuffle = GSVector4i::zero();
+            FbMask = GSVector4i::zero();
+            Af = GSVector4::zero();
         }
 
         __forceinline bool Update(const PSConstantBuffer *cb)
@@ -125,7 +130,9 @@ public:
             GSVector4i *a = (GSVector4i *)this;
             GSVector4i *b = (GSVector4i *)cb;
 
-            if (!((a[0] == b[0]) /*& (a[1] == b1)*/ & (a[2] == b[2]) & (a[3] == b[3]) & (a[4] == b[4]) & (a[5] == b[5]) & (a[6] == b[6])).alltrue()) // if WH matches HalfTexel does too
+            if (!((a[0] == b[0]) /*& (a[1] == b1)*/ & (a[2] == b[2]) & (a[3] == b[3]) & (a[4] == b[4]) & (a[5] == b[5]) &
+                  (a[6] == b[6]) & (a[7] == b[7]) & (a[9] == b[9]))
+                     .alltrue()) // if WH matches HalfTexel does too
             {
                 a[0] = b[0];
                 a[1] = b[1];
@@ -134,6 +141,8 @@ public:
                 a[4] = b[4];
                 a[5] = b[5];
                 a[6] = b[6];
+                a[7] = b[7];
+                a[9] = b[9];
 
                 return true;
             }
@@ -214,23 +223,28 @@ public:
                 // Shuffle and fbmask effect
                 uint32 shuffle : 1;
                 uint32 read_ba : 1;
+                uint32 fbmask : 1;
 
-                // *** Word 2
                 // Blend and Colclip
+                uint32 blend_a : 2;
+                uint32 blend_b : 2;
+                uint32 blend_c : 2;
+                uint32 blend_d : 2;
                 uint32 clr1 : 1;
+                uint32 hdr : 1;
+                uint32 colclip : 1;
 
                 // Others ways to fetch the texture
                 uint32 channel : 3;
 
                 // Hack
-                uint32 aout : 1;
-                uint32 spritehack : 1;
                 uint32 tcoffsethack : 1;
                 uint32 urban_chaos_hle : 1;
                 uint32 tales_of_abyss_hle : 1;
                 uint32 point_sampler : 1;
+                uint32 invalid_tex0 : 1; // Lupin the 3rd
 
-                uint32 _free : 28;
+                uint32 _free : 18;
             };
 
             uint64 key;
@@ -305,6 +319,7 @@ public:
                 uint32 wg : 1;
                 uint32 wb : 1;
                 uint32 wa : 1;
+                uint32 accu_blend : 1;
             };
 
             struct
@@ -317,28 +332,46 @@ public:
             uint32 key;
         };
 
-        operator uint32() { return key & 0x1fff; }
+        operator uint32() { return key & 0x3fff; }
 
         OMBlendSelector()
             : key(0)
         {
         }
-
-        bool IsCLR1() const
-        {
-            return (key & 0x19f) == 0x93; // abe == 1 && a == 1 && b == 2 && d == 1
-        }
     };
-
-    struct D3D11Blend
-    {
-        int bogus;
-        D3D11_BLEND_OP op;
-        D3D11_BLEND src, dst;
-    };
-    static const D3D11Blend m_blendMapD3D11[3 * 3 * 3 * 3];
 
 #pragma pack(pop)
+
+    class ShaderMacro
+    {
+        struct mcstr
+        {
+            const char *name, *def;
+            mcstr(const char *n, const char *d)
+                : name(n)
+                , def(d)
+            {
+            }
+        };
+
+        struct mstring
+        {
+            std::string name, def;
+            mstring(const char *n, std::string d)
+                : name(n)
+                , def(d)
+            {
+            }
+        };
+
+        std::vector<mstring> mlist;
+        std::vector<mcstr> mout;
+
+    public:
+        ShaderMacro(std::string &smodel);
+        void AddMacro(const char *n, int d);
+        D3D_SHADER_MACRO *GetPtr(void);
+    };
 
 private:
     float m_hack_topleft_offset;
@@ -359,11 +392,11 @@ private:
     void BeforeDraw();
     void AfterDraw();
 
-    //
+    uint16 ConvertBlendEnum(uint16 generic) final;
 
     CComPtr<ID3D11Device> m_dev;
     CComPtr<ID3D11DeviceContext> m_ctx;
-    //CComPtr<IDXGISwapChain> m_swapchain;
+    CComPtr<IDXGISwapChain> m_swapchain;
     CComPtr<ID3D11Buffer> m_vb;
     CComPtr<ID3D11Buffer> m_vb_old;
     CComPtr<ID3D11Buffer> m_ib;
@@ -470,7 +503,7 @@ private:
     GSConstantBuffer m_gs_cb_cache;
     PSConstantBuffer m_ps_cb_cache;
 
-    //std::unique_ptr<GSTexture> m_font;
+    std::unique_ptr<GSTexture> m_font;
 
 protected:
     struct
@@ -495,6 +528,7 @@ public:
     static bool LoadD3DCompiler();
     static void FreeD3DCompiler();
 
+    bool Create(const std::shared_ptr<GSWnd> &wnd);
     bool Reset(int w, int h);
     void Flip();
     void SetVSync(int vsync) final;
@@ -519,6 +553,7 @@ public:
 
     void StretchRect(GSTexture *sTex, const GSVector4 &sRect, GSTexture *dTex, const GSVector4 &dRect, int shader = 0, bool linear = true) final;
     void StretchRect(GSTexture *sTex, const GSVector4 &sRect, GSTexture *dTex, const GSVector4 &dRect, ID3D11PixelShader *ps, ID3D11Buffer *ps_cb, bool linear = true);
+    void StretchRect(GSTexture *sTex, const GSVector4 &sRect, GSTexture *dTex, const GSVector4 &dRect, bool red, bool green, bool blue, bool alpha);
     void StretchRect(GSTexture *sTex, const GSVector4 &sRect, GSTexture *dTex, const GSVector4 &dRect, ID3D11PixelShader *ps, ID3D11Buffer *ps_cb, ID3D11BlendState *bs, bool linear = true);
 
     void SetupDATE(GSTexture *rt, GSTexture *ds, const GSVertexPT1 *vertices, bool datm);
@@ -585,7 +620,9 @@ public:
     }
 
 	
+
     bool Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, void *capturehandle, void *directXDeviceNative);
+
 	void setIsWired(BOOL a_value);
 
     void setIsTessellated(BOOL a_value);
@@ -595,22 +632,22 @@ public:
 
     BOOL m_is_tessellated;
 
-	CComPtr<ID3D11Texture2D> m_SharedTexture;
+    CComPtr<ID3D11Texture2D> m_SharedTexture;
 
-	CComPtr<ID3D11Texture2D> m_RenderTargetTexture;
+    CComPtr<ID3D11Texture2D> m_RenderTargetTexture;
 
     CComPtr<ID3D11Texture2D> m_CaptureTexture;
 
-	CComPtr<ID3D11HullShader> m_hs;
+    CComPtr<ID3D11HullShader> m_hs;
 
-	CComPtr<ID3D11DomainShader> m_ds;
+    CComPtr<ID3D11DomainShader> m_ds;
 
-	CComPtr<ID3D11RasterizerState> m_solid_rs;
+    CComPtr<ID3D11RasterizerState> m_solid_rs;
 
-	CComPtr<ID3D11RasterizerState> m_wired_rs;
+    CComPtr<ID3D11RasterizerState> m_wired_rs;
 
 
-	void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11HullShader **hs);
+    void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11HullShader **hs);
 
-	void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11DomainShader **ds);
+    void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11DomainShader **ds);
 };

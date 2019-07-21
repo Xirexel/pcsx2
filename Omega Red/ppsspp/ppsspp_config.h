@@ -5,6 +5,7 @@
 
 #define PPSSPP_ARCH(PPSSPP_FEATURE) (PPSSPP_ARCH_##PPSSPP_FEATURE)
 #define PPSSPP_PLATFORM(PPSSPP_FEATURE) (PPSSPP_PLATFORM_##PPSSPP_FEATURE)
+#define PPSSPP_API(PPSSPP_FEATURE) (PPSSPP_API_##PPSSPP_FEATURE)
 
 // ARCH defines
 #if defined(_M_IX86) || defined(__i386__)
@@ -53,7 +54,7 @@
     #endif
 #endif
 
-#if defined(__aarch64__)
+#if defined(__aarch64__) || defined(_M_ARM64)
     #define PPSSPP_ARCH_ARM64 1
     #define PPSSPP_ARCH_64BIT 1
     #define PPSSPP_ARCH_ARM_NEON 1
@@ -80,13 +81,13 @@
 #if defined(_WIN32)
     // Covers both 32 and 64bit Windows
     #define PPSSPP_PLATFORM_WINDOWS 1
-    // UWP trickery
+	#ifdef _M_ARM
+        #define PPSSPP_ARCH_ARM_HARDFP 1
+	#endif
+	// UWP trickery
     #if defined(WINAPI_FAMILY) && defined(WINAPI_FAMILY_PARTITION)
         #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP) && WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP
             #define PPSSPP_PLATFORM_UWP 1
-            #ifdef _M_ARM
-                #define PPSSPP_ARCH_ARM_HARDFP 1
-            #endif
         #endif
     #endif
 #elif defined(__APPLE__)
@@ -114,4 +115,20 @@
     #define PPSSPP_PLATFORM_LINUX 1
 #elif defined(__linux__)
     #define PPSSPP_PLATFORM_LINUX 1
+#endif
+
+// Windows ARM/ARM64, and Windows UWP (all), are the only platform that don't do GL at all (until Apple finally removes it)
+#if !PPSSPP_PLATFORM(WINDOWS) || ((!PPSSPP_ARCH(ARM) && !PPSSPP_ARCH(ARM64)) && !PPSSPP_PLATFORM(UWP))
+#define PPSSPP_API_ANY_GL 1
+#endif
+
+#if PPSSPP_PLATFORM(WINDOWS)
+#if !PPSSPP_PLATFORM(UWP)
+#define PPSSPP_API_D3D9 1
+
+// Comment this and uncomment PPSSPP_API_D3DX9 if D3DX9 is prefered.
+#define PPSSPP_API_D3D9_D3DCOMPILER 1
+// #define PPSSPP_API_D3DX9 1
+#endif
+#define PPSSPP_API_D3D11 1
 #endif

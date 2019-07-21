@@ -13,14 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\spu2-x">
-      <UniqueIdentifier>{1b38f85f-547c-4178-8ed9-0e4dc5f94b14}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Extend">
       <UniqueIdentifier>{2c1aa915-d827-4225-9958-7a9f5d8a12b9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\spu2-x\Mixer">
-      <UniqueIdentifier>{3875de74-1e7e-4b80-8ace-25f0ea6b7e41}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -82,9 +76,6 @@
     </ClCompile>
     <ClCompile Include="src\spu2sys.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Extend\MemoryManager.cpp">
-      <Filter>Source Files\Extend</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

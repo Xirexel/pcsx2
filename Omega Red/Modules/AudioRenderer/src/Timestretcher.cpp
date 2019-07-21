@@ -150,110 +150,110 @@ bool IsInRange(const T &val, const T &min, const T &max)
 void SndBuffer::UpdateTempoChangeSoundTouch2()
 {
 
-//    long targetSamplesReservoir = 48 * SndOutLatencyMS; //48000*SndOutLatencyMS/1000
-//    //base aim at buffer filled %
-//    float baseTargetFullness = (double)targetSamplesReservoir; ///(double)m_size;//0.05;
-//
-//    //state vars
-//    static bool inside_hysteresis;      //=false;
-//    static int hys_ok_count;            //=0;
-//    static float dynamicTargetFullness; //=baseTargetFullness;
-//    if (gRequestStretcherReset >= STRETCHER_RESET_THRESHOLD) {
-//        ConLog("______> stretch: Reset.\n");
-//        inside_hysteresis = false;
-//        hys_ok_count = 0;
-//        dynamicTargetFullness = baseTargetFullness;
-//    }
-//
-//    int data = _GetApproximateDataInBuffer();
-//    float bufferFullness = (float)data; ///(float)m_size;
-//
-//#ifdef NEWSTRETCHER_USE_DYNAMIC_TUNING
-//    { //test current iterations/sec every 0.5s, and change algo params accordingly if different than previous IPS more than 30%
-//        static long iters = 0;
-//        static wxDateTime last = wxDateTime::UNow();
-//        wxDateTime unow = wxDateTime::UNow();
-//        wxTimeSpan delta = unow.Subtract(last);
-//        if (delta.GetMilliseconds() > 500) {
-//            int pot_targetIPS = 1000.0 / delta.GetMilliseconds().ToDouble() * iters;
-//            if (!IsInRange(pot_targetIPS, int((float)targetIPS / 1.3f), int((float)targetIPS * 1.3f))) {
-//                if (MsgOverruns())
-//                    ConLog("Stretcher: setting iters/sec from %d to %d\n", targetIPS, pot_targetIPS);
-//                targetIPS = pot_targetIPS;
-//                AVERAGING_WINDOW = GetClamped((int)(50.0f * (float)targetIPS / 750.0f), 3, (int)AVERAGING_BUFFER_SIZE);
-//            }
-//            last = unow;
-//            iters = 0;
-//        }
-//        iters++;
-//    }
-//#endif
-//
-//    //Algorithm params: (threshold params (hysteresis), etc)
-//    const float hys_ok_factor = 1.04f;
-//    const float hys_bad_factor = 1.2f;
-//    int hys_min_ok_count = GetClamped((int)(50.0 * (float)targetIPS / 750.0), 2, 100); //consecutive iterations within hys_ok before going to 1:1 mode
-//    int compensationDivider = GetClamped((int)(100.0 * (float)targetIPS / 750), 15, 150);
-//
-//    float tempoAdjust = bufferFullness / dynamicTargetFullness;
-//    float avgerage = addToAvg(tempoAdjust);
-//    tempoAdjust = avgerage;
-//
-//    // Dampen the adjustment to avoid overshoots (this means the average will compensate to the other side).
-//    // This is different than simply bigger averaging window since bigger window also has bigger "momentum",
-//    // so it's slower to slow down when it gets close to the equilibrium state and can therefore resonate.
-//    // The dampening (sqrt was chosen for no very good reason) manages to mostly prevent that.
-//    tempoAdjust = sqrt(tempoAdjust);
-//
-//    tempoAdjust = GetClamped(tempoAdjust, 0.05f, 10.0f);
-//
-//    if (tempoAdjust < 1)
-//        baseTargetFullness /= sqrt(tempoAdjust); // slightly increase latency when running slow.
-//
-//    dynamicTargetFullness += (baseTargetFullness / tempoAdjust - dynamicTargetFullness) / (double)compensationDivider;
-//    if (IsInRange(tempoAdjust, 0.9f, 1.1f) && IsInRange(dynamicTargetFullness, baseTargetFullness * 0.9f, baseTargetFullness * 1.1f))
-//        dynamicTargetFullness = baseTargetFullness;
-//
-//    if (!inside_hysteresis) {
-//        if (IsInRange(tempoAdjust, 1.0f / hys_ok_factor, hys_ok_factor))
-//            hys_ok_count++;
-//        else
-//            hys_ok_count = 0;
-//
-//        if (hys_ok_count >= hys_min_ok_count) {
-//            inside_hysteresis = true;
-//            if (MsgOverruns())
-//                ConLog("======> stretch: None (1:1)\n");
-//        }
-//
-//    } else if (!IsInRange(tempoAdjust, 1.0f / hys_bad_factor, hys_bad_factor)) {
-//        if (MsgOverruns())
-//            ConLog("~~~~~~> stretch: Dynamic\n");
-//        inside_hysteresis = false;
-//        hys_ok_count = 0;
-//    }
-//
-//    if (inside_hysteresis)
-//        tempoAdjust = 1.0;
-//
-//    if (MsgOverruns()) {
-//        static int iters = 0;
-//        static wxDateTime last = wxDateTime::UNow();
-//        wxDateTime unow = wxDateTime::UNow();
-//        wxTimeSpan delta = unow.Subtract(last);
-//
-//        if (delta.GetMilliseconds() > 1000) { //report buffers state and tempo adjust every second
-//            ConLog("buffers: %4d ms (%3.0f%%), tempo: %f, comp: %2.3f, iters: %d, (N-IPS:%d -> avg:%d, minokc:%d, div:%d) reset:%d\n",
-//                   (int)(data / 48), (double)(100.0 * bufferFullness / baseTargetFullness), (double)tempoAdjust, (double)(dynamicTargetFullness / baseTargetFullness), iters, (int)targetIPS, AVERAGING_WINDOW, hys_min_ok_count, compensationDivider, gRequestStretcherReset);
-//            last = unow;
-//            iters = 0;
-//        }
-//        iters++;
-//    }
-//
-//    pSoundTouch->setTempo(tempoAdjust);
-//    if (gRequestStretcherReset >= STRETCHER_RESET_THRESHOLD)
-//        gRequestStretcherReset = 0;
+    long targetSamplesReservoir = 48 * SndOutLatencyMS; //48000*SndOutLatencyMS/1000
+    //base aim at buffer filled %
+    float baseTargetFullness = (double)targetSamplesReservoir; ///(double)m_size;//0.05;
+
+    //state vars
+    static bool inside_hysteresis;      //=false;
+    static int hys_ok_count;            //=0;
+    static float dynamicTargetFullness; //=baseTargetFullness;
+    if (gRequestStretcherReset >= STRETCHER_RESET_THRESHOLD) {
+        ConLog("______> stretch: Reset.\n");
+        inside_hysteresis = false;
+        hys_ok_count = 0;
+        dynamicTargetFullness = baseTargetFullness;
+    }
+
+    int data = _GetApproximateDataInBuffer();
+    float bufferFullness = (float)data; ///(float)m_size;
+
+#ifdef NEWSTRETCHER_USE_DYNAMIC_TUNING
+    { //test current iterations/sec every 0.5s, and change algo params accordingly if different than previous IPS more than 30%
+        static long iters = 0;
+        static wxDateTime last = wxDateTime::UNow();
+        wxDateTime unow = wxDateTime::UNow();
+        wxTimeSpan delta = unow.Subtract(last);
+        if (delta.GetMilliseconds() > 500) {
+            int pot_targetIPS = 1000.0 / delta.GetMilliseconds().ToDouble() * iters;
+            if (!IsInRange(pot_targetIPS, int((float)targetIPS / 1.3f), int((float)targetIPS * 1.3f))) {
+                if (MsgOverruns())
+                    ConLog("Stretcher: setting iters/sec from %d to %d\n", targetIPS, pot_targetIPS);
+                targetIPS = pot_targetIPS;
+                AVERAGING_WINDOW = GetClamped((int)(50.0f * (float)targetIPS / 750.0f), 3, (int)AVERAGING_BUFFER_SIZE);
+            }
+            last = unow;
+            iters = 0;
+        }
+        iters++;
+    }
+#endif
+
+    //Algorithm params: (threshold params (hysteresis), etc)
+    const float hys_ok_factor = 1.04f;
+    const float hys_bad_factor = 1.2f;
+    int hys_min_ok_count = GetClamped((int)(50.0 * (float)targetIPS / 750.0), 2, 100); //consecutive iterations within hys_ok before going to 1:1 mode
+    int compensationDivider = GetClamped((int)(100.0 * (float)targetIPS / 750), 15, 150);
+
+    float tempoAdjust = bufferFullness / dynamicTargetFullness;
+    float avgerage = addToAvg(tempoAdjust);
+    tempoAdjust = avgerage;
+
+    // Dampen the adjustment to avoid overshoots (this means the average will compensate to the other side).
+    // This is different than simply bigger averaging window since bigger window also has bigger "momentum",
+    // so it's slower to slow down when it gets close to the equilibrium state and can therefore resonate.
+    // The dampening (sqrt was chosen for no very good reason) manages to mostly prevent that.
+    tempoAdjust = sqrt(tempoAdjust);
+
+    tempoAdjust = GetClamped(tempoAdjust, 0.05f, 10.0f);
+
+    if (tempoAdjust < 1)
+        baseTargetFullness /= sqrt(tempoAdjust); // slightly increase latency when running slow.
+
+    dynamicTargetFullness += (baseTargetFullness / tempoAdjust - dynamicTargetFullness) / (double)compensationDivider;
+    if (IsInRange(tempoAdjust, 0.9f, 1.1f) && IsInRange(dynamicTargetFullness, baseTargetFullness * 0.9f, baseTargetFullness * 1.1f))
+        dynamicTargetFullness = baseTargetFullness;
+
+    if (!inside_hysteresis) {
+        if (IsInRange(tempoAdjust, 1.0f / hys_ok_factor, hys_ok_factor))
+            hys_ok_count++;
+        else
+            hys_ok_count = 0;
+
+        if (hys_ok_count >= hys_min_ok_count) {
+            inside_hysteresis = true;
+            if (MsgOverruns())
+                ConLog("======> stretch: None (1:1)\n");
+        }
+
+    } else if (!IsInRange(tempoAdjust, 1.0f / hys_bad_factor, hys_bad_factor)) {
+        if (MsgOverruns())
+            ConLog("~~~~~~> stretch: Dynamic\n");
+        inside_hysteresis = false;
+        hys_ok_count = 0;
+    }
+
+    if (inside_hysteresis)
+        tempoAdjust = 1.0;
+
+    if (MsgOverruns()) {
+        static int iters = 0;
+        static wxDateTime last = wxDateTime::UNow();
+        wxDateTime unow = wxDateTime::UNow();
+        wxTimeSpan delta = unow.Subtract(last);
+
+        if (delta.GetMilliseconds() > 1000) { //report buffers state and tempo adjust every second
+            ConLog("buffers: %4d ms (%3.0f%%), tempo: %f, comp: %2.3f, iters: %d, (N-IPS:%d -> avg:%d, minokc:%d, div:%d) reset:%d\n",
+                   (int)(data / 48), (double)(100.0 * bufferFullness / baseTargetFullness), (double)tempoAdjust, (double)(dynamicTargetFullness / baseTargetFullness), iters, (int)targetIPS, AVERAGING_WINDOW, hys_min_ok_count, compensationDivider, gRequestStretcherReset);
+            last = unow;
+            iters = 0;
+        }
+        iters++;
+    }
+
+    pSoundTouch->setTempo(tempoAdjust);
+    if (gRequestStretcherReset >= STRETCHER_RESET_THRESHOLD)
+        gRequestStretcherReset = 0;
 
     return;
 }
@@ -261,135 +261,135 @@ void SndBuffer::UpdateTempoChangeSoundTouch2()
 
 void SndBuffer::UpdateTempoChangeSoundTouch()
 {
-  //  float statusPct = GetStatusPct();
-  //  float pctChange = statusPct - lastPct;
+    float statusPct = GetStatusPct();
+    float pctChange = statusPct - lastPct;
 
-  //  float tempoChange;
-  //  float emergencyAdj = 0;
-  //  float newcee = cTempo; // workspace var. for cTempo
+    float tempoChange;
+    float emergencyAdj = 0;
+    float newcee = cTempo; // workspace var. for cTempo
 
-  //  // IMPORTANT!
-  //  // If you plan to tweak these values, make sure you're using a release build
-  //  // OUTSIDE THE DEBUGGER to test it!  The Visual Studio debugger can really cause
-  //  // erratic behavior in the audio buffers, and makes the timestretcher seem a
-  //  // lot more inconsistent than it really is.
+    // IMPORTANT!
+    // If you plan to tweak these values, make sure you're using a release build
+    // OUTSIDE THE DEBUGGER to test it!  The Visual Studio debugger can really cause
+    // erratic behavior in the audio buffers, and makes the timestretcher seem a
+    // lot more inconsistent than it really is.
 
-  //  // We have two factors.
-  //  //   * Distance from nominal buffer status (50% full)
-  //  //   * The change from previous update to this update.
+    // We have two factors.
+    //   * Distance from nominal buffer status (50% full)
+    //   * The change from previous update to this update.
 
-  //  // Prediction based on the buffer change:
-  //  // (linear seems to work better here)
+    // Prediction based on the buffer change:
+    // (linear seems to work better here)
 
-  //  tempoChange = pctChange * 0.75f;
+    tempoChange = pctChange * 0.75f;
 
-  //  if (statusPct * tempoChange < 0.0f) {
-  //      // only apply tempo change if it is in synch with the buffer status.
-  //      // In other words, if the buffer is high (over 0%), and is decreasing,
-  //      // ignore it.  It'll just muck things up.
+    if (statusPct * tempoChange < 0.0f) {
+        // only apply tempo change if it is in synch with the buffer status.
+        // In other words, if the buffer is high (over 0%), and is decreasing,
+        // ignore it.  It'll just muck things up.
 
-  //      tempoChange = 0;
-  //  }
+        tempoChange = 0;
+    }
 
-  //  // Sudden spikes in framerate can cause the nominal buffer status
-  //  // to go critical, in which case we have to enact an emergency
-  //  // stretch. The following cubic formulas do that.  Values near
-  //  // the extremeites give much larger results than those near 0.
-  //  // And the value is added only this time, and does not accumulate.
-  //  // (otherwise a large value like this would cause problems down the road)
+    // Sudden spikes in framerate can cause the nominal buffer status
+    // to go critical, in which case we have to enact an emergency
+    // stretch. The following cubic formulas do that.  Values near
+    // the extremeites give much larger results than those near 0.
+    // And the value is added only this time, and does not accumulate.
+    // (otherwise a large value like this would cause problems down the road)
 
-  //  // Constants:
-  //  // Weight - weights the statusPct's "emergency" consideration.
-  //  //   higher values here will make the buffer perform more drastic
-  //  //   compensations at the outer edges of the buffer (at -75 or +75%
-  //  //   or beyond, for example).
+    // Constants:
+    // Weight - weights the statusPct's "emergency" consideration.
+    //   higher values here will make the buffer perform more drastic
+    //   compensations at the outer edges of the buffer (at -75 or +75%
+    //   or beyond, for example).
 
-  //  // Range - scales the adjustment to the given range (more or less).
-  //  //   The actual range is dependent on the weight used, so if you increase
-  //  //   Weight you'll usually want to decrease Range somewhat to compensate.
+    // Range - scales the adjustment to the given range (more or less).
+    //   The actual range is dependent on the weight used, so if you increase
+    //   Weight you'll usually want to decrease Range somewhat to compensate.
 
-  //  // Prediction based on the buffer fill status:
+    // Prediction based on the buffer fill status:
 
-  //  const float statusWeight = 2.99f;
-  //  const float statusRange = 0.068f;
+    const float statusWeight = 2.99f;
+    const float statusRange = 0.068f;
 
-  //  // "non-emergency" deadzone:  In this area stretching will be strongly discouraged.
-  //  // Note: due tot he nature of timestretch latency, it's always a wee bit harder to
-  //  // cope with low fps (underruns) than it is high fps (overruns).  So to help out a
-  //  // little, the low-end portions of this check are less forgiving than the high-sides.
+    // "non-emergency" deadzone:  In this area stretching will be strongly discouraged.
+    // Note: due tot he nature of timestretch latency, it's always a wee bit harder to
+    // cope with low fps (underruns) than it is high fps (overruns).  So to help out a
+    // little, the low-end portions of this check are less forgiving than the high-sides.
 
-  //  if (cTempo < 0.965f || cTempo > 1.060f ||
-  //      pctChange < -0.38f || pctChange > 0.54f ||
-  //      statusPct < -0.42f || statusPct > 0.70f ||
-  //      eTempo < 0.89f || eTempo > 1.19f) {
-  //      //printf("Emergency stretch: cTempo = %f eTempo = %f pctChange = %f statusPct = %f\n",cTempo,eTempo,pctChange,statusPct);
-  //      emergencyAdj = (pow(statusPct * statusWeight, 3.0f) * statusRange);
-  //  }
+    if (cTempo < 0.965f || cTempo > 1.060f ||
+        pctChange < -0.38f || pctChange > 0.54f ||
+        statusPct < -0.42f || statusPct > 0.70f ||
+        eTempo < 0.89f || eTempo > 1.19f) {
+        //printf("Emergency stretch: cTempo = %f eTempo = %f pctChange = %f statusPct = %f\n",cTempo,eTempo,pctChange,statusPct);
+        emergencyAdj = (pow(statusPct * statusWeight, 3.0f) * statusRange);
+    }
 
-  //  // Smooth things out by factoring our previous adjustment into this one.
-  //  // It helps make the system 'feel' a little smarter by  giving it at least
-  //  // one packet worth of history to help work off of:
+    // Smooth things out by factoring our previous adjustment into this one.
+    // It helps make the system 'feel' a little smarter by  giving it at least
+    // one packet worth of history to help work off of:
 
-  //  emergencyAdj = (emergencyAdj * 0.75f) + (lastEmergencyAdj * 0.25f);
+    emergencyAdj = (emergencyAdj * 0.75f) + (lastEmergencyAdj * 0.25f);
 
-  //  lastEmergencyAdj = emergencyAdj;
-  //  lastPct = statusPct;
+    lastEmergencyAdj = emergencyAdj;
+    lastPct = statusPct;
 
-  //  // Accumulate a fraction of the tempo change into the tempo itself.
-  //  // This helps the system run "smarter" to games that run consistently
-  //  // fast or slow by altering the base tempo to something closer to the
-  //  // game's active speed.  In tests most games normalize within 2 seconds
-  //  // at 100ms latency, which is pretty good (larger buffers normalize even
-  //  // quicker).
+    // Accumulate a fraction of the tempo change into the tempo itself.
+    // This helps the system run "smarter" to games that run consistently
+    // fast or slow by altering the base tempo to something closer to the
+    // game's active speed.  In tests most games normalize within 2 seconds
+    // at 100ms latency, which is pretty good (larger buffers normalize even
+    // quicker).
 
-  //  newcee += newcee * (tempoChange + emergencyAdj) * 0.03f;
+    newcee += newcee * (tempoChange + emergencyAdj) * 0.03f;
 
-  //  // Apply tempoChange as a scale of cTempo.  That way the effect is proportional
-  //  // to the current tempo.  (otherwise tempos rate of change at the extremes would
-  //  // be too drastic)
+    // Apply tempoChange as a scale of cTempo.  That way the effect is proportional
+    // to the current tempo.  (otherwise tempos rate of change at the extremes would
+    // be too drastic)
 
-  //  float newTempo = newcee + (emergencyAdj * cTempo);
+    float newTempo = newcee + (emergencyAdj * cTempo);
 
-  //  // ... and as a final optimization, only stretch if the new tempo is outside
-  //  // a nominal threshold.  Keep this threshold check small, because it could
-  //  // cause some serious side effects otherwise. (enlarging the cTempo check above
-  //  // is usually better/safer)
-  //  if (newTempo < 0.970f || newTempo > 1.045f) {
-  //      cTempo = (float)newcee;
+    // ... and as a final optimization, only stretch if the new tempo is outside
+    // a nominal threshold.  Keep this threshold check small, because it could
+    // cause some serious side effects otherwise. (enlarging the cTempo check above
+    // is usually better/safer)
+    if (newTempo < 0.970f || newTempo > 1.045f) {
+        cTempo = (float)newcee;
 
-  //      if (newTempo < 0.10f)
-  //          newTempo = 0.10f;
-  //      else if (newTempo > 10.0f)
-  //          newTempo = 10.0f;
+        if (newTempo < 0.10f)
+            newTempo = 0.10f;
+        else if (newTempo > 10.0f)
+            newTempo = 10.0f;
 
-  //      if (cTempo < 0.15f)
-  //          cTempo = 0.15f;
-  //      else if (cTempo > 7.5f)
-  //          cTempo = 7.5f;
+        if (cTempo < 0.15f)
+            cTempo = 0.15f;
+        else if (cTempo > 7.5f)
+            cTempo = 7.5f;
 
-  //      pSoundTouch->setTempo(eTempo = (float)newTempo);
+        pSoundTouch->setTempo(eTempo = (float)newTempo);
 
-  //      /*ConLog("* SPU2-X: [Nominal %d%%] [Emergency: %d%%] (baseTempo: %d%% ) (newTempo: %d%%) (buffer: %d%%)\n",
-		//	//(relation < 0.0) ? "Normalize" : "",
-		//	(int)(tempoChange * 100.0 * 0.03),
-		//	(int)(emergencyAdj * 100.0),
-		//	(int)(cTempo * 100.0),
-		//	(int)(newTempo * 100.0),
-		//	(int)(statusPct * 100.0)
-		//);*/
-  //  } else {
-  //      // Nominal operation -- turn off stretching.
-  //      // note: eTempo 'slides' toward 1.0 for smoother audio and better
-  //      // protection against spikes.
-  //      if (cTempo != 1.0f) {
-  //          cTempo = 1.0f;
-  //          eTempo = (1.0f + eTempo) * 0.5f;
-  //          pSoundTouch->setTempo(eTempo);
-  //      } else {
-  //          if (eTempo != cTempo)
-  //              pSoundTouch->setTempo(eTempo = cTempo);
-  //      }
-  //  }
+        /*ConLog("* SPU2-X: [Nominal %d%%] [Emergency: %d%%] (baseTempo: %d%% ) (newTempo: %d%%) (buffer: %d%%)\n",
+			//(relation < 0.0) ? "Normalize" : "",
+			(int)(tempoChange * 100.0 * 0.03),
+			(int)(emergencyAdj * 100.0),
+			(int)(cTempo * 100.0),
+			(int)(newTempo * 100.0),
+			(int)(statusPct * 100.0)
+		);*/
+    } else {
+        // Nominal operation -- turn off stretching.
+        // note: eTempo 'slides' toward 1.0 for smoother audio and better
+        // protection against spikes.
+        if (cTempo != 1.0f) {
+            cTempo = 1.0f;
+            eTempo = (1.0f + eTempo) * 0.5f;
+            pSoundTouch->setTempo(eTempo);
+        } else {
+            if (eTempo != cTempo)
+                pSoundTouch->setTempo(eTempo = cTempo);
+        }
+    }
 }
 
 extern uint TickInterval;
@@ -473,7 +473,7 @@ void SndBuffer::timeStretchWrite()
     // data prediction to make the timestretcher more responsive.
 
     PredictDataWrite((int)(SndOutPacketSize / eTempo));
-    //CvtPacketToFloat(sndTempBuffer);
+    CvtPacketToFloat(sndTempBuffer);
 
     pSoundTouch->putSamples((float *)sndTempBuffer, SndOutPacketSize);
 
@@ -483,7 +483,7 @@ void SndBuffer::timeStretchWrite()
         // Hint: It's assumed that pSoundTouch will return chunks of 128 bytes (it always does as
         // long as the SSE optimizations are enabled), which means we can do our own SSE opts here.
 
-        //CvtPacketToInt(sndTempBuffer, tempProgress);
+        CvtPacketToInt(sndTempBuffer, tempProgress);
         _WriteSamples(sndTempBuffer, tempProgress);
     }
 
@@ -496,25 +496,25 @@ void SndBuffer::timeStretchWrite()
 
 void SndBuffer::soundtouchInit()
 {
-    //pSoundTouch = new soundtouch::SoundTouch();
-    //pSoundTouch->setSampleRate(SampleRate);
-    //pSoundTouch->setChannels(2);
+    pSoundTouch = new soundtouch::SoundTouch();
+    pSoundTouch->setSampleRate(SampleRate);
+    pSoundTouch->setChannels(2);
 
-    //pSoundTouch->setSetting(SETTING_USE_QUICKSEEK, 0);
-    //pSoundTouch->setSetting(SETTING_USE_AA_FILTER, 0);
+    pSoundTouch->setSetting(SETTING_USE_QUICKSEEK, 0);
+    pSoundTouch->setSetting(SETTING_USE_AA_FILTER, 0);
 
-    //SoundtouchCfg::ApplySettings(*pSoundTouch);
+    SoundtouchCfg::ApplySettings(*pSoundTouch);
 
-    //pSoundTouch->setTempo(1);
+    pSoundTouch->setTempo(1);
 
-    //// some timestretch management vars:
+    // some timestretch management vars:
 
-    //cTempo = 1.0;
-    //eTempo = 1.0;
-    //lastPct = 0;
-    //lastEmergencyAdj = 0;
+    cTempo = 1.0;
+    eTempo = 1.0;
+    lastPct = 0;
+    lastEmergencyAdj = 0;
 
-    //m_predictData = 0;
+    m_predictData = 0;
 }
 
 // reset timestretch management vars, and delay updates a bit:
@@ -523,15 +523,15 @@ void SndBuffer::soundtouchClearContents()
     if (pSoundTouch == NULL)
         return;
 
-    //pSoundTouch->clear();
-    //pSoundTouch->setTempo(1);
+    pSoundTouch->clear();
+    pSoundTouch->setTempo(1);
 
-    //cTempo = 1.0;
-    //eTempo = 1.0;
-    //lastPct = 0;
-    //lastEmergencyAdj = 0;
+    cTempo = 1.0;
+    eTempo = 1.0;
+    lastPct = 0;
+    lastEmergencyAdj = 0;
 
-    //m_predictData = 0;
+    m_predictData = 0;
 }
 
 void SndBuffer::soundtouchCleanup()

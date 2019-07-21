@@ -194,6 +194,13 @@
     <ClCompile Include="..\..\ps2\pgif.cpp" />
     <ClCompile Include="..\..\ShiftJisToUnicode.cpp" />
     <ClCompile Include="..\..\sif2.cpp" />
+    <ClCompile Include="..\..\Recording\InputRecording.cpp" />
+    <ClCompile Include="..\..\Recording\NewRecordingFrame.cpp" />
+    <ClCompile Include="..\..\Recording\InputRecordingFile.cpp" />
+    <ClCompile Include="..\..\Recording\RecordingControls.cpp" />
+    <ClCompile Include="..\..\Recording\PadData.cpp" />
+    <ClCompile Include="..\..\Recording\RecordingInputManager.cpp" />
+    <ClCompile Include="..\..\Recording\VirtualPad.cpp" />
     <ClCompile Include="..\..\Utilities\FileUtils.cpp" />
     <ClCompile Include="..\..\Dump.cpp" />
     <ClCompile Include="..\..\x86\iMisc.cpp" />
@@ -221,7 +228,6 @@
     <ClCompile Include="..\..\MTVU.cpp" />
     <ClCompile Include="..\..\VUmicro.cpp" />
     <ClCompile Include="..\..\VUmicroMem.cpp" />
-    <ClCompile Include="..\..\x86\iVU1micro.cpp" />
     <ClCompile Include="..\..\x86\microVU.cpp" />
     <ClCompile Include="..\..\x86\sVU_Lower.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
@@ -442,6 +448,13 @@
     <ClInclude Include="..\..\Patch.h" />
     <ClInclude Include="..\..\PrecompiledHeader.h" />
     <ClInclude Include="..\..\ps2\pgif.h" />
+    <ClInclude Include="..\..\Recording\InputRecording.h" />
+    <ClInclude Include="..\..\Recording\NewRecordingFrame.h" />
+    <ClInclude Include="..\..\Recording\InputRecordingFile.h" />
+    <ClInclude Include="..\..\Recording\RecordingControls.h" />
+    <ClInclude Include="..\..\Recording\PadData.h" />
+    <ClInclude Include="..\..\Recording\RecordingInputManager.h" />
+    <ClInclude Include="..\..\Recording\VirtualPad.h" />
     <ClInclude Include="..\..\Utilities\AsciiFile.h" />
     <ClInclude Include="..\..\Elfheader.h" />
     <ClInclude Include="..\..\CDVD\IsoFileFormats.h" />
@@ -469,7 +482,6 @@
     <ClInclude Include="..\..\x86\microVU_Misc.h" />
     <ClInclude Include="..\..\x86\microVU_Profiler.h" />
     <ClInclude Include="..\..\x86\R5900_Profiler.h" />
-    <ClInclude Include="..\..\x86\sVU_Debug.h" />
     <ClInclude Include="..\..\x86\sVU_Micro.h" />
     <ClInclude Include="..\..\x86\sVU_zerorec.h" />
     <ClInclude Include="..\..\VUflags.h" />

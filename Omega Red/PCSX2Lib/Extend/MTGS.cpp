@@ -26,6 +26,7 @@
 
 
 #include "../Interface.h"
+#include "../MemoryManager/MemoryManager.h"
 #include "Extend.h"
 
 #ifdef _MSC_VER
@@ -205,7 +206,7 @@ void SysMtgsThread::OpenPlugin()
 
 	if( m_PluginOpened ) return;
 
-	memcpy( RingBuffer.Regs, PS2MEM_GS, sizeof(PS2MEM_GS) );
+	apex::MemoryManager::memcpy(RingBuffer.Regs, PS2MEM_GS, sizeof(PS2MEM_GS));
 	GSsetBaseMem( RingBuffer.Regs );
 	GSirqCallback(dummyIrqCallback);
 
@@ -662,7 +663,7 @@ void SysMtgsThread::WaitGS(bool syncRegs, bool weakWait, bool isMTVU)
 	if (syncRegs) {
 		ScopedLock lock(m_mtx_WaitGS);
 		// Completely synchronize GS and MTGS register states.
-		memcpy(RingBuffer.Regs, PS2MEM_GS, sizeof(RingBuffer.Regs));
+        apex::MemoryManager::memcpy(RingBuffer.Regs, PS2MEM_GS, sizeof(RingBuffer.Regs));
 	}
 }
 

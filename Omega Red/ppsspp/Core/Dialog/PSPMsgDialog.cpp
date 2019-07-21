@@ -146,7 +146,7 @@ void PSPMsgDialog::DisplayMessage(std::string text, bool hasYesNo, bool hasOK)
 	float WRAP_WIDTH = 300.0f;
 	if (UTF8StringNonASCIICount(text.c_str()) > 3)
 		WRAP_WIDTH = 372.0f;
-	
+
 	float y = 140.0f;
 	float h, sy ,ey;
 	int n;
@@ -207,8 +207,8 @@ void PSPMsgDialog::DisplayMessage(std::string text, bool hasYesNo, bool hasOK)
 		ey = y2 + 25.0f;
 	}
 
-	PPGeDrawTextWrapped(text.c_str(), 241.0f, y+2, WRAP_WIDTH, PPGE_ALIGN_CENTER, FONT_SCALE, CalcFadedColor(0x80000000));
-	PPGeDrawTextWrapped(text.c_str(), 240.0f, y, WRAP_WIDTH, PPGE_ALIGN_CENTER, FONT_SCALE, CalcFadedColor(0xFFFFFFFF));
+	PPGeDrawTextWrapped(text.c_str(), 241.0f, y+2, WRAP_WIDTH, 0, PPGE_ALIGN_CENTER, FONT_SCALE, CalcFadedColor(0x80000000));
+	PPGeDrawTextWrapped(text.c_str(), 240.0f, y, WRAP_WIDTH, 0, PPGE_ALIGN_CENTER, FONT_SCALE, CalcFadedColor(0xFFFFFFFF));
 	sy = 125.0f - h2;
 	PPGeDrawRect(40.0f, sy, 440.0f, sy + 1.0f, CalcFadedColor(0xFFFFFFFF));
 	PPGeDrawRect(40.0f, ey, 440.0f, ey + 1.0f, CalcFadedColor(0xFFFFFFFF));
@@ -219,45 +219,6 @@ int PSPMsgDialog::Update(int animSpeed) {
 		return SCE_ERROR_UTILITY_INVALID_STATUS;
 	}
 
-	if (flag == 0x31) {
-
-		if (messageDialog.buttonPressed != 1) {
-            messageDialog.buttonPressed = 1;
-
-            ChangeStatus(SCE_UTILITY_STATUS_FINISHED, 0);
-		}
-
-		Memory::Memcpy(messageDialogAddr, &messageDialog ,messageDialog.common.size);
-
-		return 0;
-	}
-	
-	if (strcmp(messageDialog.string, "No system data detected.\nCreate new system data?") == 0) {
-
-        if (messageDialog.buttonPressed != 0) {
-            messageDialog.buttonPressed = 0;
-        }
-
-        ChangeStatus(SCE_UTILITY_STATUS_FINISHED, 0);
-
-        Memory::Memcpy(messageDialogAddr, &messageDialog, messageDialog.common.size);
-
-        return 0;
-    }
-
-    if (strcmp(messageDialog.string, "Continue without creating/saving\nsystem data?") == 0) {
-		
-        if (messageDialog.buttonPressed != 1) {
-            messageDialog.buttonPressed = 1;
-
-            ChangeStatus(SCE_UTILITY_STATUS_FINISHED, 0);
-        }
-
-        Memory::Memcpy(messageDialogAddr, &messageDialog, messageDialog.common.size);
-
-        return 0;
-    }
-	
 	if (flag & (DS_ERROR | DS_ABORT)) {
 		ChangeStatus(SCE_UTILITY_STATUS_FINISHED, 0);
 	} else {
@@ -362,7 +323,6 @@ void PSPMsgDialog::DoState(PointerWrap &p)
 	p.DoArray(msgText, sizeof(msgText));
 	p.Do(yesnoChoice);
 }
-#include <iostream>
 
 pspUtilityDialogCommon *PSPMsgDialog::GetCommonParam()
 {

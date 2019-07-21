@@ -5,7 +5,7 @@
         xmlns:tools="clr-namespace:Omega_Red.Tools"
         xmlns:convertor="clr-namespace:Omega_Red.Tools.Converters"
         xmlns:viewModels="clr-namespace:Omega_Red.ViewModels"     
-	    xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
+        xmlns:tb="clr-namespace:Hardcodet.Wpf.TaskbarNotification"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         WindowStyle="None"
@@ -65,6 +65,7 @@
         </Storyboard>
     </Window.Resources>
     <Grid>
+        <tb:TaskbarIcon x:Name="mTaskbarIcon"/>
         <Grid>
             <panels:TouchPadPanel x:Name="m_PadPanel" >
                 <panels:DisplayControl HorizontalAlignment="Stretch"/>
@@ -260,6 +261,7 @@
                     <CheckBox Style="{DynamicResource PanelCheckBoxStyle}"
                           Visibility="{Binding Source={StaticResource mConfigViewModel}, Path=TouchControlHideVisibility}"
                           IsChecked="{Binding IsPaused}" 
+                              Command="{x:Null}"
                           Width="110" 
                           x:Name="mMediaChkBtn">
                         <CheckBox.DataContext>

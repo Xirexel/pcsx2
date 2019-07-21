@@ -30,7 +30,7 @@ static bool IsDepthStencilFormat(VkFormat format) {
 	}
 }
 
-bool VulkanTexture::CreateDirect(VkCommandBuffer cmd, int w, int h, int numMips, VkFormat format, VkImageLayout initialLayout, VkImageUsageFlags usage, const VkComponentMapping *mapping) {
+bool VulkanTexture::CreateDirect(VkCommandBuffer cmd, VulkanDeviceAllocator *allocator, int w, int h, int numMips, VkFormat format, VkImageLayout initialLayout, VkImageUsageFlags usage, const VkComponentMapping *mapping) {
 	Wipe();
 
 	width_ = w;
@@ -67,15 +67,20 @@ bool VulkanTexture::CreateDirect(VkCommandBuffer cmd, int w, int h, int numMips,
 	VkResult res = vkCreateImage(vulkan_->GetDevice(), &image_create_info, NULL, &image_);
 	if (res != VK_SUCCESS) {
 		_assert_(res == VK_ERROR_OUT_OF_HOST_MEMORY || res == VK_ERROR_OUT_OF_DEVICE_MEMORY || res == VK_ERROR_TOO_MANY_OBJECTS);
+		ELOG("vkCreateImage failed: %s", VulkanResultToString(res));
 		return false;
 	}
 
 	VkMemoryRequirements mem_reqs{};
-	vkGetImageMemoryRequirements(vulkan_->GetDevice(), image_, &mem_reqs);
+	bool dedicatedAllocation = false;
+	vulkan_->GetImageMemoryRequirements(image_, &mem_reqs, &dedicatedAllocation);
 
-	if (allocator_) {
+	if (allocator && !dedicatedAllocation) {
+		allocator_ = allocator;
 		offset_ = allocator_->Allocate(mem_reqs, &mem_, Tag());
 		if (offset_ == VulkanDeviceAllocator::ALLOCATE_FAILED) {
+			ELOG("Image memory allocation failed (mem_reqs.size=%d, typebits=%08x", (int)mem_reqs.size, (int)mem_reqs.memoryTypeBits);
+			// Destructor will take care of the image.
 			return false;
 		}
 	} else {
@@ -83,16 +88,21 @@ bool VulkanTexture::CreateDirect(VkCommandBuffer cmd, int w, int h, int numMips,
 		mem_alloc.memoryTypeIndex = 0;
 		mem_alloc.allocationSize = mem_reqs.size;
 
+		VkMemoryDedicatedAllocateInfoKHR dedicatedAllocateInfo{VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR};
+		if (dedicatedAllocation) {
+			dedicatedAllocateInfo.image = image_;
+			mem_alloc.pNext = &dedicatedAllocateInfo;
+		}
+
 		// Find memory type - don't specify any mapping requirements
 		bool pass = vulkan_->MemoryTypeFromProperties(mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &mem_alloc.memoryTypeIndex);
 		_assert_(pass);
 
 		res = vkAllocateMemory(vulkan_->GetDevice(), &mem_alloc, NULL, &mem_);
 		if (res != VK_SUCCESS) {
+			ELOG("vkAllocateMemory failed: %s", VulkanResultToString(res));
 			_assert_msg_(G3D, res != VK_ERROR_TOO_MANY_OBJECTS, "Too many Vulkan memory objects!");
 			_assert_(res == VK_ERROR_OUT_OF_HOST_MEMORY || res == VK_ERROR_OUT_OF_DEVICE_MEMORY || res == VK_ERROR_TOO_MANY_OBJECTS);
-			vkDestroyImage(vulkan_->GetDevice(), image_, nullptr);
-			image_ = VK_NULL_HANDLE;
 			return false;
 		}
 
@@ -101,6 +111,7 @@ bool VulkanTexture::CreateDirect(VkCommandBuffer cmd, int w, int h, int numMips,
 
 	res = vkBindImageMemory(vulkan_->GetDevice(), image_, mem_, offset_);
 	if (res != VK_SUCCESS) {
+		ELOG("vkBindImageMemory failed: %s", VulkanResultToString(res));
 		// This leaks the image and memory. Should not really happen though...
 		_assert_(res == VK_ERROR_OUT_OF_HOST_MEMORY || res == VK_ERROR_OUT_OF_DEVICE_MEMORY || res == VK_ERROR_TOO_MANY_OBJECTS);
 		return false;
@@ -144,6 +155,7 @@ bool VulkanTexture::CreateDirect(VkCommandBuffer cmd, int w, int h, int numMips,
 
 	res = vkCreateImageView(vulkan_->GetDevice(), &view_info, NULL, &view_);
 	if (res != VK_SUCCESS) {
+		ELOG("vkCreateImageView failed: %s", VulkanResultToString(res));
 		// This leaks the image.
 		_assert_(res == VK_ERROR_OUT_OF_HOST_MEMORY || res == VK_ERROR_OUT_OF_DEVICE_MEMORY || res == VK_ERROR_TOO_MANY_OBJECTS);
 		return false;
@@ -220,10 +232,13 @@ void VulkanTexture::Destroy() {
 	if (image_ != VK_NULL_HANDLE) {
 		vulkan_->Delete().QueueDeleteImage(image_);
 	}
-	if (mem_ != VK_NULL_HANDLE && !allocator_) {
-		vulkan_->Delete().QueueDeleteDeviceMemory(mem_);
-	} else if (mem_ != VK_NULL_HANDLE) {
-		allocator_->Free(mem_, offset_);
-		mem_ = VK_NULL_HANDLE;
+	if (mem_ != VK_NULL_HANDLE) {
+		if (allocator_) {
+			allocator_->Free(mem_, offset_);
+			mem_ = VK_NULL_HANDLE;
+			allocator_ = nullptr;
+		} else {
+			vulkan_->Delete().QueueDeleteDeviceMemory(mem_);
+		}
 	}
 }

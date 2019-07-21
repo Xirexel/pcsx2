@@ -106,9 +106,10 @@ oprofile_data/
 /tools/GSDumpGUI/bin
 /tools/GSDumpGUI/obj
 /.vs
-Omega Red/ipch/
-Omega Red/Omega Red/Modules/
-Omega Red/packages/
+ipch/
+Omega Red/Modules/
+packages/
 .vs
 Omega Red/bin/
-Omega Red/Win32/
+bin/
+Win32/

@@ -86,4 +86,5 @@
     <sys:String x:Key="YouTubeBroadcastDescriptionTitle">Broadcasts' description:</sys:String>
     <sys:String x:Key="VideoStreamBitRateTitle">Video bitrate:</sys:String>
     <sys:String x:Key="AudioStreamBitRateTitle">Audio bitrate:</sys:String>
+    <sys:String x:Key="StreamConnectionWarningTitle">Connection with the server is lost!!!</sys:String>
 </ResourceDictionary>

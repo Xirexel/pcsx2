@@ -54,9 +54,9 @@
                     </ObjectAnimationUsingKeyFrames>
                 </Storyboard>
             </Canvas.Resources>
-            <Grid x:Name="mTouchEllipse" Height="60" Width="60" Canvas.Left="0" Canvas.Top="60">
+            <Grid x:Name="mTouchEllipse" Height="70" Width="70" Canvas.Left="0" Canvas.Top="50">
                 <Ellipse x:Name="mBackEllipse"
-                     Stroke="{DynamicResource PadBorderBrush}" 
+                     Stroke="{DynamicResource StandardBorderBrush}" 
                      Fill="{DynamicResource UnpressedButtonBrush}"
                      StrokeThickness="{DynamicResource PadBorderThickness}">
                 </Ellipse>

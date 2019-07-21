@@ -78,65 +78,73 @@ namespace Omega_Red.Managers
 
         public DisplayControl DisplayControl { get; set; }
 
-        public async Task loadAsync()
+        public void load(Action method)
         {
             _mediaSourceInfoCollection.Clear();
 
-            var lXMLsources = await MediaRecorderManager.Instance.getCollectionOfSourcesAsync();
-            
-            XmlDocument doc = new XmlDocument();
-                        
-            doc.LoadXml(lXMLsources.Replace("MFVideoFormat_", "").Replace("MFAudioFormat_", ""));
+            MediaRecorderManager.Instance.getCollectionOfSources((aXMLsources)=> {
+                
+                XmlDocument doc = new XmlDocument();
 
-            if(doc.DocumentElement != null)
-            {
+                doc.LoadXml(aXMLsources.Replace("MFVideoFormat_", "").Replace("MFAudioFormat_", ""));
 
-                var lsources = doc.DocumentElement.SelectNodes("//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_HW_SOURCE']/SingleValue[@Value='Hardware device']]");
-
-                if (lsources != null)
+                if (doc.DocumentElement != null)
                 {
-                    foreach (var litem in lsources)
+
+                    var lsources = doc.DocumentElement.SelectNodes("//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_HW_SOURCE']/SingleValue[@Value='Hardware device']]");
+
+                    if (lsources != null)
                     {
-                        var lSourceNode = litem as XmlNode;
-
-                        if (lSourceNode != null)
+                        foreach (var litem in lsources)
                         {
-                            var lAttr = lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME']/SingleValue/@Value");
+                            var lSourceNode = litem as XmlNode;
 
-                            if (lAttr != null)
+                            if (lSourceNode != null)
                             {
-                                var lMediaTypes = lSourceNode.SelectSingleNode("PresentationDescriptor/StreamDescriptor/MediaTypes");                
+                                var lAttr = lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME']/SingleValue/@Value");
 
-                                addSource(lAttr.Value, MediaSourceType.Audio, lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_SYMBOLIC_LINK']/SingleValue/@Value").Value, lMediaTypes, false);
+                                if (lAttr != null)
+                                {
+                                    var lMediaTypes = lSourceNode.SelectSingleNode("PresentationDescriptor/StreamDescriptor/MediaTypes");
+
+                                    addSource(lAttr.Value, MediaSourceType.Audio, lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_SYMBOLIC_LINK']/SingleValue/@Value").Value, lMediaTypes, false);
+                                }
+                            }
+                        }
+                    }
+
+                    lsources = doc.DocumentElement.SelectNodes("//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_MEDIA_TYPE']/Value.ValueParts/ValuePart[@Value='MFMediaType_Video'] and Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_HW_SOURCE']/SingleValue[@Value='Hardware device']]");
+
+                    if (lsources != null)
+                    {
+                        foreach (var litem in lsources)
+                        {
+                            var lSourceNode = litem as XmlNode;
+
+                            if (lSourceNode != null)
+                            {
+                                var lAttr = lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME']/SingleValue/@Value");
+
+                                if (lAttr != null)
+                                {
+                                    var lMediaTypes = lSourceNode.SelectSingleNode("PresentationDescriptor/StreamDescriptor/MediaTypes");
+
+                                    addSource(lAttr.Value, MediaSourceType.Video, lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK']/SingleValue/@Value").Value, lMediaTypes, false);
+                                }
                             }
                         }
                     }
                 }
 
-                lsources = doc.DocumentElement.SelectNodes("//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_MEDIA_TYPE']/Value.ValueParts/ValuePart[@Value='MFMediaType_Video'] and Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_HW_SOURCE']/SingleValue[@Value='Hardware device']]");
+                load();
 
-                if(lsources != null)
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                 {
-                    foreach (var litem in lsources)
-                    {
-                        var lSourceNode = litem as XmlNode;
+                    if (method != null)
+                        method();
+                });
+            });
 
-                        if(lSourceNode != null)
-                        {
-                            var lAttr = lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME']/SingleValue/@Value");
-
-                            if(lAttr != null)
-                            {
-                                var lMediaTypes = lSourceNode.SelectSingleNode("PresentationDescriptor/StreamDescriptor/MediaTypes");
-                                                               
-                                addSource(lAttr.Value, MediaSourceType.Video, lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK']/SingleValue/@Value").Value, lMediaTypes, false);
-                            }
-                        }
-                    }
-                }
-            }
-
-            load();
         }
 
         private void addSource(
@@ -199,9 +207,11 @@ namespace Omega_Red.Managers
 
                 l_MediaSourceInfo.Variable = a_OriginalMediaSourceInfo.Variable;
             }
-
-
-            _mediaSourceInfoCollection.Add(l_MediaSourceInfo);
+                       
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, (ThreadStart)delegate ()
+            {
+                _mediaSourceInfoCollection.Add(l_MediaSourceInfo);
+            });
 
             if(a_persist)
                 save();

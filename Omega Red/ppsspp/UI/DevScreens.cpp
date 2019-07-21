@@ -37,6 +37,7 @@
 #include "Core/MIPS/MIPSTables.h"
 #include "Core/MIPS/JitCommon/JitBlockCache.h"
 #include "Core/MIPS/JitCommon/JitCommon.h"
+#include "Core/MIPS/JitCommon/JitState.h"
 #include "GPU/GPUInterface.h"
 #include "GPU/GPUState.h"
 #include "UI/MiscScreens.h"
@@ -46,7 +47,11 @@
 #ifdef _WIN32
 #include "Common/CommonWindows.h"
 // Want to avoid including the full header here as it includes d3dx.h
+#if PPSSPP_API(D3DX9)
 int GetD3DXVersion();
+#elif PPSSPP_API(D3D9_D3DCOMPILER)
+int GetD3DCompilerVersion();
+#endif
 #endif
 
 static const char *logLevelList[] = {
@@ -126,8 +131,6 @@ UI::EventReturn DevMenu::OnShaderView(UI::EventParams &e) {
 		screenManager()->push(new ShaderListScreen());
 	return UI::EVENT_DONE;
 }
-
-
 
 UI::EventReturn DevMenu::OnFreezeFrame(UI::EventParams &e) {
 	if (PSP_CoreParameter().frozen) {
@@ -320,6 +323,75 @@ void LogLevelScreen::OnCompleted(DialogResult result) {
 	}
 }
 
+struct JitDisableFlag {
+	MIPSComp::JitDisable flag;
+	const char *name;
+};
+
+// Please do not try to translate these :)
+static const JitDisableFlag jitDisableFlags[] = {
+	{ MIPSComp::JitDisable::ALU, "ALU" },
+	{ MIPSComp::JitDisable::ALU_IMM, "ALU_IMM" },
+	{ MIPSComp::JitDisable::ALU_BIT, "ALU_BIT" },
+	{ MIPSComp::JitDisable::MULDIV, "MULDIV" },
+	{ MIPSComp::JitDisable::FPU, "FPU" },
+	{ MIPSComp::JitDisable::FPU_COMP, "FPU_COMP" },
+	{ MIPSComp::JitDisable::FPU_XFER, "FPU_XFER" },
+	{ MIPSComp::JitDisable::VFPU_VEC, "VFPU_VEC" },
+	{ MIPSComp::JitDisable::VFPU_MTX_VTFM, "VFPU_MTX_VTFM" },
+	{ MIPSComp::JitDisable::VFPU_MTX_VMSCL, "VFPU_MTX_VMSCL" },
+	{ MIPSComp::JitDisable::VFPU_MTX_VMMUL, "VFPU_MTX_VMMUL" },
+	{ MIPSComp::JitDisable::VFPU_MTX_VMMOV, "VFPU_MTX_VMMOV" },
+	{ MIPSComp::JitDisable::VFPU_COMP, "VFPU_COMP" },
+	{ MIPSComp::JitDisable::VFPU_XFER, "VFPU_XFER" },
+	{ MIPSComp::JitDisable::LSU, "LSU" },
+	{ MIPSComp::JitDisable::LSU_UNALIGNED, "LSU_UNALIGNED" },
+	{ MIPSComp::JitDisable::LSU_FPU, "LSU_FPU" },
+	{ MIPSComp::JitDisable::LSU_VFPU, "LSU_VFPU" },
+	{ MIPSComp::JitDisable::SIMD, "SIMD" },
+	{ MIPSComp::JitDisable::BLOCKLINK, "Block Linking" },
+	{ MIPSComp::JitDisable::POINTERIFY, "Pointerify" },
+	{ MIPSComp::JitDisable::STATIC_ALLOC, "Static regalloc" },
+	{ MIPSComp::JitDisable::CACHE_POINTERS, "Cached pointers" },
+	{ MIPSComp::JitDisable::REGALLOC_GPR, "GPR Regalloc across instructions" },
+	{ MIPSComp::JitDisable::REGALLOC_FPR, "FPR Regalloc across instructions" },
+};
+
+void JitDebugScreen::CreateViews() {
+	using namespace UI;
+
+	I18NCategory *di = GetI18NCategory("Dialog");
+	I18NCategory *dev = GetI18NCategory("Developer");
+
+	root_ = new ScrollView(ORIENT_VERTICAL);
+
+	LinearLayout *vert = root_->Add(new LinearLayout(ORIENT_VERTICAL, new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT)));
+	vert->SetSpacing(0);
+
+	LinearLayout *topbar = new LinearLayout(ORIENT_HORIZONTAL);
+	topbar->Add(new Choice(di->T("Back")))->OnClick.Handle<UIScreen>(this, &UIScreen::OnBack);
+	topbar->Add(new Choice(di->T("Disable All")))->OnClick.Handle(this, &JitDebugScreen::OnDisableAll);
+	topbar->Add(new Choice(di->T("Enable All")))->OnClick.Handle(this, &JitDebugScreen::OnEnableAll);
+
+	vert->Add(topbar);
+	vert->Add(new ItemHeader(dev->T("Disabled JIT functionality")));
+
+	for (auto flag : jitDisableFlags) {
+		// Do not add translation of these.
+		vert->Add(new BitCheckBox(&g_Config.uJitDisableFlags, (uint32_t)flag.flag, flag.name));
+	}
+}
+
+UI::EventReturn JitDebugScreen::OnEnableAll(UI::EventParams &e) {
+	g_Config.uJitDisableFlags &= ~(uint32_t)MIPSComp::JitDisable::ALL_FLAGS;
+	return UI::EVENT_DONE;
+}
+
+UI::EventReturn JitDebugScreen::OnDisableAll(UI::EventParams &e) {
+	g_Config.uJitDisableFlags |= (uint32_t)MIPSComp::JitDisable::ALL_FLAGS;
+	return UI::EVENT_DONE;
+}
+
 const char *GetCompilerABI() {
 #if PPSSPP_ARCH(ARMV7)
 	return "armeabi-v7a";
@@ -388,7 +460,8 @@ void SystemInfoScreen::CreateViews() {
 
 	DrawContext *draw = screenManager()->getDrawContext();
 
-	const char *apiName = gr->T(screenManager()->getDrawContext()->GetInfoString(InfoField::APINAME));
+	const std::string apiNameKey = draw->GetInfoString(InfoField::APINAME);
+	const char *apiName = gr->T(apiNameKey);
 	deviceSpecs->Add(new InfoItem(si->T("3D API"), apiName));
 	deviceSpecs->Add(new InfoItem(si->T("Vendor"), draw->GetInfoString(InfoField::VENDORSTRING)));
 	std::string vendor = draw->GetInfoString(InfoField::VENDOR);
@@ -400,7 +473,11 @@ void SystemInfoScreen::CreateViews() {
 		deviceSpecs->Add(new InfoItem(si->T("Driver Version"), System_GetProperty(SYSPROP_GPUDRIVER_VERSION)));
 #if !PPSSPP_PLATFORM(UWP)
 	if (GetGPUBackend() == GPUBackend::DIRECT3D9) {
+#if PPSSPP_API(D3DX9)
 		deviceSpecs->Add(new InfoItem(si->T("D3DX Version"), StringFromFormat("%d", GetD3DXVersion())));
+#elif PPSSPP_API(D3D9_D3DCOMPILER)
+		deviceSpecs->Add(new InfoItem(si->T("D3DCompiler Version"), StringFromFormat("%d", GetD3DCompilerVersion())));
+#endif
 	}
 #endif
 #endif

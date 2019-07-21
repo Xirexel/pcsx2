@@ -59,6 +59,7 @@ namespace Omega_Red.Capture
     }
     class MediaStream
     {
+        private Action<bool> m_isConnected = null;
 
         private StringBuilder m_Version_XMLstring = new StringBuilder();
 
@@ -117,6 +118,9 @@ namespace Omega_Red.Capture
 
         private MethodInfo m_SetWriteFunc = null;
 
+        private MethodInfo m_SetIsConnectedFunc = null;
+
+        
 
 
         private ICollectionView mVideoBitRateCustomerView = null;
@@ -132,6 +136,8 @@ namespace Omega_Red.Capture
         private readonly ObservableCollection<BitRate> _audioBitRateCollection = new ObservableCollection<BitRate>();
 
 
+        public Action<string> Warning = null;
+
 
         private static MediaStream m_Instance = null;
 
@@ -142,6 +148,8 @@ namespace Omega_Red.Capture
 
             try
             {
+                m_isConnected = isConnected;
+
                 var l_ExecutingAssembly = System.Reflection.Assembly.GetExecutingAssembly();
 
                 AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
@@ -242,6 +250,10 @@ namespace Omega_Red.Capture
 
                             m_SetWriteFunc = l_StreamType.GetMethod("setWriteFunc");
 
+                            m_SetIsConnectedFunc = l_StreamType.GetMethod("setIsConnectedFunc");
+
+                            
+
 
                             m_GetVersion.Invoke(m_StreamObj, new object[] { m_Version_XMLstring });
                         }
@@ -278,8 +290,8 @@ namespace Omega_Red.Capture
                 mFileExtention = m_Start.Invoke(m_StreamObj, new object[] {
                     CaptureTargetTexture.Instance.CaptureNative.ToString(),
                     AudioCaptureTarget.Instance.RegisterAction,
-                    "",
-                    Omega_Red.Properties.Settings.Default.CompressionQuality}) as string;
+                    m_isConnected
+                }) as string;
 
                 l_result = true;
 
@@ -308,6 +320,35 @@ namespace Omega_Red.Capture
             } while (false);
 
             return l_result;
+        }
+
+        private void isConnected(bool a_isConnectedState)
+        {
+            if(!a_isConnectedState)
+            {
+                Managers.MediaRecorderManager.Instance.StartStop(false);
+
+                if (Warning != null)
+                {
+                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                    {
+                        string l_title = "";
+
+                        try
+                        {
+                            var l_Title = new System.Windows.Controls.TextBlock();
+
+                            l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, "StreamConnectionWarningTitle");
+
+                            l_title = l_Title.Text;
+                        }
+                        finally
+                        {
+                            Warning(l_title);
+                        }
+                    });
+                }
+            }
         }
 
         public string getCollectionOfSources()
@@ -574,6 +615,23 @@ namespace Omega_Red.Capture
 
                 m_SetWriteFunc.Invoke(m_StreamObj, new object[] { new Action<int, int, IntPtr, int, uint, int, int>((
                     handler, sampleTime, buf, size, is_keyframe, streamIdx, isVideo) => { a_FuncDelegate(handler, sampleTime, buf, size, is_keyframe, streamIdx, isVideo); }) });
+
+            } while (false);
+        }
+
+        public void setIsConnectedFunc(Func<int, bool> a_FuncDelegate)
+        {
+
+            do
+            {
+                if (m_StreamObj == null)
+                    break;
+
+                if (m_SetIsConnectedFunc == null)
+                    break;
+
+                m_SetIsConnectedFunc.Invoke(m_StreamObj, new object[] { new Func<int, bool>((
+                    handler) => { return a_FuncDelegate(handler); }) });
 
             } while (false);
         }

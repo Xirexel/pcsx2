@@ -424,11 +424,11 @@ bool UTF8StringHasNonASCII(const char *utf8string) {
 
 std::string ConvertWStringToUTF8(const wchar_t *wstr) {
 	int len = (int)wcslen(wstr);
-    int size = (int)WideCharToMultiByte(CP_ACP, 0, wstr, len, 0, 0, NULL, NULL);
+	int size = (int)WideCharToMultiByte(CP_UTF8, 0, wstr, len, 0, 0, NULL, NULL);
 	std::string s;
 	s.resize(size);
 	if (size > 0) {
-        WideCharToMultiByte(CP_ACP, 0, wstr, len, &s[0], size, NULL, NULL);
+		WideCharToMultiByte(CP_UTF8, 0, wstr, len, &s[0], size, NULL, NULL);
 	}
 	return s;
 }

@@ -17,7 +17,8 @@
 
 #include "..\src\Global.h"
 #include "..\src\SndOut.h"
-#include "MemoryManager.h"
+#include "../MemoryManager/MemoryManager.h"
+
 
 
 float SndBuffer::lastPct;
@@ -190,7 +191,7 @@ void SndBuffer::_WriteSamples_Internal(StereoOut16 *bData, int nSamples)
     // WARNING: This assumes the write will NOT wrap around,
     // and also assumes there's enough free space in the buffer.
 
-    AudioRenderer::MemoryManager::memcpy(m_buffer + m_wpos, bData, nSamples * sizeof(StereoOut16));
+    apex::MemoryManager::memcpy(m_buffer + m_wpos, bData, nSamples * sizeof(StereoOut16));
     m_wpos = (m_wpos + nSamples) % m_size;
 }
 
@@ -203,7 +204,7 @@ void SndBuffer::_ReadSamples_Internal(StereoOut32 *bData, int nSamples)
 {
     // WARNING: This assumes the read will NOT wrap around,
     // and also assumes there's enough data in the buffer.
-    AudioRenderer::MemoryManager::memcpy(bData, m_buffer + m_rpos, nSamples * sizeof(StereoOut32));
+    apex::MemoryManager::memcpy(bData, m_buffer + m_rpos, nSamples * sizeof(StereoOut32));
     _DropSamples_Internal(nSamples);
 }
 
@@ -268,7 +269,7 @@ void SndBuffer::ReadSamples(T *bData)
             b1 = nSamples;
 
         // First part
-        AudioRenderer::MemoryManager::memcpy(bData, m_buffer + m_rpos, b1 * sizeof(T));
+        apex::MemoryManager::memcpy(bData, m_buffer + m_rpos, b1 * sizeof(T));
 
         // First part
         //for (int i = 0; i < b1; i++)
@@ -276,7 +277,7 @@ void SndBuffer::ReadSamples(T *bData)
 
         // Second part
         int b2 = nSamples - b1;
-        AudioRenderer::MemoryManager::memcpy(bData + b1, m_buffer, b2 * sizeof(T));
+        apex::MemoryManager::memcpy(bData + b1, m_buffer, b2 * sizeof(T));
         //for (int i = 0; i < b2; i++)
         //    bData[i + b1] = ((T *)m_buffer)[i];
 

@@ -41,8 +41,8 @@
 // All functions should have CONDITIONAL_DISABLE, so we can narrow things down to a file quickly.
 // Currently known non working ones should have DISABLE.
 
-// #define CONDITIONAL_DISABLE { Comp_Generic(op); return; }
-#define CONDITIONAL_DISABLE ;
+//#define CONDITIONAL_DISABLE(flag) { Comp_Generic(op); return; }
+#define CONDITIONAL_DISABLE(flag) if (jo.Disabled(JitDisable::flag)) { Comp_Generic(op); return; }
 #define DISABLE { Comp_Generic(op); return; }
 
 namespace MIPSComp {
@@ -56,6 +56,9 @@ namespace MIPSComp {
 		} else {
 			MOV(SCRATCH1, gpr.R(rs));
 		}
+#ifdef MASKED_PSP_MEMORY
+		ANDI2R(SCRATCH1, SCRATCH1, 0x3FFFFFFF);
+#endif
 	}
 
 	std::vector<FixupBranch> Arm64Jit::SetScratch1ForSafeAddress(MIPSGPReg rs, s16 offset, ARM64Reg tempReg) {
@@ -110,14 +113,14 @@ namespace MIPSComp {
 	}
 
 	void Arm64Jit::Comp_ITypeMemLR(MIPSOpcode op, bool load) {
-		CONDITIONAL_DISABLE;
+		CONDITIONAL_DISABLE(LSU);
 		CheckMemoryBreakpoint();
 		int offset = (signed short)(op & 0xFFFF);
 		MIPSGPReg rt = _RT;
 		MIPSGPReg rs = _RS;
 		int o = op >> 26;
 
-		if (!js.inDelaySlot) {
+		if (!js.inDelaySlot && !jo.Disabled(JitDisable::LSU_UNALIGNED)) {
 			// Optimisation: Combine to single unaligned load/store
 			bool isLeft = (o == 34 || o == 42);
 			CheckMemoryBreakpoint(1);
@@ -135,12 +138,17 @@ namespace MIPSComp {
 		std::vector<FixupBranch> skips;
 
 		if (gpr.IsImm(rs) && Memory::IsValidAddress(iaddr)) {
+#ifdef MASKED_PSP_MEMORY
+			u32 addr = iaddr & 0x3FFFFFFF;
+#else
+			u32 addr = iaddr;
+#endif
 			// Need to initialize since this only loads part of the register.
 			// But rs no longer matters (even if rs == rt) since we have the address.
 			gpr.MapReg(rt, load ? MAP_DIRTY : 0);
-			gpr.SetRegImm(SCRATCH1, iaddr & ~3);
+			gpr.SetRegImm(SCRATCH1, addr & ~3);
 
-			u8 shift = (iaddr & 3) * 8;
+			u8 shift = (addr & 3) * 8;
 
 			switch (o) {
 			case 34: // lwl
@@ -172,7 +180,7 @@ namespace MIPSComp {
 			return;
 		}
 
-		_dbg_assert_msg_(JIT, !gpr.IsImm(rs), "Invalid immediate address?  CPU bug?");
+		_dbg_assert_msg_(JIT, !gpr.IsImm(rs), "Invalid immediate address %08x?  CPU bug?", iaddr);
 		if (load) {
 			gpr.MapDirtyIn(rt, rs, false);
 		} else {
@@ -256,7 +264,7 @@ namespace MIPSComp {
 	}
 
 	void Arm64Jit::Comp_ITypeMem(MIPSOpcode op) {
-		CONDITIONAL_DISABLE;
+		CONDITIONAL_DISABLE(LSU);
 		CheckMemoryBreakpoint();
 
 		int offset = (signed short)(op & 0xFFFF);
@@ -347,7 +355,12 @@ namespace MIPSComp {
 			}
 
 			if (gpr.IsImm(rs) && Memory::IsValidAddress(iaddr)) {
-				if (offset == 0) {
+#ifdef MASKED_PSP_MEMORY
+				u32 addr = iaddr & 0x3FFFFFFF;
+#else
+				u32 addr = iaddr;
+#endif
+				if (addr == iaddr && offset == 0) {
 					// It was already safe.  Let's shove it into a reg and use it directly.
 					if (targetReg == INVALID_REG) {
 						load ? gpr.MapDirtyIn(rt, rs) : gpr.MapInIn(rt, rs);
@@ -360,17 +373,23 @@ namespace MIPSComp {
 						gpr.MapReg(rt, load ? MAP_NOINIT : 0);
 						targetReg = gpr.R(rt);
 					}
-					gpr.SetRegImm(SCRATCH1, iaddr);
+					gpr.SetRegImm(SCRATCH1, addr);
 					addrReg = SCRATCH1;
 				}
 			} else {
-				// This actually gets hit in micro machines! rs = ZR rt = ZR. Probably a bug.
-				// Leaving this a debug assert for future investigation.
-				_dbg_assert_msg_(JIT, !gpr.IsImm(rs), "Invalid immediate address?  CPU bug?");
+				// This gets hit in a few games, as a result of never-taken delay slots (some branch types
+				// conditionally execute the delay slot instructions). Ignore in those cases.
+				if (!js.inDelaySlot) {
+					_dbg_assert_msg_(JIT, !gpr.IsImm(rs), "Invalid immediate address %08x?  CPU bug?", iaddr);
+				}
 
 				// If we already have a targetReg, we optimized an imm, and rs is already mapped.
 				if (targetReg == INVALID_REG) {
-					load ? gpr.MapDirtyIn(rt, rs) : gpr.MapInIn(rt, rs);
+					if (load) {
+						gpr.MapDirtyIn(rt, rs);
+					} else {
+						gpr.MapInIn(rt, rs);
+					}
 					targetReg = gpr.R(rt);
 				}
 
@@ -413,9 +432,9 @@ namespace MIPSComp {
 	}
 
 	void Arm64Jit::Comp_Cache(MIPSOpcode op) {
-//		int imm = (s16)(op & 0xFFFF);
-//		int rs = _RS;
-//		int addr = R(rs) + imm;
+		// int imm = (s16)(op & 0xFFFF);
+		// int rs = _RS;
+		// int addr = R(rs) + imm;
 		int func = (op >> 16) & 0x1F;
 
 		// It appears that a cache line is 0x40 (64) bytes, loops in games

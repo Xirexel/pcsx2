@@ -61,6 +61,11 @@ namespace Omega_Red.Managers
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
         {
+            if (PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Started)
+                PCSX2Controller.Instance.PlayPause();
+
+            Managers.MediaRecorderManager.Instance.StartStop(false);
+
             if (mCustomerView.CurrentItem != null)
                 LockScreenManager.Instance.showScreenshot();
         }

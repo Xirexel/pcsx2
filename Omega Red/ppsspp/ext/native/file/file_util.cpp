@@ -230,7 +230,6 @@ size_t getFilesInDir(const char *directory, std::vector<FileInfo> *files, const 
 	WIN32_FIND_DATA ffd;
 	HANDLE hFind = FindFirstFileEx((ConvertUTF8ToWString(directory) + L"\\*").c_str(), FindExInfoStandard, &ffd, FindExSearchNameMatch, NULL, 0);
 	if (hFind == INVALID_HANDLE_VALUE) {
-		FindClose(hFind);
 		return 0;
 	}
 	// windows loop
@@ -238,8 +237,6 @@ size_t getFilesInDir(const char *directory, std::vector<FileInfo> *files, const 
 	{
 		const std::string virtualName = ConvertWStringToUTF8(ffd.cFileName);
 #else
-	struct dirent_large { struct dirent entry; char padding[FILENAME_MAX+1]; };
-	struct dirent_large diren;
 	struct dirent *result = NULL;
 
 	//std::string directoryWithSlash = directory;
@@ -250,7 +247,7 @@ size_t getFilesInDir(const char *directory, std::vector<FileInfo> *files, const 
 	if (!dirp)
 		return 0;
 	// non windows loop
-	while (!readdir_r(dirp, (dirent*) &diren, &result) && result)
+	while ((result = readdir(dirp)))
 	{
 		const std::string virtualName(result->d_name);
 #endif
@@ -298,6 +295,22 @@ size_t getFilesInDir(const char *directory, std::vector<FileInfo> *files, const 
 	if (files)
 		std::sort(files->begin(), files->end());
 	return foundEntries;
+}
+
+int64_t getDirectoryRecursiveSize(const std::string &path, const char *filter, int flags) {
+	std::vector<FileInfo> fileInfo;
+	getFilesInDir(path.c_str(), &fileInfo, filter, flags);
+	int64_t sizeSum = 0;
+	// Note: getFileInDir does not fill in fileSize properly.
+	for (size_t i = 0; i < fileInfo.size(); i++) {
+		FileInfo finfo;
+		getFileInfo(fileInfo[i].fullName.c_str(), &finfo);
+		if (!finfo.isDirectory)
+			sizeSum += finfo.size;
+		else
+			sizeSum += getDirectoryRecursiveSize(finfo.fullName, filter, flags);
+	}
+	return sizeSum;
 }
 
 #ifdef _WIN32

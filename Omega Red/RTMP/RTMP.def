@@ -4,3 +4,4 @@ EXPORTS
 	Connect
 	Disconnect
 	Write
+	IsConnected

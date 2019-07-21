@@ -36,6 +36,7 @@ private:
 	int m_upscale_multiplier;
 
 	bool m_large_framebuffer;
+	bool m_disable_ts_half_bottom;
 	bool m_userhacks_align_sprite_X;
 	bool m_userhacks_enabled_gs_mem_clear;
 	bool m_userHacks_merge_sprite;
@@ -55,15 +56,16 @@ private:
 	bool OI_FFX(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_MetalSlug6(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_RozenMaidenGebetGarden(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
+	bool OI_SonicUnleashed(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_StarWarsForceUnleashed(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_PointListPalette(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_SuperManReturns(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_ArTonelico2(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_ItadakiStreet(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
+	bool OI_JakGames(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 
 	void OO_DBZBT2();
 	void OO_MajokkoALaMode2();
-	void OO_JakGames();
 
 	bool CU_DBZBT2();
 	bool CU_MajokkoALaMode2();
@@ -134,11 +136,14 @@ private:
 	uint16 Interpolate_UV(float alpha, int t0, int t1);
 	float alpha0(int L, int X0, int X1);
 	float alpha1(int L, int X0, int X1);
+	void SwSpriteRender();
 
 	template <bool linear> void RoundSpriteOffset();
 
 protected:
 	GSTextureCache* m_tc;
+	GSVector4i m_r;
+	GSTextureCache::Source* m_src;
 
 	virtual void DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* tex) = 0;
 
@@ -151,6 +156,7 @@ protected:
 	float m_userhacks_tcoffset_y;
 
 	int m_accurate_date;
+	int m_sw_blending;
 
 	bool m_channel_shuffle;
 
@@ -167,6 +173,7 @@ public:
 	GSVector2i GetCustomResolution();
 	void SetScaling();
 	void Lines2Sprites();
+	void ConvertSpriteTextureShuffle(bool& write_ba, bool& read_ba);
 	GSVector4 RealignTargetTextureCoordinate(const GSTextureCache::Source* tex);
 	GSVector4i ComputeBoundingBox(const GSVector2& rtscale, const GSVector2i& rtsize);
 	void MergeSprite(GSTextureCache::Source* tex);
@@ -179,4 +186,7 @@ public:
 	void InvalidateVideoMem(const GIFRegBITBLTBUF& BITBLTBUF, const GSVector4i& r);
 	void InvalidateLocalMem(const GIFRegBITBLTBUF& BITBLTBUF, const GSVector4i& r, bool clut = false);
 	void Draw();
+
+	// Called by the texture cache to know if current texture is useful
+	virtual bool IsDummyTexture() const { return false;}
 };

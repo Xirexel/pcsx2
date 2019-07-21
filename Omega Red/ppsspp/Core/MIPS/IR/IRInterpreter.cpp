@@ -4,13 +4,18 @@
 #include "ppsspp_config.h"
 #include "math/math_util.h"
 #include "Common/Common.h"
+#include "Common/BitScan.h"
 
 #ifdef _M_SSE
 #include <emmintrin.h>
 #endif
 
 #if PPSSPP_ARCH(ARM_NEON)
+#if defined(_MSC_VER) && PPSSPP_ARCH(ARM64)
+#include <arm64_neon.h>
+#else
 #include <arm_neon.h>
+#endif
 #endif
 
 #include "Core/Core.h"
@@ -559,14 +564,7 @@ u32 IRInterpret(MIPSState *mips, const IRInst *inst, int count) {
 
 		case IROp::Clz:
 		{
-			int x = 31;
-			int count = 0;
-			int value = mips->r[inst->src1];
-			while (x >= 0 && !(value & (1 << x))) {
-				count++;
-				x--;
-			}
-			mips->r[inst->dest] = count;
+			mips->r[inst->dest] = clz32(mips->r[inst->src1]);
 			break;
 		}
 

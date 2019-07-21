@@ -132,8 +132,9 @@ public:
 		: UI::LinearLayout(orientation, layoutParams) {
 	}
 
-	void SetCompare(CompareFunc lessFunc, DoneFunc) {
+	void SetCompare(CompareFunc lessFunc, DoneFunc doneFunc) {
 		lessFunc_ = lessFunc;
+		doneFunc_ = doneFunc;
 	}
 
 	void Update() override;
@@ -323,6 +324,8 @@ void SavedataBrowser::SetSortOption(SavedataSortOption opt) {
 			gl->SetCompare(&ByFilename, &SortDone);
 		} else if (sortOption_ == SavedataSortOption::SIZE) {
 			gl->SetCompare(&BySize, &SortDone);
+		} else if (sortOption_ == SavedataSortOption::DATE) {
+			gl->SetCompare(&ByDate, &SortDone);
 		}
 	}
 }
@@ -334,20 +337,54 @@ bool SavedataBrowser::ByFilename(const UI::View *v1, const UI::View *v2) {
 	return strcmp(b1->GamePath().c_str(), b2->GamePath().c_str()) < 0;
 }
 
+static time_t GetTotalSize(const SavedataButton *b) {
+	auto fileLoader = std::unique_ptr<FileLoader>(ConstructFileLoader(b->GamePath()));
+	switch (Identify_File(fileLoader.get())) {
+	case IdentifiedFileType::PSP_PBP_DIRECTORY:
+	case IdentifiedFileType::PSP_SAVEDATA_DIRECTORY:
+		return getDirectoryRecursiveSize(ResolvePBPDirectory(b->GamePath()), nullptr, GETFILES_GETHIDDEN);
+
+	default:
+		return fileLoader->FileSize();
+	}
+}
+
 bool SavedataBrowser::BySize(const UI::View *v1, const UI::View *v2) {
 	const SavedataButton *b1 = static_cast<const SavedataButton *>(v1);
 	const SavedataButton *b2 = static_cast<const SavedataButton *>(v2);
 
-	std::shared_ptr<GameInfo> g1info = g_gameInfoCache->GetInfo(nullptr, b1->GamePath(), GAMEINFO_WANTSIZE);
-	std::shared_ptr<GameInfo> g2info = g_gameInfoCache->GetInfo(nullptr, b2->GamePath(), GAMEINFO_WANTSIZE);
+	if (GetTotalSize(b1) > GetTotalSize(b2))
+		return true;
+	return strcmp(b1->GamePath().c_str(), b2->GamePath().c_str()) < 0;
+}
 
-	// They might be zero, but that's fine.
-	return g1info->gameSize > g2info->gameSize;
+static time_t GetDateSeconds(const SavedataButton *b) {
+	auto fileLoader = std::unique_ptr<FileLoader>(ConstructFileLoader(b->GamePath()));
+	tm datetm;
+	bool success;
+	if (Identify_File(fileLoader.get()) == IdentifiedFileType::PSP_SAVEDATA_DIRECTORY) {
+		success = File::GetModifTime(b->GamePath() + "/PARAM.SFO", datetm);
+	} else {
+		success = File::GetModifTime(b->GamePath(), datetm);
+	}
+
+	if (success) {
+		return mktime(&datetm);
+	}
+	return (time_t)0;
+}
+
+bool SavedataBrowser::ByDate(const UI::View *v1, const UI::View *v2) {
+	const SavedataButton *b1 = static_cast<const SavedataButton *>(v1);
+	const SavedataButton *b2 = static_cast<const SavedataButton *>(v2);
+
+	if (GetDateSeconds(b1) > GetDateSeconds(b2))
+		return true;
+	return strcmp(b1->GamePath().c_str(), b2->GamePath().c_str()) < 0;
 }
 
 bool SavedataBrowser::SortDone() {
-	PrioritizedWorkQueue *wq = g_gameInfoCache->WorkQueue();
-	return wq->Done();
+	return true;
 }
 
 void SavedataBrowser::Refresh() {
@@ -454,6 +491,7 @@ void SavedataScreen::CreateViews() {
 	ChoiceStrip *sortStrip = new ChoiceStrip(ORIENT_HORIZONTAL, new AnchorLayoutParams(NONE, 0, 0, NONE));
 	sortStrip->AddChoice(sa->T("Filename"));
 	sortStrip->AddChoice(sa->T("Size"));
+	sortStrip->AddChoice(sa->T("Date"));
 	sortStrip->SetSelection((int)sortOption_);
 	sortStrip->OnChoice.Handle<SavedataScreen>(this, &SavedataScreen::OnSortClick);
 

@@ -92,50 +92,41 @@ static std::mutex externalEventLock;
 std::vector<MHzChangeCallback> mhzChangeCallbacks;
 
 void FireMhzChange() {
-	for (auto it = mhzChangeCallbacks.begin(), end = mhzChangeCallbacks.end(); it != end; ++it) {
-		MHzChangeCallback cb = *it;
+	for (MHzChangeCallback cb : mhzChangeCallbacks) {
 		cb();
 	}
 }
 
-void SetClockFrequencyMHz(int cpuMhz)
-{
+void SetClockFrequencyHz(int cpuHz) {
 	// When the mhz changes, we keep track of what "time" it was before hand.
 	// This way, time always moves forward, even if mhz is changed.
 	lastGlobalTimeUs = GetGlobalTimeUs();
 	lastGlobalTimeTicks = GetTicks();
 
-	CPU_HZ = cpuMhz * 1000000;
+	CPU_HZ = cpuHz;
 	// TODO: Rescale times of scheduled events?
 
 	FireMhzChange();
 }
 
-int GetClockFrequencyMHz()
-{
-	return CPU_HZ / 1000000;
+int GetClockFrequencyHz() {
+	return CPU_HZ;
 }
 
-u64 GetGlobalTimeUsScaled()
-{
+u64 GetGlobalTimeUsScaled() {
+	return GetGlobalTimeUs();
+}
+
+u64 GetGlobalTimeUs() {
 	s64 ticksSinceLast = GetTicks() - lastGlobalTimeTicks;
-	int freq = GetClockFrequencyMHz();
-	if (g_Config.bTimerHack) {
-		float vps;
-		__DisplayGetVPS(&vps);
-		if (vps > 4.0f)
-			freq *= (vps / 59.94f);
+	int freq = GetClockFrequencyHz();
+	s64 usSinceLast = ticksSinceLast * 1000000 / freq;
+	if (ticksSinceLast > UINT_MAX) {
+		// Adjust the calculated value to avoid overflow errors.
+		lastGlobalTimeUs += usSinceLast;
+		lastGlobalTimeTicks = GetTicks();
+		usSinceLast = 0;
 	}
-	s64 usSinceLast = ticksSinceLast / freq;
-	return lastGlobalTimeUs + usSinceLast;
-
-}
-
-u64 GetGlobalTimeUs()
-{
-	s64 ticksSinceLast = GetTicks() - lastGlobalTimeTicks;
-	int freq = GetClockFrequencyMHz();
-	s64 usSinceLast = ticksSinceLast / freq;
 	return lastGlobalTimeUs + usSinceLast;
 }
 

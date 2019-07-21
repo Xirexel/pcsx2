@@ -19,6 +19,10 @@
 class GLRInputLayout;
 class GLPushBuffer;
 
+namespace Draw {
+class DrawContext;
+}
+
 class GLRTexture {
 public:
 	~GLRTexture() {
@@ -52,7 +56,9 @@ public:
 
 	GLuint handle = 0;
 	GLRTexture color_texture;
-	GLuint z_stencil_buffer = 0;  // Either this is set, or the two below.
+	// Either z_stencil_texture, z_stencil_buffer, or (z_buffer and stencil_buffer) are set.
+	GLuint z_stencil_buffer = 0;
+	GLRTexture z_stencil_texture;
 	GLuint z_buffer = 0;
 	GLuint stencil_buffer = 0;
 
@@ -363,7 +369,7 @@ public:
 	GLRenderManager();
 	~GLRenderManager();
 
-	void ThreadStart();
+	void ThreadStart(Draw::DrawContext *draw);
 	void ThreadEnd();
 	bool ThreadFrame();  // Returns false to request exiting the loop.
 
@@ -528,6 +534,22 @@ public:
 		step.texture_image.allocType = allocType;
 		step.texture_image.linearFilter = linearFilter;
 		initSteps_.push_back(step);
+	}
+
+	void TextureSubImage(GLRTexture *texture, int level, int x, int y, int width, int height, GLenum format, GLenum type, uint8_t *data, GLRAllocType allocType = GLRAllocType::NEW) {
+		_dbg_assert_(G3D, curRenderStep_ && curRenderStep_->stepType == GLRStepType::RENDER);
+		GLRRenderData _data{ GLRRenderCommand::TEXTURE_SUBIMAGE };
+		_data.texture_subimage.texture = texture;
+		_data.texture_subimage.data = data;
+		_data.texture_subimage.format = format;
+		_data.texture_subimage.type = type;
+		_data.texture_subimage.level = level;
+		_data.texture_subimage.x = x;
+		_data.texture_subimage.y = y;
+		_data.texture_subimage.width = width;
+		_data.texture_subimage.height = height;
+		_data.texture_subimage.allocType = allocType;
+		curRenderStep_->commands.push_back(_data);
 	}
 
 	void FinalizeTexture(GLRTexture *texture, int maxLevels, bool genMips) {

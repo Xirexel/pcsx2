@@ -96,6 +96,7 @@
 #include "UI/BackgroundAudio.h"
 #include "UI/TextureUtil.h"
 #include "UI/DiscordIntegration.h"
+#include "UI/GPUDriverTestScreen.h"
 
 #if !defined(MOBILE_DEVICE)
 #include "Common/KeyMap.h"
@@ -106,6 +107,9 @@
 #endif
 #if defined(USING_QT_UI)
 #include <QFontDatabase>
+#endif
+#if PPSSPP_PLATFORM(UWP)
+#include <dwrite_3.h>
 #endif
 
 // The new UI framework, for initialization
@@ -343,11 +347,14 @@ void CreateDirectoriesAndroid() {
 	File::CreateFullPath(GetSysDirectory(DIRECTORY_SAVESTATE));
 	File::CreateFullPath(GetSysDirectory(DIRECTORY_GAME));
 	File::CreateFullPath(GetSysDirectory(DIRECTORY_SYSTEM));
+	File::CreateFullPath(GetSysDirectory(DIRECTORY_TEXTURES));
 
-	// Avoid media scanners in PPSSPP_STATE and SAVEDATA directories
+	// Avoid media scanners in PPSSPP_STATE and SAVEDATA directories,
+	// and in the root PSP directory as well.
 	File::CreateEmptyFile(GetSysDirectory(DIRECTORY_SAVESTATE) + ".nomedia");
 	File::CreateEmptyFile(GetSysDirectory(DIRECTORY_SAVEDATA) + ".nomedia");
 	File::CreateEmptyFile(GetSysDirectory(DIRECTORY_SYSTEM) + ".nomedia");
+	File::CreateEmptyFile(GetSysDirectory(DIRECTORY_TEXTURES) + ".nomedia");
 }
 
 static void CheckFailedGPUBackends() {
@@ -385,9 +392,9 @@ static void CheckFailedGPUBackends() {
 		WARN_LOG(LOADER, "Failed graphics backend switched from %d to %d", lastBackend, g_Config.iGPUBackend);
 	// And then let's - for now - add the current to the failed list.
 	if (g_Config.sFailedGPUBackends.empty()) {
-		g_Config.sFailedGPUBackends = StringFromFormat("%d", g_Config.iGPUBackend);
+		g_Config.sFailedGPUBackends = GPUBackendToString((GPUBackend)g_Config.iGPUBackend);
 	} else if (g_Config.sFailedGPUBackends.find("ALL") == std::string::npos) {
-		g_Config.sFailedGPUBackends += StringFromFormat(",%d", g_Config.iGPUBackend);
+		g_Config.sFailedGPUBackends += "," + GPUBackendToString((GPUBackend)g_Config.iGPUBackend);
 	}
 
 	if (System_GetPropertyBool(SYSPROP_SUPPORTS_PERMISSIONS)) {
@@ -397,7 +404,7 @@ static void CheckFailedGPUBackends() {
 		writeStringToFile(true, g_Config.sFailedGPUBackends, cache.c_str());
 	} else {
 		// Just save immediately, since we have storage.
-		g_Config.Save();
+		g_Config.Save("got storage permission");
 	}
 }
 
@@ -411,7 +418,7 @@ static void ClearFailedGPUBackends() {
 	if (System_GetPropertyBool(SYSPROP_SUPPORTS_PERMISSIONS)) {
 		File::Delete(GetSysDirectory(DIRECTORY_APP_CACHE) + "/FailedGraphicsBackends.txt");
 	} else {
-		g_Config.Save();
+		g_Config.Save("clearFailedGPUBackends");
 	}
 }
 
@@ -462,6 +469,15 @@ void NativeInit(int argc, const char *argv[], const char *savegame_dir, const ch
 	// most sense.
 	g_Config.memStickDirectory = std::string(external_dir) + "/";
 	g_Config.flash0Directory = std::string(external_dir) + "/flash0/";
+
+	std::string memstickDirFile = g_Config.internalDataDirectory + "/memstick_dir.txt";
+	if (File::Exists(memstickDirFile)) {
+		std::string memstickDir;
+		readFileToString(true, memstickDirFile.c_str(), memstickDir);
+		if (!memstickDir.empty() && File::Exists(memstickDir)) {
+			g_Config.memStickDirectory = memstickDir + "/";
+		}
+	}
 #elif defined(IOS)
 	g_Config.memStickDirectory = user_data_path;
 	g_Config.flash0Directory = std::string(external_dir) + "/flash0/";
@@ -538,8 +554,6 @@ void NativeInit(int argc, const char *argv[], const char *savegame_dir, const ch
 					fileToLog = argv[i] + strlen("--log=");
 				if (!strncmp(argv[i], "--state=", strlen("--state=")) && strlen(argv[i]) > strlen("--state="))
 					stateToLoad = argv[i] + strlen("--state=");
-				if (!strncmp(argv[1], "--PS3", strlen("--PS3")))
-					g_Config.bPS3Controller = true;
 #if !defined(MOBILE_DEVICE)
 				if (!strncmp(argv[i], "--escape-exit", strlen("--escape-exit")))
 					g_Config.bPauseExitsEmulator = true;
@@ -635,7 +649,10 @@ void NativeInit(int argc, const char *argv[], const char *savegame_dir, const ch
 	// Note to translators: do not translate this/add this to PPSSPP-lang's files.
 	// It's intended to be custom for every user.
 	// Only add it to your own personal copies of PPSSPP.
-#if defined(USING_WIN_UI) && !PPSSPP_PLATFORM(UWP)
+#if PPSSPP_PLATFORM(UWP)
+	// Roboto font is loaded in TextDrawerUWP.
+	g_Config.sFont = des->T("Font", "Roboto");
+#elif defined(USING_WIN_UI) && !PPSSPP_PLATFORM(UWP)
 	// TODO: Could allow a setting to specify a font file to load?
 	// TODO: Make this a constant if we can sanely load the font on other systems?
 	AddFontResourceEx(L"assets/Roboto-Condensed.ttf", FR_PRIVATE, NULL);
@@ -665,7 +682,7 @@ void NativeInit(int argc, const char *argv[], const char *savegame_dir, const ch
 
 	if (!boot_filename.empty() && stateToLoad != NULL) {
 		SaveState::Load(stateToLoad, [](SaveState::Status status, const std::string &message, void *) {
-			if (!message.empty()) {
+			if (!message.empty() && (!g_Config.bDumpFrames || !g_Config.bDumpVideoOutput)) {
 				osm.Show(message, status == SaveState::Status::SUCCESS ? 2.0 : 5.0);
 			}
 		});
@@ -675,8 +692,11 @@ void NativeInit(int argc, const char *argv[], const char *savegame_dir, const ch
 	if (skipLogo) {
 		screenManager->switchScreen(new EmuScreen(boot_filename));
 	} else {
-		//screenManager->switchScreen(new LogoScreen());
+		screenManager->switchScreen(new LogoScreen());
 	}
+
+	// Easy testing
+	// screenManager->push(new GPUDriverTestScreen());
 
 	if (g_Config.bRemoteShareOnStartup && g_Config.bRemoteDebuggerOnStartup)
 		StartWebServer(WebServerFlags::ALL);
@@ -715,7 +735,7 @@ static UI::Style MakeStyle(uint32_t fg, uint32_t bg) {
 }
 
 static void UIThemeInit() {
-#if (defined(USING_WIN_UI) && !PPSSPP_PLATFORM(UWP)) || defined(USING_QT_UI)
+#if defined(USING_WIN_UI) || PPSSPP_PLATFORM(UWP) || defined(USING_QT_UI)
 	ui_theme.uiFont = UI::FontStyle(UBUNTU24, g_Config.sFont.c_str(), 22);
 	ui_theme.uiFontSmall = UI::FontStyle(UBUNTU24, g_Config.sFont.c_str(), 15);
 	ui_theme.uiFontSmaller = UI::FontStyle(UBUNTU24, g_Config.sFont.c_str(), 12);
@@ -873,7 +893,6 @@ void NativeShutdownGraphics() {
 void TakeScreenshot() {
 	g_TakeScreenshot = false;
 
-#if defined(_WIN32) || (defined(USING_QT_UI) && !defined(MOBILE_DEVICE))
 	std::string path = GetSysDirectory(DIRECTORY_SCREENSHOT);
 	while (path.length() > 0 && path.back() == '/') {
 		path.resize(path.size() - 1);
@@ -906,7 +925,6 @@ void TakeScreenshot() {
 		I18NCategory *err = GetI18NCategory("Error");
 		osm.Show(err->T("Could not save screenshot file"));
 	}
-#endif
 }
 
 void RenderOverlays(UIContext *dc, void *userdata) {
@@ -928,7 +946,6 @@ void RenderOverlays(UIContext *dc, void *userdata) {
 			UI::Drawable solid(colors[i & 3]);
 			dc->FillRect(solid, bounds);
 		}
-		dc->End();
 		dc->Flush();
 	}
 
@@ -1277,7 +1294,7 @@ void NativeShutdown() {
 	delete host;
 	host = nullptr;
 #endif
-	g_Config.Save();
+	g_Config.Save("NativeShutdown");
 
 	// Avoid shutting this down when restarting core.
 	if (!restarting)

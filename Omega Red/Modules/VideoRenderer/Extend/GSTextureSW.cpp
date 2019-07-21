@@ -23,6 +23,7 @@
 #include "Renderers/SW/GSTextureSW.h"
 #include "GSPng.h"
 
+
 GSTextureSW::GSTextureSW(int type, int width, int height)
 {
 	m_mapped.clear(std::memory_order_release);
@@ -51,7 +52,7 @@ bool GSTextureSW::Update(const GSVector4i& r, const void* data, int pitch, int l
 
 		for(int h = r.height(); h > 0; h--, src += pitch, dst += m.pitch)
 		{
-			memcpy(dst, src, rowbytes);
+            memcpy(dst, src, rowbytes);
 		}
 
 		Unmap();

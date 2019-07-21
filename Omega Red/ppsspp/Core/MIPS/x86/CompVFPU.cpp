@@ -42,7 +42,7 @@
 // Currently known non working ones should have DISABLE.
 
 // #define CONDITIONAL_DISABLE { fpr.ReleaseSpillLocks(); Comp_Generic(op); return; }
-#define CONDITIONAL_DISABLE ;
+#define CONDITIONAL_DISABLE(flag) if (jo.Disabled(JitDisable::flag)) { Comp_Generic(op); return; }
 #define DISABLE { fpr.ReleaseSpillLocks(); Comp_Generic(op); return; }
 
 #define _RS MIPS_GET_RS(op)
@@ -74,7 +74,7 @@ alignas(16) const float identityMatrix[4][4] = { { 1.0f, 0, 0, 0 }, { 0, 1.0f, 0
 
 void Jit::Comp_VPFX(MIPSOpcode op)
 {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_XFER);
 	int data = op & 0xFFFFF;
 	int regnum = (op >> 24) & 3;
 	switch (regnum) {
@@ -87,7 +87,7 @@ void Jit::Comp_VPFX(MIPSOpcode op)
 		js.prefixTFlag = JitState::PREFIX_KNOWN_DIRTY;
 		break;
 	case 2:  // D
-		js.prefixD = data;
+		js.prefixD = data & 0x00000FFF;
 		js.prefixDFlag = JitState::PREFIX_KNOWN_DIRTY;
 		break;
 	}
@@ -239,7 +239,7 @@ bool IsOverlapSafe(int dreg, int di, int sn, u8 sregs[], int tn = 0, u8 tregs[] 
 alignas(16) static u32 ssLoadStoreTemp;
 
 void Jit::Comp_SV(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(LSU_VFPU);
 
 	s32 imm = (signed short)(op&0xFFFC);
 	int vt = ((op >> 16) & 0x1f) | ((op & 3) << 5);
@@ -294,7 +294,7 @@ void Jit::Comp_SV(MIPSOpcode op) {
 }
 
 void Jit::Comp_SVQ(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(LSU_VFPU);
 
 	int imm = (signed short)(op&0xFFFC);
 	int vt = (((op >> 16) & 0x1f)) | ((op&1) << 5);
@@ -502,7 +502,7 @@ void Jit::Comp_SVQ(MIPSOpcode op) {
 }
 
 void Jit::Comp_VVectorInit(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_XFER);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -557,7 +557,7 @@ void Jit::Comp_VVectorInit(MIPSOpcode op) {
 }
 
 void Jit::Comp_VIdt(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_XFER);
 	if (js.HasUnknownPrefix())
 		DISABLE;
 
@@ -608,7 +608,7 @@ void Jit::Comp_VIdt(MIPSOpcode op) {
 }
 
 void Jit::Comp_VDot(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -739,7 +739,7 @@ void Jit::Comp_VDot(MIPSOpcode op) {
 
 
 void Jit::Comp_VHdp(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -788,7 +788,7 @@ void Jit::Comp_VHdp(MIPSOpcode op) {
 }
 
 void Jit::Comp_VCrossQuat(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -921,7 +921,7 @@ void Jit::Comp_VCrossQuat(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vcmov(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_COMP);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -997,7 +997,7 @@ static s32 DoVmaxSS(s32 treg) {
 }
 
 void Jit::Comp_VecDo3(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -1269,7 +1269,7 @@ alignas(16) static const u32 vcmpMask[4][4] = {
 };
 
 void Jit::Comp_Vcmp(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_COMP);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -1512,7 +1512,7 @@ extern const float mulTableVi2f[32] = {
 };
 
 void Jit::Comp_Vi2f(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -1599,7 +1599,7 @@ void Jit::Comp_Vi2f(MIPSOpcode op) {
 
 // Translation of ryg's half_to_float5_SSE2
 void Jit::Comp_Vh2f(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 	if (js.HasUnknownPrefix())
 		DISABLE;
 
@@ -1688,7 +1688,7 @@ alignas(16) static s8 vc2i_shuffle[16] = { -1, -1, -1, 0,  -1, -1, -1, 1,  -1, -
 alignas(16) static s8 vuc2i_shuffle[16] = { 0, 0, 0, 0,  1, 1, 1, 1,  2, 2, 2, 2,  3, 3, 3, 3 };
 
 void Jit::Comp_Vx2i(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 	if (js.HasUnknownPrefix())
 		DISABLE;
 
@@ -1811,7 +1811,7 @@ static const float half = 0.5f;
 static const double maxMinIntAsDouble[2] = { (double)0x7fffffff, (double)(int)0x80000000 };  // that's not equal to 0x80000000
 
 void Jit::Comp_Vf2i(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 	if (js.HasUnknownPrefix())
 		DISABLE;
 
@@ -1920,7 +1920,7 @@ void Jit::Comp_Vf2i(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vcst(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_XFER);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -1957,7 +1957,7 @@ void Jit::Comp_Vcst(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vsgn(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -2018,7 +2018,7 @@ void Jit::Comp_Vsgn(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vocp(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -2026,12 +2026,24 @@ void Jit::Comp_Vocp(MIPSOpcode op) {
 	VectorSize sz = GetVecSize(op);
 	int n = GetNumVectorElements(sz);
 
-	u8 sregs[4], dregs[4];
+	// This is a hack that modifies prefixes.  We eat them later, so just overwrite.
+	// S prefix forces the negate flags.
+	js.prefixS |= 0x000F0000;
+	// T prefix forces constants on and regnum to 1.
+	// That means negate still works, and abs activates a different constant.
+	js.prefixT = (js.prefixT & ~0x000000FF) | 0x00000055 | 0x0000F000;
+
+	u8 sregs[4], tregs[4], dregs[4];
+	// Actually uses the T prefixes (despite being VS.)
 	GetVectorRegsPrefixS(sregs, sz, _VS);
+	if (js.prefixT != 0x0000F055)
+		GetVectorRegsPrefixT(tregs, sz, _VS);
 	GetVectorRegsPrefixD(dregs, sz, _VD);
 
 	// Flush SIMD.
 	fpr.SimpleRegsV(sregs, sz, 0);
+	if (js.prefixT != 0x0000F055)
+		fpr.SimpleRegsV(tregs, sz, 0);
 	fpr.SimpleRegsV(dregs, sz, MAP_NOINIT | MAP_DIRTY);
 
 	X64Reg tempxregs[4];
@@ -2048,11 +2060,17 @@ void Jit::Comp_Vocp(MIPSOpcode op) {
 		}
 	}
 
-	MOV(PTRBITS, R(TEMPREG), ImmPtr(&one));
-	MOVSS(XMM1, MatR(TEMPREG));
+	if (js.prefixT == 0x0000F055) {
+		MOV(PTRBITS, R(TEMPREG), ImmPtr(&one));
+		MOVSS(XMM1, MatR(TEMPREG));
+	}
 	for (int i = 0; i < n; ++i) {
-		MOVSS(XMM0, R(XMM1));
-		SUBSS(XMM0, fpr.V(sregs[i]));
+		if (js.prefixT == 0x0000F055) {
+			MOVSS(XMM0, R(XMM1));
+		} else {
+			MOVSS(XMM0, fpr.V(tregs[i]));
+		}
+		ADDSS(XMM0, fpr.V(sregs[i]));
 		MOVSS(tempxregs[i], R(XMM0));
 	}
 
@@ -2067,7 +2085,7 @@ void Jit::Comp_Vocp(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vbfy(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 	if (js.HasUnknownPrefix())
 		DISABLE;
 
@@ -2181,7 +2199,7 @@ void SinCosNegSin(SinCosArg angle, float *output) {
 }
 
 void Jit::Comp_VV2Op(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -2419,7 +2437,7 @@ void Jit::Comp_VV2Op(MIPSOpcode op) {
 }
 
 void Jit::Comp_Mftv(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_XFER);
 
 	int imm = op & 0xFF;
 	MIPSGPReg rt = _RT;
@@ -2509,47 +2527,51 @@ void Jit::Comp_Mftv(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vmfvc(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
-	int vs = _VS;
-	int imm = op & 0xFF;
-	if (imm >= 128 && imm < 128 + VFPU_CTRL_MAX) {
-		fpr.MapRegV(vs, MAP_DIRTY | MAP_NOINIT);
-		if (imm - 128 == VFPU_CTRL_CC) {
+	CONDITIONAL_DISABLE(VFPU_XFER);
+	int vd = _VD;
+	int imm = (op >> 8) & 0x7F;
+	if (imm < VFPU_CTRL_MAX) {
+		fpr.MapRegV(vd, MAP_DIRTY | MAP_NOINIT);
+		if (imm == VFPU_CTRL_CC) {
 			gpr.MapReg(MIPS_REG_VFPUCC, true, false);
-			MOVD_xmm(fpr.VX(vs), gpr.R(MIPS_REG_VFPUCC));
+			MOVD_xmm(fpr.VX(vd), gpr.R(MIPS_REG_VFPUCC));
 		} else {
-			MOVSS(fpr.VX(vs), MIPSSTATE_VAR_ELEM32(vfpuCtrl[0], imm - 128));
+			MOVSS(fpr.VX(vd), MIPSSTATE_VAR_ELEM32(vfpuCtrl[0], imm));
 		}
+		fpr.ReleaseSpillLocks();
+	} else {
+		fpr.MapRegV(vd, MAP_DIRTY | MAP_NOINIT);
+		XORPS(fpr.VX(vd), fpr.V(vd));
 		fpr.ReleaseSpillLocks();
 	}
 }
 
 void Jit::Comp_Vmtvc(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_XFER);
 	int vs = _VS;
-	int imm = op & 0xFF;
-	if (imm >= 128 && imm < 128 + VFPU_CTRL_MAX) {
+	int imm = op & 0x7F;
+	if (imm < VFPU_CTRL_MAX) {
 		fpr.MapRegV(vs, 0);
-		if (imm - 128 == VFPU_CTRL_CC) {
+		if (imm == VFPU_CTRL_CC) {
 			gpr.MapReg(MIPS_REG_VFPUCC, false, true);
 			MOVD_xmm(gpr.R(MIPS_REG_VFPUCC), fpr.VX(vs));
 		} else {
-			MOVSS(MIPSSTATE_VAR_ELEM32(vfpuCtrl[0], imm - 128), fpr.VX(vs));
+			MOVSS(MIPSSTATE_VAR_ELEM32(vfpuCtrl[0], imm), fpr.VX(vs));
 		}
 		fpr.ReleaseSpillLocks();
 
-		if (imm - 128 == VFPU_CTRL_SPREFIX) {
+		if (imm == VFPU_CTRL_SPREFIX) {
 			js.prefixSFlag = JitState::PREFIX_UNKNOWN;
-		} else if (imm - 128 == VFPU_CTRL_TPREFIX) {
+		} else if (imm == VFPU_CTRL_TPREFIX) {
 			js.prefixTFlag = JitState::PREFIX_UNKNOWN;
-		} else if (imm - 128 == VFPU_CTRL_DPREFIX) {
+		} else if (imm == VFPU_CTRL_DPREFIX) {
 			js.prefixDFlag = JitState::PREFIX_UNKNOWN;
 		}
 	}
 }
 
 void Jit::Comp_VMatrixInit(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_XFER);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -2632,7 +2654,7 @@ void Jit::Comp_VMatrixInit(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vmmov(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_MTX_VMMOV);
 
 	// TODO: This probably ignores prefixes?
 	if (js.HasUnknownPrefix())
@@ -2718,7 +2740,7 @@ void Jit::Comp_Vmmov(MIPSOpcode op) {
 }
 
 void Jit::Comp_VScl(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -2780,7 +2802,7 @@ void Jit::Comp_VScl(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vmmul(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_MTX_VMMUL);
 
 	// TODO: This probably ignores prefixes?
 	if (js.HasUnknownPrefix())
@@ -2974,7 +2996,7 @@ void Jit::Comp_Vmmul(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vmscl(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_MTX_VMSCL);
 
 	// TODO: This op probably ignores prefixes?
 	if (js.HasUnknownPrefix())
@@ -3020,7 +3042,7 @@ void Jit::Comp_Vmscl(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vtfm(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_MTX_VTFM);
 
 	// TODO: This probably ignores prefixes?  Or maybe uses D?
 	if (js.HasUnknownPrefix())
@@ -3163,7 +3185,7 @@ alignas(16) static const s8 vi2xc_shuffle[16] = { 3, 7, 11, 15,  -1, -1, -1, -1,
 alignas(16) static const s8 vi2xs_shuffle[16] = { 2, 3, 6, 7,  10, 11, 14, 15,  -1, -1, -1, -1,  -1, -1, -1, -1 };
 
 void Jit::Comp_Vi2x(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 	if (js.HasUnknownPrefix())
 		DISABLE;
 
@@ -3295,7 +3317,7 @@ void Jit::Comp_Vi2x(MIPSOpcode op) {
 alignas(16) static const float vavg_table[4] = { 1.0f, 1.0f / 2.0f, 1.0f / 3.0f, 1.0f / 4.0f };
 
 void Jit::Comp_Vhoriz(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -3412,7 +3434,7 @@ void Jit::Comp_Vhoriz(MIPSOpcode op) {
 }
 
 void Jit::Comp_Viim(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_XFER);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -3435,7 +3457,7 @@ void Jit::Comp_Viim(MIPSOpcode op) {
 }
 
 void Jit::Comp_Vfim(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_XFER);
 
 	if (js.HasUnknownPrefix())
 		DISABLE;
@@ -3497,7 +3519,7 @@ void Jit::CompVrotShuffle(u8 *dregs, int imm, int n, bool negSin) {
 
 // Very heavily used by FF:CC
 void Jit::Comp_VRot(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 	if (js.HasUnknownPrefix()) {
 		DISABLE;
 	}
@@ -3569,7 +3591,7 @@ void Jit::Comp_VRot(MIPSOpcode op) {
 }
 
 void Jit::Comp_ColorConv(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(VFPU_VEC);
 	if (js.HasUnknownPrefix())
 		DISABLE;
 

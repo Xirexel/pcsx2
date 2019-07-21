@@ -176,6 +176,7 @@ public:
 //	//when presets are enabled, the user has practically no control over the emulation settings, and can only choose the preset to use.
 
 	wxString				CurrentIso;
+    wxString				CurrentBlockdump;
 	wxString				CurrentELF;
 	wxString				CurrentIRX;
 

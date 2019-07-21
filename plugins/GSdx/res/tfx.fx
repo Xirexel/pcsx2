@@ -29,9 +29,8 @@
 #define PS_FOG 0
 #define PS_CLR1 0
 #define PS_FBA 0
-#define PS_AOUT 0
+#define PS_FBMASK 0
 #define PS_LTF 1
-#define PS_SPRITEHACK 0
 #define PS_TCOFFSETHACK 0
 #define PS_POINT_SAMPLER 0
 #define PS_SHUFFLE 0
@@ -42,8 +41,17 @@
 #define PS_CHANNEL_FETCH 0
 #define PS_TALES_OF_ABYSS_HLE 0
 #define PS_URBAN_CHAOS_HLE 0
+#define PS_INVALID_TEX0 0
 #define PS_SCALE_FACTOR 1
+#define PS_HDR 0
+#define PS_COLCLIP 0
+#define PS_BLEND_A 0
+#define PS_BLEND_B 0
+#define PS_BLEND_C 0
+#define PS_BLEND_D 0
 #endif
+
+#define SW_BLEND (PS_BLEND_A || PS_BLEND_B || PS_BLEND_D)
 
 struct VS_INPUT
 {
@@ -80,6 +88,7 @@ struct PS_OUTPUT
 
 Texture2D<float4> Texture : register(t0);
 Texture2D<float4> Palette : register(t1);
+Texture2D<float4> RtSampler : register(t3);
 Texture2D<float4> RawTexture : register(t4);
 SamplerState TextureSampler : register(s0);
 SamplerState PaletteSampler : register(s1);
@@ -102,7 +111,10 @@ cbuffer cb1
 	float2 TA;
 	uint4 MskFix;
 	int4 ChannelShuffle;
+	uint4 FbMask;
 	float4 TC_OffsetHack;
+	float Af;
+	float3 _pad;
 };
 
 cbuffer cb2
@@ -331,6 +343,13 @@ float4 sample_depth(float2 st, float2 pos)
 
 float4 clamp_wrap_uv(float4 uv)
 {
+	float4 tex_size;
+
+	if (PS_INVALID_TEX0 == 1)
+		tex_size = WH.zwzw;
+	else
+		tex_size = WH.xyxy;
+
 	if(PS_WMS == PS_WMT)
 	{
 		if(PS_WMS == 2)
@@ -344,7 +363,7 @@ float4 clamp_wrap_uv(float4 uv)
 			// textures. Fixes Xenosaga's hair issue.
 			uv = frac(uv);
 			#endif
-			uv = (float4)(((uint4)(uv * WH.xyxy) & MskFix.xyxy) | MskFix.zwzw) / WH.xyxy;
+			uv = (float4)(((uint4)(uv * tex_size) & MskFix.xyxy) | MskFix.zwzw) / tex_size;
 		}
 	}
 	else
@@ -358,7 +377,7 @@ float4 clamp_wrap_uv(float4 uv)
 			#if PS_FST == 0
 			uv.xz = frac(uv.xz);
 			#endif
-			uv.xz = (float2)(((uint2)(uv.xz * WH.xx) & MskFix.xx) | MskFix.zz) / WH.xx;
+			uv.xz = (float2)(((uint2)(uv.xz * tex_size.xx) & MskFix.xx) | MskFix.zz) / tex_size.xx;
 		}
 		if(PS_WMT == 2)
 		{
@@ -369,7 +388,7 @@ float4 clamp_wrap_uv(float4 uv)
 			#if PS_FST == 0
 			uv.yw = frac(uv.yw);
 			#endif
-			uv.yw = (float2)(((uint2)(uv.yw * WH.yy) & MskFix.yy) | MskFix.ww) / WH.yy;
+			uv.yw = (float2)(((uint2)(uv.yw * tex_size.yy) & MskFix.yy) | MskFix.ww) / tex_size.yy;
 		}
 	}
 
@@ -571,9 +590,7 @@ void atst(float4 c)
 	}
 	else if(PS_ATST == 1)
 	{
-		#if PS_SPRITEHACK == 0
 		if (a > AREF) discard;
-		#endif
 	}
 	else if(PS_ATST == 2)
 	{
@@ -602,7 +619,11 @@ float4 fog(float4 c, float f)
 
 float4 ps_color(PS_INPUT input)
 {
-#if PS_FST == 0
+#if PS_FST == 0 && PS_INVALID_TEX0 == 1
+	// Re-normalize coordinate from invalid GS to corrected texture size
+	float2 st = (input.t.xy * WH.xy) / (input.t.w * WH.zw);
+	// no st_int yet
+#elif PS_FST == 0
 	float2 st = input.t.xy / input.t.w;
 	float2 st_int = input.ti.zw / input.t.w;
 #else
@@ -857,6 +878,39 @@ void gs_main(line VS_OUTPUT input[2], inout TriangleStream<VS_OUTPUT> stream)
 
 #endif
 
+void ps_blend(inout float4 Color, float As, float2 pos_xy)
+{
+	if (SW_BLEND)
+	{
+		float4 RT = RtSampler.Load(int3(pos_xy, 0));
+
+		float3 Cs = trunc(Color.rgb * 255.0f + 0.1f);
+		float3 Cd = trunc(RT.rgb * 255.0f + 0.1f);
+		float3 Cv;
+
+		float Ad = (PS_DFMT == FMT_24) ? 1.0f : (RT.a * 255.0f / 128.0f);
+
+		float3 A = (PS_BLEND_A == 0) ? Cs : ((PS_BLEND_A == 1) ? Cd : (float3)0.0f);
+		float3 B = (PS_BLEND_B == 0) ? Cs : ((PS_BLEND_B == 1) ? Cd : (float3)0.0f);
+		float3 C = (PS_BLEND_C == 0) ? As : ((PS_BLEND_C == 1) ? Ad : Af);
+		float3 D = (PS_BLEND_D == 0) ? Cs : ((PS_BLEND_D == 1) ? Cd : (float3)0.0f);
+
+		Cv = (PS_BLEND_A == PS_BLEND_B) ? D : trunc(((A - B) * C) + D);
+
+		// Standard Clamp
+		if (PS_COLCLIP == 0 && PS_HDR == 0)
+			Cv = clamp(Cv, (float3)0.0f, (float3)255.0f);
+
+		// In 16 bits format, only 5 bits of color are used. It impacts shadows computation of Castlevania
+		if (PS_DFMT == FMT_16)
+			Cv = (float3)((int3)Cv & (int3)0xF8);
+		else if (PS_COLCLIP == 1 && PS_HDR == 0)
+			Cv = (float3)((int3)Cv & (int3)0xFF);
+
+		Color.rgb = Cv / 255.0f;
+	}
+}
+
 PS_OUTPUT ps_main(PS_INPUT input)
 {
 	float4 c = ps_color(input);
@@ -890,9 +944,14 @@ PS_OUTPUT ps_main(PS_INPUT input)
 		}
 	}
 
-	output.c1 = c.a * 255.0f / 128.0f; // used for alpha blending
+	// Must be done before alpha correction
+	float alpha_blend = c.a * 255.0f / 128.0f;
 
-	if ((PS_DFMT == FMT_16) || PS_AOUT) // 16 bit output
+	// Blending
+	ps_blend(c, alpha_blend, input.p.xy);
+
+	// Alpha correction
+	if (PS_DFMT == FMT_16) // 16 bit output
 	{
 		float a = 128.0f / 255; // alpha output will be 0x80
 
@@ -903,7 +962,16 @@ PS_OUTPUT ps_main(PS_INPUT input)
 		if (c.a < 128.0f / 255.0f) c.a += 128.0f / 255.0f;
 	}
 
+	if (PS_FBMASK)
+	{
+		float4 rt = RtSampler.Load(int3(input.p.xy, 0));
+		uint4 denorm_rt = uint4(rt * 255.0f + 0.5f);
+		uint4 denorm_c = uint4(c * 255.0f + 0.5f);
+		c = float4((denorm_c & ~FbMask) | (denorm_rt & FbMask)) / 255.0f;
+	}
+
 	output.c0 = c;
+	output.c1 = (float4)(alpha_blend);
 
 	return output;
 }

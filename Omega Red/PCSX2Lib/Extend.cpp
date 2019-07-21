@@ -214,3 +214,4 @@ bool SysPluginBindings::McdReIndex(uint port, uint slot, const wxString& filter)
 	return g_Mcd->McdReIndex((PS2E_THISPTR)g_Mcd, port, slot, filter);
 }
 
+ void SaveStateBase::InputRecordingFreeze(){}

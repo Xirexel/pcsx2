@@ -1,6 +1,5 @@
 // SDL/EGL implementation of the framework.
 // This is quite messy due to platform-specific implementations and #ifdef's.
-// Note: SDL1.2 implementation is deprecated and will soon be replaced by SDL2.0.
 // If your platform is not supported, it is suggested to use Qt instead.
 
 #include <unistd.h>
@@ -116,18 +115,33 @@ void System_SendMessage(const char *command, const char *parameter) {
 	} else if (!strcmp(command, "finish")) {
 		// Do a clean exit
 		g_QuitRequested = true;
+	} else if (!strcmp(command, "graphics_restart")) {
+		// Not sure how we best do this, but do a clean exit, better than being stuck in a bad state.
+		g_QuitRequested = true;
+	} else if (!strcmp(command, "setclipboardtext")) {
+		SDL_SetClipboardText(parameter);
 	}
 }
 
 void System_AskForPermission(SystemPermission permission) {}
 PermissionStatus System_GetPermissionStatus(SystemPermission permission) { return PERMISSION_STATUS_GRANTED; }
 
+void OpenDirectory(const char *path) {
+#if defined(_WIN32)
+	PIDLIST_ABSOLUTE pidl = ILCreateFromPath(ConvertUTF8ToWString(ReplaceAll(path, "/", "\\")).c_str());
+	if (pidl) {
+		SHOpenFolderAndSelectItems(pidl, 0, NULL, 0);
+		ILFree(pidl);
+	}
+#endif
+}
+
 void LaunchBrowser(const char *url) {
 #if defined(MOBILE_DEVICE)
 	ILOG("Would have gone to %s but LaunchBrowser is not implemented on this platform", url);
 #elif defined(_WIN32)
 	std::wstring wurl = ConvertUTF8ToWString(url);
-	//ShellExecute(NULL, L"open", wurl.c_str(), NULL, NULL, SW_SHOWNORMAL);
+	ShellExecute(NULL, L"open", wurl.c_str(), NULL, NULL, SW_SHOWNORMAL);
 #elif defined(__APPLE__)
 	std::string command = std::string("open ") + url;
 	system(command.c_str());
@@ -145,7 +159,7 @@ void LaunchMarket(const char *url) {
 	ILOG("Would have gone to %s but LaunchMarket is not implemented on this platform", url);
 #elif defined(_WIN32)
 	std::wstring wurl = ConvertUTF8ToWString(url);
-	//ShellExecute(NULL, L"open", wurl.c_str(), NULL, NULL, SW_SHOWNORMAL);
+	ShellExecute(NULL, L"open", wurl.c_str(), NULL, NULL, SW_SHOWNORMAL);
 #elif defined(__APPLE__)
 	std::string command = std::string("open ") + url;
 	system(command.c_str());
@@ -163,7 +177,7 @@ void LaunchEmail(const char *email_address) {
 	ILOG("Would have opened your email client for %s but LaunchEmail is not implemented on this platform", email_address);
 #elif defined(_WIN32)
 	std::wstring mailto = std::wstring(L"mailto:") + ConvertUTF8ToWString(email_address);
-	//ShellExecute(NULL, L"open", mailto.c_str(), NULL, NULL, SW_SHOWNORMAL);
+	ShellExecute(NULL, L"open", mailto.c_str(), NULL, NULL, SW_SHOWNORMAL);
 #elif defined(__APPLE__)
 	std::string command = std::string("open mailto:") + email_address;
 	system(command.c_str());
@@ -205,6 +219,8 @@ std::string System_GetProperty(SystemProperty prop) {
 		}
 		return "en_US";
 	}
+	case SYSPROP_CLIPBOARD_TEXT:
+		return SDL_HasClipboardText() ? SDL_GetClipboardText() : "";
 	default:
 		return "";
 	}
@@ -348,9 +364,9 @@ int main(int argc, char *argv[]) {
 	SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
 
 	if (VulkanMayBeAvailable()) {
-		printf("Vulkan might be available.\n");
+		printf("DEBUG: Vulkan might be available.\n");
 	} else {
-		printf("Vulkan is not available.\n");
+		printf("DEBUG: Vulkan is not available, not using Vulkan.\n");
 	}
 
 	int set_xres = -1;
@@ -435,16 +451,18 @@ int main(int argc, char *argv[]) {
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetSwapInterval(1);
 
-	// Is resolution is too low to run windowed
+	// Force fullscreen if the resolution is too low to run windowed.
 	if (g_DesktopWidth < 480 * 2 && g_DesktopHeight < 272 * 2) {
 		mode |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 
 	// If we're on mobile, don't try for windowed either.
-#if defined(USING_GLES2) || defined(MOBILE_DEVICE)
-    mode |= SDL_WINDOW_FULLSCREEN;
+#if defined(MOBILE_DEVICE)
+	mode |= SDL_WINDOW_FULLSCREEN;
+#elif defined(USING_FBDEV)
+	mode |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 #else
-    mode |= SDL_WINDOW_RESIZABLE;
+	mode |= SDL_WINDOW_RESIZABLE;
 #endif
 
 	if (mode & SDL_WINDOW_FULLSCREEN_DESKTOP) {
@@ -600,6 +618,7 @@ int main(int argc, char *argv[]) {
 	}
 	graphicsContext->ThreadStart();
 
+	bool windowHidden = false;
 	while (true) {
 		double startTime = time_now_d();
 		SDL_Event event, touchEvent;
@@ -615,7 +634,7 @@ int main(int argc, char *argv[]) {
 #if !defined(MOBILE_DEVICE)
 			case SDL_WINDOWEVENT:
 				switch (event.window.event) {
-				case SDL_WINDOWEVENT_RESIZED:
+				case SDL_WINDOWEVENT_SIZE_CHANGED:  // better than RESIZED, more general
 				{
 					Uint32 window_flags = SDL_GetWindowFlags(window);
 					bool fullscreen = (window_flags & SDL_WINDOW_FULLSCREEN);
@@ -635,6 +654,19 @@ int main(int argc, char *argv[]) {
 					}
 					break;
 				}
+
+				case SDL_WINDOWEVENT_MINIMIZED:
+				case SDL_WINDOWEVENT_HIDDEN:
+					windowHidden = true;
+					Core_NotifyWindowHidden(windowHidden);
+					break;
+				case SDL_WINDOWEVENT_EXPOSED:
+				case SDL_WINDOWEVENT_SHOWN:
+				case SDL_WINDOWEVENT_MAXIMIZED:
+				case SDL_WINDOWEVENT_RESTORED:
+					windowHidden = false;
+					Core_NotifyWindowHidden(windowHidden);
+					break;
 
 				default:
 					break;
@@ -682,6 +714,8 @@ int main(int argc, char *argv[]) {
 					NativeKey(key);
 					break;
 				}
+// This behavior doesn't feel right on a macbook with a touchpad.
+#if !PPSSPP_PLATFORM(MAC)
 			case SDL_FINGERMOTION:
 				{
 					SDL_GetWindowSize(window, &w, &h);
@@ -744,6 +778,7 @@ int main(int argc, char *argv[]) {
 					SDL_PushEvent(&touchEvent);
 					break;
 				}
+#endif
 			case SDL_MOUSEBUTTONDOWN:
 				switch (event.button.button) {
 				case SDL_BUTTON_LEFT:
@@ -847,7 +882,8 @@ int main(int argc, char *argv[]) {
 			// glsl_refresh(); // auto-reloads modified GLSL shaders once per second.
 		}
 
-		if (emuThreadState != (int)EmuThreadState::DISABLED) {
+		bool renderThreadPaused = windowHidden && g_Config.bPauseWhenMinimized && emuThreadState != (int)EmuThreadState::DISABLED;
+		if (emuThreadState != (int)EmuThreadState::DISABLED && !renderThreadPaused) {
 			if (!graphicsContext->ThreadFrame())
 				break;
 		}
@@ -859,7 +895,7 @@ int main(int argc, char *argv[]) {
 
 		// Simple throttling to not burn the GPU in the menu.
 		time_update();
-		if (GetUIState() != UISTATE_INGAME || !PSP_IsInited()) {
+		if (GetUIState() != UISTATE_INGAME || !PSP_IsInited() || renderThreadPaused) {
 			double diffTime = time_now_d() - startTime;
 			int sleepTime = (int)(1000.0 / 60.0) - (int)(diffTime * 1000.0);
 			if (sleepTime > 0)

@@ -225,3 +225,15 @@ Write(int handler, int32_t sampleTime, const char* buf, int size, int Flags, int
 
 	return -1;
 }
+
+RTMP_EXPORT_(int)
+IsConnected(int handler)
+{
+    auto l_find = g_Servers.find(handler);
+
+    if (l_find != g_Servers.end()) {
+        return RTMP_IsConnected((*l_find).second->m_RTMP.get());
+    }
+
+    return FALSE;
+}

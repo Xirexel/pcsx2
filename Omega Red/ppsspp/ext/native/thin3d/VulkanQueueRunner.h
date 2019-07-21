@@ -246,8 +246,8 @@ private:
 
 	VulkanContext *vulkan_;
 
-	VkFramebuffer backbuffer_;
-	VkImage backbufferImage_;
+	VkFramebuffer backbuffer_ = VK_NULL_HANDLE;
+	VkImage backbufferImage_ = VK_NULL_HANDLE;
 
 	VkRenderPass backbufferRenderPass_ = VK_NULL_HANDLE;
 	VkRenderPass framebufferRenderPass_ = VK_NULL_HANDLE;
@@ -261,6 +261,7 @@ private:
 	VkDeviceMemory readbackMemory_ = VK_NULL_HANDLE;
 	VkBuffer readbackBuffer_ = VK_NULL_HANDLE;
 	VkDeviceSize readbackBufferSize_ = 0;
+	bool readbackBufferIsCoherent_ = false;
 
 	// TODO: Enable based on compat.ini.
 	uint32_t hacksEnabled_ = 0;

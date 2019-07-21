@@ -224,7 +224,7 @@ bool MemoryMap_Setup(u32 flags) {
 #if defined(_WIN32) && PPSSPP_ARCH(32BIT)
 		// Try a whole range of possible bases. Return once we got a valid one.
 		uintptr_t max_base_addr = 0xCFFF0000;
-		uintptr_t min_base_addr = 0xA1000000;
+		uintptr_t min_base_addr = 0x51000000; // 0xA1000000;
 
 // original values
 //		uintptr_t max_base_addr = 0x7FFF0000 - 0x10000000;

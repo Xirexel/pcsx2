@@ -42,22 +42,22 @@ void CreateImage(VulkanContext *vulkan, VkCommandBuffer cmd, VKRImage &img, int 
 	vkCreateImage(vulkan->GetDevice(), &ici, nullptr, &img.image);
 
 	VkMemoryRequirements memreq;
-	vkGetImageMemoryRequirements(vulkan->GetDevice(), img.image, &memreq);
+	bool dedicatedAllocation = false;
+	vulkan->GetImageMemoryRequirements(img.image, &memreq, &dedicatedAllocation);
 
 	VkMemoryAllocateInfo alloc{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
 	alloc.allocationSize = memreq.size;
-
-	// Hint to the driver that this allocation is image-specific. Some drivers benefit.
-	// We only bother supporting the KHR extension, not the old NV one.
-	VkMemoryDedicatedAllocateInfoKHR dedicated{ VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR };
-	if (vulkan->DeviceExtensions().DEDICATED_ALLOCATION) {
-		alloc.pNext = &dedicated;
-		dedicated.image = img.image;
+	VkMemoryDedicatedAllocateInfoKHR dedicatedAllocateInfo{VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR};
+	if (dedicatedAllocation) {
+		dedicatedAllocateInfo.image = img.image;
+		alloc.pNext = &dedicatedAllocateInfo;
 	}
 
 	vulkan->MemoryTypeFromProperties(memreq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc.memoryTypeIndex);
+
 	VkResult res = vkAllocateMemory(vulkan->GetDevice(), &alloc, nullptr, &img.memory);
 	assert(res == VK_SUCCESS);
+
 	res = vkBindImageMemory(vulkan->GetDevice(), img.image, img.memory, 0);
 	assert(res == VK_SUCCESS);
 
@@ -136,7 +136,7 @@ VulkanRenderManager::VulkanRenderManager(VulkanContext *vulkan) : vulkan_(vulkan
 	queueRunner_.CreateDeviceObjects();
 
 	// Temporary AMD hack for issue #10097
-	if (vulkan_->GetPhysicalDeviceProperties(vulkan_->GetCurrentPhysicalDevice()).vendorID == VULKAN_VENDOR_AMD) {
+	if (vulkan_->GetPhysicalDeviceProperties().properties.vendorID == VULKAN_VENDOR_AMD) {
 		useThread_ = false;
 	}
 }
@@ -156,7 +156,7 @@ void VulkanRenderManager::CreateBackbuffers() {
 	VkCommandBuffer cmdInit = GetInitCmd();
 
 	for (uint32_t i = 0; i < swapchainImageCount_; i++) {
-		SwapchainImageData sc_buffer;
+		SwapchainImageData sc_buffer{};
 		sc_buffer.image = swapchainImages[i];
 
 		VkImageViewCreateInfo color_image_view = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
@@ -552,11 +552,6 @@ bool VulkanRenderManager::InitDepthStencilBuffer(VkCommandBuffer cmd) {
 	image_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	image_info.flags = 0;
 
-	VkMemoryAllocateInfo mem_alloc = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
-	mem_alloc.allocationSize = 0;
-	mem_alloc.memoryTypeIndex = 0;
-
-	VkMemoryRequirements mem_reqs;
 
 	depth_.format = depth_format;
 
@@ -566,9 +561,20 @@ bool VulkanRenderManager::InitDepthStencilBuffer(VkCommandBuffer cmd) {
 	if (res != VK_SUCCESS)
 		return false;
 
-	vkGetImageMemoryRequirements(device, depth_.image, &mem_reqs);
+	bool dedicatedAllocation = false;
+	VkMemoryRequirements mem_reqs;
+	vulkan_->GetImageMemoryRequirements(depth_.image, &mem_reqs, &dedicatedAllocation);
 
+	VkMemoryAllocateInfo mem_alloc = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
 	mem_alloc.allocationSize = mem_reqs.size;
+	mem_alloc.memoryTypeIndex = 0;
+
+	VkMemoryDedicatedAllocateInfoKHR dedicatedAllocateInfo{VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR};
+	if (dedicatedAllocation) {
+		dedicatedAllocateInfo.image = depth_.image;
+		mem_alloc.pNext = &dedicatedAllocateInfo;
+	}
+
 	// Use the memory properties to determine the type of memory required
 	pass = vulkan_->MemoryTypeFromProperties(mem_reqs.memoryTypeBits,
 		0, /* No requirements */
@@ -859,7 +865,9 @@ void VulkanRenderManager::BeginSubmitFrame(int frame) {
 		VkResult res = vkAcquireNextImageKHR(vulkan_->GetDevice(), vulkan_->GetSwapchain(), UINT64_MAX, acquireSemaphore_, (VkFence)VK_NULL_HANDLE, &frameData.curSwapchainImage);
 		if (res == VK_SUBOPTIMAL_KHR) {
 			// Hopefully the resize will happen shortly. Ignore - one frame might look bad or something.
+			WLOG("VK_SUBOPTIMAL_KHR returned - ignoring");
 		} else if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+			WLOG("VK_ERROR_OUT_OF_DATE_KHR returned - not presenting");
 			frameData.skipSwap = true;
 		} else {
 			_assert_msg_(G3D, res == VK_SUCCESS, "vkAcquireNextImageKHR failed! result=%s", VulkanResultToString(res));
@@ -898,7 +906,11 @@ void VulkanRenderManager::Submit(int frame, bool triggerFence) {
 			submit_info.pCommandBuffers = cmdBufs;
 			res = vkQueueSubmit(vulkan_->GetGraphicsQueue(), 1, &submit_info, VK_NULL_HANDLE);
 			if (res == VK_ERROR_DEVICE_LOST) {
-				_assert_msg_(G3D, false, "Lost the Vulkan device!");
+#ifdef _WIN32
+				_assert_msg_(G3D, false, "Lost the Vulkan device! If this happens again, switch Graphics Backend from Vulkan to Direct3D11");
+#else
+				_assert_msg_(G3D, false, "Lost the Vulkan device! If this happens again, switch Graphics Backend from Vulkan to OpenGL");
+#endif
 			} else {
 				_assert_msg_(G3D, res == VK_SUCCESS, "vkQueueSubmit failed (init)! result=%s", VulkanResultToString(res));
 			}
@@ -922,7 +934,11 @@ void VulkanRenderManager::Submit(int frame, bool triggerFence) {
 	}
 	res = vkQueueSubmit(vulkan_->GetGraphicsQueue(), 1, &submit_info, triggerFence ? frameData.fence : VK_NULL_HANDLE);
 	if (res == VK_ERROR_DEVICE_LOST) {
-		_assert_msg_(G3D, false, "Lost the Vulkan device!");
+#ifdef _WIN32
+		_assert_msg_(G3D, false, "Lost the Vulkan device! If this happens again, switch Graphics Backend from Vulkan to Direct3D11");
+#else
+		_assert_msg_(G3D, false, "Lost the Vulkan device! If this happens again, switch Graphics Backend from Vulkan to OpenGL");
+#endif
 	} else {
 		_assert_msg_(G3D, res == VK_SUCCESS, "vkQueueSubmit failed (main, split=%d)! result=%s", (int)splitSubmit_, VulkanResultToString(res));
 	}

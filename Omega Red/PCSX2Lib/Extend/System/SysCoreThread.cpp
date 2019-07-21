@@ -119,7 +119,9 @@ void SysCoreThread::OnResumeReady()
 // the context of a reset/restart.
 void SysCoreThread::SetElfOverride( const wxString& elf )
 {
+	//pxAssertDev( !m_hasValidMachine, "Thread synchronization error while assigning ELF override." );
 	m_elf_override = elf;
+
 
 	Hle_SetElfPath(elf.ToUTF8());
 }

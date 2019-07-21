@@ -24,6 +24,7 @@
 #include "Common/CommonWindows.h"
 #include "Common/KeyMap.h"
 #include "Common/OSVersion.h"
+#include "ppsspp_config.h"
 
 #include <Windowsx.h>
 #include <shellapi.h>
@@ -546,9 +547,10 @@ namespace MainWindow
 		DialogManager::AddDlg(disasmWindow[0]);
 		disasmWindow[0]->Show(g_Config.bShowDebuggerOnLoad);
 
+#if PPSSPP_API(ANY_GL)
 		geDebuggerWindow = new CGEDebugger(MainWindow::GetHInstance(), MainWindow::GetHWND());
 		DialogManager::AddDlg(geDebuggerWindow);
-
+#endif
 		memoryWindow[0] = new CMemoryDlg(MainWindow::GetHInstance(), MainWindow::GetHWND(), currentDebugMIPS);
 		DialogManager::AddDlg(memoryWindow[0]);
 	}

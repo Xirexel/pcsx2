@@ -65,7 +65,7 @@ bool postprocess_filter_dealias = false;
 
 // OUTPUT
 int SndOutLatencyMS = 100;
-int SynchMode = 2; // Time Stretch, Async or Disabled
+int SynchMode = 0; // Time Stretch, Async or Disabled
 
 u32 OutputModule = 0;
 
@@ -112,7 +112,7 @@ void ReadSettings()
     VolumeAdjustSR = powf(10, VolumeAdjustSRdb / 10);
     VolumeAdjustLFE = powf(10, VolumeAdjustLFEdb / 10);
 
-    //SynchMode = CfgReadInt(L"OUTPUT", L"Synch_Mode", 0);
+    SynchMode = CfgReadInt(L"OUTPUT", L"Synch_Mode", 0);
     numSpeakers = CfgReadInt(L"OUTPUT", L"SpeakerConfiguration", 0);
     dplLevel = CfgReadInt(L"OUTPUT", L"DplDecodingLevel", 0);
     SndOutLatencyMS = CfgReadInt(L"OUTPUT", L"Latency", 100);
@@ -123,6 +123,15 @@ void ReadSettings()
         SndOutLatencyMS = LATENCY_MIN;
 
     wchar_t omodid[128];
+
+    // portaudio occasionally has issues selecting the proper default audio device.
+    // let's use xaudio2 until this is sorted (rama)
+
+    //	CfgReadStr(L"OUTPUT", L"Output_Module", omodid, 127, PortaudioOut->GetIdent());
+    if (IsWindows8OrGreater())
+        CfgReadStr(L"OUTPUT", L"Output_Module", omodid, 127, XAudio2Out->GetIdent());
+    else
+        CfgReadStr(L"OUTPUT", L"Output_Module", omodid, 127, XAudio2_27_Out->GetIdent());
 
     // find the driver index of this module:
     OutputModule = FindOutputModuleById(omodid);
@@ -136,6 +145,7 @@ void ReadSettings()
     Config_WaveOut.NumBuffers = CfgReadInt(L"WAVEOUT", L"Buffer_Count", 4);
 
     DSoundOut->ReadSettings();
+    PortaudioOut->ReadSettings();
 
     SoundtouchCfg::ReadSettings();
     DebugConfig::ReadSettings();
@@ -175,7 +185,7 @@ void WriteSettings()
 
     CfgWriteStr(L"OUTPUT", L"Output_Module", mods[OutputModule]->GetIdent());
     CfgWriteInt(L"OUTPUT", L"Latency", SndOutLatencyMS);
-    //CfgWriteInt(L"OUTPUT", L"Synch_Mode", SynchMode);
+    CfgWriteInt(L"OUTPUT", L"Synch_Mode", SynchMode);
     CfgWriteInt(L"OUTPUT", L"SpeakerConfiguration", numSpeakers);
     CfgWriteInt(L"OUTPUT", L"DplDecodingLevel", dplLevel);
     CfgWriteInt(L"DEBUG", L"DelayCycles", delayCycles);
@@ -189,6 +199,7 @@ void WriteSettings()
     CfgWriteInt(L"DSP PLUGIN", L"ModuleNum", dspPluginModule);
     CfgWriteBool(L"DSP PLUGIN", L"Enabled", dspPluginEnabled);
 
+    PortaudioOut->WriteSettings();
     DSoundOut->WriteSettings();
     SoundtouchCfg::WriteSettings();
     DebugConfig::WriteSettings();
@@ -198,9 +209,14 @@ void CheckOutputModule(HWND window)
 {
     OutputModule = SendMessage(GetDlgItem(window, IDC_OUTPUT), CB_GETCURSEL, 0, 0);
     const bool IsConfigurable =
+        mods[OutputModule] == PortaudioOut ||
+        mods[OutputModule] == WaveOut ||
         mods[OutputModule] == DSoundOut;
 
-    const bool AudioExpansion = false;
+    const bool AudioExpansion =
+        mods[OutputModule] == XAudio2Out ||
+        mods[OutputModule] == XAudio2_27_Out ||
+        mods[OutputModule] == PortaudioOut;
 
     EnableWindow(GetDlgItem(window, IDC_OUTCONF), IsConfigurable);
     EnableWindow(GetDlgItem(window, IDC_SPEAKERS), AudioExpansion);
@@ -229,7 +245,7 @@ BOOL CALLBACK ConfigProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             SendDialogMsg(hWnd, IDC_SYNCHMODE, CB_ADDSTRING, 0, (LPARAM)L"TimeStretch (Recommended)");
             SendDialogMsg(hWnd, IDC_SYNCHMODE, CB_ADDSTRING, 0, (LPARAM)L"Async Mix (Breaks some games!)");
             SendDialogMsg(hWnd, IDC_SYNCHMODE, CB_ADDSTRING, 0, (LPARAM)L"None (Audio can skip.)");
-            //SendDialogMsg(hWnd, IDC_SYNCHMODE, CB_SETCURSEL, SynchMode, 0);
+            SendDialogMsg(hWnd, IDC_SYNCHMODE, CB_SETCURSEL, SynchMode, 0);
 
             SendDialogMsg(hWnd, IDC_SPEAKERS, CB_RESETCONTENT, 0, 0);
             SendDialogMsg(hWnd, IDC_SPEAKERS, CB_ADDSTRING, 0, (LPARAM)L"Stereo (None, Default)");
@@ -266,7 +282,7 @@ BOOL CALLBACK ConfigProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             CheckOutputModule(hWnd);
 
-            //EnableWindow(GetDlgItem(hWnd, IDC_OPEN_CONFIG_SOUNDTOUCH), (SynchMode == 0));
+            EnableWindow(GetDlgItem(hWnd, IDC_OPEN_CONFIG_SOUNDTOUCH), (SynchMode == 0));
             EnableWindow(GetDlgItem(hWnd, IDC_OPEN_CONFIG_DEBUG), DebugEnabled);
 
             SET_CHECK(IDC_EFFECTS_DISABLE, EffectsDisabled);
@@ -287,7 +303,7 @@ BOOL CALLBACK ConfigProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     FinalVolume = (float)(SendDialogMsg(hWnd, IDC_VOLUME_SLIDER, TBM_GETPOS, 0, 0)) / 100;
                     Interpolation = (int)SendDialogMsg(hWnd, IDC_INTERPOLATE, CB_GETCURSEL, 0, 0);
                     OutputModule = (int)SendDialogMsg(hWnd, IDC_OUTPUT, CB_GETCURSEL, 0, 0);
-                    //SynchMode = (int)SendDialogMsg(hWnd, IDC_SYNCHMODE, CB_GETCURSEL, 0, 0);
+                    SynchMode = (int)SendDialogMsg(hWnd, IDC_SYNCHMODE, CB_GETCURSEL, 0, 0);
                     numSpeakers = (int)SendDialogMsg(hWnd, IDC_SPEAKERS, CB_GETCURSEL, 0, 0);
 
                     WriteSettings();

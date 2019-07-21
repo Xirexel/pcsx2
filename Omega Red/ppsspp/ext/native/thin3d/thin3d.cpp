@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "base/logging.h"
+#include "base/display.h"
 #include "thin3d/thin3d.h"
 #include "Common/Log.h"
 #include "Common/ColorConv.h"
@@ -101,11 +102,6 @@ bool RefCountedObject::ReleaseAssertLast() {
 
 // The Vulkan ones can be re-used with modern GL later if desired, as they're just GLSL.
 
-struct ShaderSource {
-	ShaderLanguage lang;
-	const char *src;
-};
-
 static const std::vector<ShaderSource> fsTexCol = {
 	{ShaderLanguage::GLSL_ES_200,
 	"#ifdef GL_ES\n"
@@ -196,6 +192,7 @@ static const std::vector<ShaderSource> vsCol = {
 	"attribute vec3 Position;\n"
 	"attribute vec4 Color0;\n"
 	"varying vec4 oColor0;\n"
+
 	"uniform mat4 WorldViewProj;\n"
 	"void main() {\n"
 	"  gl_Position = WorldViewProj * vec4(Position, 1.0);\n"
@@ -317,7 +314,7 @@ const UniformBufferDesc vsTexColBufDesc{ sizeof(VsTexColUB),{
 	{ "WorldViewProj", 0, -1, UniformType::MATRIX4X4, 0 }
 } };
 
-static ShaderModule *CreateShader(DrawContext *draw, ShaderStage stage, const std::vector<ShaderSource> &sources) {
+ShaderModule *CreateShader(DrawContext *draw, ShaderStage stage, const std::vector<ShaderSource> &sources) {
 	uint32_t supported = draw->GetSupportedShaderLanguages();
 	for (auto iter : sources) {
 		if ((uint32_t)iter.lang & supported) {
@@ -354,6 +351,38 @@ void DrawContext::DestroyPresets() {
 
 DrawContext::~DrawContext() {
 	DestroyPresets();
+}
+
+void DrawContext::RotateRectToDisplay(FRect &rect, float curRTWidth, float curRTHeight) {
+	if (g_display_rotation == DisplayRotation::ROTATE_0)
+		return;
+	switch (g_display_rotation) {
+	case DisplayRotation::ROTATE_180:
+		rect.x = curRTWidth - rect.w - rect.x;
+		rect.y = curRTHeight - rect.h - rect.y;
+		break;
+	case DisplayRotation::ROTATE_90: {
+		// Note that curRTWidth_ and curRTHeight_ are "swapped"!
+		float origX = rect.x;
+		float origY = rect.y;
+		float rtw = curRTHeight;
+		float rth = curRTWidth;
+		rect.x = rth - rect.h - origY;
+		rect.y = origX;
+		std::swap(rect.w, rect.h);
+		break;
+	}
+	case DisplayRotation::ROTATE_270: {
+		float origX = rect.x;
+		float origY = rect.y;
+		float rtw = curRTHeight;
+		float rth = curRTWidth;
+		rect.x = origY;
+		rect.y = rtw - rect.w - origX;
+		std::swap(rect.w, rect.h);
+		break;
+	}
+	}
 }
 
 // TODO: SSE/NEON

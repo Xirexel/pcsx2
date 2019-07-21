@@ -20,8 +20,6 @@
 
 StereoOut32 StereoOut32::Empty(0, 0);
 
-StereoOut16 StereoOut16::Empty(0, 0);
-
 StereoOut32::StereoOut32(const StereoOut16 &src)
     : Left(src.Left)
     , Right(src.Right)
@@ -85,7 +83,18 @@ public:
 SndOutModule *mods[] =
     {
         &NullOut,
+#ifdef _MSC_VER
+        XAudio2_27_Out,
         DSoundOut,
+        WaveOut,
+#endif
+        PortaudioOut,
+#if defined(SPU2X_SDL) || defined(SPU2X_SDL2)
+        SDLOut,
+#endif
+#if defined(__linux__) /* && defined(__ALSA__)*/
+        AlsaOut,
+#endif
         NULL // signals the end of our list
 };
 
@@ -100,13 +109,14 @@ int FindOutputModuleById(const wchar_t *omodid)
     return modcnt;
 }
 
-StereoOut16 *SndBuffer::m_buffer;
+StereoOut32 *SndBuffer::m_buffer;
 s32 SndBuffer::m_size;
 __aligned(4) volatile s32 SndBuffer::m_rpos;
 __aligned(4) volatile s32 SndBuffer::m_wpos;
 
 bool SndBuffer::m_underrun_freeze;
-StereoOut16 *SndBuffer::sndTempBuffer = NULL;
+StereoOut32 *SndBuffer::sndTempBuffer = NULL;
+StereoOut16 *SndBuffer::sndTempBuffer16 = NULL;
 int SndBuffer::sndTempProgress = 0;
 
 int GetAlignedBufferSize(int comp)
@@ -164,12 +174,12 @@ int SndBuffer::_GetApproximateDataInBuffer()
     return (m_wpos + m_size - m_rpos) % m_size;
 }
 
-void SndBuffer::_WriteSamples_Internal(StereoOut16 *bData, int nSamples)
+void SndBuffer::_WriteSamples_Internal(StereoOut32 *bData, int nSamples)
 {
     // WARNING: This assumes the write will NOT wrap around,
     // and also assumes there's enough free space in the buffer.
-	
-    memcpy(m_buffer + m_wpos, bData, nSamples * sizeof(StereoOut16));
+
+    memcpy(m_buffer + m_wpos, bData, nSamples * sizeof(StereoOut32));
     m_wpos = (m_wpos + nSamples) % m_size;
 }
 
@@ -186,7 +196,7 @@ void SndBuffer::_ReadSamples_Internal(StereoOut32 *bData, int nSamples)
     _DropSamples_Internal(nSamples);
 }
 
-void SndBuffer::_WriteSamples_Safe(StereoOut16 *bData, int nSamples)
+void SndBuffer::_WriteSamples_Safe(StereoOut32 *bData, int nSamples)
 {
     // WARNING: This code assumes there's only ONE writing process.
     if ((m_size - m_wpos) < nSamples) {
@@ -246,18 +256,25 @@ void SndBuffer::ReadSamples(T *bData)
         if (b1 > nSamples)
             b1 = nSamples;
 
-        // First part
-        memcpy(bData, m_buffer + m_rpos, b1 * sizeof(T));
-
+        if (AdvancedVolumeControl) {
             // First part
-        //for (int i = 0; i < b1; i++)
-        //    bData[i] = ((T*)m_buffer)[i + m_rpos];
+            for (int i = 0; i < b1; i++)
+                bData[i].AdjustFrom(m_buffer[i + m_rpos]);
 
-        // Second part
-        int b2 = nSamples - b1;
-        memcpy(bData + b1, m_buffer, b2 * sizeof(T));
-        //for (int i = 0; i < b2; i++)
-        //    bData[i + b1] = ((T *)m_buffer)[i];
+            // Second part
+            int b2 = nSamples - b1;
+            for (int i = 0; i < b2; i++)
+                bData[i + b1].AdjustFrom(m_buffer[i]);
+        } else {
+            // First part
+            for (int i = 0; i < b1; i++)
+                bData[i].ResampleFrom(m_buffer[i + m_rpos]);
+
+            // Second part
+            int b2 = nSamples - b1;
+            for (int i = 0; i < b2; i++)
+                bData[i + b1].ResampleFrom(m_buffer[i]);
+        }
 
         _DropSamples_Internal(nSamples);
     }
@@ -289,7 +306,7 @@ template void SndBuffer::ReadSamples(Stereo51Out32Dpl *);
 template void SndBuffer::ReadSamples(Stereo51Out32DplII *);
 template void SndBuffer::ReadSamples(Stereo71Out32 *);
 
-void SndBuffer::_WriteSamples(StereoOut16 *bData, int nSamples)
+void SndBuffer::_WriteSamples(StereoOut32 *bData, int nSamples)
 {
     m_predictData = 0;
 
@@ -358,10 +375,11 @@ void SndBuffer::Init()
     try {
         const float latencyMS = SndOutLatencyMS * 16;
         m_size = GetAlignedBufferSize((int)(latencyMS * SampleRate / 1000.0f));
-        m_buffer = new StereoOut16[m_size];
+        m_buffer = new StereoOut32[m_size];
         m_underrun_freeze = false;
 
-        sndTempBuffer = new StereoOut16[SndOutPacketSize];
+        sndTempBuffer = new StereoOut32[SndOutPacketSize];
+        sndTempBuffer16 = new StereoOut16[SndOutPacketSize * 2]; // in case of leftovers.
     } catch (std::bad_alloc &) {
         // out of memory exception (most likely)
 
@@ -387,6 +405,7 @@ void SndBuffer::Cleanup()
 
     safe_delete_array(m_buffer);
     safe_delete_array(sndTempBuffer);
+    safe_delete_array(sndTempBuffer16);
 }
 
 int SndBuffer::m_dsp_progress = 0;
@@ -400,8 +419,14 @@ void SndBuffer::ClearContents()
     SndBuffer::ssFreeze = 256; //Delays sound output for about 1 second.
 }
 
-void SndBuffer::Write(const StereoOut16 &Sample)
+void SndBuffer::Write(const StereoOut32 &Sample)
 {
+    // Log final output to wavefile.
+    WaveDump::WriteCore(1, CoreSrc_External, Sample.DownSample());
+
+    if (WavRecordEnabled)
+        RecordWrite(Sample.DownSample());
+
     if (mods[OutputModule] == &NullOut) // null output doesn't need buffering or stretching! :p
         return;
 
@@ -416,8 +441,40 @@ void SndBuffer::Write(const StereoOut16 &Sample)
     if (ssFreeze > 0) {
         ssFreeze--;
         // Play silence
-        std::fill_n(sndTempBuffer, SndOutPacketSize, StereoOut16{});
+        std::fill_n(sndTempBuffer, SndOutPacketSize, StereoOut32{});
     }
+#ifndef __POSIX__
+    if (dspPluginEnabled) {
+        // Convert in, send to winamp DSP, and convert out.
+
+        int ei = m_dsp_progress;
+        for (int i = 0; i < SndOutPacketSize; ++i, ++ei) {
+            sndTempBuffer16[ei] = sndTempBuffer[i].DownSample();
+        }
+        m_dsp_progress += DspProcess((s16 *)sndTempBuffer16 + m_dsp_progress, SndOutPacketSize);
+
+        // Some ugly code to ensure full packet handling:
+        ei = 0;
+        while (m_dsp_progress >= SndOutPacketSize) {
+            for (int i = 0; i < SndOutPacketSize; ++i, ++ei) {
+                sndTempBuffer[i] = sndTempBuffer16[ei].UpSample();
+            }
+
+            if (SynchMode == 0) // TimeStrech on
+                timeStretchWrite();
+            else
+                _WriteSamples(sndTempBuffer, SndOutPacketSize);
+
+            m_dsp_progress -= SndOutPacketSize;
+        }
+
+        // copy any leftovers to the front of the dsp buffer.
+        if (m_dsp_progress > 0) {
+            memcpy(sndTempBuffer16, &sndTempBuffer16[ei],
+                   sizeof(sndTempBuffer16[0]) * m_dsp_progress);
+        }
+    }
+#endif
     else {
         if (SynchMode == 0) // TimeStrech on
             timeStretchWrite();

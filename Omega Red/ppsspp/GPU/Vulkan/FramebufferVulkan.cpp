@@ -20,10 +20,10 @@
 
 #include "profiler/profiler.h"
 
+#include "base/display.h"
 #include "base/timeutil.h"
 #include "math/lin/matrix4x4.h"
 #include "math/dataconv.h"
-#include "i18n/i18n.h"
 #include "ext/native/file/vfs.h"
 #include "ext/native/thin3d/thin3d.h"
 
@@ -195,9 +195,9 @@ void FramebufferManagerVulkan::MakePixelTexture(const u8 *srcPixels, GEBufferFor
 	VkCommandBuffer initCmd = (VkCommandBuffer)draw_->GetNativeObject(Draw::NativeObject::INIT_COMMANDBUFFER);
 
 	// There's only ever a few of these alive, don't need to stress the allocator with these big ones.
-	drawPixelsTex_ = new VulkanTexture(vulkan_, nullptr);
+	drawPixelsTex_ = new VulkanTexture(vulkan_);
 	drawPixelsTex_->SetTag("DrawPixels");
-	if (!drawPixelsTex_->CreateDirect(initCmd, width, height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)) {
+	if (!drawPixelsTex_->CreateDirect(initCmd, nullptr, width, height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)) {
 		// out of memory?
 		delete drawPixelsTex_;
 		drawPixelsTex_ = nullptr;
@@ -303,6 +303,16 @@ void FramebufferManagerVulkan::DrawActiveTexture(float x, float y, float w, floa
 		vtx[i].y = vtx[i].y * invDestH - 1.0f;
 	}
 
+	if ((flags & DRAWTEX_TO_BACKBUFFER) && g_display_rotation != DisplayRotation::ROTATE_0) {
+		for (int i = 0; i < 4; i++) {
+			// backwards notation, should fix that...
+			Vec3 v(vtx[i].x, vtx[i].y, 0.0f);
+			v = v * g_display_rot_matrix;
+			vtx[i].x = v.x;
+			vtx[i].y = v.y;
+		}
+	}
+
 	draw_->FlushState();
 
 	// TODO: Should probably use draw_ directly and not go low level
@@ -379,10 +389,6 @@ void FramebufferManagerVulkan::ReformatFramebufferFrom(VirtualFramebuffer *vfb, 
 
 // Except for a missing rebind and silly scissor enables, identical copy of the same function in GPU_GLES - tricky parts are in thin3d.
 void FramebufferManagerVulkan::BlitFramebufferDepth(VirtualFramebuffer *src, VirtualFramebuffer *dst) {
-	if (g_Config.bDisableSlowFramebufEffects) {
-		return;
-	}
-
 	bool matchingDepthBuffer = src->z_address == dst->z_address && src->z_stride != 0 && dst->z_stride != 0;
 	bool matchingSize = src->width == dst->width && src->height == dst->height;
 	bool matchingRenderSize = src->renderWidth == dst->renderWidth && src->renderHeight == dst->renderHeight;
@@ -408,7 +414,7 @@ VkImageView FramebufferManagerVulkan::BindFramebufferAsColorTexture(int stage, V
 	// currentRenderVfb_ will always be set when this is called, except from the GE debugger.
 	// Let's just not bother with the copy in that case.
 	bool skipCopy = (flags & BINDFBCOLOR_MAY_COPY) == 0;
-	if (GPUStepping::IsStepping() || g_Config.bDisableSlowFramebufEffects) {
+	if (GPUStepping::IsStepping()) {
 		skipCopy = true;
 	}
 	// Currently rendering to this framebuffer. Need to make a copy.
@@ -425,7 +431,7 @@ VkImageView FramebufferManagerVulkan::BindFramebufferAsColorTexture(int stage, V
 			draw_->BindFramebufferAsTexture(framebuffer->fbo, stage, Draw::FB_COLOR_BIT, 0);
 		}
 		return (VkImageView)draw_->GetNativeObject(Draw::NativeObject::BOUND_TEXTURE0_IMAGEVIEW);
-	} else if (framebuffer != currentRenderVfb_) {
+	} else if (framebuffer != currentRenderVfb_ || (flags & BINDFBCOLOR_FORCE_SELF) != 0) {
 		draw_->BindFramebufferAsTexture(framebuffer->fbo, stage, Draw::FB_COLOR_BIT, 0);
 		return (VkImageView)draw_->GetNativeObject(Draw::NativeObject::BOUND_TEXTURE0_IMAGEVIEW);
 	} else {
@@ -468,6 +474,13 @@ void FramebufferManagerVulkan::BlitFramebuffer(VirtualFramebuffer *dst, int dstX
 	if (dstY + h > dst->bufferHeight) {
 		h -= dstY + h - dst->bufferHeight;
 	}
+	if (srcX + w > src->bufferWidth) {
+		w -= srcX + w - src->bufferWidth;
+	}
+	if (srcY + h > src->bufferHeight) {
+		h -= srcY + h - src->bufferHeight;
+	}
+
 	if (w == 0 || h == 0)
 		return;
 
@@ -615,7 +628,6 @@ void FramebufferManagerVulkan::CompilePostShader() {
 	} else {
 		return;
 	}
-	I18NCategory *gr = GetI18NCategory("Graphics");
 
 	// TODO: Delete the old pipeline?
 

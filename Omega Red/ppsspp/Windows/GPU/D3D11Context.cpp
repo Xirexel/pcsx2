@@ -178,7 +178,7 @@ bool D3D11Context::Init(HINSTANCE hInst, IUnknown *a_PtrUnkDirectX11Device, HWND
 			// Change the config to D3D and restart.
 			g_Config.iGPUBackend = (int)GPUBackend::DIRECT3D9;
 			g_Config.sFailedGPUBackends.clear();
-			g_Config.Save();
+			g_Config.Save("Error");
 
 			W32Util::ExitAndRestart();
 		}
@@ -353,12 +353,17 @@ void D3D11Context::Shutdown() {
 	context_ = nullptr;
 
 #ifdef _DEBUG
-	d3dInfoQueue_->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, false);
-	d3dInfoQueue_->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, false);
-	d3dInfoQueue_->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, false);
-	d3dDebug_->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY | D3D11_RLDO_DETAIL);
-	d3dDebug_->Release();
-	d3dInfoQueue_->Release();
+	if (d3dInfoQueue_) {
+        d3dInfoQueue_->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, false);
+        d3dInfoQueue_->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, false);
+        d3dInfoQueue_->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, false);
+    }
+    if (d3dDebug_) {
+        d3dDebug_->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY | D3D11_RLDO_DETAIL);
+        d3dDebug_->Release();
+    }
+    if (d3dInfoQueue_)
+		d3dInfoQueue_->Release();
 #endif
 
 	hWnd_ = nullptr;

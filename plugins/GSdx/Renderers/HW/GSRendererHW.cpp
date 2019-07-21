@@ -29,7 +29,9 @@ GSRendererHW::GSRendererHW(GSTextureCache* tc)
 	, m_custom_height(1024)
 	, m_reset(false)
 	, m_upscale_multiplier(1)
+	, m_disable_ts_half_bottom(false)
 	, m_tc(tc)
+	, m_src(nullptr)
 	, m_userhacks_tcoffset(false)
 	, m_userhacks_tcoffset_x(0)
 	, m_userhacks_tcoffset_y(0)
@@ -40,6 +42,8 @@ GSRendererHW::GSRendererHW(GSTextureCache* tc)
 	m_upscale_multiplier = theApp.GetConfigI("upscale_multiplier");
 	m_large_framebuffer  = theApp.GetConfigB("large_framebuffer");
 	m_accurate_date = theApp.GetConfigI("accurate_date");
+	m_disable_ts_half_bottom = theApp.GetConfigB("disable_ts_half_bottom");
+
 	if (theApp.GetConfigB("UserHacks")) {
 		m_userhacks_enabled_gs_mem_clear = !theApp.GetConfigB("UserHacks_Disable_Safe_Features");
 		m_userHacks_enabled_unscale_ptln = !theApp.GetConfigB("UserHacks_Disable_Safe_Features");
@@ -189,44 +193,48 @@ void GSRendererHW::SetGameCRC(uint32 crc, int options)
 	{
 		switch (CRC::Lookup(crc).title)
 		{
-		case CRC::AceCombatZero:
-		case CRC::AceCombat4:
-		case CRC::AceCombat5:
-		case CRC::ApeEscape2:
-		case CRC::Barnyard:
-		case CRC::BrianLaraInternationalCricket:
-		case CRC::DarkCloud:
-		case CRC::DestroyAllHumans:
-		case CRC::DestroyAllHumans2:
-		case CRC::FIFA03:
-		case CRC::FIFA04:
-		case CRC::FIFA05:
-		case CRC::HarryPotterATCOS:
-		case CRC::HarryPotterATHBP:
-		case CRC::HarryPotterATPOA:
-		case CRC::HarryPotterOOTP:
-		case CRC::Jak1:
-		case CRC::Jak3:
-		case CRC::LegacyOfKainDefiance:
-		case CRC::NicktoonsUnite:
-		case CRC::RatchetAndClank:
-		case CRC::RatchetAndClank2:
-		case CRC::RatchetAndClank3:
-		case CRC::RatchetAndClank4:
-		case CRC::RatchetAndClank5:
-		case CRC::RickyPontingInternationalCricket:
-		case CRC::Quake3Revolution:
-		case CRC::Shox:
-		case CRC::SoulReaver2:
-		case CRC::TheIncredibleHulkUD:
-		case CRC::TombRaiderAnniversary:
-		case CRC::TribesAerialAssault:
-		case CRC::Whiplash:
-			m_mipmap = static_cast<int>(HWMipmapLevel::Basic);
-			break;
-		default:
-			m_mipmap = static_cast<int>(HWMipmapLevel::Off);
-			break;
+			case CRC::AceCombatZero:
+			case CRC::AceCombat4:
+			case CRC::AceCombat5:
+			case CRC::ApeEscape2:
+			case CRC::Barnyard:
+			case CRC::BrianLaraInternationalCricket:
+			case CRC::DarkCloud:
+			case CRC::DestroyAllHumans:
+			case CRC::DestroyAllHumans2:
+			case CRC::FIFA03:
+			case CRC::FIFA04:
+			case CRC::FIFA05:
+			case CRC::HarryPotterATCOS:
+			case CRC::HarryPotterATGOF:
+			case CRC::HarryPotterATHBP:
+			case CRC::HarryPotterATPOA:
+			case CRC::HarryPotterOOTP:
+			// Disable Automatic mipmapping for Jak games for now, it seems to cause a hard crash.
+			// Issue https://github.com/PCSX2/pcsx2/issues/2916
+			// case CRC::Jak1:
+			// case CRC::Jak3:
+			case CRC::LegacyOfKainDefiance:
+			case CRC::NicktoonsUnite:
+			case CRC::ProjectSnowblind:
+			case CRC::Quake3Revolution:
+			case CRC::RatchetAndClank:
+			case CRC::RatchetAndClank2:
+			case CRC::RatchetAndClank3:
+			case CRC::RatchetAndClank4:
+			case CRC::RatchetAndClank5:
+			case CRC::RickyPontingInternationalCricket:
+			case CRC::Shox:
+			case CRC::SoulReaver2:
+			case CRC::TheIncredibleHulkUD:
+			case CRC::TombRaiderAnniversary:
+			case CRC::TribesAerialAssault:
+			case CRC::Whiplash:
+				m_mipmap = static_cast<int>(HWMipmapLevel::Basic);
+				break;
+			default:
+				m_mipmap = static_cast<int>(HWMipmapLevel::Off);
+				break;
 		}
 	}
 }
@@ -428,6 +436,118 @@ void GSRendererHW::Lines2Sprites()
 	}
 }
 
+// Fix the vertex position/tex_coordinate from 16 bits color to 32 bits color
+void GSRendererHW::ConvertSpriteTextureShuffle(bool& write_ba, bool& read_ba)
+{
+	size_t count = m_vertex.next;
+	GSVertex* v = &m_vertex.buff[0];
+	const GIFRegXYOFFSET& o = m_context->XYOFFSET;
+
+	// vertex position is 8 to 16 pixels, therefore it is the 16-31 bits of the colors
+	int  pos = (v[0].XYZ.X - o.OFX) & 0xFF;
+	write_ba = (pos > 112 && pos < 136);
+
+	// Read texture is 8 to 16 pixels (same as above)
+	float tw = (float)(1u << m_context->TEX0.TW);
+	int tex_pos = (PRIM->FST) ? v[0].U : (int)(tw * v[0].ST.S);
+	tex_pos &= 0xFF;
+	read_ba = (tex_pos > 112 && tex_pos < 144);
+
+	// Here's the idea
+	// TS effect is 16 bits but we emulate it on a 32 bits format
+	// Normally this means we need to divide size by 2.
+	//
+	// Some games do two TS effects on each half of the buffer.
+	// This makes a mess for us in the TC because we end up with two targets
+	// when we only want one, thus half screen bug.
+	//
+	// 32bits emulation means we can do the effect once but double the size.
+	// Test cases: Crash Twinsantiy and DBZ BT3
+	int height_delta = m_src->m_valid_rect.height() - m_r.height();
+	// Test Case: NFS: HP2 splits the effect h:256 and h:192 so 64
+	bool half_bottom = abs(height_delta) <= 64 && !m_disable_ts_half_bottom;
+
+	if (PRIM->FST) {
+		GL_INS("First vertex is  P: %d => %d    T: %d => %d", v[0].XYZ.X, v[1].XYZ.X, v[0].U, v[1].U);
+
+		for(size_t i = 0; i < count; i += 2) {
+			if (write_ba)
+				v[i].XYZ.X   -= 128u;
+			else
+				v[i+1].XYZ.X += 128u;
+
+			if (read_ba)
+				v[i].U       -= 128u;
+			else
+				v[i+1].U     += 128u;
+
+			if (!half_bottom){
+				// Height is too big (2x).
+				int tex_offset = v[i].V & 0xF;
+				GSVector4i offset(o.OFY, tex_offset, o.OFY, tex_offset);
+
+				GSVector4i tmp(v[i].XYZ.Y, v[i].V, v[i + 1].XYZ.Y, v[i + 1].V);
+				tmp = GSVector4i(tmp - offset).srl32(1) + offset;
+
+				v[i].XYZ.Y = (uint16)tmp.x;
+				v[i].V = (uint16)tmp.y;
+				v[i + 1].XYZ.Y = (uint16)tmp.z;
+				v[i + 1].V = (uint16)tmp.w;
+			}
+		}
+	} else {
+		const float offset_8pix = 8.0f / tw;
+		GL_INS("First vertex is  P: %d => %d    T: %f => %f (offset %f)", v[0].XYZ.X, v[1].XYZ.X, v[0].ST.S, v[1].ST.S, offset_8pix);
+
+		for(size_t i = 0; i < count; i += 2) {
+			if (write_ba)
+				v[i].XYZ.X   -= 128u;
+			else
+				v[i+1].XYZ.X += 128u;
+
+			if (read_ba)
+				v[i].ST.S    -= offset_8pix;
+			else
+				v[i+1].ST.S  += offset_8pix;
+
+			if (!half_bottom) {
+				// Height is too big (2x).
+				GSVector4i offset(o.OFY, o.OFY);
+
+				GSVector4i tmp(v[i].XYZ.Y, v[i + 1].XYZ.Y);
+				tmp = GSVector4i(tmp - offset).srl32(1) + offset;
+
+				//fprintf(stderr, "Before %d, After %d\n", v[i+1].XYZ.Y, tmp.y);
+				v[i].XYZ.Y = (uint16)tmp.x;
+				v[i].ST.T /= 2.0f;
+				v[i + 1].XYZ.Y = (uint16)tmp.y;
+				v[i + 1].ST.T /= 2.0f;
+			}
+		}
+	}
+
+	// Update vertex trace too. Avoid issue to compute bounding box
+	if (write_ba)
+		m_vt.m_min.p.x -= 8.0f;
+	else
+		m_vt.m_max.p.x += 8.0f;
+
+	if (!half_bottom) {
+		float delta_Y = m_vt.m_max.p.y - m_vt.m_min.p.y;
+		m_vt.m_max.p.y -= delta_Y / 2.0f;
+	}
+
+	if (read_ba)
+		m_vt.m_min.t.x -= 8.0f;
+	else
+		m_vt.m_max.t.x += 8.0f;
+
+	if (!half_bottom) {
+		float delta_T = m_vt.m_max.t.y - m_vt.m_min.t.y;
+		m_vt.m_max.t.y -= delta_T / 2.0f;
+	}
+}
+
 GSVector4 GSRendererHW::RealignTargetTextureCoordinate(const GSTextureCache::Source* tex)
 {
 	if (m_userHacks_HPO <= 1 || GetUpscaleMultiplier() == 1) return GSVector4(0.0f);
@@ -581,6 +701,199 @@ float GSRendererHW::alpha1(int L, int X0, int X1)
 	return float(x - X0) / (float)L;
 }
 
+void GSRendererHW::SwSpriteRender()
+{
+	// Supported drawing attributes
+	ASSERT(PRIM->PRIM == 4 || PRIM->PRIM == 6);
+	ASSERT(!PRIM->IIP);  // Flat shading method
+	ASSERT(!PRIM->FGE);  // No FOG
+	ASSERT(!PRIM->AA1);  // No antialiasing
+	ASSERT(!PRIM->FST);  // STQ texture coordinates
+	ASSERT(!PRIM->FIX);  // Normal fragment value control
+
+	ASSERT(!m_env.DTHE.DTHE); // No dithering
+
+	ASSERT(!m_context->TEST.ATE);  // No alpha test
+	ASSERT(!m_context->TEST.DATE);  // No destination alpha test
+	ASSERT(!m_context->DepthRead() && !m_context->DepthWrite());  // No depth handling
+
+	ASSERT(!m_context->TEX0.CSM);  // No CLUT usage
+
+	ASSERT(!m_env.PABE.PABE);  // No PABE
+
+	// PSMCT32 pixel format
+	ASSERT(!PRIM->TME || (PRIM->TME && m_context->TEX0.PSM == PSM_PSMCT32));
+	ASSERT(m_context->FRAME.PSM == PSM_PSMCT32);
+
+	// No rasterization required
+	ASSERT(m_vt.m_eq.rgba == 0xffff);
+	ASSERT(m_vt.m_eq.z == 0x1);
+	ASSERT(m_vt.m_eq.q == 0x1);
+
+	bool texture_mapping_enabled = PRIM->TME;
+
+	// Setup registers for SW rendering
+	GIFRegBITBLTBUF bitbltbuf;
+
+	if (texture_mapping_enabled)
+	{
+		bitbltbuf.SBP = m_context->TEX0.TBP0;
+		bitbltbuf.SBW = m_context->TEX0.TBW;
+		bitbltbuf.SPSM = m_context->TEX0.PSM;
+	}
+
+	bitbltbuf.DBP = m_context->FRAME.Block();
+	bitbltbuf.DBW = m_context->FRAME.FBW;
+	bitbltbuf.DPSM = m_context->FRAME.PSM;
+
+	GIFRegTRXPOS trxpos;
+
+	trxpos.DSAX = 0;
+	trxpos.DSAY = 0;
+	trxpos.SSAX = 0;
+	trxpos.SSAY = 0;
+
+	GIFRegTRXREG trxreg;
+
+	if (texture_mapping_enabled)
+	{
+		trxreg.RRW = m_context->TEX0.TW * 4;
+		trxreg.RRH = m_context->TEX0.TH * 4;
+		// Check drawing region
+		ASSERT((GSVector4i(m_vt.m_min.p.xyxy(m_vt.m_max.p)).rintersect(GSVector4i(m_context->scissor.in)) == GSVector4i(0, 0, trxreg.RRW, trxreg.RRH)).alltrue());
+	}
+	else
+	{
+		GSVector4i r = GSVector4i(m_vt.m_min.p.xyxy(m_vt.m_max.p)).rintersect(GSVector4i(m_context->scissor.in));
+		trxreg.RRW = r.width();
+		trxreg.RRH = r.height();
+	}
+
+	// SW rendering code, mainly taken from GSState::Move(), TRXPOS.DIR{X,Y} management excluded
+
+	int sx = trxpos.SSAX;
+	int sy = trxpos.SSAY;
+	int dx = trxpos.DSAX;
+	int dy = trxpos.DSAY;
+	int w = trxreg.RRW;
+	int h = trxreg.RRH;
+
+	GL_INS("SwSpriteRender: Dest 0x%x W:%d F:%s, size(%d %d)", bitbltbuf.DBP, bitbltbuf.DBW, psm_str(bitbltbuf.DPSM), w, h);
+
+	if (texture_mapping_enabled)
+		InvalidateLocalMem(bitbltbuf, GSVector4i(sx, sy, sx + w, sy + h));
+	InvalidateVideoMem(bitbltbuf, GSVector4i(dx, dy, dx + w, dy + h));
+
+	GSOffset* RESTRICT spo = texture_mapping_enabled ? m_mem.GetOffset(bitbltbuf.SBP, bitbltbuf.SBW, bitbltbuf.SPSM) : nullptr;
+	GSOffset* RESTRICT dpo = m_mem.GetOffset(bitbltbuf.DBP, bitbltbuf.DBW, bitbltbuf.DPSM);
+
+	int* RESTRICT scol = texture_mapping_enabled ? &spo->pixel.col[0][sx] : nullptr;
+	int* RESTRICT dcol = &dpo->pixel.col[0][dx];
+
+	bool alpha_blending_enabled = PRIM->ABE;
+
+	GSVector4i vc = m_vt.m_min.c;  // 0x000000AA000000BB000000GG000000RR
+	vc = vc.ps32();                // 0x00AA00BB00GG00RR00AA00BB00GG00RR
+
+	GSVector4i a_mask = GSVector4i::xff000000().u8to16();  // 0x00FF00000000000000FF000000000000
+
+	bool fb_mask_enabled = m_context->FRAME.FBMSK != 0x0;
+	GSVector4i fb_mask = GSVector4i(m_context->FRAME.FBMSK).xxxx(); // 0x????????????????MMMMMMMMMMMMMMMM
+
+	uint8 tex0_tcc = m_context->TEX0.TCC;
+	uint8 alpha_b = m_context->ALPHA.B;
+
+	for (int y = 0; y < h; y++, ++sy, ++dy)
+	{
+		uint32* RESTRICT s = texture_mapping_enabled ? &m_mem.m_vm32[spo->pixel.row[sy]] : nullptr;
+		uint32* RESTRICT d = &m_mem.m_vm32[dpo->pixel.row[dy]];
+
+		ASSERT(w % 2 == 0);
+
+		for (int x = 0; x < w; x += 2)
+		{
+			GSVector4i sc;
+			if (texture_mapping_enabled)
+			{
+				// Read 2 source pixel colors
+				ASSERT((scol[x] + 1) == scol[x + 1]);  // Source pixel pair is adjacent in memory
+				sc = GSVector4i::loadl(&s[scol[x]]).u8to16();  // 0x00AA00BB00GG00RR00aa00bb00gg00rr
+
+				// Apply TFX
+				ASSERT(m_context->TEX0.TFX == 0);
+				sc = sc.mul16l(vc).srl16(7).clamp8();  // clamp((sc * vc) >> 7, 0, 255), srl16 is ok because 16 bit values are unsigned
+				if (tex0_tcc == 0)
+					sc = sc.blend(vc, a_mask);
+			}
+			else
+				sc = vc;
+
+			// No FOG
+
+			GSVector4i dc0;
+			GSVector4i dc;
+
+			if (alpha_blending_enabled || fb_mask_enabled)
+			{
+				// Read 2 destination pixel colors
+				ASSERT((dcol[x] + 1) == dcol[x + 1]);  // Destination pixel pair is adjacent in memory
+				dc0 = GSVector4i::loadl(&d[dcol[x]]).u8to16();  // 0x00AA00BB00GG00RR00aa00bb00gg00rr
+			}
+
+			if (alpha_blending_enabled)
+			{
+				// Blending
+				ASSERT(m_context->ALPHA.A == 0);
+				ASSERT(alpha_b == 1 || alpha_b == 2);
+				ASSERT(m_context->ALPHA.C == 0);
+				ASSERT(m_context->ALPHA.D == 1);
+				ASSERT(m_context->ALPHA.FIX == 0);
+
+				GSVector4i sc_alpha_vec =
+					sc.yyww()   // 0x00AA00BB00AA00BB00aa00bb00aa00bb
+					.srl32(16)  // 0x000000AA000000AA000000aa000000aa
+					.ps32()     // 0x00AA00AA00aa00aa00AA00AA00aa00aa
+					.xxyy();    // 0x00AA00AA00AA00AA00aa00aa00aa00aa
+
+				switch (alpha_b)
+				{
+				case 1:
+					dc = sc.sub16(dc0).mul16l(sc_alpha_vec).sra16(7).add16(dc0);  // (((Cs - Cd) * As) >> 7) + Cd, must use sra16 due to signed 16 bit values
+					break;
+				default:
+					dc = sc.mul16l(sc_alpha_vec).sra16(7).add16(dc0);  // (((Cs - 0) * As) >> 7) + Cd, must use sra16 due to signed 16 bit values
+					break;
+				}
+				// dc alpha channels (dc.u16[3], dc.u16[7]) dirty
+			}
+			else
+				dc = sc;
+
+			// No dithering
+
+			// Clamping
+			if (m_env.COLCLAMP.CLAMP)
+				dc = dc.clamp8();  // clamp(dc, 0, 255)
+			else
+				dc = dc.sll16(8).srl16(8);  // Mask, lower 8 bits enabled per channel
+
+			// No Alpha Correction
+			ASSERT(m_context->FBA.FBA == 0);
+			dc = dc.blend(sc, a_mask);
+			// dc alpha channels valid
+
+			// Frame buffer mask
+			if (fb_mask_enabled)
+				dc = dc.blend(dc0, fb_mask);
+
+			// Store 2 pixel colors
+			dc = dc.pu16(GSVector4i::zero());  // 0x0000000000000000AABBGGRRaabbggrr
+			ASSERT((dcol[x] + 1) == dcol[x + 1]);  // Destination pixel pair is adjacent in memory
+			GSVector4i::storel(&d[dcol[x]], dc);
+		}
+	}
+}
+
 template <bool linear>
 void GSRendererHW::RoundSpriteOffset()
 {
@@ -702,6 +1015,10 @@ void GSRendererHW::Draw()
 	GSDrawingContext* context = m_context;
 	const GSLocalMemory::psm_t& tex_psm = GSLocalMemory::m_psm[m_context->TEX0.PSM];
 
+	// Fix TEX0 size
+	if(PRIM->TME && !IsMipMapActive())
+		m_context->ComputeFixedTEX0(m_vt.m_min.t.xyxy(m_vt.m_max.t));
+
 	// skip alpha test if possible
 	// Note: do it first so we know if frame/depth writes are masked
 
@@ -783,7 +1100,7 @@ void GSRendererHW::Draw()
 		ds_tex = ds->m_texture;
 	}
 
-	GSTextureCache::Source* tex = NULL;
+	m_src = nullptr;
 	m_texture_shuffle = false;
 
 	if(PRIM->TME)
@@ -863,7 +1180,7 @@ void GSRendererHW::Draw()
 
 		GetTextureMinMax(r, TEX0, MIP_CLAMP, m_vt.IsLinear());
 
-		tex = tex_psm.depth ? m_tc->LookupDepthSource(TEX0, env.TEXA, r) : m_tc->LookupSource(TEX0, env.TEXA, r);
+		m_src = tex_psm.depth ? m_tc->LookupDepthSource(TEX0, env.TEXA, r) : m_tc->LookupSource(TEX0, env.TEXA, r);
 
 		// Round 2
 		if (IsMipMapActive() && m_mipmap == 2 && !tex_psm.depth) {
@@ -886,7 +1203,7 @@ void GSRendererHW::Draw()
 
 				GetTextureMinMax(r, MIP_TEX0, MIP_CLAMP, m_vt.IsLinear());
 
-				tex->UpdateLayer(MIP_TEX0, r, layer - m_lod.x);
+				m_src->UpdateLayer(MIP_TEX0, r, layer - m_lod.x);
 			}
 
 			m_vt.m_min.t = tmin;
@@ -898,7 +1215,7 @@ void GSRendererHW::Draw()
 		//
 		// Both input and output are 16 bits and texture was initially 32 bits!
 		m_texture_shuffle = (GSLocalMemory::m_psm[context->FRAME.PSM].bpp == 16) && (tex_psm.bpp == 16)
-			&& draw_sprite_tex && tex->m_32_bits_fmt;
+			&& draw_sprite_tex && m_src->m_32_bits_fmt;
 
 		// Shadow_of_memories_Shadow_Flickering (Okami mustn't call this code)
 		if (m_texture_shuffle && m_vertex.next < 3 && PRIM->FST && (m_context->FRAME.FBMSK == 0)) {
@@ -919,7 +1236,7 @@ void GSRendererHW::Draw()
 		// Texture shuffle is not yet supported with strange clamp mode
 		ASSERT(!m_texture_shuffle || (context->CLAMP.WMS < 3 && context->CLAMP.WMT < 3));
 
-		if (tex->m_target && m_context->TEX0.PSM == PSM_PSMT8 && single_page && draw_sprite_tex) {
+		if (m_src->m_target && m_context->TEX0.PSM == PSM_PSMT8 && single_page && draw_sprite_tex) {
 			GL_INS("Channel shuffle effect detected (2nd shot)");
 			m_channel_shuffle = true;
 		} else {
@@ -947,7 +1264,7 @@ void GSRendererHW::Draw()
 			m_context->Dump(m_dump_root+s);
 		}
 
-		if(s_savet && s_n >= s_saven && tex)
+		if(s_savet && s_n >= s_saven && m_src)
 		{
 			s = format("%05d_f%lld_itex_%05x_%s_%d%d_%02x_%02x_%02x_%02x.dds",
 				s_n, frame, (int)context->TEX0.TBP0, psm_str(context->TEX0.PSM),
@@ -955,13 +1272,13 @@ void GSRendererHW::Draw()
 				(int)context->CLAMP.MINU, (int)context->CLAMP.MAXU,
 				(int)context->CLAMP.MINV, (int)context->CLAMP.MAXV);
 
-			tex->m_texture->Save(m_dump_root+s);
+			m_src->m_texture->Save(m_dump_root+s);
 
-			if(tex->m_palette)
+			if(m_src->m_palette)
 			{
 				s = format("%05d_f%lld_itpx_%05x_%s.dds", s_n, frame, context->TEX0.CBP, psm_str(context->TEX0.CPSM));
 
-				tex->m_palette->Save(m_dump_root+s);
+				m_src->m_palette->Save(m_dump_root+s);
 			}
 		}
 
@@ -984,15 +1301,15 @@ void GSRendererHW::Draw()
 	}
 
 	// The rectangle of the draw
-	GSVector4i r = GSVector4i(m_vt.m_min.p.xyxy(m_vt.m_max.p)).rintersect(GSVector4i(context->scissor.in));
+	m_r = GSVector4i(m_vt.m_min.p.xyxy(m_vt.m_max.p)).rintersect(GSVector4i(context->scissor.in));
 
-	if(m_hacks.m_oi && !(this->*m_hacks.m_oi)(rt_tex, ds_tex, tex))
+	if(m_hacks.m_oi && !(this->*m_hacks.m_oi)(rt_tex, ds_tex, m_src))
 	{
 		GL_INS("Warning skipping a draw call (%d)", s_n);
 		return;
 	}
 
-	if (!OI_BlitFMV(rt, tex, r)) {
+	if (!OI_BlitFMV(rt, m_src, m_r)) {
 		GL_INS("Warning skipping a draw call (%d)", s_n);
 		return;
 	}
@@ -1005,7 +1322,7 @@ void GSRendererHW::Draw()
 				&& !m_context->TEST.ATE // no alpha test
 				&& (!m_context->TEST.ZTE || m_context->TEST.ZTST == ZTST_ALWAYS) // no depth test
 				&& (m_vt.m_eq.rgba == 0xFFFF) // constant color write
-				&& r.x == 0 && r.y == 0) { // Likely full buffer write
+				&& m_r.x == 0 && m_r.y == 0) { // Likely full buffer write
 
 			OI_GsMemClear();
 
@@ -1056,7 +1373,7 @@ void GSRendererHW::Draw()
 
 	//
 
-	DrawPrims(rt_tex, ds_tex, tex);
+	DrawPrims(rt_tex, ds_tex, m_src);
 
 	//
 
@@ -1068,20 +1385,20 @@ void GSRendererHW::Draw()
 
 	// Help to detect rendering outside of the framebuffer
 #if _DEBUG
-	if (m_upscale_multiplier * r.z > m_width) {
-		GL_INS("ERROR: RT width is too small only %d but require %d", m_width, m_upscale_multiplier * r.z);
+	if (m_upscale_multiplier * m_r.z > m_width) {
+		GL_INS("ERROR: RT width is too small only %d but require %d", m_width, m_upscale_multiplier * m_r.z);
 	}
-	if (m_upscale_multiplier * r.w > m_height) {
-		GL_INS("ERROR: RT height is too small only %d but require %d", m_height, m_upscale_multiplier * r.w);
+	if (m_upscale_multiplier * m_r.w > m_height) {
+		GL_INS("ERROR: RT height is too small only %d but require %d", m_height, m_upscale_multiplier * m_r.w);
 	}
 #endif
 
 	if(fm != 0xffffffff && rt)
 	{
 		//rt->m_valid = rt->m_valid.runion(r);
-		rt->UpdateValidity(r);
+		rt->UpdateValidity(m_r);
 
-		m_tc->InvalidateVideoMem(context->offset.fb, r, false);
+		m_tc->InvalidateVideoMem(context->offset.fb, m_r, false);
 
 		m_tc->InvalidateVideoMemType(GSTextureCache::DepthStencil, context->FRAME.Block());
 	}
@@ -1089,9 +1406,9 @@ void GSRendererHW::Draw()
 	if(zm != 0xffffffff && ds)
 	{
 		//ds->m_valid = ds->m_valid.runion(r);
-		ds->UpdateValidity(r);
+		ds->UpdateValidity(m_r);
 
-		m_tc->InvalidateVideoMem(context->offset.zb, r, false);
+		m_tc->InvalidateVideoMem(context->offset.zb, m_r, false);
 
 		m_tc->InvalidateVideoMemType(GSTextureCache::RenderTarget, context->ZBUF.Block());
 	}
@@ -1132,10 +1449,8 @@ void GSRendererHW::Draw()
 	}
 
 	#ifdef DISABLE_HW_TEXTURE_CACHE
-
 	if (rt)
-		m_tc->Read(rt, r);
-
+		m_tc->Read(rt, m_r);
 	#endif
 }
 
@@ -1153,16 +1468,17 @@ GSRendererHW::Hacks::Hacks()
 	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::FFX, CRC::RegionCount, &GSRendererHW::OI_FFX));
 	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::MetalSlug6, CRC::RegionCount, &GSRendererHW::OI_MetalSlug6));
 	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::RozenMaidenGebetGarden, CRC::RegionCount, &GSRendererHW::OI_RozenMaidenGebetGarden));
+	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::SonicUnleashed, CRC::RegionCount, &GSRendererHW::OI_SonicUnleashed));
 	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::StarWarsForceUnleashed, CRC::RegionCount, &GSRendererHW::OI_StarWarsForceUnleashed));
 	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::SuperManReturns, CRC::RegionCount, &GSRendererHW::OI_SuperManReturns));
 	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::ArTonelico2, CRC::RegionCount, &GSRendererHW::OI_ArTonelico2));
 	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::ItadakiStreet, CRC::RegionCount, &GSRendererHW::OI_ItadakiStreet));
+	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::Jak2, CRC::RegionCount, &GSRendererHW::OI_JakGames));
+	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::Jak3, CRC::RegionCount, &GSRendererHW::OI_JakGames));
+	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::JakX, CRC::RegionCount, &GSRendererHW::OI_JakGames));
 
 	m_oo_list.push_back(HackEntry<OO_Ptr>(CRC::DBZBT2, CRC::RegionCount, &GSRendererHW::OO_DBZBT2));
 	m_oo_list.push_back(HackEntry<OO_Ptr>(CRC::MajokkoALaMode2, CRC::RegionCount, &GSRendererHW::OO_MajokkoALaMode2));
-	m_oo_list.push_back(HackEntry<OO_Ptr>(CRC::Jak2, CRC::RegionCount, &GSRendererHW::OO_JakGames));
-	m_oo_list.push_back(HackEntry<OO_Ptr>(CRC::Jak3, CRC::RegionCount, &GSRendererHW::OO_JakGames));
-	m_oo_list.push_back(HackEntry<OO_Ptr>(CRC::JakX, CRC::RegionCount, &GSRendererHW::OO_JakGames));
 
 	m_cu_list.push_back(HackEntry<CU_Ptr>(CRC::DBZBT2, CRC::RegionCount, &GSRendererHW::CU_DBZBT2));
 	m_cu_list.push_back(HackEntry<CU_Ptr>(CRC::MajokkoALaMode2, CRC::RegionCount, &GSRendererHW::CU_MajokkoALaMode2));
@@ -1224,15 +1540,22 @@ void GSRendererHW::OI_DoubleHalfClear(GSTexture* rt, GSTexture* ds)
 		// If both buffers are side by side we can expect a fast clear in on-going
 		if (half <= (base + written_pages)) {
 			uint32 color = v[1].RGBAQ.u32[0];
+			bool clear_depth = (m_context->FRAME.FBP > m_context->ZBUF.ZBP);
 
-			GL_INS("OI_DoubleHalfClear: base %x half %x. w_pages %d h_pages %d fbw %d. Color %x", base << 5, half << 5, w_pages, h_pages, m_context->FRAME.FBW, color);
+			GL_INS("OI_DoubleHalfClear:%s: base %x half %x. w_pages %d h_pages %d fbw %d. Color %x",
+					clear_depth ? "depth" : "target", base << 5, half << 5, w_pages, h_pages, m_context->FRAME.FBW, color);
 
-			if (m_context->FRAME.FBP > m_context->ZBUF.ZBP) {
+			// Commit texture with a factor 2 on the height
+			GSTexture* t = clear_depth ? ds : rt;
+			GSVector4i commitRect = ComputeBoundingBox(t->GetScale(), t->GetSize());
+			t->CommitRegion(GSVector2i(commitRect.z, 2 * commitRect.w));
+
+			if (clear_depth) {
 				// Only pure clear are supported for depth
 				ASSERT(color == 0);
-				m_dev->ClearDepth(ds);
+				m_dev->ClearDepth(t);
 			} else {
-				m_dev->ClearRenderTarget(rt, color);
+				m_dev->ClearRenderTarget(t, color);
 			}
 		}
 	}
@@ -1457,7 +1780,8 @@ bool GSRendererHW::OI_FFX(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* 
 	if((FBP == 0x00d00 || FBP == 0x00000) && ZBP == 0x02100 && PRIM->TME && TBP == 0x01a00 && m_context->TEX0.PSM == PSM_PSMCT16S)
 	{
 		// random battle transition (z buffer written directly, clear it now)
-
+		if(ds)
+			ds->Commit(); // Don't bother to save few MB for a single game
 		m_dev->ClearDepth(ds);
 	}
 
@@ -1508,6 +1832,7 @@ bool GSRendererHW::OI_RozenMaidenGebetGarden(GSTexture* rt, GSTexture* ds, GSTex
 
 			if(GSTextureCache::Target* tmp_rt = m_tc->LookupTarget(TEX0, m_width, m_height, GSTextureCache::RenderTarget, true))
 			{
+				tmp_rt->m_texture->Commit(); // Don't bother to save few MB for a single game
 				m_dev->ClearRenderTarget(tmp_rt->m_texture, 0);
 			}
 
@@ -1525,6 +1850,7 @@ bool GSRendererHW::OI_RozenMaidenGebetGarden(GSTexture* rt, GSTexture* ds, GSTex
 
 			if(GSTextureCache::Target* tmp_ds = m_tc->LookupTarget(TEX0, m_width, m_height, GSTextureCache::DepthStencil, true))
 			{
+				tmp_ds->m_texture->Commit(); // Don't bother to save few MB for a single game
 				m_dev->ClearDepth(tmp_ds->m_texture);
 			}
 
@@ -1535,24 +1861,49 @@ bool GSRendererHW::OI_RozenMaidenGebetGarden(GSTexture* rt, GSTexture* ds, GSTex
 	return true;
 }
 
+bool GSRendererHW::OI_SonicUnleashed(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t)
+{
+	// Rendering pattern is:
+	// Save RG channel with a kind of a TS (replaced by a copy in this hack),
+	// compute shadow in RG,
+	// save result in alpha with a TS,
+	// Restore RG channel that we previously copied to render shadows.
+
+	GIFRegTEX0 Texture = m_context->TEX0;
+
+	GIFRegTEX0 Frame;
+	Frame.TBW = m_context->FRAME.FBW;
+	Frame.TBP0 = m_context->FRAME.FBP;
+	Frame.TBP0 = m_context->FRAME.Block();
+	Frame.PSM = m_context->FRAME.PSM;
+
+	if ((!PRIM->TME) || (GSLocalMemory::m_psm[Texture.PSM].bpp != 16) || (GSLocalMemory::m_psm[Frame.PSM].bpp != 16))
+		return true;
+
+	if ((Texture.TBP0 == Frame.TBP0) || (Frame.TBW != 16 && Texture.TBW != 16))
+		return true;
+
+	GSTextureCache::Target* src = m_tc->LookupTarget(Texture, m_width, m_height, GSTextureCache::RenderTarget, true);
+	GSVector4 sRect(0, 0, 1, 1);
+	GSVector4 dRect(0, 0, m_width, m_height);
+
+	m_dev->StretchRect(src->m_texture, sRect, rt, dRect, true, true, true, false);
+	GL_INS("OI_SonicUnleashed replace draw by a copy");
+
+	return false;
+}
+
 bool GSRendererHW::OI_StarWarsForceUnleashed(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t)
 {
 	uint32 FBP = m_context->FRAME.Block();
 	uint32 FPSM = m_context->FRAME.PSM;
 
-	if(!PRIM->TME)
-	{
-		if(FPSM == PSM_PSMCT24 && FBP == 0x2bc0)
-		{
-			m_dev->ClearDepth(ds);
-
-			return false;
-		}
-	}
-	else if(PRIM->TME)
+	if(PRIM->TME)
 	{
 		if((FBP == 0x0 || FBP == 0x01180) && FPSM == PSM_PSMCT32 && (m_vt.m_eq.z && m_vt.m_max.p.z == 0))
 		{
+			if(ds)
+				ds->Commit(); // Don't bother to save few MB for a single game
 			m_dev->ClearDepth(ds);
 		}
 	}
@@ -1637,6 +1988,8 @@ bool GSRendererHW::OI_SuperManReturns(GSTexture* rt, GSTexture* ds, GSTextureCac
 	ASSERT((v->RGBAQ.A << 24 | v->RGBAQ.B << 16 | v->RGBAQ.G << 8 | v->RGBAQ.R) == (int)v->XYZ.Z);
 
 	// Do a direct write
+	if(rt)
+		rt->Commit(); // Don't bother to save few MB for a single game
 	m_dev->ClearRenderTarget(rt, GSVector4(m_vt.m_min.c));
 
 	m_tc->InvalidateVideoMemType(GSTextureCache::DepthStencil, ctx->FRAME.Block());
@@ -1671,6 +2024,8 @@ bool GSRendererHW::OI_ArTonelico2(GSTexture* rt, GSTexture* ds, GSTextureCache::
 
 	if (m_vertex.next == 2 && !PRIM->TME && m_context->FRAME.FBW == 10 && v->XYZ.Z == 0 && m_context->TEST.ZTST == ZTST_ALWAYS) {
 		GL_INS("OI_ArTonelico2");
+		if(ds)
+			ds->Commit(); // Don't bother to save few MB for a single game
 		m_dev->ClearDepth(ds);
 	}
 
@@ -1698,6 +2053,64 @@ bool GSRendererHW::OI_ItadakiStreet(GSTexture* rt, GSTexture* ds, GSTextureCache
 			m_context->TEST.ATST = ATST_ALWAYS;
 		}
 #endif
+	}
+
+	return true;
+}
+
+bool GSRendererHW::OI_JakGames(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t)
+{
+	GSVector4i r = GSVector4i(m_vt.m_min.p.xyxy(m_vt.m_max.p)).rintersect(GSVector4i(m_context->scissor.in));
+	GSVector4i r_p = GSVector4i(0, 0, 16, 16);
+
+	if (!(r == r_p).alltrue())
+		return true;
+
+	// Rendering 16x16 palette
+
+	if (m_vt.m_eq.rgba != 0xffff || m_vt.m_eq.z != 0x1 || m_vt.m_eq.q != 0x1)
+		return true;
+
+	// No rasterization
+
+	if (m_context->DepthRead() || m_context->DepthWrite())
+		return true;
+
+	// No depth handling
+
+	// Game is clearing palette content.
+	// Jak X does a constant RGBA color write to clear palette prior to actual rendering 
+	// that is not being handled correctly, most likely due to TC issue, so let's bypass
+	// GPU render and TC and clear GS memory directly instead
+	bool palette_clear = PRIM->PRIM == 6
+		&& !PRIM->IIP
+		&& !PRIM->TME
+		&& !PRIM->FGE
+		&& !PRIM->ABE
+		&& !PRIM->AA1
+		&& !PRIM->FST
+		&& !PRIM->FIX
+		&& m_context->FRAME.FBMSK == 0x0
+		&& m_context->FRAME.FBW == 1
+		&& m_context->FRAME.PSM == PSM_PSMCT32
+		;
+
+	// Game is rendering directly to palette.
+	// Cannot perform GPU render to FB as reading back is both slow and clashes with
+	// texture inside FB reading needed for correct eye rendering,
+	// so perform CPU rendering instead and skip draw.
+	bool palette_render = !PRIM->FST
+		&& PRIM->TME
+		&& m_context->TEX0.TBW == 1
+		&& m_context->TEX0.TW == 4
+		&& m_context->TEX0.TH == 4
+		&& m_context->TEX0.PSM == PSM_PSMCT32
+		;
+
+	if (palette_clear || palette_render)
+	{
+		SwSpriteRender();
+		return false; // skip current draw
 	}
 
 	return true;
@@ -1732,27 +2145,6 @@ void GSRendererHW::OO_MajokkoALaMode2()
 
 	if(!PRIM->TME && FBP == 0x03f40)
 	{
-		GIFRegBITBLTBUF BITBLTBUF;
-
-		BITBLTBUF.SBP = FBP;
-		BITBLTBUF.SBW = 1;
-		BITBLTBUF.SPSM = PSM_PSMCT32;
-
-		InvalidateLocalMem(BITBLTBUF, GSVector4i(0, 0, 16, 16));
-	}
-}
-
-void GSRendererHW::OO_JakGames()
-{
-	// FIXME might need a CU_Jak too
-	GSVector4i r = GSVector4i(m_vt.m_min.p.xyxy(m_vt.m_max.p)).rintersect(GSVector4i(m_context->scissor.in));
-	GSVector4i r_p = GSVector4i(0, 0, 16, 16);
-
-	if(!PRIM->FST && PRIM->TME && (r == r_p).alltrue() && m_context->TEX0.TW == 4 && m_context->TEX0.TH == 4 && m_context->TEX0.PSM == PSM_PSMCT32) {
-		// Game will render a texture directly into a palette.
-		uint32 FBP = m_context->FRAME.Block();
-		GL_INS("OO_JakGames read back 0x%x", FBP);
-
 		GIFRegBITBLTBUF BITBLTBUF;
 
 		BITBLTBUF.SBP = FBP;

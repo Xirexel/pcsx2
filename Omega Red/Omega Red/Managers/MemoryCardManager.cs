@@ -151,7 +151,7 @@ namespace Omega_Red.Managers
 
                     if (l_splits != null && l_splits.Length == 3)
                     {
-                        if (fi.Name.Contains(PCSX2Controller.Instance.IsoInfo.Title + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial))
+                        if (fi.Name.Contains(PCSX2Controller.Instance.IsoInfo.DiscSerial))
                         {
                             int l_value = 0;
 
@@ -209,18 +209,42 @@ namespace Omega_Red.Managers
 
                 var FullName = Settings.Default.MemoryCardsFolder + Name;
 
-                using (var fs = new FileStream(FullName, FileMode.Create, FileAccess.Write, FileShare.None))
+                try
                 {
-                    for (uint i = 0; i < (MC2_SIZE) / m_effeffs.Length; i++)
+                    using (var fs = new FileStream(FullName, FileMode.Create, FileAccess.Write, FileShare.None))
                     {
-                        try 
-	                    {
-                            fs.Write(m_effeffs, 0, m_effeffs.Length);
-	                    }
-	                    catch (Exception)
-	                    {
-                            return;
-	                    }
+                        for (uint i = 0; i < (MC2_SIZE) / m_effeffs.Length; i++)
+                        {
+                            try
+                            {
+                                fs.Write(m_effeffs, 0, m_effeffs.Length);
+                            }
+                            catch (Exception)
+                            {
+                                return;
+                            }
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    Name = PCSX2Controller.Instance.IsoInfo.DiscSerial + "." + lIndexString + ".ps2";
+
+                    FullName = Settings.Default.MemoryCardsFolder + Name;
+
+                    using (var fs = new FileStream(FullName, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        for (uint i = 0; i < (MC2_SIZE) / m_effeffs.Length; i++)
+                        {
+                            try
+                            {
+                                fs.Write(m_effeffs, 0, m_effeffs.Length);
+                            }
+                            catch (Exception)
+                            {
+                                return;
+                            }
+                        }
                     }
                 }
 

@@ -88,7 +88,6 @@
     <ClCompile Include="InputDevice.cpp">
       <Filter>Windows\Input</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="..\android\jni\ArmEmitterTest.cpp">
       <Filter>Other Platforms</Filter>
@@ -187,10 +186,12 @@
     <ClCompile Include="WASAPIStream.cpp">
       <Filter>Windows\System</Filter>
     </ClCompile>
+    <ClCompile Include="GPU\D3D9Context.cpp" />
+    <ClCompile Include="GPU\WindowsVulkanContext.cpp" />
+    <ClCompile Include="GPU\WindowsGLContext.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="OmegaRedinputDevice.cpp">
-      <Filter>Windows\Input</Filter>
-    </ClCompile>
+    <ClCompile Include="OmegaRedinputDevice.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Debugger\CtrlDisAsmView.h">
@@ -349,7 +350,9 @@
     <ClInclude Include="WASAPIStream.h">
       <Filter>Windows\System</Filter>
     </ClInclude>
-    <ClInclude Include="dllmain.h" />
+    <ClInclude Include="GPU\D3D9Context.h" />
+    <ClInclude Include="GPU\WindowsVulkanContext.h" />
+    <ClInclude Include="GPU\WindowsGLContext.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="icon1.ico">
@@ -429,7 +432,7 @@
     <None Include="..\Qt\assets.qrc">
       <Filter>Other Platforms\Qt</Filter>
     </None>
-    <None Include="PPSSPPWindows.def" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ppsspp.rc">

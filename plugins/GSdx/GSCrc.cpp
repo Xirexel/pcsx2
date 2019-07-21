@@ -77,22 +77,6 @@ CRC::Game CRC::m_games[] =
 	{0x21068223, Okami, US, 0},
 	{0x891F223F, Okami, EU, 0}, // PAL DE, ES & FR.
 	{0xC5DEFEA0, Okami, JP, 0},
-	{0x086273D2, MetalGearSolid3, EU, 0}, // - PAL UK & FR
-	{0x26A6E286, MetalGearSolid3, DE, 0},
-	{0x9F185CE1, MetalGearSolid3, EU, 0},
-	{0x98D4BC93, MetalGearSolid3, ES, 0},
-	{0x79ED26AD, MetalGearSolid3, EU, 0},
-	{0x5E31EA42, MetalGearSolid3, EU, 0},
-	{0xD7ED797D, MetalGearSolid3, DE, 0},
-	{0x053D2239, MetalGearSolid3, US, 0}, // Metal Gear Solid 3 Subsistence disc1
-	{0x01B2FA7F, MetalGearSolid3, US, 0}, // Metal Gear Solid 3 Subsistence disc2
-	{0xAA31B5BF, MetalGearSolid3, US, 0},
-	{0x86BC3040, MetalGearSolid3, US, 0}, // Metal Gear Solid 3 Subsistence disc1
-	{0x0481AD8A, MetalGearSolid3, JP, 0},
-	{0xC69ACB6F, MetalGearSolid3, KO, 0}, // Metal Gear Solid 3 Snake Eater
-	{0xB0D195EF, MetalGearSolid3, KO, 0}, // Metal Gear Solid 3 Subsistence disc1
-	{0x3EBABC9C, MetalGearSolid3, KO, 0}, // Metal Gear Solid 3 Subsistence disc2
-	{0x8A5C25A7, MetalGearSolid3, ES, 0}, // Metal Gear Solid 3 Subsistence Spanish version
 	{0x278722BF, DBZBT2, EU, 0},
 	{0xFE961D28, DBZBT2, US, 0},
 	{0x0393B6BE, DBZBT2, EU, 0},
@@ -122,15 +106,6 @@ CRC::Game CRC::m_games[] =
 	{0x877F3436, SoTC, JP, 0},
 	{0xA17D6AAA, SoTC, KO, 0},
 	{0x877B3D35, SoTC, CH, 0},
-	{0x3122B508, OnePieceGrandAdventure, US, 0},
-	{0x8DF14A24, OnePieceGrandAdventure, EU, 0},
-	{0xE446C9F9, OnePieceGrandAdventure, KO, 0},
-	{0xCA2073B3, OnePieceGrandBattle, KO, 0},
-	{0x66953267, OnePieceGrandAdventure, JP, 0},
-	{0xE1674F57, OnePieceGrandBattle, EU, 0},
-	{0x947B933B, OnePieceGrandAdventure, US, 0},
-	{0xB049DD5E, OnePieceGrandBattle, US, 0},
-	{0x5D02CC5B, OnePieceGrandBattle, NoRegion, 0},
 	{0x6F8545DB, ICO, US, 0},
 	{0x48CDF317, ICO, US, 0}, // Demo
 	{0xB01A4C95, ICO, JP, 0},
@@ -150,6 +125,7 @@ CRC::Game CRC::m_games[] =
 	{0x9DE5CF65, GT3, JP, 0},
 	{0x706DFF80, GT3, JP, 0}, // GT3 Store Disc Vol. 2
 	{0x55CE5111, GT3, JP, 0}, // Gran Turismo 2000 Body Omen
+	{0xE9A7E08D, GT3, JP, 0}, // Gran Turismo 2000 Body Omen
 	{0xB590CE04, GT3, EU, 0},
 	{0xC02C653E, GT4, CH, 0},
 	{0x7ABDBB5E, GT4, CH, 0}, // cutie comment
@@ -247,18 +223,13 @@ CRC::Game CRC::m_games[] =
 	{0x71320CA8, Onimusha3, JP, 0},
 	{0xDAFFFB0D, Onimusha3, KO, 0},
 	{0xF442260C, MajokkoALaMode2, JP, 0},
+	{0xA616A6C2, TalesOfAbyss, US, 0},
 	{0x14FE77F7, TalesOfAbyss, US, 0},
 	{0x045D77E9, TalesOfAbyss, JPUNDUB, 0},
+	{0x14FD77F7, TalesOfAbyss, JPUNDUB, 0},
 	{0xAA5EC3A3, TalesOfAbyss, JP, 0},
 	{0xFB236A46, SonicUnleashed, US, 0},
 	{0x8C913264, SonicUnleashed, EU, 0},
-	{0x5C1EBD61, SimpsonsGame, EU, 0},
-	{0x5C1EBF61, SimpsonsGame, FR, 0},
-	{0x4C7BB3C8, SimpsonsGame, NoRegion, 0},
-	{0x4C94B32C, SimpsonsGame, NoRegion, 0},
-	{0x565B7E04, SimpsonsGame, IT, 0},
-	{0x206779D8, SimpsonsGame, EU, 0},
-	{0xBBE4D862, SimpsonsGame, US, 0},
 	{0xD71B57F4, Genji, US, 0},
 	{0xFADEBC45, Genji, EU, 0},
 	{0xB4776FC1, Genji, JP, 0},
@@ -319,6 +290,7 @@ CRC::Game CRC::m_games[] =
 	{0x518DD841, Sly2, KO, 0},
 	{0x07652DD9, Sly2, US, 0},
 	{0x5B93397F, Sly2, US, 0}, // E3 Demo
+	{0xA480549C, Sly2, US, 0}, // Prototype
 	{0xDD0B5E6C, Sly2, US, 0}, // Internal prototype disc
 	{0x615EA2DB, Sly2, JP, 0}, // Kaitou Sly Cooper 2
 	{0xFDA1CBF6, Sly2, EU, 0},
@@ -334,23 +306,15 @@ CRC::Game CRC::m_games[] =
 	{0xEB198738, LordOfTheRingsThirdAge, US, 0},
 	{0x614F4CF4, LordOfTheRingsThirdAge, EU, 0},
 	{0x37CD4279, LordOfTheRingsThirdAge, KO, 0},
+	{0xE169BAF8, RedDeadRevolver, US, 0},
+	{0xE2E67E23, RedDeadRevolver, EU, 0},
+	{0x87844524, RedDeadRevolver, RU, 0}, // Unofficial RU-version
 	{0x6DF62AEA, BleachBladeBattlers, JP, 0},
 	{0x6EB71AB0, BleachBladeBattlers, JP, 0}, // 2nd
-	{0x3A446111, CastlevaniaCoD, US, 0},
-	{0xF321BC38, CastlevaniaCoD, EU, 0},
-	{0x950876FA, CastlevaniaCoD, KO, 0},
-	{0x237B84D3, CastlevaniaCoD, CH, 0},
-	{0x28270F7D, CastlevaniaLoI, US, 0},
-	{0x306CDADA, CastlevaniaLoI, EU, 0},
-	{0xA36CFF6C, CastlevaniaLoI, JP, 0},
-	{0x9A93FE5D, CastlevaniaLoI, KO, 0},
 	{0xCBB87BF9, EvangelionJo, JP, 0}, // cutie comment
 	{0xC5B75C7C, Oneechanbara2Special, JP, 0}, // cutie comment
 	{0xC725CC6C, Oneechanbara2Special, JP, 0},
 	{0x07608CA2, Oneechanbara2Special, EU, 0}, // Zombie Hunters 2
-	{0xC0659AD1, NarutimateAccel, JP, 0}, // cutie comment
-	{0xF3D9DFBE, NarutimateAccel, JP, 0},
-	{0x59739DDE, Naruto, JP, 0}, // cutie comment
 	{0xE0347841, XenosagaE3, JP, 0}, // cutie comment
 	{0xA4E88698, XenosagaE3, CH, 0},
 	{0x2088950A, XenosagaE3, US, 0},
@@ -361,8 +325,6 @@ CRC::Game CRC::m_games[] =
 	{0x958DCA28, ShadowofRome, EU, 0},
 	{0x57818AF6, ShadowofRome, US, 0},
 	{0x1E210E60, ShadowofRome, US, 0}, // Demo
-	{0xF21EE6E0, CrashNburn, US, 0},
-	{0x54A548B4, CrashNburn, EU, 0},
 	{0x694A998E, TombRaiderUnderworld, JP, 0}, // cutie comment
 	{0x8E214549, TombRaiderUnderworld, EU, 0},
 	{0x8E265148, TombRaiderUnderworld, RU, 0}, // Unofficial RU-version
@@ -375,6 +337,7 @@ CRC::Game CRC::m_games[] =
 	{0x05177ECE, TombRaiderLegend, EU, 0},
 	{0x879CDA5E, StarWarsForceUnleashed, US, 0},
 	{0x137C792E, StarWarsForceUnleashed, US, 0},
+	{0xCC9BFDE3, StarWarsForceUnleashed, JP, 0},
 	{0xDAF2145C, StarWarsForceUnleashed, EU, 0},
 	{0x25FC361B, DevilMayCry3, US, 0}, // SE
 	{0x2F7D8AD5, DevilMayCry3, US, 0},
@@ -404,10 +367,6 @@ CRC::Game CRC::m_games[] =
 	{0x43AB7214, TalesOfLegendia, US, 0},
 	{0x1F8640E0, TalesOfLegendia, JP, 0},
 	{0xE4F5DA2B, TalesOfLegendia, KO, 0},
-	{0xA79B0491, NanoBreaker, JP, 0},
-	{0x98C7B76D, NanoBreaker, US, 0},
-	{0x7098BE76, NanoBreaker, KO, 0},
-	{0x9B89F425, NanoBreaker, EU, 0},
 	{0x519E816B, Kunoichi, US, 0}, // Nightshade
 	{0x3FB419FD, Kunoichi, JP, 0},
 	{0x086D198E, Kunoichi, CH, 0},
@@ -454,11 +413,6 @@ CRC::Game CRC::m_games[] =
 	{0x5AC7E79C, TouristTrophy, CH, 0}, // cutie comment
 	{0xFF9C0E93, TouristTrophy, US, 0},
 	{0xCA9AA903, TouristTrophy, EU, 0},
-	{0xA1B3F232, GTASanAndreas, EU, 0}, // cutie comment
-	{0xB440A8FE, GTASanAndreas, EU, 0},
-	{0x399A49CA, GTASanAndreas, US, 0},
-	{0x2C6BE434, GTASanAndreas, US, 0},
-	{0x60FE139C, GTASanAndreas, JP, 0},
 	{0xAEDAEE99, GodHand, JP, 0},
 	{0x6FB69282, GodHand, US, 0},
 	{0x924C4AA6, GodHand, KO, 0},
@@ -487,19 +441,23 @@ CRC::Game CRC::m_games[] =
 	{0x472E7699, Jak1, US, 0},
 	{0x2479F4A9, Jak2, EU, 0},
 	{0x9184AAF1, Jak2, US, 0},
+	{0xA2034C69, Jak2, US, 0}, // Demo
 	{0x12804727, Jak3, EU, 0},
 	{0x644CFD03, Jak3, US, 0},
+	{0x23F8D35B, Jak3, NoRegion, 0}, // EU Preview, US Internal test build
 	{0xDF659E77, JakX, EU, 0}, // Jak X: Combat Racing
 	{0x3091E6FB, JakX, US, 0},
 	{0x4653CA3E, HarleyDavidson, US, 0},
 	// Games list for Automatic Mipmapping
 	// Basic mipmapping
-	{0x194C9F38, AceCombatZero, EU, 0},
+	{0x194C9F38, AceCombatZero, EU, 0}, // Ace Combat: The Belkan War
 	{0x65729657, AceCombatZero, US, 0},
 	{0xA04B52DB, AceCombatZero, JP, 0},
+	{0x2799A4E5, AceCombatZero, KO, 0},
 	{0x09B3AD4D, ApeEscape2, EU, 0},
 	{0xBDD9F5E1, ApeEscape2, US, 0},
 	{0xFE0A6AB6, ApeEscape2, JP, 0}, // Saru! Get You! 2
+	{0x64A9982B, ApeEscape2, CH, 0},
 	{0xEC8EF2DE, Barnyard, US, 0}, // Nickelodeon: Barnyard
 	{0x5267A845, Barnyard, EU, 0},
 	{0x0940508D, BrianLaraInternationalCricket, EU, 0},
@@ -521,12 +479,16 @@ CRC::Game CRC::m_games[] =
 	{0x972611BB, FIFA05, US, 0},
 	{0x972719A3, FIFA05, EU, 0},
 	{0xC5473413, HarryPotterATCOS, NoRegion, 0}, // EU and US versions have the same CRC - Chamber Of Secrets
+	{0xE1963055, HarryPotterATCOS, JP, 0 }, // Harry Potter to Himitsu no Heya
 	{0xE90BE9F8, HarryPotterATCOS, JP, 0 }, // Coca Cola original Version
+	{0xB38CC628, HarryPotterATGOF, US, 0 },
+	{0xB18DC525, HarryPotterATGOF, EU, 0 },
 	{0x9C3A84F4, HarryPotterATHBP, US, 0 }, // Half-Blood Prince
 	{0xCB598BC2, HarryPotterATHBP, EU, 0 },
 	{0x51E019BC, HarryPotterATPOA, NoRegion, 0 }, // EU and US versions have the same CRC - Prisoner of Azkaban
 	{0x99A8B4FF, HarryPotterATPOA, KO, 0 },
 	{0xA8901AD6, HarryPotterATPOA, JP, 0 }, // Harry Potter to Azkaban no Shuujin
+	{0x51E417AA, HarryPotterATPOA, EU, 0 },
 	{0x4C01B1B0, HarryPotterOOTP, US, 0}, // Order Of The Phoenix
 	{0x01A9BF0E, HarryPotterOOTP, EU, 0},
 	{0x230CB71D, SoulReaver2, US, 0},
@@ -538,6 +500,11 @@ CRC::Game CRC::m_games[] =
 	{0x018AC37C, LegacyOfKainDefiance, RU, 0}, // Unofficial RU-version
 	{0x28D09BF9, NicktoonsUnite, US, 0},
 	{0xF25266C4, NicktoonsUnite, EU, 0}, // Nickelodeon SpongeBob SquarePants And Friends Unite
+	{0x2BDA8ADB, ProjectSnowblind, US, 0},
+	{0xF00CA82B, ProjectSnowblind, EU, 0},
+	{0xF1583665, ProjectSnowblind, EU, 0},
+	{0xA56A0525, Quake3Revolution, US, 0},
+	{0x2064ACE6, Quake3Revolution, EU, 0},
 	{0xCE4933D0, RatchetAndClank, US, 0},
 	{0x6F191506, RatchetAndClank, US, 0}, // E3 Demo
 	{0x81CBFEA2, RatchetAndClank, US, 0}, // EB Games Demo
@@ -558,8 +525,6 @@ CRC::Game CRC::m_games[] =
 	{0x8661F7BA, RatchetAndClank5, US, 0}, // Size Matters
 	{0xFCB981D5, RatchetAndClank5, EU, 0}, // Size Matters
 	{0x8634861F, RickyPontingInternationalCricket, EU, 0},
-	{0xA56A0525, Quake3Revolution, US, 0},
-	{0x2064ACE6, Quake3Revolution, EU, 0},
 	{0xDDAC3815, Shox, US, 0},
 	{0x78FFA39F, Shox, EU, 0},
 	{0x3DF10389, Shox, EU, 0},

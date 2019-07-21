@@ -4,7 +4,16 @@
     <ClCompile Include="Headless.cpp" />
     <ClCompile Include="Compare.cpp" />
     <ClCompile Include="..\ext\glew\glew.c" />
+    <ClCompile Include="..\Windows\GPU\D3D9Context.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Windows\GPU\WindowsGLContext.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
     <ClCompile Include="WindowsHeadlessHost.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Windows\GPU\WindowsVulkanContext.cpp">
       <Filter>Windows</Filter>
     </ClCompile>
     <ClCompile Include="..\Windows\W32Util\Misc.cpp">

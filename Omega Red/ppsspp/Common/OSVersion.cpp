@@ -7,6 +7,7 @@
 #endif
 
 #include <cstdint>
+#include <vector>
 #include "OSVersion.h"
 #include "Common/CommonWindows.h"
 
@@ -124,15 +125,20 @@ std::string GetWindowsSystemArchitecture() {
 	ZeroMemory(&sysinfo, sizeof(SYSTEM_INFO));
 	GetNativeSystemInfo(&sysinfo);
 
-	if (sysinfo.wProcessorArchitecture & PROCESSOR_ARCHITECTURE_AMD64)
-		return "(x64)";
-	// Need to check for equality here, since ANDing with 0 is always 0.
-	else if (sysinfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)
+	switch (sysinfo.wProcessorArchitecture) {
+	case PROCESSOR_ARCHITECTURE_INTEL:
 		return "(x86)";
-	else if (sysinfo.wProcessorArchitecture & PROCESSOR_ARCHITECTURE_ARM)
+	case PROCESSOR_ARCHITECTURE_AMD64:
+		return "(x64)";
+	case PROCESSOR_ARCHITECTURE_ARM:
 		return "(ARM)";
-	else
+#ifdef PROCESSOR_ARCHITECTURE_ARM64
+	case PROCESSOR_ARCHITECTURE_ARM64:
+		return "(ARM64)";
+#endif
+	default:
 		return "(Unknown)";
+	}
 }
 
 #endif

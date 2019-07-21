@@ -64,11 +64,13 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)Emitters;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)PCSX2Lib;$(SolutionDir)Common\Framework;$(SolutionDir)Common\PugiXML;$(SolutionDir)..\common\include;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PUGIXML_WCHAR_MODE;BUILTIN_FW_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MultiThreadedDebug</RuntimeLibrary>
+      <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</IntrinsicFunctions>
     </ClCompile>
     <ClCompile>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)Emitters;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)PCSX2Lib;$(SolutionDir)Common\Framework;$(SolutionDir)Common\PugiXML;$(SolutionDir)..\common\include;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PUGIXML_WCHAR_MODE;BUILTIN_FW_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MultiThreaded</RuntimeLibrary>
+      <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</IntrinsicFunctions>
     </ClCompile>
     <PreBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SolutionDir)..\common\vsprops\preBuild.cmd"</Command>

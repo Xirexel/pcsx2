@@ -24,6 +24,7 @@
 #include "GS.h"
 #include "PSX/GPU.h"
 
+
 static void* s_hModule;
 
 #ifdef _WIN32
@@ -55,7 +56,7 @@ bool GSdxApp::LoadResource(int id, std::vector<char>& buff, const char* type)
 	// On Linux resources are always NULL terminated
 	// Add + 1 on size to do the same for compatibility sake (required by GSDeviceOGL)
 	buff.resize(size + 1);
-	memcpy(buff.data(), LockResource(hGlobal), size);
+    memcpy(buff.data(), LockResource(hGlobal), size);
 	return true;
 }
 

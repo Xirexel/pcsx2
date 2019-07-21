@@ -53,8 +53,8 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Full:\nFor an optimal experience with Direct3D.\n\n"
 				"Aggressive:\nUse more aggressive CRC hacks.\n"
 				"Removes effects in some games which make the image appear sharper/clearer.\n"
-				"Affected games: AC4, DBZBT 2 & 3, FF games, GOW games, MGS3, OnimushaDoD, RE4, SoTC, SMT3, SMTDDS1, SMTDDS2.\n"
-				"Works as a speedhack for: BleachBB, Kunoichi, Steambot Chronicles, The Simpsons Game.";
+				"Affected games: AC4, DBZBT 2 & 3, FF games, GOW games, OnimushaDoD, RDRevolver, RE4, SoTC, SMT3, SMTDDS1, SMTDDS2.\n"
+				"Works as a speedhack for: BleachBB, Kunoichi, Steambot Chronicles.";
 		case IDC_SKIPDRAWHACK:
 		case IDC_SKIPDRAWHACKEDIT:
 		case IDC_SKIPDRAWOFFSET:
@@ -64,23 +64,13 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Step 1: Increase the value in the left box and keep the value in the right box set to the same value as the left box to find and remove a bad effect.\n"
 				"Step 2: If a bad effect found with Step 1 is not completely removed yet, then without changing the value in the left box, try increasing the value in the box to right until the effect is completely gone.\n\n"
 				"Note: Increase the value in the right box and keep the value in the left box set to \"1\" to reproduce the old skipdraw behaviour.";
-		case IDC_ALPHAHACK:
-			return "Different alpha handling. Can work around some shadow problems.";
 		case IDC_OFFSETHACK:
 			return "Might fix some misaligned fog, bloom, or blend effect.\n"
 				"The preferred option is Normal (Vertex) as it is most likely to resolve misalignment issues.\n"
 				"The special cases are only useful in a couple of games like Captain Tsubasa.";
-		case IDC_SPRITEHACK:
-			return "Helps getting rid of black inner lines in some filtered sprites."
-				" Half option is the preferred one. Use it for Mana Khemia or Ar tonelico for example."
-				" Full can be used for Tales of Destiny.";
 		case IDC_WILDHACK:
 			return "Lowers the GS precision to avoid gaps between pixels when upscaling.\n"
 				"Fixes the text on Wild Arms games.";
-		case IDC_ALPHASTENCIL:
-			return "Extend stencil based emulation of destination alpha to perform stencil operations while drawing.\n\n"
-				"Improves many shadows which are normally overdrawn in parts, may affect other effects.\n"
-				"Will disable partial transparency in some games or even prevent drawing some elements altogether.";
 		case IDC_ALIGN_SPRITE:
 			return "Fixes issues with upscaling(vertical lines) in Namco games like Ace Combat, Tekken, Soul Calibur, etc.";
 		case IDC_ROUND_SPRITE:
@@ -147,17 +137,23 @@ const char* dialog_message(int ID, bool* updateText) {
 			return "Enables external shader for additional post-processing effects.";
 		case IDC_FXAA:
 			return "Enables fast approximate anti-aliasing. Small performance impact.";
-		case IDC_AUTO_FLUSH:
+		case IDC_AUTO_FLUSH_HW:
 			return "Force a primitive flush when a framebuffer is also an input texture.\n"
 				"Fixes some processing effects such as the shadows in the Jak series and radiosity in GTA:SA.\n"
-				"Warning: it's very costly on the performance.\n\n"
+				"Warning: It's very costly on the performance.\n\n"
 				"Note: OpenGL HW renderer is able to handle Jak shadows at full speed without this option.";
+		case IDC_AUTO_FLUSH_SW:
+			return "Force a primitive flush when a framebuffer is also an input texture.\n"
+				"Fixes some processing effects such as the shadows in the Jak series and radiosity in GTA:SA.\n"
+				"Warning: It's very costly on the performance.";
 		case IDC_SAFE_FEATURES:
 			return "This option disables multiple safe features.\n\n"
-				"Disables accurate Ucnscale Point and Line rendering.\n"
+				"Disables accurate Unscale Point and Line rendering.\n"
 				"It can help Xenosaga games.\n\n"
-				"Disables accurate GS Memory Clearing to be done on the CPU, and let only the GPU hangle it.\n"
-				"It can help Kingdom Hearts games.";
+				"Disables accurate GS Memory Clearing to be done on the CPU, and let only the GPU handle it.\n"
+				"It can help Kingdom Hearts games.\n\n"
+				"Disables special Nvidia hack.\n"
+				"It can help SOTC, Fatal Frame games and possibly others too.";
 		case IDC_MEMORY_WRAPPING:
 			return "Emulates GS memory wrapping accurately. This fixes issues where part of the image is cut-off by block shaped sections such as the FMVs in Wallace & Gromit: The Curse of the Were-Rabbit and Thrillville.\n\n"
 				"Note: This hack can have a small impact on performance.";
@@ -201,6 +197,23 @@ const char* dialog_message(int ID, bool* updateText) {
 				"It increases GPU/memory requirements.\n\n"
 				"Note: It should be disabled for Armored Core, Destroy All Humans, and Gran Turismo.\n"
 				"It will amplify RAM/VRAM spikes. Other games might be affected as well.";
+		// Windows only options.
+#ifdef _WIN32
+		case IDC_ALPHASTENCIL:
+			return "Improves shadows/transparency rendering in games such as Amagami.\n\n"
+				"Note: It will break transparency rendering in many games, avoid using it.";
+		case IDC_ACCURATE_BLEND_UNIT_D3D11:
+			return "Control the accuracy level of the GS blending unit emulation.\n\n"
+				"None:\nFast but introduces various rendering issues.\n"
+				"It is intended for slow computer.\n\n"
+				"Basic:\nEmulate correctly some of the effects with a limited speed penalty.\n"
+				"This is the recommended setting.\n\n"
+				"Medium:\nExtend it to color shuffling. Performance impact remains reasonable.\n"
+				"It is intended for debug.\n\n"
+				"High:\nExtend it to triangle based primitives. It is ultra slow!\n"
+				"It is intended for debug.\n\n"
+				"Note: Direct3D and OpenGL blending options aren't the same, even High blending on Direct3D is like 1/3 of Basic blending on OpenGL.";
+#endif
 		default:
 			if (updateText)
 				*updateText = false;

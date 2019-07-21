@@ -13,6 +13,9 @@
     <ClCompile Include="..\..\ext\SPIRV-Cross\spirv_glsl.cpp" />
     <ClCompile Include="..\..\ext\SPIRV-Cross\spirv_hlsl.cpp" />
     <ClCompile Include="..\..\ext\SPIRV-Cross\spirv_msl.cpp" />
+    <ClCompile Include="..\..\ext\SPIRV-Cross\spirv_cross_util.cpp" />
+    <ClCompile Include="..\..\ext\SPIRV-Cross\spirv_cross_parsed_ir.cpp" />
+    <ClCompile Include="..\..\ext\SPIRV-Cross\spirv_parser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -24,5 +27,10 @@
     <ClInclude Include="..\..\ext\SPIRV-Cross\spirv_glsl.hpp" />
     <ClInclude Include="..\..\ext\SPIRV-Cross\spirv_hlsl.hpp" />
     <ClInclude Include="..\..\ext\SPIRV-Cross\spirv_msl.hpp" />
+    <ClInclude Include="..\..\ext\SPIRV-Cross\spirv_cross_util.hpp" />
+    <ClInclude Include="..\..\ext\SPIRV-Cross\spirv_cross_containers.hpp" />
+    <ClInclude Include="..\..\ext\SPIRV-Cross\spirv_cross_error_handling.hpp" />
+    <ClInclude Include="..\..\ext\SPIRV-Cross\spirv_cross_parsed_ir.hpp" />
+    <ClInclude Include="..\..\ext\SPIRV-Cross\spirv_parser.hpp" />
   </ItemGroup>
 </Project>

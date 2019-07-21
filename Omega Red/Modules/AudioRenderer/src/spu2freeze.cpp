@@ -17,7 +17,6 @@
 
 #include "Global.h"
 #include "PS2E-spu2.h" // hopefully temporary, until I resolve lClocks depdendency
-#include "MemoryManager.h"
 
 namespace Savestate
 {
@@ -62,8 +61,8 @@ s32 __fastcall Savestate::FreezeIt(DataBlock &spud)
     if (_spu2mem != NULL)
         memcpy(spud.mem, _spu2mem, sizeof(spud.mem));
 
-    AudioRenderer::MemoryManager::memcpy(spud.Cores, Cores, sizeof(Cores));
-    AudioRenderer::MemoryManager::memcpy(&spud.Spdif, &Spdif, sizeof(Spdif));
+    memcpy(spud.Cores, Cores, sizeof(Cores));
+    memcpy(&spud.Spdif, &Spdif, sizeof(Spdif));
 
     spud.OutPos = OutPos;
     spud.InputPos = InputPos;
@@ -111,8 +110,8 @@ s32 __fastcall Savestate::ThawIt(DataBlock &spud)
         if (_spu2mem)
             memcpy(_spu2mem, spud.mem, sizeof(spud.mem));
 
-        AudioRenderer::MemoryManager::memcpy(Cores, spud.Cores, sizeof(Cores));
-        AudioRenderer::MemoryManager::memcpy(&Spdif, &spud.Spdif, sizeof(Spdif));
+        memcpy(Cores, spud.Cores, sizeof(Cores));
+        memcpy(&Spdif, &spud.Spdif, sizeof(Spdif));
 
         OutPos = spud.OutPos;
         InputPos = spud.InputPos;

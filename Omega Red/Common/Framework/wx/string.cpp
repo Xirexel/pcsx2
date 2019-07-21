@@ -654,6 +654,11 @@ int wxArrayString::GetCount() const
 	return m_strings.size();
 }
 
+int wxArrayString::Count() const
+{
+    return m_strings.size();
+}
+
 bool wxArrayString::IsEmpty() const { return m_strings.empty(); }
 
 wxString& wxArrayString::Item(size_t nIndex) { return m_strings[nIndex]; }
@@ -721,3 +726,17 @@ CharBuffer::element_type *wxCharBuffer::data() { return m_CharBuffer.get(); }
 const CharBuffer::element_type *wxCharBuffer::data() const { return  m_CharBuffer.get(); }
 wxCharBuffer::operator const CharBuffer::element_type *() const { return m_CharBuffer.get(); }
 CharBuffer::element_type wxCharBuffer::operator[](size_t n) const { return data()[n]; }
+
+
+// Splits a string into parts and adds the parts into the given SafeList.
+// This list is not cleared, so concatenating many splits into a single large list is
+// the 'default' behavior, unless you manually clear the SafeList prior to subsequent calls.
+//
+// Note: wxWidgets 2.9 / 3.0 has a wxSplit function, but we're using 2.8 so I had to make
+// my own.
+void SplitString(wxArrayString &dest, const wxString &src, const wxString &delims, wxStringTokenizerMode mode)
+{
+    wxStringTokenizer parts(src, delims, mode);
+    while (parts.HasMoreTokens())
+        dest.Add(parts.GetNextToken());
+}

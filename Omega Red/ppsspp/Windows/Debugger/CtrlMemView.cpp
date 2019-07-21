@@ -4,12 +4,13 @@
 #include <math.h>
 
 #include "Core/Config.h"
-#include "../resource.h"
-#include "../../Core/MemMap.h"
-#include "../W32Util/Misc.h"
+#include "Windows/resource.h"
+#include "Core/MemMap.h"
+#include "Windows/W32Util/Misc.h"
 #include "Windows/InputBox.h"
-#include "../Main.h"
-#include "../../Core/Debugger/SymbolMap.h"
+#include "Windows/main.h"
+#include "Core/Debugger/SymbolMap.h"
+#include "base/display.h"
 
 #include "Debugger_Disasm.h"
 #include "DebuggerShared.h"
@@ -26,18 +27,20 @@ CtrlMemView::CtrlMemView(HWND _wnd)
 	SetWindowLong(wnd, GWL_STYLE, GetWindowLong(wnd,GWL_STYLE) | WS_VSCROLL);
 	SetScrollRange(wnd, SB_VERT, -1,1,TRUE);
 
-	rowHeight = g_Config.iFontHeight;
-	charWidth = g_Config.iFontWidth;
+	const float fontScale = 1.0f / g_dpi_scale_real_y;
+	rowHeight = g_Config.iFontHeight * fontScale;
+	charWidth = g_Config.iFontWidth * fontScale;
+	offsetPositionY = offsetLine * rowHeight;
 
-	font =
-		CreateFont(rowHeight,charWidth,0,0,FW_DONTCARE,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
-			CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,L"Lucida Console");
-	underlineFont =
-		CreateFont(rowHeight,charWidth,0,0,FW_DONTCARE,FALSE,TRUE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
-			CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,L"Lucida Console");
-	curAddress=0;
+	font = CreateFont(rowHeight, charWidth, 0, 0,
+		FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH,
+		L"Lucida Console");
+	underlineFont = CreateFont(rowHeight, charWidth, 0, 0,
+		FW_DONTCARE, FALSE, TRUE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH,
+		L"Lucida Console");
+	curAddress = 0;
 	debugger = 0;
-  
+ 
 	searchQuery = "";
 	matchAddress = -1;
 	searching = false;
@@ -93,6 +96,7 @@ LRESULT CALLBACK CtrlMemView::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 {
 	CtrlMemView *ccp = CtrlMemView::getFrom(hwnd);
 	static bool lmbDown=false,rmbDown=false;
+
     switch(msg)
     {
     case WM_NCCREATE:
@@ -196,6 +200,10 @@ void CtrlMemView::onPaint(WPARAM wParam, LPARAM lParam)
 	SelectObject(hdc,standardBrush);
 	Rectangle(hdc,0,0,rect.right,rect.bottom);
 
+	if (displayOffsetScale) 
+		drawOffsetScale(hdc);
+	
+
 	// draw one extra row that may be partially visible
 	for (int i = 0; i < visibleRows+1; i++)
 	{
@@ -203,6 +211,10 @@ void CtrlMemView::onPaint(WPARAM wParam, LPARAM lParam)
 
 		unsigned int address=windowStart + i*rowSize;
 		int rowY = rowHeight*i;
+
+		if (displayOffsetScale) 
+			rowY += rowHeight * offsetSpace; // skip the first X rows to make space for the offsets
+		
 		
 		sprintf(temp,"%08X",address);
 		SetTextColor(hdc,0x600000);
@@ -409,6 +421,10 @@ void CtrlMemView::redraw()
 	GetClientRect(wnd, &rect);
 	visibleRows = (rect.bottom/rowHeight);
 
+	if (displayOffsetScale) {
+		visibleRows -= offsetSpace; // visibleRows is calculated based on the size of the control, but X rows have already been used for the offsets and are no longer usable
+	}
+
 	InvalidateRect(wnd, NULL, FALSE);
 	UpdateWindow(wnd); 
 }
@@ -516,6 +532,17 @@ void CtrlMemView::gotoPoint(int x, int y)
 {
 	int line = y/rowHeight;
 	int lineAddress = windowStart+line*rowSize;
+
+	if (displayOffsetScale)
+	{
+		if (line < offsetSpace) // ignore clicks on the offset space
+		{
+			updateStatusBarText();
+			redraw();
+			return;
+		}
+		lineAddress -= (rowSize * offsetSpace); // since each row has been written X rows down from where the window expected it to be written the target of the clicks must be adjusted
+	}
 
 	if (x >= asciiStart)
 	{
@@ -706,5 +733,36 @@ void CtrlMemView::search(bool continueSearch)
 
 	MessageBox(wnd,L"Not found",L"Search",MB_OK);
 	searching = false;
+	redraw();
+}
+
+void CtrlMemView::drawOffsetScale(HDC hdc)
+{
+	int currentX = addressStart;
+
+	SetTextColor(hdc, 0x600000);
+	TextOutA(hdc, currentX, offsetPositionY, "Offset", 6);
+
+	currentX = addressStart + ((8 + 1)*charWidth); // the start offset, the size of the hex addresses and one space 
+	
+	char temp[64];
+
+	for (int i = 0; i < 16; i++) 
+	{
+		sprintf(temp, "%02X", i);
+		TextOutA(hdc, currentX, offsetPositionY, temp, 2);
+		currentX += 3 * charWidth; // hex and space
+	}
+
+}
+
+void CtrlMemView::toggleOffsetScale(OffsetToggles toggle)
+{
+	if (toggle == On) 
+		displayOffsetScale = true;
+	else if (toggle == Off)
+		displayOffsetScale = false;
+
+	updateStatusBarText();
 	redraw();
 }

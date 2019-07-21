@@ -55,6 +55,8 @@ namespace Omega_Red
             ConfigManager.Instance.SwitchControlModeEvent += Instance_SwitchControlModeEvent;
 
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+
+            MediaRecorderManager.Instance.ShowWarningEvent += Instance_ShowWarningEvent;
                         
 #if DEBUG
 
@@ -63,7 +65,12 @@ namespace Omega_Red
             WindowStyle = System.Windows.WindowStyle.SingleBorderWindow;
 #endif
         }
-        
+
+        private void Instance_ShowWarningEvent(string a_message)
+        {
+            mTaskbarIcon.ShowBalloonTip(Title, a_message, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Warning);
+        }
+
         void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
         {
             if (!mButtonControl && a_Status == PCSX2Controller.StatusEnum.Started)
@@ -125,7 +132,7 @@ namespace Omega_Red
                     break;
                 }
 
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)async delegate ()
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                 {
 
                     if (m_PadPanel.Content != null && m_PadPanel.Content is DisplayControl)
@@ -145,11 +152,15 @@ namespace Omega_Red
 
                     ModuleControl.Instance.setWindowHandler(wih.Handle);
 
-                    await MediaSourcesManager.Instance.loadAsync();
+                    MediaSourcesManager.Instance.load(()=>
+                    {
+                        SocialNetworks.Google.GoogleAccountManager.Instance.sendEvent();
 
-                    SocialNetworks.Google.GoogleAccountManager.Instance.sendEvent();
+                        PCSX2Controller.Instance.updateInitilize();
 
-                    PCSX2Controller.Instance.updateInitilize();
+                        if (ModuleManager.Instance.isInit && PCSX2LibNative.Instance.isInit && PPSSPPNative.Instance.isInit)
+                            LockScreenManager.Instance.hide();
+                    });
                 });
                 
                 Capture.MediaStream.Instance.setConnectionFunc(RTMPNative.Instance.Connect);
@@ -158,14 +169,9 @@ namespace Omega_Red
 
                 Capture.MediaStream.Instance.setWriteFunc(RTMPNative.Instance.Write);
 
+                Capture.MediaStream.Instance.setIsConnectedFunc(RTMPNative.Instance.IsConnected);
 
             } while (false);
-
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate()
-            {
-                if (ModuleManager.Instance.isInit && PCSX2LibNative.Instance.isInit)
-                    LockScreenManager.Instance.hide();
-            });
         }
         
         private void Window_Loaded(object sender, RoutedEventArgs e)

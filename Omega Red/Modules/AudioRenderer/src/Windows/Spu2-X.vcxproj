@@ -65,7 +65,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'">DEBUG_FAST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\portaudio\include\;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\portaudio\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -106,12 +106,17 @@
     </ClCompile>
     <ClCompile Include="..\debug.cpp" />
     <ClCompile Include="..\RegLog.cpp" />
-    <ClCompile Include="..\Spu2replay.cpp" />
+    <ClCompile Include="..\spu2replay.cpp" />
     <ClCompile Include="..\wavedump_wav.cpp" />
     <ClCompile Include="..\Lowpass.cpp" />
     <ClCompile Include="..\SndOut.cpp" />
     <ClCompile Include="..\Timestretcher.cpp" />
     <ClCompile Include="SndOut_DSound.cpp" />
+    <ClCompile Include="SndOut_waveOut.cpp" />
+    <ClCompile Include="SndOut_XAudio2.cpp" />
+    <ClCompile Include="SndOut_XAudio2_27.cpp">
+      <AdditionalIncludeDirectories>$(DXSDK_DIR)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <ClCompile Include="..\Linux\Alsa.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -143,6 +148,7 @@
     <None Include="..\..\LGPL.txt" />
     <None Include="..\..\License.txt" />
     <None Include="..\..\spu2-x-sm.bmp" />
+    <None Include="SndOut_XAudio2.inl" />
     <None Include="Spu2-X.def" />
   </ItemGroup>
   <ItemGroup>

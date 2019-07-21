@@ -74,7 +74,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;CDVD_EXPORTS;PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>.\;$(SolutionDir)..\pcsx2;$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\3rdparty;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common;$(SolutionDir)Common\Framework;$(SolutionDir)..\3rdparty\pthreads4w\include;$(SolutionDir)Emitters;$(SolutionDir)..\common\include</AdditionalIncludeDirectories>

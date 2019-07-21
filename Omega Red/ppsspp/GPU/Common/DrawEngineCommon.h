@@ -34,7 +34,6 @@ enum {
 	VERTEX_BUFFER_MAX = 65536,
 	DECODED_VERTEX_BUFFER_SIZE = VERTEX_BUFFER_MAX * 64,
 	DECODED_INDEX_BUFFER_SIZE = VERTEX_BUFFER_MAX * 16,
-	SPLINE_BUFFER_SIZE = VERTEX_BUFFER_MAX * 26, // At least, this buffer needs greater than 1679616 bytes for Mist Dragon morphing in FF4CC.
 };
 
 // Avoiding the full include of TextureDecoder.h.
@@ -49,6 +48,16 @@ inline uint32_t GetVertTypeID(uint32_t vertType, int uvGenMode) {
 	// into the top of the verttype where there are unused bits.
 	return (vertType & 0xFFFFFF) | (uvGenMode << 24);
 }
+
+struct SimpleVertex;
+namespace Spline { struct Weight2D; }
+
+class TessellationDataTransfer {
+public:
+	virtual ~TessellationDataTransfer() {}
+	void CopyControlPoints(float *pos, float *tex, float *col, int posStride, int texStride, int colStride, const SimpleVertex *const *points, int size, u32 vertType);
+	virtual void SendDataToShader(const SimpleVertex *const *points, int size_u, int size_v, u32 vertType, const Spline::Weight2D &weights) = 0;
+};
 
 class DrawEngineCommon {
 public:
@@ -66,15 +75,16 @@ public:
 	// This would seem to be unnecessary now, but is still required for splines/beziers to work in the software backend since SubmitPrim
 	// is different. Should probably refactor that.
 	// Note that vertTypeID should be computed using GetVertTypeID().
-	virtual void DispatchSubmitPrim(void *verts, void *inds, GEPrimitiveType prim, int vertexCount, u32 vertTypeID, int *bytesRead) {
-		SubmitPrim(verts, inds, prim, vertexCount, vertTypeID, -1, bytesRead);
+	virtual void DispatchSubmitPrim(void *verts, void *inds, GEPrimitiveType prim, int vertexCount, u32 vertTypeID, int cullMode, int *bytesRead) {
+		SubmitPrim(verts, inds, prim, vertexCount, vertTypeID, cullMode, bytesRead);
 	}
 
 	bool TestBoundingBox(void* control_points, int vertexCount, u32 vertType, int *bytesRead);
 
 	void SubmitPrim(void *verts, void *inds, GEPrimitiveType prim, int vertexCount, u32 vertTypeID, int cullMode, int *bytesRead);
-	void SubmitSpline(const void *control_points, const void *indices, int tess_u, int tess_v, int count_u, int count_v, int type_u, int type_v, GEPatchPrimType prim_type, bool computeNormals, bool patchFacing, u32 vertType, int *bytesRead);
-	void SubmitBezier(const void *control_points, const void *indices, int tess_u, int tess_v, int count_u, int count_v, GEPatchPrimType prim_type, bool computeNormals, bool patchFacing, u32 vertType, int *bytesRead);
+	template<class Surface>
+	void SubmitCurve(const void *control_points, const void *indices, Surface &surface, u32 vertType, int *bytesRead, const char *scope);
+	void ClearSplineBezierWeights();
 
 	std::vector<std::string> DebugGetVertexLoaderIDs();
 	std::string DebugGetVertexLoaderString(std::string id, DebugShaderStringType stringType);
@@ -121,7 +131,6 @@ protected:
 	// Vertex collector buffers
 	u8 *decoded = nullptr;
 	u16 *decIndex = nullptr;
-	u8 *splineBuffer = nullptr;
 
 	// Cached vertex decoders
 	u32 lastVType_ = -1;
@@ -160,31 +169,10 @@ protected:
 	int decodedVerts_ = 0;
 	GEPrimitiveType prevPrim_ = GE_PRIM_INVALID;
 
-	// Fixed index buffer for easy quad generation from spline/bezier
-	u16 *quadIndices_ = nullptr;
-
 	// Shader blending state
 	bool fboTexNeedBind_ = false;
 	bool fboTexBound_ = false;
 
 	// Hardware tessellation
-	int numPatches;
-	class TessellationDataTransfer {
-	protected:
-		// TODO: These aren't used by all backends.
-		int prevSize;
-		int prevSizeTex;
-		int prevSizeCol;
-	public:
-		virtual ~TessellationDataTransfer() {}
-		// Send spline/bezier's control points to vertex shader through floating point texture.
-		virtual void PrepareBuffers(float *&pos, float *&tex, float *&col, int &posStride, int &texStride, int &colStride, int size, bool hasColor, bool hasTexCoords) {
-			posStride = 4;
-			texStride = 4;
-			colStride = 4;
-		}
-		virtual void SendDataToShader(const float *pos, const float *tex, const float *col, int size, bool hasColor, bool hasTexCoords) = 0;
-		virtual void EndFrame() {}
-	};
 	TessellationDataTransfer *tessDataTransfer;
 };

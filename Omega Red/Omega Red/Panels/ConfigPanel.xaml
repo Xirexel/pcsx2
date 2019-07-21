@@ -102,13 +102,13 @@
                 <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ColourSchemaCollection}" Margin="5,0,5,5"/>
                 </StackPanel>
             </Border>
-            <Border>
+            <!--<Border>
                 <StackPanel Margin="5">
                 <TextBlock Text="{DynamicResource RenderingSchemaTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
                 <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding RenderingSchemaCollection}" Margin="5,0,5,5"/>
                 <ContentPresenter Content="{Binding RenderingConfig}" Margin="5,0,5,5"/>
                 </StackPanel>
-            </Border>
+            </Border>-->
             <Border>
                 <StackPanel Margin="5" VerticalAlignment="Center">
                 <CheckBox Margin="5" IsChecked="{Binding IsFXAA}" VerticalContentAlignment="Center">

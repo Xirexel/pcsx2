@@ -21,7 +21,9 @@
 #include <map>
 #include <vector>
 
+#include "ppsspp_config.h"
 #include "Common/CommonTypes.h"
+#include "Core/ConfigValues.h"
 
 extern const char *PPSSPP_GIT_VERSION;
 
@@ -60,6 +62,7 @@ public:
 	bool bScreenshotsAsPNG;
 	bool bUseFFV1;
 	bool bDumpFrames;
+	bool bDumpVideoOutput;
 	bool bDumpAudio;
 	bool bSaveLoadResetsAVdumping;
 	bool bEnableLogging;
@@ -71,7 +74,7 @@ public:
 	bool bIgnoreWindowsKey;
 	bool bRestartRequired;
 #endif
-#if defined(USING_WIN_UI) || defined(USING_QT_UI)
+#if defined(USING_WIN_UI) || defined(USING_QT_UI) || PPSSPP_PLATFORM(UWP)
 	std::string sFont;
 #endif
 
@@ -81,7 +84,6 @@ public:
 	bool bPauseExitsEmulator;
 #endif
 	bool bPauseMenuExitsEmulator;
-	bool bPS3Controller;
 
 	// Core
 	bool bIgnoreBadMemAccess;
@@ -93,6 +95,7 @@ public:
 	bool bHideSlowWarnings;
 	bool bHideStateWarnings;
 	bool bPreloadFunctions;
+	uint32_t uJitDisableFlags;
 
 	bool bSeparateSASThread;
 	bool bSeparateIOThread;
@@ -122,6 +125,7 @@ public:
 	// GFX
 	int iGPUBackend;
 	std::string sFailedGPUBackends;
+	std::string sDisabledGPUBackends;
 	// We have separate device parameters for each backend so it doesn't get erased if you switch backends.
 	// If not set, will use the "best" device.
 	std::string sVulkanDevice;
@@ -131,6 +135,7 @@ public:
 	bool bSoftwareRendering;
 	bool bHardwareTransform; // only used in the GLES backend
 	bool bSoftwareSkinning;  // may speed up some games
+	bool bVendorBugChecksEnabled;
 
 	int iRenderingMode; // 0 = non-buffered rendering 1 = buffered rendering
 	int iTexFiltering; // 1 = off , 2 = nearest , 3 = linear , 4 = linear(CG)
@@ -143,6 +148,7 @@ public:
 	bool bSustainedPerformanceMode;  // Android: Slows clocks down to avoid overheating/speed fluctuations.
 	bool bVSync;
 	int iFrameSkip;
+	int iFrameSkipType;
 	bool bAutoFrameSkip;
 	bool bFrameSkipUnthrottle;
 
@@ -165,7 +171,6 @@ public:
 	int iInternalResolution;  // 0 = Auto (native), 1 = 1x (480x272), 2 = 2x, 3 = 3x, 4 = 4x and so on.
 	int iAnisotropyLevel;  // 0 - 5, powers of 2: 0 = 1x = no aniso
 	int bHighQualityDepth;
-	bool bTrueColor;
 	bool bReplaceTextures;
 	bool bSaveNewTextures;
 	bool bIgnoreTextureFilenames;
@@ -174,7 +179,6 @@ public:
 	bool bTexDeposterize;
 	int iFpsLimit1;
 	int iFpsLimit2;
-	int iForceMaxEmulatedFPS;
 	int iMaxRecent;
 	int iCurrentStateSlot;
 	int iRewindFlipFrequency;
@@ -183,9 +187,7 @@ public:
 	bool bEnableCheats;
 	bool bReloadCheats;
 	int iCwCheatRefreshRate;
-	bool bDisableStencilTest;
 	int iBloomHack; //0 = off, 1 = safe, 2 = balanced, 3 = aggressive
-	bool bTimerHack;
 	bool bBlockTransferGPU;
 	bool bDisableSlowFramebufEffects;
 	bool bFragmentTestCache;
@@ -201,9 +203,6 @@ public:
 	int iAudioBackend;
 	int iGlobalVolume;
 	bool bExtraAudioBuffering;  // For bluetooth
-
-	// Audio Hack
-	bool bSoundSpeedHack;
 
 	// UI
 	bool bShowDebuggerOnLoad;
@@ -411,7 +410,7 @@ public:
 	std::string dismissedVersion;
 
 	void Load(const char *iniFileName = nullptr, const char *controllerIniFilename = nullptr);
-	void Save();
+	void Save(const char *saveReason);
 	void RestoreDefaults();
 
 	//per game config managment, should maybe be in it's own class
@@ -444,6 +443,7 @@ public:
 
 	bool IsPortrait() const;
 	int NextValidBackend();
+	bool IsBackendEnabled(GPUBackend backend, bool validate = true);
 
 protected:
 	void LoadStandardControllerIni();

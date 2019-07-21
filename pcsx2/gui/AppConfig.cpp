@@ -640,6 +640,7 @@ void AppConfig::LoadSaveRootItems( IniInterface& ini )
 	ini.Entry( L"CurrentIso", res, res, ini.IsLoading() || IsPortable() );
 	CurrentIso = res.GetFullPath();
 
+	IniEntry( CurrentBlockdump );
 	IniEntry( CurrentELF );
 	IniEntry( CurrentIRX );
 
@@ -939,6 +940,9 @@ AppConfig::UiTemplateOptions::UiTemplateOptions()
 	OutputInterlaced	= L"Interlaced";
 	Paused				= L"<PAUSED> ";
 	TitleTemplate		= L"Slot: ${slot} | Speed: ${speed} (${vfps}) | ${videomode} | Limiter: ${limiter} | ${gsdx} | ${omodei} | ${cpuusage}";
+#ifndef DISABLE_RECORDING
+	RecordingTemplate	= L"Slot: ${slot} | Frame: ${frame}/${maxFrame} | Rec. Mode: ${mode} | Speed: ${speed} (${vfps}) | Limiter: ${limiter}";
+#endif
 }
 
 void AppConfig::UiTemplateOptions::LoadSave(IniInterface& ini)
@@ -955,6 +959,9 @@ void AppConfig::UiTemplateOptions::LoadSave(IniInterface& ini)
 	IniEntry(OutputInterlaced);
 	IniEntry(Paused);
 	IniEntry(TitleTemplate);
+#ifndef DISABLE_RECORDING
+	IniEntry(RecordingTemplate);
+#endif
 }
 
 int AppConfig::GetMaxPresetIndex()
@@ -1041,22 +1048,25 @@ bool AppConfig::IsOkApplyPreset(int n, bool ignoreMTVU)
 
 	// Actual application of current preset over the base settings which all presets use (mostly pcsx2's default values).
 
-	Pcsx2Config::CpuOptions& cpuOps(g_Conf->EmuOptions.Cpu);
 	bool isRateSet = false, isSkipSet = false, isMTVUSet = ignoreMTVU ? true : false; // used to prevent application of specific lower preset values on fallthrough.
 	switch (n) // Settings will waterfall down to the Safe preset, then stop. So, Balanced and higher will inherit any settings through Safe.
 	{
 		case 5: // Mostly Harmful
 			isRateSet ? 0 : (isRateSet = true, EmuOptions.Speedhacks.EECycleRate = 1); // +1 EE cyclerate
 			isSkipSet ? 0 : (isSkipSet = true, EmuOptions.Speedhacks.EECycleSkip = 1); // +1 EE cycle skip
+            // Fall through
 		
 		case 4: // Very Aggressive
 			isRateSet ? 0 : (isRateSet = true, EmuOptions.Speedhacks.EECycleRate = -2); // -2 EE cyclerate
+            // Fall through
 
 		case 3: // Aggressive
 			isRateSet ? 0 : (isRateSet = true, EmuOptions.Speedhacks.EECycleRate = -1); // -1 EE cyclerate
+            // Fall through
 
 		case 2: // Balanced
 			isMTVUSet ? 0 : (isMTVUSet = true, EmuOptions.Speedhacks.vuThread = true); // Enable MTVU
+            // Fall through
 
 		case 1: // Safe (Default)
 			EmuOptions.Speedhacks.IntcStat = true;
@@ -1065,6 +1075,7 @@ bool AppConfig::IsOkApplyPreset(int n, bool ignoreMTVU)
 			
 			// If waterfalling from > Safe, break to avoid MTVU disable.
 			if (n > 1) break;
+            // Fall through
 			
 		case 0: // Safest
 			isMTVUSet ? 0 : (isMTVUSet = true, EmuOptions.Speedhacks.vuThread = false); // Disable MTVU

@@ -44,6 +44,7 @@ struct DefMappingStruct {
 };
 
 KeyMapping g_controllerMap;
+int g_controllerMapGeneration = 0;
 std::set<std::string> g_seenPads;
 
 bool g_swapped_keys = false;
@@ -667,6 +668,9 @@ const KeyMap_IntStrPair psp_button_names[] = {
 
 	{VIRTKEY_AXIS_SWAP, "AxisSwap"},
 	{VIRTKEY_DEVMENU, "DevMenu"},
+	{VIRTKEY_TEXTURE_DUMP, "Texture Dumping"},
+	{VIRTKEY_TEXTURE_REPLACE, "Texture Replacement"},
+	{VIRTKEY_SCREENSHOT, "Screenshot"},
 
 	{CTRL_HOME, "Home"},
 	{CTRL_HOLD, "Hold"},
@@ -833,6 +837,7 @@ void SetKeyMapping(int btn, KeyDef key, bool replace) {
 		}
 		g_controllerMap[btn].push_back(key);
 	}
+	g_controllerMapGeneration++;
 
 	UpdateNativeMenuKeys();
 }
@@ -956,6 +961,7 @@ void AutoConfForPad(const std::string &name) {
 	// Add a couple of convenient keyboard mappings by default, too.
 	g_controllerMap[VIRTKEY_PAUSE].push_back(KeyDef(DEVICE_ID_KEYBOARD, NKCODE_ESCAPE));
 	g_controllerMap[VIRTKEY_UNTHROTTLE].push_back(KeyDef(DEVICE_ID_KEYBOARD, NKCODE_TAB));
+	g_controllerMapGeneration++;
 #endif
 }
 

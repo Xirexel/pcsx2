@@ -44,12 +44,12 @@
 #define CURRENT_LOADER_ICD_INTERFACE_VERSION 5
 #define MIN_SUPPORTED_LOADER_ICD_INTERFACE_VERSION 0
 #define MIN_PHYS_DEV_EXTENSION_ICD_INTERFACE_VERSION 4
-typedef VkResult (VKAPI_PTR *PFN_vkNegotiateLoaderICDInterfaceVersion)(uint32_t *pVersion);
+typedef VkResult(VKAPI_PTR *PFN_vkNegotiateLoaderICDInterfaceVersion)(uint32_t *pVersion);
 
 // This is defined in vk_layer.h which will be found by the loader, but if an ICD is building against this
 // file directly, it won't be found.
 #ifndef PFN_GetPhysicalDeviceProcAddr
-typedef PFN_vkVoidFunction (VKAPI_PTR *PFN_GetPhysicalDeviceProcAddr)(VkInstance instance, const char* pName);
+typedef PFN_vkVoidFunction(VKAPI_PTR *PFN_GetPhysicalDeviceProcAddr)(VkInstance instance, const char *pName);
 #endif
 
 /*
@@ -85,7 +85,11 @@ typedef enum {
     VK_ICD_WSI_PLATFORM_WIN32,
     VK_ICD_WSI_PLATFORM_XCB,
     VK_ICD_WSI_PLATFORM_XLIB,
-    VK_ICD_WSI_PLATFORM_DISPLAY
+    VK_ICD_WSI_PLATFORM_ANDROID,
+    VK_ICD_WSI_PLATFORM_MACOS,
+    VK_ICD_WSI_PLATFORM_IOS,
+    VK_ICD_WSI_PLATFORM_DISPLAY,
+    VK_ICD_WSI_PLATFORM_HEADLESS
 } VkIcdWsiPlatform;
 
 typedef struct {
@@ -98,7 +102,7 @@ typedef struct {
     MirConnection *connection;
     MirSurface *mirSurface;
 } VkIcdSurfaceMir;
-#endif // VK_USE_PLATFORM_MIR_KHR
+#endif  // VK_USE_PLATFORM_MIR_KHR
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 typedef struct {
@@ -106,7 +110,7 @@ typedef struct {
     struct wl_display *display;
     struct wl_surface *surface;
 } VkIcdSurfaceWayland;
-#endif // VK_USE_PLATFORM_WAYLAND_KHR
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 typedef struct {
@@ -114,7 +118,7 @@ typedef struct {
     HINSTANCE hinstance;
     HWND hwnd;
 } VkIcdSurfaceWin32;
-#endif // VK_USE_PLATFORM_WIN32_KHR
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
 typedef struct {
@@ -122,7 +126,7 @@ typedef struct {
     xcb_connection_t *connection;
     xcb_window_t window;
 } VkIcdSurfaceXcb;
-#endif // VK_USE_PLATFORM_XCB_KHR
+#endif  // VK_USE_PLATFORM_XCB_KHR
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 typedef struct {
@@ -130,13 +134,28 @@ typedef struct {
     Display *dpy;
     Window window;
 } VkIcdSurfaceXlib;
-#endif // VK_USE_PLATFORM_XLIB_KHR
+#endif  // VK_USE_PLATFORM_XLIB_KHR
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 typedef struct {
-    ANativeWindow* window;
+    VkIcdSurfaceBase base;
+    struct ANativeWindow *window;
 } VkIcdSurfaceAndroid;
-#endif //VK_USE_PLATFORM_ANDROID_KHR
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+typedef struct {
+    VkIcdSurfaceBase base;
+    const void *pView;
+} VkIcdSurfaceMacOS;
+#endif  // VK_USE_PLATFORM_MACOS_MVK
+
+#ifdef VK_USE_PLATFORM_IOS_MVK
+typedef struct {
+    VkIcdSurfaceBase base;
+    const void *pView;
+} VkIcdSurfaceIOS;
+#endif  // VK_USE_PLATFORM_IOS_MVK
 
 typedef struct {
     VkIcdSurfaceBase base;
@@ -149,4 +168,8 @@ typedef struct {
     VkExtent2D imageExtent;
 } VkIcdSurfaceDisplay;
 
-#endif // VKICD_H
+typedef struct {
+    VkIcdSurfaceBase base;
+} VkIcdSurfaceHeadless;
+
+#endif  // VKICD_H

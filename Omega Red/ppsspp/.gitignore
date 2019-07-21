@@ -36,12 +36,19 @@ ext/_Output
 android/lint.xml
 PPSSPPWindows64.exe.manifest
 PPSSPPWindows.exe.manifest
+PPSSPPWindowsARM64.exe.manifest
+PPSSPPWindowsARM.exe.manifest
 PPSSPPDebug64.exe.manifest
 PPSSPPDebug.exe.manifest
+PPSSPPDebugARM64.exe.manifest
+PPSSPPDebugARM.exe.manifest
 assets/flash0
 UWP/icph
+UWP/Content/*
+!UWP/Content/.empty
 UWP/.vs
 .vs
+.vscode
 
 # For Mac
 .DS_Store
@@ -68,7 +75,7 @@ desc.txt
 
 Logs
 Memstick
-memstick
+memstick*
 Cheats
 
 /git-version.cpp

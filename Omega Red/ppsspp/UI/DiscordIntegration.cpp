@@ -7,9 +7,13 @@
 #include "DiscordIntegration.h"
 #include "i18n/i18n.h"
 
-#if (PPSSPP_PLATFORM(WINDOWS) || PPSSPP_PLATFORM(MAC) || PPSSPP_PLATFORM(LINUX)) && !PPSSPP_PLATFORM(ANDROID)
+#if (PPSSPP_PLATFORM(WINDOWS) || PPSSPP_PLATFORM(MAC) || PPSSPP_PLATFORM(LINUX)) && !PPSSPP_PLATFORM(ANDROID) && !PPSSPP_PLATFORM(UWP)
 
+#ifdef _MSC_VER
 #define ENABLE_DISCORD
+#elif USE_DISCORD
+#define ENABLE_DISCORD
+#endif
 
 #else
 
@@ -27,10 +31,12 @@ Discord g_Discord;
 
 static const char *ppsspp_app_id = "423397985041383434";
 
+#ifdef ENABLE_DISCORD
 // No context argument? What?
 static void handleDiscordError(int errCode, const char *message) {
 	ERROR_LOG(SYSTEM, "Discord error code %d: '%s'", errCode, message);
 }
+#endif
 
 Discord::~Discord() {
 	assert(!initialized_);
@@ -98,6 +104,7 @@ void Discord::SetPresenceGame(const char *gameTitle) {
 	std::string details = sc->T("Playing");
 	discordPresence.details = details.c_str();
 	discordPresence.startTimestamp = time(0);
+	discordPresence.largeImageText = "PPSSPP is the best PlayStation Portable emulator around!";
 #ifdef GOLD
 	discordPresence.largeImageKey = "icon_gold_png";
 #else
@@ -122,11 +129,21 @@ void Discord::SetPresenceMenu() {
 	discordPresence.state = sc->T("In menu");
 	discordPresence.details = "";
 	discordPresence.startTimestamp = time(0);
+	discordPresence.largeImageText = "PPSSPP is the best PlayStation Portable emulator around!";
 #ifdef GOLD
 	discordPresence.largeImageKey = "icon_gold_png";
 #else
 	discordPresence.largeImageKey = "icon_regular_png";
 #endif
 	Discord_UpdatePresence(&discordPresence);
+#endif
+}
+
+void Discord::ClearPresence() {
+	if (!IsEnabled() || !initialized_)
+		return;
+
+#ifdef ENABLE_DISCORD
+	Discord_ClearPresence();
 #endif
 }

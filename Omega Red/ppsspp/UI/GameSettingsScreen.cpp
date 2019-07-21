@@ -44,6 +44,7 @@
 #include "UI/TiltAnalogSettingsScreen.h"
 #include "UI/TiltEventProcessor.h"
 #include "UI/ComboKeyMappingScreen.h"
+#include "UI/GPUDriverTestScreen.h"
 
 #include "Common/KeyMap.h"
 #include "Common/FileUtil.h"
@@ -67,8 +68,6 @@
 #include "Windows/W32Util/ShellUtil.h"
 #endif
 
-extern bool VulkanMayBeAvailable();
-
 GameSettingsScreen::GameSettingsScreen(std::string gamePath, std::string gameID, bool editThenRestore)
 	: UIDialogScreenWithGameBackground(gamePath), gameID_(gameID), enableReports_(false), editThenRestore_(editThenRestore) {
 	lastVertical_ = UseVerticalLayout();
@@ -80,7 +79,7 @@ bool GameSettingsScreen::UseVerticalLayout() const {
 
 // This needs before run CheckGPUFeatures()
 // TODO: Remove this if fix the issue
-bool CheckSupportInstancedTessellationGLES() {
+bool CheckSupportShaderTessellationGLES() {
 #if PPSSPP_PLATFORM(UWP)
 	return true;
 #else
@@ -88,21 +87,17 @@ bool CheckSupportInstancedTessellationGLES() {
 	int maxVertexTextureImageUnits = gl_extensions.maxVertexTextureUnits;
 	bool vertexTexture = maxVertexTextureImageUnits >= 3; // At least 3 for hardware tessellation
 
-	bool canUseInstanceID = gl_extensions.EXT_draw_instanced || gl_extensions.ARB_draw_instanced;
-	bool canDefInstanceID = gl_extensions.IsGLES || gl_extensions.EXT_gpu_shader4 || gl_extensions.VersionGEThan(3, 1);
-	bool instanceRendering = gl_extensions.GLES3 || (canUseInstanceID && canDefInstanceID);
-
 	bool textureFloat = gl_extensions.ARB_texture_float || gl_extensions.OES_texture_float;
 	bool hasTexelFetch = gl_extensions.GLES3 || (!gl_extensions.IsGLES && gl_extensions.VersionGEThan(3, 3, 0)) || gl_extensions.EXT_gpu_shader4;
 
-	return instanceRendering && vertexTexture && textureFloat && hasTexelFetch;
+	return vertexTexture && textureFloat && hasTexelFetch;
 #endif
 }
 
 bool DoesBackendSupportHWTess() {
 	switch (GetGPUBackend()) {
 	case GPUBackend::OPENGL:
-		return CheckSupportInstancedTessellationGLES();
+		return CheckSupportShaderTessellationGLES();
 	case GPUBackend::VULKAN:
 	case GPUBackend::DIRECT3D11:
 		return true;
@@ -139,8 +134,6 @@ void GameSettingsScreen::CreateViews() {
 	if (editThenRestore_) {
 		g_Config.loadGameConfig(gameID_);
 	}
-
-	cap60FPS_ = g_Config.iForceMaxEmulatedFPS == 60;
 
 	iAlternateSpeedPercent1_ = g_Config.iFpsLimit1 < 0 ? -1 : (g_Config.iFpsLimit1 * 100) / 60;
 	iAlternateSpeedPercent2_ = g_Config.iFpsLimit2 < 0 ? -1 : (g_Config.iFpsLimit2 * 100) / 60;
@@ -204,23 +197,17 @@ void GameSettingsScreen::CreateViews() {
 	static const char *renderingBackend[] = { "OpenGL", "Direct3D 9", "Direct3D 11", "Vulkan" };
 	PopupMultiChoice *renderingBackendChoice = graphicsSettings->Add(new PopupMultiChoice(&g_Config.iGPUBackend, gr->T("Backend"), renderingBackend, (int)GPUBackend::OPENGL, ARRAY_SIZE(renderingBackend), gr->GetName(), screenManager()));
 	renderingBackendChoice->OnChoice.Handle(this, &GameSettingsScreen::OnRenderingBackend);
-#if !PPSSPP_PLATFORM(WINDOWS)
-	renderingBackendChoice->HideChoice(1);  // D3D9
-	renderingBackendChoice->HideChoice(2);  // D3D11
-#else
-	if (!DoesVersionMatchWindows(6, 0, 0, 0, true)) {
-		// Hide the D3D11 choice if Windows version is older than Windows Vista.
-		renderingBackendChoice->HideChoice(2);  // D3D11
-	}
+
+	if (!g_Config.IsBackendEnabled(GPUBackend::OPENGL))
+		renderingBackendChoice->HideChoice((int)GPUBackend::OPENGL);
+	if (!g_Config.IsBackendEnabled(GPUBackend::DIRECT3D9))
+		renderingBackendChoice->HideChoice((int)GPUBackend::DIRECT3D9);
+	if (!g_Config.IsBackendEnabled(GPUBackend::DIRECT3D11))
+		renderingBackendChoice->HideChoice((int)GPUBackend::DIRECT3D11);
+	if (!g_Config.IsBackendEnabled(GPUBackend::VULKAN))
+		renderingBackendChoice->HideChoice((int)GPUBackend::VULKAN);
 #endif
-	bool vulkanAvailable = false;
-#ifndef IOS
-	vulkanAvailable = VulkanMayBeAvailable();
-#endif
-	if (!vulkanAvailable) {
-		renderingBackendChoice->HideChoice(3);
-	}
-#endif
+
 	Draw::DrawContext *draw = screenManager()->getDrawContext();
 
 	// Backends that don't allow a device choice will only expose one device.
@@ -275,9 +262,10 @@ void GameSettingsScreen::CreateViews() {
 	graphicsSettings->Add(new ItemHeader(gr->T("Frame Rate Control")));
 	static const char *frameSkip[] = {"Off", "1", "2", "3", "4", "5", "6", "7", "8"};
 	graphicsSettings->Add(new PopupMultiChoice(&g_Config.iFrameSkip, gr->T("Frame Skipping"), frameSkip, 0, ARRAY_SIZE(frameSkip), gr->GetName(), screenManager()));
+	static const char *frameSkipType[] = {"Number of Frames", "Percent of FPS"};
+	graphicsSettings->Add(new PopupMultiChoice(&g_Config.iFrameSkipType, gr->T("Frame Skipping Type"), frameSkipType, 0, ARRAY_SIZE(frameSkipType), gr->GetName(), screenManager()));
 	frameSkipAuto_ = graphicsSettings->Add(new CheckBox(&g_Config.bAutoFrameSkip, gr->T("Auto FrameSkip")));
 	frameSkipAuto_->OnClick.Handle(this, &GameSettingsScreen::OnAutoFrameskip);
-	graphicsSettings->Add(new CheckBox(&cap60FPS_, gr->T("Force max 60 FPS (helps GoW)")));
 
 	PopupSliderChoice *altSpeed1 = graphicsSettings->Add(new PopupSliderChoice(&iAlternateSpeedPercent1_, 0, 1000, gr->T("Alternative Speed", "Alternative speed"), 5, screenManager(), gr->T("%, 0:unlimited")));
 	altSpeed1->SetFormat("%i%%");
@@ -392,11 +380,10 @@ void GameSettingsScreen::CreateViews() {
 		}
 		return UI::EVENT_CONTINUE;
 	});
-	beziersChoice->SetDisabledPtr(&g_Config.bHardwareTessellation);
 
 	CheckBox *tessellationHW = graphicsSettings->Add(new CheckBox(&g_Config.bHardwareTessellation, gr->T("Hardware Tessellation")));
 	tessellationHW->OnClick.Add([=](EventParams &e) {
-		settingInfo_->Show(gr->T("HardwareTessellation Tip", "Uses hardware to make curves, always uses a fixed quality"), e.v);
+		settingInfo_->Show(gr->T("HardwareTessellation Tip", "Uses hardware to make curves"), e.v);
 		return UI::EVENT_CONTINUE;
 	});
 	tessHWEnable_ = DoesBackendSupportHWTess() && !g_Config.bSoftwareRendering && g_Config.bHardwareTransform;
@@ -464,14 +451,6 @@ void GameSettingsScreen::CreateViews() {
 #endif
 
 	graphicsSettings->Add(new ItemHeader(gr->T("Hack Settings", "Hack Settings (these WILL cause glitches)")));
-	CheckBox *timerHack = graphicsSettings->Add(new CheckBox(&g_Config.bTimerHack, gr->T("Timer Hack")));
-	timerHack->OnClick.Add([=](EventParams &e) {
-		settingInfo_->Show(gr->T("TimerHack Tip", "Changes game clock based on emu speed, may break games"), e.v);
-		return UI::EVENT_CONTINUE;
-	});
-
-	CheckBox *stencilTest = graphicsSettings->Add(new CheckBox(&g_Config.bDisableStencilTest, gr->T("Disable Stencil Test")));
-	stencilTest->SetDisabledPtr(&g_Config.bSoftwareRendering);
 
 	static const char *bloomHackOptions[] = { "Off", "Safe", "Balanced", "Aggressive" };
 	PopupMultiChoice *bloomHack = graphicsSettings->Add(new PopupMultiChoice(&g_Config.iBloomHack, gr->T("Lower resolution for effects (reduces artifacts)"), bloomHackOptions, 0, ARRAY_SIZE(bloomHackOptions), gr->GetName(), screenManager()));
@@ -526,9 +505,6 @@ void GameSettingsScreen::CreateViews() {
 		CheckBox *resampling = audioSettings->Add(new CheckBox(&g_Config.bAudioResampler, a->T("Audio sync", "Audio sync (resampling)")));
 		resampling->SetEnabledPtr(&g_Config.bEnableSound);
 	}
-
-	audioSettings->Add(new ItemHeader(a->T("Audio hacks")));
-	audioSettings->Add(new CheckBox(&g_Config.bSoundSpeedHack, a->T("Sound speed hack (DOA etc.)")));
 
 	// Control
 	ViewGroup *controlsSettingsScroll = new ScrollView(ORIENT_VERTICAL, new LinearLayoutParams(FILL_PARENT, FILL_PARENT));
@@ -653,7 +629,7 @@ void GameSettingsScreen::CreateViews() {
 	networkingSettings->Add(new CheckBox(&g_Config.bEnableWlan, n->T("Enable networking", "Enable networking/wlan (beta)")));
 	networkingSettings->Add(new CheckBox(&g_Config.bDiscordPresence, n->T("Send Discord Presence information")));
 
-#if !defined(MOBILE_DEVICE) && !defined(USING_QT_UI)
+#if !defined(MOBILE_DEVICE)
 	networkingSettings->Add(new PopupTextInputChoice(&g_Config.proAdhocServer, n->T("Change proAdhocServer Address"), "", 255, screenManager()));
 #elif defined(__ANDROID__)
 	networkingSettings->Add(new ChoiceWithValueDisplay(&g_Config.proAdhocServer, n->T("Change proAdhocServer Address"), (const char *)nullptr))->OnClick.Handle(this, &GameSettingsScreen::OnChangeproAdhocServerAddress);
@@ -749,7 +725,11 @@ void GameSettingsScreen::CreateViews() {
 #if defined(USING_WIN_UI)
 	systemSettings->Add(new CheckBox(&g_Config.bBypassOSKWithKeyboard, sy->T("Enable Windows native keyboard", "Enable Windows native keyboard")));
 #endif
-#if defined(_WIN32) && !PPSSPP_PLATFORM(UWP)
+#if PPSSPP_PLATFORM(ANDROID)
+	auto memstickPath = systemSettings->Add(new ChoiceWithValueDisplay(&g_Config.memStickDirectory, sy->T("Change Memory Stick folder"), (const char *)nullptr));
+	memstickPath->SetEnabled(!PSP_IsInited());
+	memstickPath->OnClick.Handle(this, &GameSettingsScreen::OnChangeMemStickDir);
+#elif defined(_WIN32) && !PPSSPP_PLATFORM(UWP)
 	SavePathInMyDocumentChoice = systemSettings->Add(new CheckBox(&installed_, sy->T("Save path in My Documents", "Save path in My Documents")));
 	SavePathInMyDocumentChoice->OnClick.Handle(this, &GameSettingsScreen::OnSavePathMydoc);
 	SavePathInOtherChoice = systemSettings->Add(new CheckBox(&otherinstalled_, sy->T("Save path in installed.txt", "Save path in installed.txt")));
@@ -811,18 +791,18 @@ void GameSettingsScreen::CreateViews() {
 	systemSettings->Add(new PopupMultiChoice(&g_Config.iPSPModel, sy->T("PSP Model"), models, 0, ARRAY_SIZE(models), sy->GetName(), screenManager()))->SetEnabled(!PSP_IsInited());
 	// TODO: Come up with a way to display a keyboard for mobile users,
 	// so until then, this is Windows/Desktop only.
-#if !defined(MOBILE_DEVICE) && !defined(USING_QT_UI)  // TODO: Add all platforms where KEY_CHAR support is added
+#if !defined(MOBILE_DEVICE)  // TODO: Add all platforms where KEY_CHAR support is added
 	systemSettings->Add(new PopupTextInputChoice(&g_Config.sNickName, sy->T("Change Nickname"), "", 32, screenManager()));
-#elif defined(USING_QT_UI)
-	systemSettings->Add(new Choice(sy->T("Change Nickname")))->OnClick.Handle(this, &GameSettingsScreen::OnChangeNickname);
 #elif defined(__ANDROID__)
 	systemSettings->Add(new ChoiceWithValueDisplay(&g_Config.sNickName, sy->T("Change Nickname"), (const char *)nullptr))->OnClick.Handle(this, &GameSettingsScreen::OnChangeNickname);
 #endif
-#if defined(_WIN32) || (defined(USING_QT_UI) && !defined(MOBILE_DEVICE))
-	// Screenshot functionality is not yet available on non-Windows/non-Qt
+
 	systemSettings->Add(new CheckBox(&g_Config.bScreenshotsAsPNG, sy->T("Screenshots as PNG")));
+
+#if defined(_WIN32) || (defined(USING_QT_UI) && !defined(MOBILE_DEVICE))
 	systemSettings->Add(new CheckBox(&g_Config.bDumpFrames, sy->T("Record Display")));
 	systemSettings->Add(new CheckBox(&g_Config.bUseFFV1, sy->T("Use Lossless Video Codec (FFV1)")));
+	systemSettings->Add(new CheckBox(&g_Config.bDumpVideoOutput, sy->T("Use output buffer (with overlay) for recording")));
 	systemSettings->Add(new CheckBox(&g_Config.bDumpAudio, sy->T("Record Audio")));
 	systemSettings->Add(new CheckBox(&g_Config.bSaveLoadResetsAVdumping, sy->T("Reset Recording on Save/Load State")));
 #endif
@@ -919,7 +899,15 @@ UI::EventReturn GameSettingsScreen::OnJitAffectingSetting(UI::EventParams &e) {
 	return UI::EVENT_DONE;
 }
 
-#if defined(_WIN32) && !PPSSPP_PLATFORM(UWP)
+#if PPSSPP_PLATFORM(ANDROID)
+
+UI::EventReturn GameSettingsScreen::OnChangeMemStickDir(UI::EventParams &e) {
+	I18NCategory *sy = GetI18NCategory("System");
+	System_SendMessage("inputbox", (std::string(sy->T("Memory Stick Folder")) + ":" + g_Config.memStickDirectory).c_str());
+	return UI::EVENT_DONE;
+}
+
+#elif defined(_WIN32) && !PPSSPP_PLATFORM(UWP)
 
 UI::EventReturn GameSettingsScreen::OnSavePathMydoc(UI::EventParams &e) {
 	const std::string PPSSPPpath = File::GetExeDirectory();
@@ -1048,7 +1036,6 @@ UI::EventReturn GameSettingsScreen::OnDumpNextFrameToLog(UI::EventParams &e) {
 
 void GameSettingsScreen::update() {
 	UIScreen::update();
-	g_Config.iForceMaxEmulatedFPS = cap60FPS_ ? 60 : 0;
 
 	g_Config.iFpsLimit1 = iAlternateSpeedPercent1_ < 0 ? -1 : (iAlternateSpeedPercent1_ * 60) / 100;
 	g_Config.iFpsLimit2 = iAlternateSpeedPercent2_ < 0 ? -1 : (iAlternateSpeedPercent2_ * 60) / 100;
@@ -1068,7 +1055,7 @@ void GameSettingsScreen::onFinish(DialogResult result) {
 
 	Reporting::Enable(enableReports_, "report.ppsspp.org");
 	Reporting::UpdateConfig();
-	g_Config.Save();
+	g_Config.Save("GameSettingsScreen::onFinish");
 	if (editThenRestore_) {
 		g_Config.unloadGameConfig();
 	}
@@ -1082,13 +1069,77 @@ void GameSettingsScreen::onFinish(DialogResult result) {
 	NativeMessageReceived("gpu_clearCache", "");
 }
 
+void GameSettingsScreen::sendMessage(const char *message, const char *value) {
+	UIDialogScreenWithGameBackground::sendMessage(message, value);
+
+	I18NCategory *sy = GetI18NCategory("System");
+	I18NCategory *di = GetI18NCategory("Dialog");
+
+	if (!strcmp(message, "inputbox_completed")) {
+		std::vector<std::string> inputboxValue;
+		SplitString(value, ':', inputboxValue);
+
+#if PPSSPP_PLATFORM(ANDROID)
+		if (inputboxValue.size() >= 2 && inputboxValue[0] == sy->T("Memory Stick Folder")) {
+			// Allow colons in the path.
+			std::string newPath = std::string(value).substr(inputboxValue[0].size() + 1);
+			size_t pos = newPath.find_last_not_of("/");
+			// Gotta have at least something but a /, and also needs to start with a /.
+			if (newPath.empty() || pos == newPath.npos || newPath[0] != '/') {
+				settingInfo_->Show(sy->T("ChangingMemstickPathInvalid", "That path couldn't be used to save Memory Stick files."), nullptr);
+				return;
+			}
+			if (pos != newPath.size() - 1) {
+				newPath = newPath.substr(0, pos + 1);
+			}
+
+			pendingMemstickFolder_ = newPath;
+			std::string promptMessage = sy->T("ChangingMemstickPath", "Save games, save states, and other data will not be copied to this folder.\n\nChange the Memory Stick folder?");
+			if (!File::Exists(newPath)) {
+				promptMessage = sy->T("ChangingMemstickPathNotExists", "That folder doesn't exist yet.\n\nSave games, save states, and other data will not be copied to this folder.\n\nCreate a new Memory Stick folder?");
+			}
+			// Add the path for clarity and proper confirmation.
+			promptMessage += "\n\n" + newPath + "/";
+			screenManager()->push(new PromptScreen(promptMessage, di->T("Yes"), di->T("No"), std::bind(&GameSettingsScreen::CallbackMemstickFolder, this, std::placeholders::_1)));
+		}
+#endif
+	}
+}
+
+#if PPSSPP_PLATFORM(ANDROID)
+void GameSettingsScreen::CallbackMemstickFolder(bool yes) {
+	I18NCategory *sy = GetI18NCategory("System");
+
+	if (yes) {
+		std::string memstickDirFile = g_Config.internalDataDirectory + "/memstick_dir.txt";
+		std::string testWriteFile = pendingMemstickFolder_ + "/.write_verify_file";
+
+		// Already, create away.
+		if (!File::Exists(pendingMemstickFolder_)) {
+			File::CreateFullPath(pendingMemstickFolder_);
+		}
+		if (!writeDataToFile(true, "1", 1, testWriteFile.c_str())) {
+			settingInfo_->Show(sy->T("ChangingMemstickPathInvalid", "That path couldn't be used to save Memory Stick files."), nullptr);
+			return;
+		}
+		File::Delete(testWriteFile);
+
+		writeDataToFile(true, pendingMemstickFolder_.c_str(), pendingMemstickFolder_.size(), memstickDirFile.c_str());
+		// Save so the settings, at least, are transferred.
+		g_Config.memStickDirectory = pendingMemstickFolder_ + "/";
+		g_Config.Save("MemstickPathChanged");
+		screenManager()->RecreateAllViews();
+	}
+}
+#endif
+
 void GameSettingsScreen::CallbackRenderingBackend(bool yes) {
 	// If the user ends up deciding not to restart, set the config back to the current backend
 	// so it doesn't get switched by accident.
 	if (yes) {
 		// Extra save here to make sure the choice really gets saved even if there are shutdown bugs in
 		// the GPU backend code.
-		g_Config.Save();
+		g_Config.Save("GameSettingsScreen::RenderingBackendYes");
 		System_SendMessage("graphics_restart", "");
 	} else {
 		g_Config.iGPUBackend = (int)GetGPUBackend();
@@ -1101,7 +1152,7 @@ void GameSettingsScreen::CallbackRenderingDevice(bool yes) {
 	if (yes) {
 		// Extra save here to make sure the choice really gets saved even if there are shutdown bugs in
 		// the GPU backend code.
-		g_Config.Save();
+		g_Config.Save("GameSettingsScreen::RenderingDeviceYes");
 		System_SendMessage("graphics_restart", "");
 	} else {
 		std::string *deviceNameSetting = GPUDeviceNameSetting();
@@ -1222,8 +1273,8 @@ UI::EventReturn GameSettingsScreen::OnPostProcShaderChange(UI::EventParams &e) {
 }
 
 UI::EventReturn GameSettingsScreen::OnDeveloperTools(UI::EventParams &e) {
-	screenManager()->push(new DeveloperToolsScreen());
-	return UI::EVENT_DONE;
+screenManager()->push(new DeveloperToolsScreen());
+return UI::EVENT_DONE;
 }
 
 UI::EventReturn GameSettingsScreen::OnRemoteISO(UI::EventParams &e) {
@@ -1243,12 +1294,12 @@ UI::EventReturn GameSettingsScreen::OnTouchControlLayout(UI::EventParams &e) {
 
 //when the tilt event type is modified, we need to reset all tilt settings.
 //refer to the ResetTiltEvents() function for a detailed explanation.
-UI::EventReturn GameSettingsScreen::OnTiltTypeChange(UI::EventParams &e){
+UI::EventReturn GameSettingsScreen::OnTiltTypeChange(UI::EventParams &e) {
 	TiltEventProcessor::ResetTiltEvents();
 	return UI::EVENT_DONE;
 };
 
-UI::EventReturn GameSettingsScreen::OnTiltCustomize(UI::EventParams &e){
+UI::EventReturn GameSettingsScreen::OnTiltCustomize(UI::EventParams &e) {
 	screenManager()->push(new TiltAnalogSettingsScreen());
 	return UI::EVENT_DONE;
 };
@@ -1287,13 +1338,14 @@ void DeveloperToolsScreen::CreateViews() {
 	// iOS can now use JIT on all modes, apparently.
 	// The bool may come in handy for future non-jit platforms though (UWP XB1?)
 
-	static const char *cpuCores[] = { "Interpreter", "Dynarec (JIT)", "IR Interpreter" };
+	static const char *cpuCores[] = {"Interpreter", "Dynarec (JIT)", "IR Interpreter"};
 	PopupMultiChoice *core = list->Add(new PopupMultiChoice(&g_Config.iCpuCore, gr->T("CPU Core"), cpuCores, 0, ARRAY_SIZE(cpuCores), sy->GetName(), screenManager()));
 	core->OnChoice.Handle(this, &DeveloperToolsScreen::OnJitAffectingSetting);
 	if (!canUseJit) {
 		core->HideChoice(1);
 	}
 
+	list->Add(new Choice(dev->T("JIT debug tools")))->OnClick.Handle(this, &DeveloperToolsScreen::OnJitDebugTools);
 	list->Add(new CheckBox(&g_Config.bShowDeveloperMenu, dev->T("Show Developer Menu")));
 	list->Add(new CheckBox(&g_Config.bDumpDecryptedEboot, dev->T("Dump Decrypted Eboot", "Dump Decrypted EBOOT.BIN (If Encrypted) When Booting Game")));
 
@@ -1303,6 +1355,11 @@ void DeveloperToolsScreen::CreateViews() {
 
 	cpuTests->SetEnabled(TestsAvailable());
 #endif
+	// For now, we only implement GPU driver tests for Vulkan and OpenGL. This is simply
+	// because the D3D drivers are generally solid enough to not need this type of investigation.
+	if (g_Config.iGPUBackend == (int)GPUBackend::VULKAN || g_Config.iGPUBackend == (int)GPUBackend::OPENGL) {
+		list->Add(new Choice(dev->T("GPU Driver Test")))->OnClick.Handle(this, &DeveloperToolsScreen::OnGPUDriverTest);
+	}
 
 	allowDebugger_ = !WebServerStopped(WebServerFlags::DEBUGGER);
 	canAllowDebugger_ = !WebServerStopping(WebServerFlags::DEBUGGER);
@@ -1319,6 +1376,7 @@ void DeveloperToolsScreen::CreateViews() {
 	list->Add(new ItemHeader(dev->T("Texture Replacement")));
 	list->Add(new CheckBox(&g_Config.bSaveNewTextures, dev->T("Save new textures")));
 	list->Add(new CheckBox(&g_Config.bReplaceTextures, dev->T("Replace textures")));
+
 #if !defined(MOBILE_DEVICE)
 	Choice *createTextureIni = list->Add(new Choice(dev->T("Create/Open textures.ini file for current game")));
 	createTextureIni->OnClick.Handle(this, &DeveloperToolsScreen::OnOpenTexturesIniFile);
@@ -1329,7 +1387,7 @@ void DeveloperToolsScreen::CreateViews() {
 }
 
 void DeveloperToolsScreen::onFinish(DialogResult result) {
-	g_Config.Save();
+	g_Config.Save("DeveloperToolsScreen::onFinish");
 }
 
 void GameSettingsScreen::CallbackRestoreDefaults(bool yes) {
@@ -1390,6 +1448,16 @@ UI::EventReturn DeveloperToolsScreen::OnOpenTexturesIniFile(UI::EventParams &e) 
 
 UI::EventReturn DeveloperToolsScreen::OnLogConfig(UI::EventParams &e) {
 	screenManager()->push(new LogConfigScreen());
+	return UI::EVENT_DONE;
+}
+
+UI::EventReturn DeveloperToolsScreen::OnJitDebugTools(UI::EventParams &e) {
+	screenManager()->push(new JitDebugScreen());
+	return UI::EVENT_DONE;
+}
+
+UI::EventReturn DeveloperToolsScreen::OnGPUDriverTest(UI::EventParams &e) {
+	screenManager()->push(new GPUDriverTestScreen());
 	return UI::EVENT_DONE;
 }
 

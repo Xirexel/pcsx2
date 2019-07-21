@@ -160,6 +160,10 @@
     <ClCompile Include="..\..\ext\glslang\OGLCompilersDLL\InitializeDll.cpp">
       <Filter>OGLCompilersDLL</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\ext\glslang\glslang\MachineIndependent\attribute.cpp">
+      <Filter>glslang\MachineIndependent</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ext\glslang\SPIRV\SpvPostProcess.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -316,6 +320,9 @@
     </ClInclude>
     <ClInclude Include="..\..\ext\glslang\OGLCompilersDLL\InitializeDll.h">
       <Filter>OGLCompilersDLL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ext\glslang\glslang\MachineIndependent\attribute.h">
+      <Filter>glslang\MachineIndependent</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

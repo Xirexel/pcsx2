@@ -51,8 +51,8 @@
 // All functions should have CONDITIONAL_DISABLE, so we can narrow things down to a file quickly.
 // Currently known non working ones should have DISABLE.
 
-// #define CONDITIONAL_DISABLE { Comp_Generic(op); return; }
-#define CONDITIONAL_DISABLE ;
+// #define CONDITIONAL_DISABLE(flag) { Comp_Generic(op); return; }
+#define CONDITIONAL_DISABLE(flag) if (jo.Disabled(JitDisable::flag)) { Comp_Generic(op); return; }
 #define DISABLE { Comp_Generic(op); return; }
 
 namespace MIPSComp {
@@ -60,7 +60,7 @@ namespace MIPSComp {
 	using namespace Arm64JitConstants;
 
 void Arm64Jit::Comp_FPU3op(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(FPU);
 
 	int ft = _FT;
 	int fs = _FS;
@@ -80,7 +80,7 @@ void Arm64Jit::Comp_FPU3op(MIPSOpcode op) {
 
 void Arm64Jit::Comp_FPULS(MIPSOpcode op)
 {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(LSU_FPU);
 	CheckMemoryBreakpoint();
 
 	// Surprisingly, these work fine alraedy.
@@ -102,7 +102,11 @@ void Arm64Jit::Comp_FPULS(MIPSOpcode op)
 		fpr.SpillLock(ft);
 		fpr.MapReg(ft, MAP_NOINIT | MAP_DIRTY);
 		if (gpr.IsImm(rs)) {
+#ifdef MASKED_PSP_MEMORY
+			u32 addr = (offset + gpr.GetImm(rs)) & 0x3FFFFFFF;
+#else
 			u32 addr = offset + gpr.GetImm(rs);
+#endif
 			gpr.SetRegImm(SCRATCH1, addr);
 		} else {
 			gpr.MapReg(rs);
@@ -129,7 +133,11 @@ void Arm64Jit::Comp_FPULS(MIPSOpcode op)
 
 		fpr.MapReg(ft);
 		if (gpr.IsImm(rs)) {
+#ifdef MASKED_PSP_MEMORY
+			u32 addr = (offset + gpr.GetImm(rs)) & 0x3FFFFFFF;
+#else
 			u32 addr = offset + gpr.GetImm(rs);
+#endif
 			gpr.SetRegImm(SCRATCH1, addr);
 		} else {
 			gpr.MapReg(rs);
@@ -152,7 +160,7 @@ void Arm64Jit::Comp_FPULS(MIPSOpcode op)
 }
 
 void Arm64Jit::Comp_FPUComp(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(FPU_COMP);
 
 	int opc = op & 0xF;
 	if (opc >= 8) opc -= 8; // alias
@@ -198,7 +206,7 @@ void Arm64Jit::Comp_FPUComp(MIPSOpcode op) {
 }
 
 void Arm64Jit::Comp_FPU2op(MIPSOpcode op) {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(FPU);
 	int fs = _FS;
 	int fd = _FD;
 
@@ -301,7 +309,7 @@ void Arm64Jit::Comp_FPU2op(MIPSOpcode op) {
 
 void Arm64Jit::Comp_mxc1(MIPSOpcode op)
 {
-	CONDITIONAL_DISABLE;
+	CONDITIONAL_DISABLE(FPU_XFER);
 
 	int fs = _FS;
 	MIPSGPReg rt = _RT;

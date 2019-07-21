@@ -180,6 +180,11 @@ void __DisplayFlip(int cyclesLate);
 static void ScheduleLagSync(int over = 0) {
 	lagSyncScheduled = g_Config.bForceLagSync;
 	if (lagSyncScheduled) {
+		// Reset over if it became too high, such as after pausing or initial loading.
+		// There's no real sense in it being more than 1/60th of a second.
+		if (over > 1000000 / 60) {
+			over = 0;
+		}
 		CoreTiming::ScheduleEvent(usToCycles(1000 + over), lagSyncEvent, 0);
 		lastLagSync = real_time_now();
 	}
@@ -503,6 +508,18 @@ static void DoFrameDropLogging(float scaledTimestep) {
 	}
 }
 
+static int CalculateFrameSkip() {
+	int frameSkipNum;
+	if (g_Config.iFrameSkipType == 1) { 
+		// Calculate the frames to skip dynamically using the set percentage of the current fps
+		frameSkipNum = ceil( flips * (static_cast<double>(g_Config.iFrameSkip) / 100.00) ); 
+	} else { 
+		// Use the set number of frames to skip
+		frameSkipNum = g_Config.iFrameSkip; 
+	}
+	return frameSkipNum;
+}
+
 // Let's collect all the throttling and frameskipping logic here.
 static void DoFrameTiming(bool &throttle, bool &skipFrame, float timestep) {
 	PROFILE_THIS_SCOPE("timing");
@@ -553,15 +570,16 @@ static void DoFrameTiming(bool &throttle, bool &skipFrame, float timestep) {
 	// Auto-frameskip automatically if speed limit is set differently than the default.
 	bool useAutoFrameskip = g_Config.bAutoFrameSkip && g_Config.iRenderingMode != FB_NON_BUFFERED_MODE;
 	bool forceFrameskip = (fpsLimiter == FPSLimit::CUSTOM1 && g_Config.iFpsLimit1 > 60) || (fpsLimiter == FPSLimit::CUSTOM2 && g_Config.iFpsLimit2 > 60);
+	int frameSkipNum = CalculateFrameSkip();
 	if (g_Config.bAutoFrameSkip || forceFrameskip) {
 		// autoframeskip
 		// Argh, we are falling behind! Let's skip a frame and see if we catch up.
 		if (curFrameTime > nextFrameTime && doFrameSkip) {
 			skipFrame = true;
 		}
-	} else if (g_Config.iFrameSkip >= 1) {
+	} else if (frameSkipNum >= 1) {
 		// fixed frameskip
-		if (numSkippedFrames >= g_Config.iFrameSkip)
+		if (numSkippedFrames >= frameSkipNum)
 			skipFrame = false;
 		else
 			skipFrame = true;
@@ -734,9 +752,10 @@ void __DisplayFlip(int cyclesLate) {
 		DoFrameTiming(throttle, skipFrame, (float)numVBlanksSinceFlip * timePerVblank);
 
 		int maxFrameskip = 8;
+		int frameSkipNum = CalculateFrameSkip();
 		if (throttle) {
 			// 4 here means 1 drawn, 4 skipped - so 12 fps minimum.
-			maxFrameskip = g_Config.iFrameSkip;
+			maxFrameskip = frameSkipNum;
 		}
 		if (numSkippedFrames >= maxFrameskip || GPURecord::IsActivePending()) {
 			skipFrame = false;
@@ -914,7 +933,7 @@ u32 sceDisplaySetFramebuf(u32 topaddr, int linesize, int pixelformat, int sync) 
 
 	s64 delayCycles = 0;
 	// Don't count transitions between display off and display on.
-	if (topaddr != 0 && topaddr != framebuf.topaddr && framebuf.topaddr != 0 && g_Config.iForceMaxEmulatedFPS > 0) {
+	if (topaddr != 0 && topaddr != framebuf.topaddr && framebuf.topaddr != 0 && PSP_CoreParameter().compat.flags().ForceMax60FPS) {
 		// sceDisplaySetFramebuf() isn't supposed to delay threads at all.  This is a hack.
 		// So let's only delay when it's more than 1ms.
 		const s64 FLIP_DELAY_CYCLES_MIN = usToCycles(1000);
@@ -928,7 +947,7 @@ u32 sceDisplaySetFramebuf(u32 topaddr, int linesize, int pixelformat, int sync) 
 		u64 now = CoreTiming::GetTicks();
 		s64 cyclesAhead = nextFlipCycles - now;
 		if (cyclesAhead > FLIP_DELAY_CYCLES_MIN) {
-			if (lastFlipsTooFrequent >= FLIP_DELAY_MIN_FLIPS && gpuStats.numClears > 0) {
+			if (lastFlipsTooFrequent >= FLIP_DELAY_MIN_FLIPS) {
 				delayCycles = cyclesAhead;
 			} else {
 				++lastFlipsTooFrequent;
@@ -938,7 +957,7 @@ u32 sceDisplaySetFramebuf(u32 topaddr, int linesize, int pixelformat, int sync) 
 		}
 
 		// 1001 to account for NTSC timing (59.94 fps.)
-		u64 expected = msToCycles(1001) / g_Config.iForceMaxEmulatedFPS - LEEWAY_CYCLES_PER_FLIP;
+		u64 expected = msToCycles(1001) / 60 - LEEWAY_CYCLES_PER_FLIP;
 		lastFlipCycles = now;
 		nextFlipCycles = std::max(lastFlipCycles, nextFlipCycles) + expected;
 	}
@@ -1050,10 +1069,10 @@ static u32 sceDisplayGetVcount() {
 }
 
 static u32 __DisplayGetCurrentHcount() {
-	const static int ticksPerVblank333 = 333 * 1000000 / 60 / hCountPerVblank;
 	const int ticksIntoFrame = CoreTiming::GetTicks() - frameStartTicks;
+	const int ticksPerVblank = CoreTiming::GetClockFrequencyHz() / 60 / hCountPerVblank;
 	// Can't seem to produce a 0 on real hardware, offsetting by 1 makes things look right.
-	return 1 + (ticksIntoFrame / (CoreTiming::GetClockFrequencyMHz() * ticksPerVblank333 / 333));
+	return 1 + (ticksIntoFrame / ticksPerVblank);
 }
 
 static u32 __DisplayGetAccumulatedHcount() {

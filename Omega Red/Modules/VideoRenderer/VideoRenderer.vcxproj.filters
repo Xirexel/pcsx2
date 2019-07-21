@@ -201,6 +201,12 @@
     <ClCompile Include="Extend\GSdx.cpp">
       <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
     </ClCompile>
+    <ClCompile Include="Extend\GSRendererProxy_add.cpp">
+      <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="Extend\GSDeviceProxy_add.cpp">
+      <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="VideoRenderer.def">
@@ -519,6 +525,9 @@
     </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>Omega Red\Modules\VideoRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma.h">
+      <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

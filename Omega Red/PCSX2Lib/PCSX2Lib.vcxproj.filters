@@ -155,9 +155,6 @@
     <ClCompile Include="..\..\pcsx2\x86\ir5900tables.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcsx2\x86\iVU1micro.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\pcsx2\x86\microVU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

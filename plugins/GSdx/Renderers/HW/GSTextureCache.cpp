@@ -21,6 +21,7 @@
 
 #include "stdafx.h"
 #include "GSTextureCache.h"
+#include "GSRendererHW.h"
 #include "GSUtil.h"
 
 bool GSTextureCache::m_disable_partial_invalidation = false;
@@ -31,7 +32,6 @@ GSTextureCache::GSTextureCache(GSRenderer* r)
 	, m_palette_map(r)
 {
 	if (theApp.GetConfigB("UserHacks")) {
-		m_spritehack                   = theApp.GetConfigI("UserHacks_SpriteHack");
 		UserHacks_HalfPixelOffset      = theApp.GetConfigI("UserHacks_HalfPixelOffset") == 1;
 		m_preload_frame                = theApp.GetConfigB("preload_frame_with_gs_data");
 		m_disable_partial_invalidation = theApp.GetConfigB("UserHacks_DisablePartialInvalidation");
@@ -40,7 +40,6 @@ GSTextureCache::GSTextureCache(GSRenderer* r)
 		m_texture_inside_rt            = theApp.GetConfigB("UserHacks_TextureInsideRt");
 		m_wrap_gs_mem                  = theApp.GetConfigB("wrap_gs_mem");
 	} else {
-		m_spritehack                   = 0;
 		UserHacks_HalfPixelOffset      = false;
 		m_preload_frame                = false;
 		m_disable_partial_invalidation = false;
@@ -156,6 +155,7 @@ GSTextureCache::Source* GSTextureCache::LookupDepthSource(const GIFRegTEX0& TEX0
 		src->m_target = true; // So renderer can check if a conversion is required
 		src->m_from_target = dst->m_texture; // avoid complex condition on the renderer
 		src->m_32_bits_fmt = dst->m_32_bits_fmt;
+		src->m_valid_rect = dst->m_valid;
 
 		// Insert the texture in the hash set to keep track of it. But don't bother with
 		// texture cache list. It means that a new Source is created everytime we need it.
@@ -1138,16 +1138,6 @@ GSTextureCache::Source* GSTextureCache::CreateSource(const GIFRegTEX0& TEX0, con
 
 	bool hack = false;
 
-	if(m_spritehack && (TEX0.PSM == PSM_PSMT8 || TEX0.PSM == PSM_PSMT8H))
-	{
-		src->m_spritehack_t = true;
-
-		if(m_spritehack == 2 && TEX0.CPSM != PSM_PSMCT16)
-			src->m_spritehack_t = false;
-	}
-	else
-		src->m_spritehack_t = false;
-
 	if (dst && (x_offset != 0 || y_offset != 0))
 	{
 		GSVector2 scale = dst->m_texture->GetScale();
@@ -1172,6 +1162,31 @@ GSTextureCache::Source* GSTextureCache::CreateSource(const GIFRegTEX0& TEX0, con
 			// Attach palette for GPU texture conversion
 			AttachPaletteToSource(src, psm.pal, true);
 		}
+	}
+	else if (dst && static_cast<GSRendererHW*>(m_renderer)->IsDummyTexture())
+	{
+		// This shortcut is a temporary solution. It isn't a good solution
+		// as it won't work with Channel Shuffle/Texture Shuffle pattern
+		// (we need texture cache result to detect those effects).
+		// Instead a better solution would be to defer the copy/StrechRect later
+		// in the rendering.
+		// Still this poor solution is enough for a huge speed up in a couple of games
+		//
+		// Be aware that you can't use StrechRect between BeginScene/EndScene.
+		// So it could be tricky to put in the middle of the DrawPrims
+
+		// Texture is created to keep code compatibility
+		GSTexture* dTex = m_renderer->m_dev->CreateRenderTarget(tw, th);
+
+		// Keep a trace of origin of the texture
+		src->m_texture = dTex;
+		src->m_target = true;
+		src->m_from_target = dst->m_texture;
+
+		// Even if we sample the framebuffer directly we might need the palette
+		// to handle the format conversion on GPU
+		if (psm.pal > 0)
+			AttachPaletteToSource(src, psm.pal, true);
 	}
 	else if (dst)
 	{
@@ -1198,6 +1213,7 @@ GSTextureCache::Source* GSTextureCache::CreateSource(const GIFRegTEX0& TEX0, con
 		// Keep a trace of origin of the texture
 		src->m_target = true;
 		src->m_from_target = dst->m_texture;
+		src->m_valid_rect = dst->m_valid;
 
 		dst->Update();
 
@@ -1319,8 +1335,11 @@ GSTextureCache::Source* GSTextureCache::CreateSource(const GIFRegTEX0& TEX0, con
 
 		GSVector4 sRect(0, 0, w, h);
 
-		GSTexture* sTex = src->m_texture ? src->m_texture : dst->m_texture;
+		// Don't be fooled by the name. 'dst' is the old target (hence the input)
+		// 'src' is the new texture cache entry (hence the output)
+		GSTexture* sTex = dst->m_texture;
 		GSTexture* dTex = m_renderer->m_dev->CreateRenderTarget(w, h);
+		src->m_texture = dTex;
 
 		// GH: by default (m_paltex == 0) GSdx converts texture to the 32 bit format
 		// However it is different here. We want to reuse a Render Target as a texture.
@@ -1354,11 +1373,6 @@ GSTextureCache::Source* GSTextureCache::CreateSource(const GIFRegTEX0& TEX0, con
 		// copy. Likely a speed boost and memory usage reduction.
 		bool linear = (TEX0.PSM == PSM_PSMCT32 || TEX0.PSM == PSM_PSMCT24);
 
-		if(!src->m_texture)
-		{
-			src->m_texture = dTex;
-		}
-
 		if ((sRect == dRect).alltrue() && !shader)
 		{
 			if (half_right) {
@@ -1382,13 +1396,6 @@ GSTextureCache::Source* GSTextureCache::CreateSource(const GIFRegTEX0& TEX0, con
 			}
 
 			m_renderer->m_dev->StretchRect(sTex, sRect, dTex, dRect, shader, linear);
-		}
-
-		if(dTex != src->m_texture)
-		{
-			m_renderer->m_dev->Recycle(src->m_texture);
-
-			src->m_texture = dTex;
 		}
 
 		if( src->m_texture )
@@ -1461,13 +1468,13 @@ GSTextureCache::Target* GSTextureCache::CreateTarget(const GIFRegTEX0& TEX0, int
 
 	if(type == RenderTarget)
 	{
-		t->m_texture = m_renderer->m_dev->CreateRenderTarget(w, h);
+		t->m_texture = m_renderer->m_dev->CreateSparseRenderTarget(w, h);
 
 		t->m_used = true; // FIXME
 	}
 	else if(type == DepthStencil)
 	{
-		t->m_texture = m_renderer->m_dev->CreateDepthStencil(w, h);
+		t->m_texture = m_renderer->m_dev->CreateSparseDepthStencil(w, h);
 	}
 
 	m_dst[type].push_front(t);
@@ -1535,9 +1542,9 @@ GSTextureCache::Source::Source(GSRenderer* r, const GIFRegTEX0& TEX0, const GIFR
 	: Surface(r, temp)
 	, m_palette_obj(nullptr)
 	, m_palette(nullptr)
+	, m_valid_rect(0, 0)
 	, m_target(false)
 	, m_complete(false)
-	, m_spritehack_t(false)
 	, m_p2t(NULL)
 	, m_from_target(NULL)
 {

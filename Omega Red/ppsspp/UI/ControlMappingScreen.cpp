@@ -29,6 +29,7 @@
 #include "ui/view.h"
 #include "ui/viewgroup.h"
 
+#include "Core/Host.h"
 #include "Core/HLE/sceCtrl.h"
 #include "Core/System.h"
 #include "Common/KeyMap.h"
@@ -79,6 +80,7 @@ void ControlMapper::Update() {
 	if (refresh_) {
 		refresh_ = false;
 		Refresh();
+		host->UpdateUI();
 	}
 }
 
@@ -169,6 +171,7 @@ void ControlMapper::MappedCallback(KeyDef kdf) {
 		break;
 	case REPLACEONE:
 		KeyMap::g_controllerMap[pspKey_][actionIndex_] = kdf;
+		KeyMap::g_controllerMapGeneration++;
 		break;
 	default:
 		;
@@ -211,6 +214,7 @@ UI::EventReturn ControlMapper::OnAddMouse(UI::EventParams &params) {
 UI::EventReturn ControlMapper::OnDelete(UI::EventParams &params) {
 	int index = atoi(params.v->Tag().c_str());
 	KeyMap::g_controllerMap[pspKey_].erase(KeyMap::g_controllerMap[pspKey_].begin() + index);
+	KeyMap::g_controllerMapGeneration++;
 	refresh_ = true;
 	return UI::EVENT_DONE;
 }
@@ -427,8 +431,8 @@ class JoystickHistoryView : public UI::InertView {
 public:
 	JoystickHistoryView(int xAxis, int xDevice, int xDir, int yAxis, int yDevice, int yDir, UI::LayoutParams *layoutParams = nullptr)
 		: UI::InertView(layoutParams),
-			xAxis_(xAxis), xDevice_(xDevice), xDir_(xDir),
-			yAxis_(yAxis), yDevice_(yDevice), yDir_(yDir),
+			xAxis_(xAxis), xDir_(xDir),
+			yAxis_(yAxis), yDir_(yDir),
 			curX_(0.0f), curY_(0.0f),
 			maxCount_(500) {}
 	void Draw(UIContext &dc) override;
@@ -451,10 +455,8 @@ private:
 	};
 
 	int xAxis_;
-	int xDevice_;
 	int xDir_;
 	int yAxis_;
-	int yDevice_;
 	int yDir_;
 
 	float curX_;
@@ -478,10 +480,9 @@ void JoystickHistoryView::Draw(UIContext &dc) {
 			dc.Draw()->DrawImage(I_CROSS, x, y, 0.8f, colorAlpha(0xFFFFFF, alpha), ALIGN_CENTER);
 			a++;
 		}
-		dc.End();
 		dc.BeginNoTex();
 		dc.Draw()->RectOutline(bounds_.centerX() - minRadius, bounds_.centerY() - minRadius, minRadius * 2, minRadius * 2, 0x80FFFFFF);
-		dc.End();
+		dc.Flush();
 		dc.Begin();
 	} else {
 		dc.DrawText("N/A", bounds_.centerX(), bounds_.centerY(), 0xFFFFFFFF, ALIGN_CENTER);

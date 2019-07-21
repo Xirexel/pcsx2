@@ -53,9 +53,23 @@ void VulkanQueueRunner::ResizeReadbackBuffer(VkDeviceSize requiredSize) {
 	VkMemoryAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
 	allocInfo.allocationSize = reqs.size;
 
-	VkFlags typeReqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	bool success = vulkan_->MemoryTypeFromProperties(reqs.memoryTypeBits, typeReqs, &allocInfo.memoryTypeIndex);
-	_assert_(success);
+	// For speedy readbacks, we want the CPU cache to be enabled. However on most hardware we then have to
+	// sacrifice coherency, which means manual flushing. But try to find such memory first! If no cached
+	// memory type is available we fall back to just coherent.
+	const VkFlags desiredTypes[] = {
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	};
+	VkFlags successTypeReqs = 0;
+	for (VkFlags typeReqs : desiredTypes) {
+		if (vulkan_->MemoryTypeFromProperties(reqs.memoryTypeBits, typeReqs, &allocInfo.memoryTypeIndex)) {
+			successTypeReqs = typeReqs;
+			break;
+		}
+	}
+	_assert_(successTypeReqs != 0);
+	readbackBufferIsCoherent_ = (successTypeReqs & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
 
 	VkResult res = vkAllocateMemory(device, &allocInfo, nullptr, &readbackMemory_);
 	if (res != VK_SUCCESS) {
@@ -249,6 +263,9 @@ VkRenderPass VulkanQueueRunner::GetRenderPass(const RPKey &key) {
 	VkSubpassDependency deps[2]{};
 	int numDeps = 0;
 	switch (key.prevColorLayout) {
+	case VK_IMAGE_LAYOUT_UNDEFINED:
+		// No need to specify stage or access.
+		break;
 	case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
 		// Already the right color layout. Unclear that we need to do a lot here..
 		break;
@@ -275,6 +292,9 @@ VkRenderPass VulkanQueueRunner::GetRenderPass(const RPKey &key) {
 	}
 
 	switch (key.prevDepthLayout) {
+	case VK_IMAGE_LAYOUT_UNDEFINED:
+		// No need to specify stage or access.
+		break;
 	case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
 		// Already the right depth layout. Unclear that we need to do a lot here..
 		break;
@@ -502,7 +522,7 @@ void VulkanQueueRunner::ApplyMGSHack(std::vector<VKRStep *> &steps) {
 			assert(steps[i + copies.size()]->stepType == VKRStepType::RENDER);
 			// Combine the renders.
 			for (int j = 1; j < (int)renders.size(); j++) {
-				for (int k = 0; k < renders[j]->commands.size(); k++) {
+				for (int k = 0; k < (int)renders[j]->commands.size(); k++) {
 					steps[i + copies.size()]->commands.push_back(renders[j]->commands[k]);
 				}
 				steps[i + copies.size() + j]->stepType = VKRStepType::RENDER_SKIP;
@@ -695,6 +715,7 @@ void VulkanQueueRunner::PerformRenderPass(const VKRStep &step, VkCommandBuffer c
 			VkPipelineStageFlags dstStage{};
 			switch (barrier.oldLayout) {
 			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+			case VK_IMAGE_LAYOUT_UNDEFINED:
 				barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 				srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 				break;
@@ -864,7 +885,7 @@ void VulkanQueueRunner::PerformBindFramebufferAsRenderTarget(const VKRStep &step
 		// See pull request #10723.
 		bool maliBugWorkaround = step.render.numDraws == 0 &&
 			step.render.color == VKRRenderPassAction::CLEAR &&
-			vulkan_->GetPhysicalDeviceProperties(vulkan_->GetCurrentPhysicalDevice()).driverVersion == 0xaa9c4b29;
+			vulkan_->GetPhysicalDeviceProperties().properties.driverVersion == 0xaa9c4b29;
 		if (maliBugWorkaround) {
 			TransitionImageLayout2(cmd, step.render.framebuffer->color.image, 0, 1, VK_IMAGE_ASPECT_COLOR_BIT,
 				fb->color.layout, VK_IMAGE_LAYOUT_GENERAL,
@@ -1281,6 +1302,7 @@ void VulkanQueueRunner::PerformReadbackImage(const VKRStep &step, VkCommandBuffe
 		VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT);
 
 	// NOTE: Can't read the buffer using the CPU here - need to sync first.
+	// Doing that will also act like a heavyweight barrier ensuring that device writes are visible on the host.
 }
 
 void VulkanQueueRunner::CopyReadbackBuffer(int width, int height, Draw::DataFormat srcFormat, Draw::DataFormat destFormat, int pixelStride, uint8_t *pixels) {
@@ -1292,10 +1314,20 @@ void VulkanQueueRunner::CopyReadbackBuffer(int width, int height, Draw::DataForm
 	const size_t srcPixelSize = DataFormatSizeInBytes(srcFormat);
 
 	VkResult res = vkMapMemory(vulkan_->GetDevice(), readbackMemory_, 0, width * height * srcPixelSize, 0, &mappedData);
+	if (!readbackBufferIsCoherent_) {
+		VkMappedMemoryRange range{};
+		range.memory = readbackMemory_;
+		range.offset = 0;
+		range.size = width * height * srcPixelSize;
+		vkInvalidateMappedMemoryRanges(vulkan_->GetDevice(), 1, &range);
+	}
+
 	if (res != VK_SUCCESS) {
 		ELOG("CopyReadbackBuffer: vkMapMemory failed! result=%d", (int)res);
 		return;
 	}
+
+	// TODO: Perform these conversions in a compute shader on the GPU.
 	if (srcFormat == Draw::DataFormat::R8G8B8A8_UNORM) {
 		ConvertFromRGBA8888(pixels, (const uint8_t *)mappedData, pixelStride, width, width, height, destFormat);
 	} else if (srcFormat == Draw::DataFormat::B8G8R8A8_UNORM) {

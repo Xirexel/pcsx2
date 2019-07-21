@@ -108,6 +108,22 @@ namespace Omega_Red.Managers
 
         public event Action<bool> RecordingStateEvent;
 
+        public event Action<string> ShowWarningEvent;
+
+        public string CaptureManagerVersion { get {
+                switch (MediaOutputType)
+                {
+                    case MediaOutputType.Capture:
+                        return MediaCapture.Instance.CaptureManagerVersion;
+                    case MediaOutputType.Stream:
+                        return MediaStream.Instance.CaptureManagerVersion;
+                    default:
+                        return "";
+                }
+            }
+        }
+
+
         private MediaOutputType MediaOutputType { get; set; }
 
         public bool IsAllowedStreaming { get; set; }
@@ -123,6 +139,7 @@ namespace Omega_Red.Managers
                     break;
                 case MediaOutputType.Stream:
                     IsAllowedStreaming = !string.IsNullOrWhiteSpace(Settings.Default.StreamName);
+                    MediaStream.Instance.Warning = ShowWarning;
                     break;
                 default:
                     break;
@@ -144,7 +161,9 @@ namespace Omega_Red.Managers
 
 
         private MediaRecorderManager()
-        {            
+        {
+            MediaOutputType = MediaOutputType.Capture;
+
             if (string.IsNullOrEmpty(Settings.Default.VideosFolder))
                 Settings.Default.VideosFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos) + @"\Omega Red\";
 
@@ -168,6 +187,11 @@ namespace Omega_Red.Managers
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
         {
+            if(PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Started)
+                PCSX2Controller.Instance.PlayPause();
+
+            Managers.MediaRecorderManager.Instance.StartStop(false);
+
             if (mCustomerView.CurrentItem != null)
                 LockScreenManager.Instance.showVideo();
         }
@@ -277,39 +301,28 @@ namespace Omega_Red.Managers
             t.Start();
         }
                
-        public async Task<string> getCollectionOfSourcesAsync()
-        {
-            string lresult = await Task.Run(() =>
+        public void getCollectionOfSources(Action<string> method)
+        {            
+            var t = new Thread(() =>
             {
                 string linnerresult = "";
 
-                AutoResetEvent lBlockEvent = new AutoResetEvent(false);
-
-                var t = new Thread(() =>
+                try
                 {
-                    try
-                    {
-                        linnerresult = MediaStream.Instance.getCollectionOfSources();
+                    linnerresult = MediaStream.Instance.getCollectionOfSources();
 
-                        linnerresult = MediaCapture.Instance.getCollectionOfSources();
-                    }
-                    finally
-                    {
-                        lBlockEvent.Set();
-                    }
-                });
+                    linnerresult = MediaCapture.Instance.getCollectionOfSources();
+                }
+                finally
+                {
+                    if (method != null)
+                        method(linnerresult);
+                }
+            });
 
-                t.SetApartmentState(ApartmentState.MTA);
+            t.SetApartmentState(ApartmentState.MTA);
 
-                t.Start();
-
-                lBlockEvent.WaitOne();
-
-                return linnerresult;
-            }
-                );
-
-            return lresult;
+            t.Start();
         }
 
         public void removeItem(object a_Item)
@@ -608,6 +621,16 @@ namespace Omega_Red.Managers
                 lBlockEvent.WaitOne();
             }
             );
+        }
+
+        private void ShowWarning(string a_message)
+        {
+            if (ShowWarningEvent != null)
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    ShowWarningEvent(a_message);
+                });
+
         }
     }
 }

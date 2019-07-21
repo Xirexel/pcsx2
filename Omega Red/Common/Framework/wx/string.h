@@ -251,6 +251,8 @@ public:
 
 	int GetCount() const;
 
+	int Count() const;
+
 	bool IsEmpty() const;
 
 	wxString& Item(size_t nIndex);
@@ -291,3 +293,6 @@ extern wxChar wxTolower(const wxString::Char& s2);
 extern wxChar wxToupper(const wxString::Char& s2);
 
 extern int wxVsnprintf(wxChar *str, size_t size, const wxString& format, va_list argptr);
+
+#include "tokenzr.h"
+extern void SplitString(wxArrayString &dest, const wxString &src, const wxString &delims, wxStringTokenizerMode mode = wxTOKEN_RET_EMPTY_ALL);

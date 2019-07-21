@@ -18,7 +18,6 @@
 #include "..\src\Global.h"
 #include "..\src\PS2E-spu2.h"
 #include "..\src\Dma.h"
-#include "MemoryManager.h"
 
 //#include "svnrev.h"
 
@@ -195,10 +194,6 @@ SPU2init()
     }
 
     IsInitialized = true;
-
-	AudioRenderer::MemoryManager lMemoryManager;
-
-	lMemoryManager.initialize();
 
     //ReadSettings();
 

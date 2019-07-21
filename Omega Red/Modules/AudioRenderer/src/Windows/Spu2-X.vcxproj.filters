@@ -123,6 +123,9 @@
     <ClCompile Include="..\RegLog.cpp">
       <Filter>Source Files\debug</Filter>
     </ClCompile>
+    <ClCompile Include="..\spu2replay.cpp">
+      <Filter>Source Files\debug</Filter>
+    </ClCompile>
     <ClCompile Include="..\wavedump_wav.cpp">
       <Filter>Source Files\debug</Filter>
     </ClCompile>
@@ -136,6 +139,12 @@
       <Filter>Source Files\Sound Output</Filter>
     </ClCompile>
     <ClCompile Include="SndOut_DSound.cpp">
+      <Filter>Source Files\Sound Output\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="SndOut_waveOut.cpp">
+      <Filter>Source Files\Sound Output\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="SndOut_XAudio2_27.cpp">
       <Filter>Source Files\Sound Output\Windows</Filter>
     </ClCompile>
     <ClCompile Include="..\Linux\Alsa.cpp">
@@ -201,8 +210,8 @@
     <ClCompile Include="..\DplIIdecoder.cpp">
       <Filter>Source Files\Sound Output</Filter>
     </ClCompile>
-    <ClCompile Include="..\Spu2replay.cpp">
-      <Filter>Source Files\debug</Filter>
+    <ClCompile Include="SndOut_XAudio2.cpp">
+      <Filter>Source Files\Sound Output\Windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -217,6 +226,9 @@
     </None>
     <None Include="Spu2-X.def">
       <Filter>Resources</Filter>
+    </None>
+    <None Include="SndOut_XAudio2.inl">
+      <Filter>Source Files\Sound Output\Windows</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

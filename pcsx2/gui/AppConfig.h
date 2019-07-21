@@ -263,6 +263,9 @@ public:
 		wxString OutputInterlaced;
 		wxString Paused;
 		wxString TitleTemplate;
+#ifndef DISABLE_RECORDING
+		wxString RecordingTemplate;
+#endif
 	};
 
 public:
@@ -320,6 +323,7 @@ public:
 	bool		AskOnBoot;
 
 	wxString				CurrentIso;
+    wxString				CurrentBlockdump;
 	wxString				CurrentELF;
 	wxString				CurrentIRX;
 	CDVD_SourceType			CdvdSource;

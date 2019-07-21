@@ -88,7 +88,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;AUDIORENDERER_EXPORTS;_WINDOWS;_USRDLL;PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -166,7 +166,6 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Extend\MemoryManager.cpp" />
     <ClCompile Include="src\ADSR.cpp" />
     <ClCompile Include="src\DplIIdecoder.cpp" />
     <ClCompile Include="src\ReadInput.cpp" />
@@ -189,6 +188,9 @@
     <None Include="AudioRenderer.def" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Common\MemoryManager\MemoryManager.vcxproj">
+      <Project>{1691294c-24f6-452d-9554-feb49c1c1c22}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\Common\PugiXML\PugiXML.vcxproj">
       <Project>{7331057d-d230-4588-a016-493824c12a40}</Project>
     </ProjectReference>

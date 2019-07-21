@@ -24,20 +24,19 @@
 #include "GPU/GPU.h"
 #include "GPU/GPUInterface.h"
 
-#if PPSSPP_PLATFORM(UWP)
-#include "GPU/D3D11/GPU_D3D11.h"
-#else
+#if PPSSPP_API(ANY_GL)
 #include "GPU/GLES/GPU_GLES.h"
-
+#endif
 #include "GPU/Vulkan/GPU_Vulkan.h"
 #include "GPU/Null/NullGpu.h"
 #include "GPU/Software/SoftGpu.h"
 
-#if defined(_WIN32)
+#if PPSSPP_API(D3D9)
 #include "GPU/Directx9/GPU_DX9.h"
-#include "GPU/D3D11/GPU_D3D11.h"
 #endif
 
+#if PPSSPP_API(D3D11)
+#include "GPU/D3D11/GPU_D3D11.h"
 #endif
 
 GPUStatistics gpuStats;
@@ -61,7 +60,7 @@ bool GPU_IsReady() {
 }
 
 bool GPU_Init(GraphicsContext *ctx, Draw::DrawContext *draw) {
-	_assert_(draw);
+	_assert_(draw || PSP_CoreParameter().gpuCore == GPUCORE_NULL);
 #if PPSSPP_PLATFORM(UWP)
 	SetGPU(new GPU_D3D11(ctx, draw));
 	return true;
@@ -71,20 +70,25 @@ bool GPU_Init(GraphicsContext *ctx, Draw::DrawContext *draw) {
 		SetGPU(new NullGPU());
 		break;
 	case GPUCORE_GLES:
+		// Disable GLES on ARM Windows (but leave it enabled on other ARM platforms).
+#if PPSSPP_API(ANY_GL)
 		SetGPU(new GPU_GLES(ctx, draw));
 		break;
+#else
+		return false;
+#endif
 	case GPUCORE_SOFTWARE:
 		SetGPU(new SoftGPU(ctx, draw));
 		break;
 	case GPUCORE_DIRECTX9:
-#if defined(_WIN32)
+#if PPSSPP_API(D3D9)
 		SetGPU(new DIRECTX9_GPU(ctx, draw));
 		break;
 #else
 		return false;
 #endif
 	case GPUCORE_DIRECTX11:
-#if defined(_WIN32)
+#if PPSSPP_API(D3D11)
 		SetGPU(new GPU_D3D11(ctx, draw));
 		break;
 #else

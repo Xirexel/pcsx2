@@ -26,10 +26,12 @@
 #include "Core/System.h"
 #include "GPU/Common/GPUDebugInterface.h"
 #include "GPU/GPUState.h"
-//#include "Windows/GPU/WindowsGLContext.h"
-//#include "Windows/GPU/D3D9Context.h"
+#if PPSSPP_API(ANY_GL)
+#include "Windows/GPU/WindowsGLContext.h"
+#endif
+#include "Windows/GPU/D3D9Context.h"
 #include "Windows/GPU/D3D11Context.h"
-//#include "Windows/GPU/WindowsVulkanContext.h"
+#include "Windows/GPU/WindowsVulkanContext.h"
 
 #include "base/logging.h"
 #include "base/timeutil.h"
@@ -91,14 +93,23 @@ bool WindowsHeadlessHost::InitGraphics(std::string *error_message, GraphicsConte
 	switch (gpuCore_) {
 	case GPUCORE_NULL:
 	case GPUCORE_GLES:
+#if PPSSPP_API(ANY_GL)
 	case GPUCORE_SOFTWARE:
+		graphicsContext = new WindowsGLContext();
+		needRenderThread = true;
+		break;
+#endif
 	case GPUCORE_DIRECTX9:
+		graphicsContext = new D3D9Context();
+		break;
+
+	case GPUCORE_DIRECTX11:
+		graphicsContext = new D3D11Context();
+		break;
+
 	case GPUCORE_VULKAN:
-        return false;
-        break;
-    case GPUCORE_DIRECTX11:
-        graphicsContext = new D3D11Context();
-        break;
+		graphicsContext = new WindowsVulkanContext();
+		break;
 	}
 
 	if (graphicsContext->Init(NULL, hWnd, error_message)) {

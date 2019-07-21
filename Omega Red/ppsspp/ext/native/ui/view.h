@@ -240,9 +240,7 @@ struct HandlerRegistration {
 class Event {
 public:
 	Event() {}
-	~Event() {
-		handlers_.clear();
-	}
+	~Event();
 	// Call this from input thread or whatever, it doesn't matter
 	void Trigger(EventParams &e);
 	// Call this from UI thread
@@ -552,8 +550,8 @@ private:
 	float paddingLeft_;
 	float paddingRight_;
 	int step_;
-	int repeat_;
-	int repeatCode_;
+	int repeat_ = 0;
+	int repeatCode_ = 0;
 };
 
 class SliderFloat : public Clickable {
@@ -580,7 +578,7 @@ private:
 	float paddingLeft_;
 	float paddingRight_;
 	int repeat_;
-	int repeatCode_;
+	int repeatCode_ = 0;
 };
 
 // Basic button that modifies a bitfield based on the pressed status. Supports multitouch.
@@ -742,13 +740,28 @@ public:
 
 	EventReturn OnClicked(EventParams &e);
 	//allow external agents to toggle the checkbox
-	void Toggle();
+	virtual void Toggle();
+	virtual bool Toggled() const;
 private:
 	float CalculateTextScale(const UIContext &dc, float availWidth) const;
 
 	bool *toggle_;
 	std::string text_;
 	std::string smallText_;
+};
+
+class BitCheckBox : public CheckBox {
+public:
+	BitCheckBox(uint32_t *bitfield, uint32_t bit, const std::string &text, const std::string &smallText = "", LayoutParams *layoutParams = nullptr)
+		: CheckBox(nullptr, text, smallText, layoutParams), bitfield_(bitfield), bit_(bit) {
+	}
+
+	void Toggle() override;
+	bool Toggled() const override;
+
+private:
+	uint32_t *bitfield_;
+	uint32_t bit_;
 };
 
 // These are for generic use.

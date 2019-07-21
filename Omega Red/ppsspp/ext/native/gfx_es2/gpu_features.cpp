@@ -6,7 +6,7 @@
 #include "base/logging.h"
 #include "base/stringutil.h"
 
-#if !PPSSPP_PLATFORM(UWP)
+#if PPSSPP_API(ANY_GL)
 #include "gfx/gl_common.h"
 
 #if defined(_WIN32)
@@ -98,13 +98,11 @@ void ProcessGPUFeatures() {
 
 	DLOG("Checking for GL driver bugs... vendor=%i model='%s'", (int)gl_extensions.gpuVendor, gl_extensions.model);
 
-	// Should be table driven instead, this is a quick hack for Galaxy Y
-	if (System_GetProperty(SYSPROP_NAME) == "samsung:GT-S5360") {
-		gl_extensions.bugs |= BUG_FBO_UNUSABLE;
-	}
-
 	if (gl_extensions.gpuVendor == GPU_VENDOR_IMGTEC) {
-		if (!strcmp(gl_extensions.model, "PowerVR SGX 543") ||
+		if (!strcmp(gl_extensions.model, "PowerVR SGX 545") ||
+			  !strcmp(gl_extensions.model, "PowerVR SGX 544") ||
+			  !strcmp(gl_extensions.model, "PowerVR SGX 544MP2") ||
+			  !strcmp(gl_extensions.model, "PowerVR SGX 543") ||
 			  !strcmp(gl_extensions.model, "PowerVR SGX 540") ||
 			  !strcmp(gl_extensions.model, "PowerVR SGX 530") ||
 				!strcmp(gl_extensions.model, "PowerVR SGX 520") ) {
@@ -114,13 +112,6 @@ void ProcessGPUFeatures() {
 			WLOG("GL DRIVER BUG: PVR with bad precision");
 			gl_extensions.bugs |= BUG_PVR_SHADER_PRECISION_BAD;
 		}
-		gl_extensions.bugs |= BUG_PVR_GENMIPMAP_HEIGHT_GREATER;
-	}
-
-	// TODO: Make this check more lenient. Disabled for all right now
-	// because it murders performance on Mali.
-	if (gl_extensions.gpuVendor != GPU_VENDOR_NVIDIA) {
-		gl_extensions.bugs |= BUG_ANY_MAP_BUFFER_RANGE_SLOW;
 	}
 }
 
@@ -128,7 +119,7 @@ void ProcessGPUFeatures() {
 
 void CheckGLExtensions() {
 
-#if !PPSSPP_PLATFORM(UWP)
+#if PPSSPP_API(ANY_GL)
 
 	// Make sure to only do this once. It's okay to call CheckGLExtensions from wherever.
 	if (extensionsDone)
@@ -171,6 +162,8 @@ void CheckGLExtensions() {
 		} else if (vendor == "Broadcom") {
 			gl_extensions.gpuVendor = GPU_VENDOR_BROADCOM;
 			// Just for reference: Galaxy Y has renderer == "VideoCore IV HW"
+		} else if (vendor == "Vivante Corporation") {
+			gl_extensions.gpuVendor = GPU_VENDOR_VIVANTE;
 		} else {
 			gl_extensions.gpuVendor = GPU_VENDOR_UNKNOWN;
 		}
@@ -214,6 +207,13 @@ void CheckGLExtensions() {
 		}
 	}
 
+#ifndef USING_GLES2
+	if (strstr(versionStr, "OpenGL ES") == versionStr) {
+		// For desktops running GLES.
+		gl_extensions.IsGLES = true;
+	}
+#endif
+
 	if (!gl_extensions.IsGLES) { // For desktop GL
 		gl_extensions.ver[0] = parsed[0];
 		gl_extensions.ver[1] = parsed[1];
@@ -232,7 +232,6 @@ void CheckGLExtensions() {
 		// Start by assuming we're at 2.0.
 		gl_extensions.ver[0] = 2;
 
-#ifdef USING_GLES2
 #ifdef GL_MAJOR_VERSION
 		// Before grabbing the values, reset the error.
 		glGetError();
@@ -254,6 +253,7 @@ void CheckGLExtensions() {
 #endif
 
 		// If the above didn't give us a version, or gave us a crazy version, fallback.
+#ifdef USING_GLES2
 		if (gl_extensions.ver[0] < 3 || gl_extensions.ver[0] > 5) {
 			// Try to load GLES 3.0 only if "3.0" found in version
 			// This simple heuristic avoids issues on older devices where you can only call eglGetProcAddress a limited
@@ -281,6 +281,9 @@ void CheckGLExtensions() {
 				gl_extensions.GLES3 = gl3stubInit();
 			}
 		}
+#else
+		// If we have GLEW/similar, assume GLES3 loaded.
+		gl_extensions.GLES3 = gl_extensions.ver[0] >= 3;
 #endif
 
 		if (gl_extensions.GLES3) {
@@ -335,6 +338,7 @@ void CheckGLExtensions() {
 	gl_extensions.EXT_blend_func_extended = g_set_gl_extensions.count("GL_EXT_blend_func_extended") != 0;
 	gl_extensions.ARB_conservative_depth = g_set_gl_extensions.count("GL_ARB_conservative_depth") != 0;
 	gl_extensions.ARB_shader_image_load_store = (g_set_gl_extensions.count("GL_ARB_shader_image_load_store") != 0) || (g_set_gl_extensions.count("GL_EXT_shader_image_load_store") != 0);
+	gl_extensions.ARB_shading_language_420pack = (g_set_gl_extensions.count("GL_ARB_shading_language_420pack") != 0);
 	gl_extensions.EXT_bgra = g_set_gl_extensions.count("GL_EXT_bgra") != 0;
 	gl_extensions.EXT_gpu_shader4 = g_set_gl_extensions.count("GL_EXT_gpu_shader4") != 0;
 	gl_extensions.NV_framebuffer_blit = g_set_gl_extensions.count("GL_NV_framebuffer_blit") != 0;
@@ -345,9 +349,10 @@ void CheckGLExtensions() {
 	gl_extensions.ARB_buffer_storage = g_set_gl_extensions.count("GL_ARB_buffer_storage") != 0;
 	gl_extensions.ARB_vertex_array_object = g_set_gl_extensions.count("GL_ARB_vertex_array_object") != 0;
 	gl_extensions.ARB_texture_float = g_set_gl_extensions.count("GL_ARB_texture_float") != 0;
-	gl_extensions.EXT_texture_filter_anisotropic = g_set_gl_extensions.count("GL_EXT_texture_filter_anisotropic") != 0;
+	gl_extensions.EXT_texture_filter_anisotropic = g_set_gl_extensions.count("GL_EXT_texture_filter_anisotropic") != 0 || g_set_gl_extensions.count("GL_ARB_texture_filter_anisotropic") != 0;
 	gl_extensions.EXT_draw_instanced = g_set_gl_extensions.count("GL_EXT_draw_instanced") != 0;
 	gl_extensions.ARB_draw_instanced = g_set_gl_extensions.count("GL_ARB_draw_instanced") != 0;
+	gl_extensions.ARB_cull_distance = g_set_gl_extensions.count("GL_ARB_cull_distance") != 0;
 
 	if (gl_extensions.IsGLES) {
 		gl_extensions.OES_texture_npot = g_set_gl_extensions.count("GL_OES_texture_npot") != 0;
@@ -362,6 +367,7 @@ void CheckGLExtensions() {
 		gl_extensions.ARM_shader_framebuffer_fetch = g_set_gl_extensions.count("GL_ARM_shader_framebuffer_fetch") != 0;
 		gl_extensions.OES_texture_float = g_set_gl_extensions.count("GL_OES_texture_float") != 0;
 		gl_extensions.EXT_buffer_storage = g_set_gl_extensions.count("GL_EXT_buffer_storage") != 0;
+		gl_extensions.EXT_clip_cull_distance = g_set_gl_extensions.count("GL_EXT_clip_cull_distance") != 0;
 
 #if defined(__ANDROID__)
 		// On Android, incredibly, this is not consistently non-zero! It does seem to have the same value though.
@@ -522,6 +528,13 @@ void CheckGLExtensions() {
 		if (gl_extensions.VersionGEThan(4, 4)) {
 			gl_extensions.ARB_buffer_storage = true;
 		}
+		if (gl_extensions.VersionGEThan(4, 5)) {
+			gl_extensions.ARB_cull_distance = true;
+		}
+		if (gl_extensions.VersionGEThan(4, 6)) {
+			// Actually ARB, but they're basically the same.
+			gl_extensions.EXT_texture_filter_anisotropic = true;
+		}
 	}
 
 #ifdef __APPLE__
@@ -556,11 +569,11 @@ static const char *glsl_fragment_prelude =
 "#endif\n";
 
 std::string ApplyGLSLPrelude(const std::string &source, uint32_t stage) {
-#if !PPSSPP_PLATFORM(UWP)
+#if PPSSPP_API(ANY_GL)
 	std::string temp;
 	std::string version = "";
 	if (!gl_extensions.IsGLES && gl_extensions.IsCoreContext) {
-		// We need to add a corresponding #version.  Apple drives fail without an exact match.
+		// We need to add a corresponding #version.  Apple drivers fail without an exact match.
 		version = StringFromFormat("#version %d\n", gl_extensions.GLSLVersion());
 	}
 	if (stage == GL_FRAGMENT_SHADER) {

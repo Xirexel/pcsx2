@@ -318,12 +318,12 @@ static void AnalyzeMpeg(u8 *buffer, u32 validSize, MpegContext *ctx) {
 	ctx->audioFrameCount = 0;
 	ctx->endOfAudioReached = false;
 	ctx->endOfVideoReached = false;
-	
+
 	// Sanity Check ctx->mpegFirstTimestamp
 	if (ctx->mpegFirstTimestamp != 90000) {
 		WARN_LOG_REPORT(ME, "Unexpected mpeg first timestamp: %llx / %lld", ctx->mpegFirstTimestamp, ctx->mpegFirstTimestamp);
 	}
-	
+
 	if (ctx->mpegMagic != PSMF_MAGIC || ctx->mpegVersion < 0 ||
 		(ctx->mpegOffset & 2047) != 0 || ctx->mpegOffset == 0) {
 		// mpeg header is invalid!
@@ -511,7 +511,7 @@ static u32 sceMpegCreate(u32 mpegAddr, u32 dataPtr, u32 size, u32 ringbufferAddr
 		Memory::Write_U32(ringbufferAddr, mpegHandle + 16);
 		Memory::Write_U32(ringbuffer->dataUpperBound, mpegHandle + 20);
 	}
-	MpegContext *ctx = new MpegContext;
+	MpegContext *ctx = new MpegContext();
 	if (mpegMap.find(mpegHandle) != mpegMap.end()) {
 		WARN_LOG_REPORT(HLE, "Replacing existing mpeg context at %08x", mpegAddr);
 		// Otherwise, it would leak.
@@ -532,6 +532,8 @@ static u32 sceMpegCreate(u32 mpegAddr, u32 dataPtr, u32 size, u32 ringbufferAddr
 	ctx->ignorePcm = false;
 	ctx->ignoreAvc = false;
 	ctx->defaultFrameWidth = frameWidth;
+	ctx->mpegStreamSize = 0;
+	ctx->mpegOffset = 0;
 	for (int i = 0; i < MPEG_DATA_ES_BUFFERS; i++) {
 		ctx->esBuffers[i] = false;
 	}
@@ -1599,7 +1601,6 @@ static int sceMpegGetAvcAu(u32 mpeg, u32 streamId, u32 auAddr, u32 attrAddr)
 		Memory::Write_U32(1, attrAddr);
 	}
 
-
 	DEBUG_LOG(ME, "%x=sceMpegGetAvcAu(%08x, %08x, %08x, %08x)", result, mpeg, streamId, auAddr, attrAddr);
 	// TODO: sceMpegGetAvcAu seems to modify esSize, and delay when it's > 1000 or something.
 	// There's definitely more to it, but ultimately it seems games should expect it to delay randomly.
@@ -1664,6 +1665,7 @@ static int sceMpegGetAtracAu(u32 mpeg, u32 streamId, u32 auAddr, u32 attrAddr)
 	// Instead, let's abuse it to keep track of the stream number.
 	if (streamInfo != ctx->streamMap.end()) {
 		atracAu.esBuffer = streamInfo->second.num;
+		ctx->mediaengine->setAudioStream(streamInfo->second.num);
 	}
 
 	int result = 0;

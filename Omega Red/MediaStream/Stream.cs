@@ -95,6 +95,7 @@ namespace MediaStream
 
 
 
+
         private static Stream m_Instance = null;
         
         public static Stream Instance { get { if (m_Instance == null) m_Instance = new Stream(); return m_Instance; } }
@@ -400,12 +401,12 @@ namespace MediaStream
             } while (false);
         }
 
-        private void startServer(string a_streamsXml)
+        private void startServer(string a_streamsXml, Action<bool> a_isConnected)
         {
             if (m_StreamingClient != null)
                 m_StreamingClient.disconnect();
 
-            m_StreamingClient = RtmpClient.createInstance(a_streamsXml, m_Address);
+            m_StreamingClient = RtmpClient.createInstance(a_streamsXml, m_Address, a_isConnected);
         }
 
         private void checkMixers()
@@ -458,8 +459,7 @@ namespace MediaStream
         public string start(
             string a_PtrDirectX11Source,
             Action<Action<IntPtr, uint>> a_RegisterAction,
-            string a_FilePath,
-            uint a_CompressionQuality)
+            Action<bool> a_isConnected)
         {
             string l_FileExtention = "Error";
 
@@ -916,7 +916,7 @@ namespace MediaStream
                 if (m_ISession == null)
                     break;
 
-                startServer(l_streamMediaTypesXml.InnerXml);
+                startServer(l_streamMediaTypesXml.InnerXml, a_isConnected);
                 
                 m_ISession.registerUpdateStateDelegate(UpdateStateDelegate);
 
@@ -1546,6 +1546,13 @@ namespace MediaStream
         {
             RtmpClient.Write = a_Action;
         }
+
+        public void setIsConnectedFunc(Func<int, bool> a_Func)
+        {
+            RtmpClient.ConnectedFunc = a_Func;
+        }
+
+
 
         public void setVideoBitRate(uint a_bitRate)
         {

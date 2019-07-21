@@ -804,8 +804,8 @@ __forceinline
             // CDDA is on Core 1:
             (PlayMode & 8) ? StereoOut32::Empty : ApplyVolume(Cores[1].ReadInput(), Cores[1].InpVol)};
 
-    //WaveDump::WriteCore(0, CoreSrc_Input, InputData[0]);
-    //WaveDump::WriteCore(1, CoreSrc_Input, InputData[1]);
+    WaveDump::WriteCore(0, CoreSrc_Input, InputData[0]);
+    WaveDump::WriteCore(1, CoreSrc_Input, InputData[1]);
 
     // Todo: Replace me with memzero initializer!
     VoiceMixSet VoiceData[2] = {VoiceMixSet::Empty, VoiceMixSet::Empty}; // mixed voice data for each core.
@@ -836,9 +836,6 @@ __forceinline
         Out = Cores[1].ReadInput_HiFi();
         //WaveLog::WriteCore( 1, "CDDA-32", OutL, OutR );
     } else {
-        //Out.Left = MulShr16(Out.Left, Cores[1].MasterVol.Left.NativeValue);
-        //Out.Right = MulShr16(Out.Right, Cores[1].MasterVol.Right.NativeValue);
-
         Out.Left = MulShr32(Out.Left << (SndOutVolumeShift + 1), Cores[1].MasterVol.Left.Value);
         Out.Right = MulShr32(Out.Right << (SndOutVolumeShift + 1), Cores[1].MasterVol.Right.Value);
 
@@ -865,10 +862,10 @@ __forceinline
     }
 
     // Configurable output volume
-    //Out.Left *= FinalVolume;
-    //Out.Right *= FinalVolume;
+    Out.Left *= FinalVolume;
+    Out.Right *= FinalVolume;
 
-    SndBuffer::Write(Out.DownSample());
+    SndBuffer::Write(Out);
 
     // Update AutoDMA output positioning
     OutPos++;

@@ -59,7 +59,6 @@
     <ClCompile Include="..\..\pcsx2\x86\iR3000Atables.cpp" />
     <ClCompile Include="..\..\pcsx2\x86\iR5900Misc.cpp" />
     <ClCompile Include="..\..\pcsx2\x86\ir5900tables.cpp" />
-    <ClCompile Include="..\..\pcsx2\x86\iVU1micro.cpp" />
     <ClCompile Include="..\..\pcsx2\x86\microVU.cpp" />
     <ClCompile Include="..\..\pcsx2\x86\newVif_Dynarec.cpp" />
     <ClCompile Include="..\..\pcsx2\x86\newVif_Unpack.cpp" />
@@ -240,7 +239,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PCSX2LIB_EXPORTS;_M_X86;PCSX2_DEBUG;_HAS_EXCEPTIONS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PCSX2LIB_EXPORTS;DISABLE_RECORDING;SSE2_MIN;_M_X86;PCSX2_DEBUG;_HAS_EXCEPTIONS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>.\;.\Extend;$(SolutionDir)..\pcsx2\x86;$(SolutionDir)..\pcsx2;$(SolutionDir)Common\pthreads4w\include;$(SolutionDir)..\3rdparty;$(SolutionDir)\3rdparty\soundtouch\;$(SolutionDir)Common\Framework;$(SolutionDir)..\pcsx2\System;$(SolutionDir)Emitters;$(SolutionDir)..\common\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -274,7 +273,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PCSX2LIB_EXPORTS;_M_X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PCSX2LIB_EXPORTS;DISABLE_RECORDING;_M_X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>.\;.\Extend;$(SolutionDir)..\pcsx2\x86;$(SolutionDir)..\pcsx2;$(SolutionDir)Common\pthreads4w\include;$(SolutionDir)..\3rdparty;$(SolutionDir)\3rdparty\soundtouch\;$(SolutionDir)Common\Framework;$(SolutionDir)..\pcsx2\System;$(SolutionDir)Emitters;$(SolutionDir)..\common\include</AdditionalIncludeDirectories>
@@ -305,6 +304,9 @@
     <Manifest Include="PCSX2Lib.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common\MemoryManager\MemoryManager.vcxproj">
+      <Project>{1691294c-24f6-452d-9554-feb49c1c1c22}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Emitters\x86emitter\x86emitter.vcxproj">
       <Project>{15F393DA-14A3-4DB2-8F12-4EF81ED5907D}</Project>
     </ProjectReference>

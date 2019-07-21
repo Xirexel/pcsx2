@@ -26,6 +26,7 @@
 #include "math/lin/matrix4x4.h"
 #include "math/math_util.h"
 #include "math/dataconv.h"
+#include "thin3d/thin3d.h"
 #include "util/text/utf8.h"
 #include "Common/Common.h"
 #include "Core/Config.h"
@@ -88,16 +89,16 @@ std::string D3D11VertexShader::GetShaderString(DebugShaderStringType type) const
 	}
 }
 
-ShaderManagerD3D11::ShaderManagerD3D11(ID3D11Device *device, ID3D11DeviceContext *context, D3D_FEATURE_LEVEL featureLevel)
-	: device_(device), context_(context), featureLevel_(featureLevel), lastVShader_(nullptr), lastFShader_(nullptr) {
+ShaderManagerD3D11::ShaderManagerD3D11(Draw::DrawContext *draw, ID3D11Device *device, ID3D11DeviceContext *context, D3D_FEATURE_LEVEL featureLevel)
+	: ShaderManagerCommon(draw), device_(device), context_(context), featureLevel_(featureLevel), lastVShader_(nullptr), lastFShader_(nullptr) {
 	codeBuffer_ = new char[16384];
 	memset(&ub_base, 0, sizeof(ub_base));
 	memset(&ub_lights, 0, sizeof(ub_lights));
 	memset(&ub_bones, 0, sizeof(ub_bones));
 
-	INFO_LOG(G3D, "sizeof(ub_base): %d", (int)sizeof(ub_base));
-	INFO_LOG(G3D, "sizeof(ub_lights): %d", (int)sizeof(ub_lights));
-	INFO_LOG(G3D, "sizeof(ub_bones): %d", (int)sizeof(ub_bones));
+	static_assert(sizeof(ub_base) <= 512, "ub_base grew too big");
+	static_assert(sizeof(ub_lights) <= 512, "ub_lights grew too big");
+	static_assert(sizeof(ub_bones) <= 384, "ub_bones grew too big");
 
 	D3D11_BUFFER_DESC desc{sizeof(ub_base), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE };
 	ASSERT_SUCCESS(device_->CreateBuffer(&desc, nullptr, &push_base));
@@ -190,7 +191,7 @@ void ShaderManagerD3D11::GetShaders(int prim, u32 vertType, D3D11VertexShader **
 
 	if (gstate_c.IsDirty(DIRTY_FRAGMENTSHADER_STATE)) {
 		gstate_c.Clean(DIRTY_FRAGMENTSHADER_STATE);
-		ComputeFragmentShaderID(&FSID);
+		ComputeFragmentShaderID(&FSID, draw_->GetBugs());
 	} else {
 		FSID = lastFSID_;
 	}

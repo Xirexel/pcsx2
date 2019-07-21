@@ -8,7 +8,7 @@
 // TODO: There will be additional bits, indicating that groups of these will be
 // sent to the shader and processed there. This will cut down the number of shaders ("ubershader approach")
 // This is probably only really worth doing for lighting and bones.
-enum {
+enum VShaderBit : uint8_t {
 	VS_BIT_LMODE = 0,
 	VS_BIT_IS_THROUGH = 1,
 	VS_BIT_ENABLE_FOG = 2,
@@ -24,7 +24,7 @@ enum {
 	VS_BIT_HAS_COLOR_TESS = 12,  // 1 bit
 	VS_BIT_HAS_TEXCOORD_TESS = 13,  // 1 bit
 	VS_BIT_NORM_REVERSE_TESS = 14, // 1 bit
-	// 15 is free.
+	VS_BIT_HAS_NORMAL_TESS = 15, // 1 bit
 	VS_BIT_UVGEN_MODE = 16,
 	VS_BIT_UVPROJ_MODE = 18,  // 2, can overlap with LS0
 	VS_BIT_LS0 = 18,  // 2
@@ -55,9 +55,12 @@ enum {
 	// No more free
 };
 
+static inline VShaderBit operator +(VShaderBit bit, int i) {
+	return VShaderBit((int)bit + i);
+}
 
 // Local
-enum {
+enum FShaderBit : uint8_t {
 	FS_BIT_CLEARMODE = 0,
 	FS_BIT_DO_TEXTURE = 1,
 	FS_BIT_TEXFUNC = 2,  // 3 bits
@@ -87,8 +90,13 @@ enum {
 	FS_BIT_FLATSHADE = 46,
 	FS_BIT_BGRA_TEXTURE = 47,
 	FS_BIT_TEST_DISCARD_TO_ZERO = 48,
-	// 49+ are free.
+	FS_BIT_NO_DEPTH_CANNOT_DISCARD_STENCIL = 49,
+	// 50+ are free.
 };
+
+static inline FShaderBit operator +(FShaderBit bit, int i) {
+	return FShaderBit((int)bit + i);
+}
 
 struct ShaderID {
 	ShaderID() {
@@ -125,6 +133,20 @@ struct ShaderID {
 	bool operator != (const ShaderID &other) const {
 		return !(*this == other);
 	}
+
+	uint32_t Word(int word) const {
+		return d[word];
+	}
+
+	void ToString(std::string *dest) const {
+		dest->resize(sizeof(d));
+		memcpy(&(*dest)[0], d, sizeof(d));
+	}
+	void FromString(std::string src) {
+		memcpy(d, &(src)[0], sizeof(d));
+	}
+
+protected:
 	bool Bit(int bit) const {
 		return (d[bit >> 5] >> (bit & 31)) & 1;
 	}
@@ -132,9 +154,6 @@ struct ShaderID {
 	int Bits(int bit, int count) const {
 		const int mask = (1 << count) - 1;
 		return (d[bit >> 5] >> (bit & 31)) & mask;
-	}
-	uint32_t Word(int word) const {
-		return d[word];
 	}
 	void SetBit(int bit, bool value = true) {
 		if (value) {
@@ -147,14 +166,6 @@ struct ShaderID {
 			d[bit >> 5] |= (value & mask) << (bit & 31);
 		}
 	}
-
-	void ToString(std::string *dest) const {
-		dest->resize(sizeof(d));
-		memcpy(&(*dest)[0], d, sizeof(d));
-	}
-	void FromString(std::string src) {
-		memcpy(d, &(src)[0], sizeof(d));
-	}
 };
 
 struct VShaderID : ShaderID {
@@ -163,6 +174,22 @@ struct VShaderID : ShaderID {
 
 	explicit VShaderID(ShaderID &src) {
 		memcpy(d, src.d, sizeof(d));
+	}
+
+	bool Bit(VShaderBit bit) const {
+		return ShaderID::Bit((int)bit);
+	}
+
+	int Bits(VShaderBit bit, int count) const {
+		return ShaderID::Bits((int)bit, count);
+	}
+
+	void SetBit(VShaderBit bit, bool value = true) {
+		ShaderID::SetBit((int)bit, value);
+	}
+
+	void SetBits(VShaderBit bit, int count, int value) {
+		ShaderID::SetBits((int)bit, count, value);
 	}
 };
 
@@ -173,14 +200,33 @@ struct FShaderID : ShaderID {
 	explicit FShaderID(ShaderID &src) {
 		memcpy(d, src.d, sizeof(d));
 	}
+
+	bool Bit(FShaderBit bit) const {
+		return ShaderID::Bit((int)bit);
+	}
+
+	int Bits(FShaderBit bit, int count) const {
+		return ShaderID::Bits((int)bit, count);
+	}
+
+	void SetBit(FShaderBit bit, bool value = true) {
+		ShaderID::SetBit((int)bit, value);
+	}
+
+	void SetBits(FShaderBit bit, int count, int value) {
+		ShaderID::SetBits((int)bit, count, value);
+	}
 };
 
+namespace Draw {
+class Bugs;
+}
 
-bool CanUseHardwareTransform(int prim);
-void ComputeVertexShaderID(ShaderID *id, uint32_t vertexType, bool useHWTransform);
+
+void ComputeVertexShaderID(VShaderID *id, uint32_t vertexType, bool useHWTransform);
 // Generates a compact string that describes the shader. Useful in a list to get an overview
 // of the current flora of shaders.
-std::string VertexShaderDesc(const ShaderID &id);
+std::string VertexShaderDesc(const VShaderID &id);
 
-void ComputeFragmentShaderID(ShaderID *id);
-std::string FragmentShaderDesc(const ShaderID &id);
+void ComputeFragmentShaderID(FShaderID *id, const Draw::Bugs &bugs);
+std::string FragmentShaderDesc(const FShaderID &id);

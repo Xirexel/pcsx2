@@ -16,8 +16,16 @@
 #include "PrecompiledHeader.h"
 #include "IopCommon.h"
 
+#include "Common.h"
+//#include "ConsoleLogger.h"
 #include "Sio.h"
 #include "sio_internal.h"
+
+#ifndef DISABLE_RECORDING
+#	include "Recording/InputRecording.h"
+#	include "Recording/PadData.h"
+#	include "Recording/RecordingInputManager.h"
+#endif
 
 _sio sio;
 _mcd mcds[2][4];
@@ -33,7 +41,8 @@ static const u8 memcard_psx[] = {0x5A, 0x5D, 0x5C, 0x5D, 0x04, 0x00, 0x00, 0x80}
 
 // Memory Card Specs for standard Sony 8mb carts:
 //    Flags (magic sio '+' thingie!), Sector size, eraseBlockSize (in pages), card size (in pages), xor checksum (superblock?), terminator (unused?).
-static const mc_command_0x26_tag mc_sizeinfo_8mb= {'+', 512, 16, 0x4000, 0x52, 0x5A};
+// FIXME variable commented out since it's not used atm.
+// static const mc_command_0x26_tag mc_sizeinfo_8mb= {'+', 512, 16, 0x4000, 0x52, 0x5A};
 
 // Ejection timeout management belongs in the MemoryCardFile plugin, except the plugin
 // interface is not yet complete.
@@ -171,7 +180,7 @@ SIO_WRITE sioWriteStart(u8 data)
 	case 0x81: siomode = SIO_MEMCARD; break;
 
 	default:
-		DevCon.Warning("%s cmd: %02X??\n", __FUNCTION__, data);
+		DevCon.Warning("%s cmd: %02X??", __FUNCTION__, data);
 		DEVICE_UNPLUGGED();
 		siomode = SIO_DUMMY;
 		break;
@@ -257,7 +266,7 @@ SIO_WRITE sioWriteMultitap(u8 data)
 			break;
 
 		default:
-			DevCon.Warning("%s cmd: %02X??\n", __FUNCTION__, data);
+			DevCon.Warning("%s cmd: %02X??", __FUNCTION__, data);
 			sio.buf[3] = 0x00;
 			sio.buf[4] = 0x00;
 			sio.buf[5] = 0x00;
@@ -358,13 +367,13 @@ SIO_WRITE memcardErase(u8 data)
 			{
 			case 0x82: // Erase
 				//siomode = SIO_DUMMY; // Nothing more to do here.
-				memcpy(sio.buf, &header[1], 4);
+                memcpy(sio.buf, &header[1], 4);
 				sio.bufSize = 3;
 				mcd->EraseBlock();
 				break;
 
 			default:
-				DevCon.Warning("%s cmd: %02X??\n", __FUNCTION__, data);
+				DevCon.Warning("%s cmd: %02X??", __FUNCTION__, data);
 				sio.bufCount = -1;
 				//sio.bufSize = 3;
 				//sio.bufCount = 4;
@@ -406,7 +415,7 @@ SIO_WRITE memcardWrite(u8 data)
 			switch(data)
 			{
 			case 0x42: // Write
-				memcpy(sio.buf, header, 4);
+                    memcpy(sio.buf, header, 4);
 				once = true;
 				break;
 
@@ -414,7 +423,7 @@ SIO_WRITE memcardWrite(u8 data)
 				if(once)
 				{
 					siomode = SIO_DUMMY; // Nothing more to do here.
-					memcpy(sio.buf, &header[1], 4);
+                    memcpy(sio.buf, &header[1], 4);
 					sio.bufSize = 3;
 
 					sio2.packet.recvVal1 = 0x1600; // Writing
@@ -425,7 +434,7 @@ SIO_WRITE memcardWrite(u8 data)
 				}
 
 			default:
-				DevCon.Warning("%s cmd: %02X??\n", __FUNCTION__, data);
+				DevCon.Warning("%s cmd: %02X??", __FUNCTION__, data);
 				sio.bufCount = -1;
 				//sio.bufSize = 3;
 				//sio.bufCount = 4;
@@ -496,7 +505,7 @@ SIO_WRITE memcardRead(u8 data)
 			switch(data)
 			{
 			case 0x43: // Read
-				memcpy(sio.buf, header, 4);
+                    memcpy(sio.buf, header, 4);
 				once = true;
 				break;
 
@@ -504,7 +513,7 @@ SIO_WRITE memcardRead(u8 data)
 				if(once)
 				{
 					siomode = SIO_DUMMY; // Nothing more to do here.
-					memcpy(sio.buf, &header[1], 4);
+                    memcpy(sio.buf, &header[1], 4);
 					sio.bufSize = 3;
 
 					sio2.packet.recvVal1 = 0x1700; // Reading
@@ -515,7 +524,7 @@ SIO_WRITE memcardRead(u8 data)
 				}
 
 			default:
-				DevCon.Warning("%s cmd: %02X??\n", __FUNCTION__, data);
+				DevCon.Warning("%s cmd: %02X??", __FUNCTION__, data);
 				sio.bufCount = -1;
 				//sio.bufSize = 3;
 				//sio.bufCount = 4;
@@ -696,6 +705,7 @@ SIO_WRITE sioWriteMemcard(u8 data)
 		case 0x11: // On Boot/Probe
 		case 0x12: // On Write/Delete/Recheck?
 			sio2.packet.recvVal3 = 0x8C;
+			// Fall through
 
 		case 0x81: // Checked right after copy/delete
 		case 0xBF: // Wtf?? On game booting?
@@ -706,7 +716,7 @@ SIO_WRITE sioWriteMemcard(u8 data)
 			break;
 
 		default:
-			DevCon.Warning("%s cmd: %02X??\n", __FUNCTION__, data);
+			DevCon.Warning("%s cmd: %02X??", __FUNCTION__, data);
 			siomode = SIO_DUMMY;
 			break;
 		}
@@ -741,7 +751,7 @@ SIO_WRITE sioWriteMemcardPSX(u8 data)
 		{
 		case 0x53: // PSX 'S'tate // haven't seen it happen yet
 			sio.buf[1] = mcd->FLAG;
-			memcpy(&sio.buf[2], memcard_psx, 8);
+            memcpy(&sio.buf[2], memcard_psx, 8);
 			siomode = SIO_DUMMY;
 			break;
 
@@ -898,8 +908,8 @@ static void sioWrite8inl(u8 data)
 	if (IS_LAST_BYTE_IN_PACKET != 1) //The following should be set after each byte transfer but the last one.
 		sio.StatReg |= ACK_INP; //Signal that Controller (or MC) has brought the /ACK (Acknowledge) line active low.
 
-		sioInterrupt();
-		//chkTriggerInt();
+	sioInterrupt();
+	//chkTriggerInt();
 	//Console.WriteLn( "SIO0 WR DATA COMMON %02X  INT_STAT= %08X  IOPpc= %08X " , data, psxHu32(0x1070), psxRegs.pc);
 	byteCnt++;
 }
@@ -910,11 +920,11 @@ void sioStatRead() {
 
 if (clrAckCnt > 1) {  //This check can probably be removed...
 	sio.StatReg &= ~ACK_INP; //clear (goes inactive) /ACK line.
-//sio.StatReg &= ~TX_RDY;
-//	sio.StatReg &= ~0x200; //irq
-	//if (byteCnt == 1)
-	//	sio.StatReg &= ~RX_RDY;
-clrAckCnt = 0;
+	// sio.StatReg &= ~TX_RDY;
+	// sio.StatReg &= ~0x200; //irq
+	// if (byteCnt == 1)
+	// 	sio.StatReg &= ~RX_RDY;
+	clrAckCnt = 0;
 }
 	//The /ACK line should go active for >2us, in a time window between 12us and 100us after each byte is sent (received by the controller).
 	//If that doesn't happen, the controller is considered missing.

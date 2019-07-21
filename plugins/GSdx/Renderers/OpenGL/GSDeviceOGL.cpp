@@ -76,8 +76,9 @@ GSDeviceOGL::GSDeviceOGL()
 	GLState::Clear();
 
 	m_mipmap = theApp.GetConfigI("mipmap");
-	m_filter = static_cast<TriFiltering>(theApp.GetConfigI("UserHacks_TriFilter"));
-	if (!theApp.GetConfigB("UserHacks"))
+	if (theApp.GetConfigB("UserHacks"))
+		m_filter = static_cast<TriFiltering>(theApp.GetConfigI("UserHacks_TriFilter"));
+	else
 		m_filter = TriFiltering::None;
 
 	// Reset the debug file
@@ -239,6 +240,10 @@ GSTexture* GSDeviceOGL::CreateSurface(int type, int w, int h, int fmt)
 	// FIXME: it will be more logical to do it in FetchSurface. This code is only called at first creation
 	//  of the texture. However we could reuse a deleted texture.
 	if (m_force_texture_clear == 0) {
+		// Clear won't be done if the texture isn't committed. Commit the full texture to ensure
+		// correct behavior of force clear option (debug option)
+		t->Commit();
+
 		switch(type)
 		{
 			case GSTexture::RenderTarget:
@@ -257,12 +262,16 @@ GSTexture* GSDeviceOGL::CreateSurface(int type, int w, int h, int fmt)
 GSTexture* GSDeviceOGL::FetchSurface(int type, int w, int h, int format)
 {
 	if (format == 0)
-		format = (type == GSTexture::DepthStencil) ? GL_DEPTH32F_STENCIL8 : GL_RGBA8;
+		format = (type == GSTexture::DepthStencil || type == GSTexture::SparseDepthStencil) ? GL_DEPTH32F_STENCIL8 : GL_RGBA8;
 
 	GSTexture* t = GSDevice::FetchSurface(type, w, h, format);
 
 
 	if (m_force_texture_clear) {
+		// Clear won't be done if the texture isn't committed. Commit the full texture to ensure
+		// correct behavior of force clear option (debug option)
+		t->Commit();
+
 		GSVector4 red(1.0f, 0.0f, 0.0f, 1.0f);
 		switch(type)
 		{
@@ -379,7 +388,7 @@ bool GSDeviceOGL::Create(const std::shared_ptr<GSWnd> &wnd)
 		// Upload once and forget about it.
 		// Use value of 1 when upscale multiplier is 0 for ScalingFactor,
 		// this is to avoid doing math with 0 in shader. It helps custom res be less broken.
-		m_misc_cb_cache.ScalingFactor = GSVector4i(theApp.GetConfigI("upscale_multiplier") ? theApp.GetConfigI("upscale_multiplier") : 1);
+		m_misc_cb_cache.ScalingFactor = GSVector4i(std::max(1, theApp.GetConfigI("upscale_multiplier")));
 		m_convert.cb->cache_upload(&m_misc_cb_cache);
 
 		theApp.LoadResource(IDR_CONVERT_GLSL, shader);
@@ -446,9 +455,9 @@ bool GSDeviceOGL::Create(const std::shared_ptr<GSWnd> &wnd)
 	{
 		GL_PUSH("GSDeviceOGL::Shadeboost");
 
-		int ShadeBoost_Contrast = theApp.GetConfigI("ShadeBoost_Contrast");
-		int ShadeBoost_Brightness = theApp.GetConfigI("ShadeBoost_Brightness");
-		int ShadeBoost_Saturation = theApp.GetConfigI("ShadeBoost_Saturation");
+		int ShadeBoost_Contrast = std::max(0, std::min(theApp.GetConfigI("ShadeBoost_Contrast"), 100));
+		int ShadeBoost_Brightness = std::max(0, std::min(theApp.GetConfigI("ShadeBoost_Brightness"), 100));
+		int ShadeBoost_Saturation = std::max(0, std::min(theApp.GetConfigI("ShadeBoost_Saturation"), 100));
 		std::string shade_macro = format("#define SB_SATURATION %d.0\n", ShadeBoost_Saturation)
 			+ format("#define SB_BRIGHTNESS %d.0\n", ShadeBoost_Brightness)
 			+ format("#define SB_CONTRAST %d.0\n", ShadeBoost_Contrast);
@@ -948,6 +957,7 @@ GLuint GSDeviceOGL::CompilePS(PSSelector sel)
 		+ format("#define PS_URBAN_CHAOS_HLE %d\n", sel.urban_chaos_hle)
 		+ format("#define PS_TALES_OF_ABYSS_HLE %d\n", sel.tales_of_abyss_hle)
 		+ format("#define PS_TEX_IS_FB %d\n", sel.tex_is_fb)
+		+ format("#define PS_INVALID_TEX0 %d\n", sel.invalid_tex0)
 		+ format("#define PS_AEM %d\n", sel.aem)
 		+ format("#define PS_TFX %d\n", sel.tfx)
 		+ format("#define PS_TCC %d\n", sel.tcc)
@@ -972,7 +982,7 @@ GLuint GSDeviceOGL::CompilePS(PSSelector sel)
 		+ format("#define PS_WRITE_RG %d\n", sel.write_rg)
 		+ format("#define PS_FBMASK %d\n", sel.fbmask)
 		+ format("#define PS_HDR %d\n", sel.hdr)
-		+ format("#define PS_PABE %d\n", sel.pabe);
+		// + format("#define PS_PABE %d\n", sel.pabe)
 	;
 
 	if (GLLoader::buggy_sso_dual_src)
@@ -1211,6 +1221,8 @@ void GSDeviceOGL::CopyRectConv(GSTexture* sTex, GSTexture* dTex, const GSVector4
 
 	GL_PUSH(format("CopyRectConv from %d to %d", sid, did).c_str());
 
+	dTex->CommitRegion(GSVector2i(r.z, r.w));
+
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo_read);
 
 	glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sid, 0);
@@ -1238,6 +1250,8 @@ void GSDeviceOGL::CopyRect(GSTexture* sTex, GSTexture* dTex, const GSVector4i& r
 	PSSetShaderResource(6, sTex);
 #endif
 
+	dTex->CommitRegion(GSVector2i(r.z, r.w));
+
 	ASSERT(GLExtension::Has("GL_ARB_copy_image") && glCopyImageSubData);
 	glCopyImageSubData( sid, GL_TEXTURE_2D,
 			0, r.x, r.y, 0,
@@ -1253,10 +1267,22 @@ void GSDeviceOGL::StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture
 
 void GSDeviceOGL::StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, GLuint ps, bool linear)
 {
-	StretchRect(sTex, sRect, dTex, dRect, ps, m_NO_BLEND, linear);
+	StretchRect(sTex, sRect, dTex, dRect, ps, m_NO_BLEND, OMColorMaskSelector(), linear);
 }
 
-void GSDeviceOGL::StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, GLuint ps, int bs, bool linear)
+void GSDeviceOGL::StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, bool red, bool green, bool blue, bool alpha)
+{
+	OMColorMaskSelector cms;
+
+	cms.wr = red;
+	cms.wg = green;
+	cms.wb = blue;
+	cms.wa = alpha;
+
+	StretchRect(sTex, sRect, dTex, dRect, m_convert.ps[ShaderConvert_COPY], m_NO_BLEND, cms, false);
+}
+
+void GSDeviceOGL::StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, GLuint ps, int bs, OMColorMaskSelector cms, bool linear)
 {
 	if(!sTex || !dTex)
 	{
@@ -1298,7 +1324,7 @@ void GSDeviceOGL::StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture
 		OMSetRenderTargets(dTex, NULL);
 
 	OMSetBlendState((uint8)bs);
-	OMSetColorMaskState();
+	OMSetColorMaskState(cms);
 
 	// ************************************
 	// ia
@@ -1350,6 +1376,7 @@ void GSDeviceOGL::StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture
 	// ************************************
 	// Draw
 	// ************************************
+	dTex->CommitRegion(GSVector2i((int)dRect.z + 1, (int)dRect.w + 1));
 	DrawPrimitive();
 
 	// ************************************
@@ -1434,10 +1461,10 @@ void GSDeviceOGL::DoMerge(GSTexture* sTex[3], GSVector4* sRect, GSTexture* dTex,
 		if (PMODE.MMOD == 1) {
 			// Blend with a constant alpha
 			m_merge_obj.cb->cache_upload(&c.v);
-			StretchRect(sTex[0], sRect[0], dTex, dRect[0], m_merge_obj.ps[1], m_MERGE_BLEND);
+			StretchRect(sTex[0], sRect[0], dTex, dRect[0], m_merge_obj.ps[1], m_MERGE_BLEND, OMColorMaskSelector());
 		} else {
 			// Blend with 2 * input alpha
-			StretchRect(sTex[0], sRect[0], dTex, dRect[0], m_merge_obj.ps[0], m_MERGE_BLEND);
+			StretchRect(sTex[0], sRect[0], dTex, dRect[0], m_merge_obj.ps[0], m_MERGE_BLEND, OMColorMaskSelector());
 		}
 	}
 
@@ -1718,7 +1745,7 @@ void GSDeviceOGL::OMSetBlendState(uint8 blend_index, uint8 blend_factor, bool is
 			glBlendColor(bf, bf, bf, bf);
 		}
 
-		OGLBlend b = m_blendMapOGL[blend_index];
+		HWBlend b = GetBlend(blend_index);
 		if (accumulation_blend) {
 			b.src = GL_ONE;
 			b.dst = GL_ONE;
@@ -1960,110 +1987,29 @@ void GSDeviceOGL::DebugOutputToFile(GLenum gl_source, GLenum gl_type, GLuint id,
 #endif
 }
 
-// (A - B) * C + D
-// A: Cs/Cd/0
-// B: Cs/Cd/0
-// C: As/Ad/FIX
-// D: Cs/Cd/0
-
-// bogus: 0100, 0110, 0120, 0200, 0210, 0220, 1001, 1011, 1021
-// tricky: 1201, 1211, 1221
-
-// Source.rgb = float3(1, 1, 1);
-// 1201 Cd*(1 + As) => Source * Dest color + Dest * Source alpha
-// 1211 Cd*(1 + Ad) => Source * Dest color + Dest * Dest alpha
-// 1221 Cd*(1 + F) => Source * Dest color + Dest * Factor
-
-// Special blending method table:
-// # (tricky) => 1 * Cd + Cd * F => Use (Cd, F) as factor of color (1, Cd)
-// * (bogus) => C * (1 + F ) + ... => factor is always bigger than 1 (except above case)
-// ? => Cs * F + Cd => do the multiplication in shader and addition in blending unit. It is an optimization
-
-const int GSDeviceOGL::m_NO_BLEND = 0;
-const int GSDeviceOGL::m_MERGE_BLEND = 3*3*3*3;
-
-const GSDeviceOGL::OGLBlend GSDeviceOGL::m_blendMapOGL[3*3*3*3 + 1] =
+uint16 GSDeviceOGL::ConvertBlendEnum(uint16 generic)
 {
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , // 0000: (Cs - Cs)*As + Cs ==> Cs
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE}                      , // 0001: (Cs - Cs)*As + Cd ==> Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ZERO                     , GL_ZERO}                     , // 0002: (Cs - Cs)*As +  0 ==> 0
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , // 0010: (Cs - Cs)*Ad + Cs ==> Cs
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE}                      , // 0011: (Cs - Cs)*Ad + Cd ==> Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ZERO                     , GL_ZERO}                     , // 0012: (Cs - Cs)*Ad +  0 ==> 0
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , // 0020: (Cs - Cs)*F  + Cs ==> Cs
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE}                      , // 0021: (Cs - Cs)*F  + Cd ==> Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ZERO                     , GL_ZERO}                     , // 0022: (Cs - Cs)*F  +  0 ==> 0
-	{ BLEND_A_MAX                , GL_FUNC_SUBTRACT         , GL_ONE                      , GL_SRC1_ALPHA}               , //*0100: (Cs - Cd)*As + Cs ==> Cs*(As + 1) - Cd*As
-	{ 0                          , GL_FUNC_ADD              , GL_SRC1_ALPHA               , GL_ONE_MINUS_SRC1_ALPHA}     , // 0101: (Cs - Cd)*As + Cd ==> Cs*As + Cd*(1 - As)
-	{ 0                          , GL_FUNC_SUBTRACT         , GL_SRC1_ALPHA               , GL_SRC1_ALPHA}               , // 0102: (Cs - Cd)*As +  0 ==> Cs*As - Cd*As
-	{ BLEND_A_MAX                , GL_FUNC_SUBTRACT         , GL_ONE                      , GL_DST_ALPHA}                , //*0110: (Cs - Cd)*Ad + Cs ==> Cs*(Ad + 1) - Cd*Ad
-	{ 0                          , GL_FUNC_ADD              , GL_DST_ALPHA                , GL_ONE_MINUS_DST_ALPHA}      , // 0111: (Cs - Cd)*Ad + Cd ==> Cs*Ad + Cd*(1 - Ad)
-	{ 0                          , GL_FUNC_SUBTRACT         , GL_DST_ALPHA                , GL_DST_ALPHA}                , // 0112: (Cs - Cd)*Ad +  0 ==> Cs*Ad - Cd*Ad
-	{ BLEND_A_MAX                , GL_FUNC_SUBTRACT         , GL_ONE                      , GL_CONSTANT_COLOR}           , //*0120: (Cs - Cd)*F  + Cs ==> Cs*(F + 1) - Cd*F
-	{ 0                          , GL_FUNC_ADD              , GL_CONSTANT_COLOR           , GL_ONE_MINUS_CONSTANT_COLOR} , // 0121: (Cs - Cd)*F  + Cd ==> Cs*F + Cd*(1 - F)
-	{ 0                          , GL_FUNC_SUBTRACT         , GL_CONSTANT_COLOR           , GL_CONSTANT_COLOR}           , // 0122: (Cs - Cd)*F  +  0 ==> Cs*F - Cd*F
-	{ BLEND_NO_BAR | BLEND_A_MAX , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , //*0200: (Cs -  0)*As + Cs ==> Cs*(As + 1)
-	{ BLEND_ACCU                 , GL_FUNC_ADD              , GL_SRC1_ALPHA               , GL_ONE}                      , //?0201: (Cs -  0)*As + Cd ==> Cs*As + Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_SRC1_ALPHA               , GL_ZERO}                     , // 0202: (Cs -  0)*As +  0 ==> Cs*As
-	{ BLEND_A_MAX                , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , //*0210: (Cs -  0)*Ad + Cs ==> Cs*(Ad + 1)
-	{ 0                          , GL_FUNC_ADD              , GL_DST_ALPHA                , GL_ONE}                      , // 0211: (Cs -  0)*Ad + Cd ==> Cs*Ad + Cd
-	{ 0                          , GL_FUNC_ADD              , GL_DST_ALPHA                , GL_ZERO}                     , // 0212: (Cs -  0)*Ad +  0 ==> Cs*Ad
-	{ BLEND_NO_BAR | BLEND_A_MAX , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , //*0220: (Cs -  0)*F  + Cs ==> Cs*(F + 1)
-	{ BLEND_ACCU                 , GL_FUNC_ADD              , GL_CONSTANT_COLOR           , GL_ONE}                      , //?0221: (Cs -  0)*F  + Cd ==> Cs*F + Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_CONSTANT_COLOR           , GL_ZERO}                     , // 0222: (Cs -  0)*F  +  0 ==> Cs*F
-	{ 0                          , GL_FUNC_ADD              , GL_ONE_MINUS_SRC1_ALPHA     , GL_SRC1_ALPHA}               , // 1000: (Cd - Cs)*As + Cs ==> Cd*As + Cs*(1 - As)
-	{ BLEND_A_MAX                , GL_FUNC_REVERSE_SUBTRACT , GL_SRC1_ALPHA               , GL_ONE}                      , //*1001: (Cd - Cs)*As + Cd ==> Cd*(As + 1) - Cs*As
-	{ 0                          , GL_FUNC_REVERSE_SUBTRACT , GL_SRC1_ALPHA               , GL_SRC1_ALPHA}               , // 1002: (Cd - Cs)*As +  0 ==> Cd*As - Cs*As
-	{ 0                          , GL_FUNC_ADD              , GL_ONE_MINUS_DST_ALPHA      , GL_DST_ALPHA}                , // 1010: (Cd - Cs)*Ad + Cs ==> Cd*Ad + Cs*(1 - Ad)
-	{ BLEND_A_MAX                , GL_FUNC_REVERSE_SUBTRACT , GL_DST_ALPHA                , GL_ONE}                      , //*1011: (Cd - Cs)*Ad + Cd ==> Cd*(Ad + 1) - Cs*Ad
-	{ 0                          , GL_FUNC_REVERSE_SUBTRACT , GL_DST_ALPHA                , GL_DST_ALPHA}                , // 1012: (Cd - Cs)*Ad +  0 ==> Cd*Ad - Cs*Ad
-	{ 0                          , GL_FUNC_ADD              , GL_ONE_MINUS_CONSTANT_COLOR , GL_CONSTANT_COLOR}           , // 1020: (Cd - Cs)*F  + Cs ==> Cd*F + Cs*(1 - F)
-	{ BLEND_A_MAX                , GL_FUNC_REVERSE_SUBTRACT , GL_CONSTANT_COLOR           , GL_ONE}                      , //*1021: (Cd - Cs)*F  + Cd ==> Cd*(F + 1) - Cs*F
-	{ 0                          , GL_FUNC_REVERSE_SUBTRACT , GL_CONSTANT_COLOR           , GL_CONSTANT_COLOR}           , // 1022: (Cd - Cs)*F  +  0 ==> Cd*F - Cs*F
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , // 1100: (Cd - Cd)*As + Cs ==> Cs
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE}                      , // 1101: (Cd - Cd)*As + Cd ==> Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ZERO                     , GL_ZERO}                     , // 1102: (Cd - Cd)*As +  0 ==> 0
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , // 1110: (Cd - Cd)*Ad + Cs ==> Cs
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE}                      , // 1111: (Cd - Cd)*Ad + Cd ==> Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ZERO                     , GL_ZERO}                     , // 1112: (Cd - Cd)*Ad +  0 ==> 0
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , // 1120: (Cd - Cd)*F  + Cs ==> Cs
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE}                      , // 1121: (Cd - Cd)*F  + Cd ==> Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ZERO                     , GL_ZERO}                     , // 1122: (Cd - Cd)*F  +  0 ==> 0
-	{ 0                          , GL_FUNC_ADD              , GL_ONE                      , GL_SRC1_ALPHA}               , // 1200: (Cd -  0)*As + Cs ==> Cs + Cd*As
-	{ BLEND_C_CLR                , GL_FUNC_ADD              , GL_DST_COLOR                , GL_SRC1_ALPHA}               , //#1201: (Cd -  0)*As + Cd ==> Cd*(1 + As) // ffxii main menu background
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_SRC1_ALPHA}               , // 1202: (Cd -  0)*As +  0 ==> Cd*As
-	{ 0                          , GL_FUNC_ADD              , GL_ONE                      , GL_DST_ALPHA}                , // 1210: (Cd -  0)*Ad + Cs ==> Cs + Cd*Ad
-	{ BLEND_C_CLR                , GL_FUNC_ADD              , GL_DST_COLOR                , GL_DST_ALPHA}                , //#1211: (Cd -  0)*Ad + Cd ==> Cd*(1 + Ad)
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_DST_ALPHA}                , // 1212: (Cd -  0)*Ad +  0 ==> Cd*Ad
-	{ 0                          , GL_FUNC_ADD              , GL_ONE                      , GL_CONSTANT_COLOR}           , // 1220: (Cd -  0)*F  + Cs ==> Cs + Cd*F
-	{ BLEND_C_CLR                , GL_FUNC_ADD              , GL_DST_COLOR                , GL_CONSTANT_COLOR}           , //#1221: (Cd -  0)*F  + Cd ==> Cd*(1 + F)
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_CONSTANT_COLOR}           , // 1222: (Cd -  0)*F  +  0 ==> Cd*F
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE_MINUS_SRC1_ALPHA     , GL_ZERO}                     , // 2000: (0  - Cs)*As + Cs ==> Cs*(1 - As)
-	{ BLEND_ACCU                 , GL_FUNC_REVERSE_SUBTRACT , GL_SRC1_ALPHA               , GL_ONE}                      , // 2001: (0  - Cs)*As + Cd ==> Cd - Cs*As
-	{ BLEND_NO_BAR               , GL_FUNC_REVERSE_SUBTRACT , GL_SRC1_ALPHA               , GL_ZERO}                     , // 2002: (0  - Cs)*As +  0 ==> 0 - Cs*As
-	{ 0                          , GL_FUNC_ADD              , GL_ONE_MINUS_DST_ALPHA      , GL_ZERO}                     , // 2010: (0  - Cs)*Ad + Cs ==> Cs*(1 - Ad)
-	{ 0                          , GL_FUNC_REVERSE_SUBTRACT , GL_DST_ALPHA                , GL_ONE}                      , // 2011: (0  - Cs)*Ad + Cd ==> Cd - Cs*Ad
-	{ 0                          , GL_FUNC_REVERSE_SUBTRACT , GL_DST_ALPHA                , GL_ZERO}                     , // 2012: (0  - Cs)*Ad +  0 ==> 0 - Cs*Ad
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE_MINUS_CONSTANT_COLOR , GL_ZERO}                     , // 2020: (0  - Cs)*F  + Cs ==> Cs*(1 - F)
-	{ BLEND_ACCU                 , GL_FUNC_REVERSE_SUBTRACT , GL_CONSTANT_COLOR           , GL_ONE}                      , // 2021: (0  - Cs)*F  + Cd ==> Cd - Cs*F
-	{ BLEND_NO_BAR               , GL_FUNC_REVERSE_SUBTRACT , GL_CONSTANT_COLOR           , GL_ZERO}                     , // 2022: (0  - Cs)*F  +  0 ==> 0 - Cs*F
-	{ 0                          , GL_FUNC_SUBTRACT         , GL_ONE                      , GL_SRC1_ALPHA}               , // 2100: (0  - Cd)*As + Cs ==> Cs - Cd*As
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE_MINUS_SRC1_ALPHA}     , // 2101: (0  - Cd)*As + Cd ==> Cd*(1 - As)
-	{ 0                          , GL_FUNC_SUBTRACT         , GL_ZERO                     , GL_SRC1_ALPHA}               , // 2102: (0  - Cd)*As +  0 ==> 0 - Cd*As
-	{ 0                          , GL_FUNC_SUBTRACT         , GL_ONE                      , GL_DST_ALPHA}                , // 2110: (0  - Cd)*Ad + Cs ==> Cs - Cd*Ad
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE_MINUS_DST_ALPHA}      , // 2111: (0  - Cd)*Ad + Cd ==> Cd*(1 - Ad)
-	{ 0                          , GL_FUNC_SUBTRACT         , GL_ONE                      , GL_DST_ALPHA}                , // 2112: (0  - Cd)*Ad +  0 ==> 0 - Cd*Ad
-	{ 0                          , GL_FUNC_SUBTRACT         , GL_ONE                      , GL_CONSTANT_COLOR}           , // 2120: (0  - Cd)*F  + Cs ==> Cs - Cd*F
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE_MINUS_CONSTANT_COLOR} , // 2121: (0  - Cd)*F  + Cd ==> Cd*(1 - F)
-	{ 0                          , GL_FUNC_SUBTRACT         , GL_ONE                      , GL_CONSTANT_COLOR}           , // 2122: (0  - Cd)*F  +  0 ==> 0 - Cd*F
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , // 2200: (0  -  0)*As + Cs ==> Cs
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE}                      , // 2201: (0  -  0)*As + Cd ==> Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ZERO                     , GL_ZERO}                     , // 2202: (0  -  0)*As +  0 ==> 0
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , // 2210: (0  -  0)*Ad + Cs ==> Cs
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE}                      , // 2211: (0  -  0)*Ad + Cd ==> Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ZERO                     , GL_ZERO}                     , // 2212: (0  -  0)*Ad +  0 ==> 0
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ONE                      , GL_ZERO}                     , // 2220: (0  -  0)*F  + Cs ==> Cs
-	{ 0                          , GL_FUNC_ADD              , GL_ZERO                     , GL_ONE}                      , // 2221: (0  -  0)*F  + Cd ==> Cd
-	{ BLEND_NO_BAR               , GL_FUNC_ADD              , GL_ZERO                     , GL_ZERO}                     , // 2222: (0  -  0)*F  +  0 ==> 0
-	{ 0                          , GL_FUNC_ADD              , GL_SRC_ALPHA                , GL_ONE_MINUS_SRC_ALPHA}      , // extra for merge operation
-};
+	switch (generic)
+	{
+	case SRC_COLOR       : return GL_SRC_COLOR;
+	case INV_SRC_COLOR   : return GL_ONE_MINUS_SRC_COLOR;
+	case DST_COLOR       : return GL_DST_COLOR;
+	case INV_DST_COLOR   : return GL_ONE_MINUS_DST_COLOR;
+	case SRC1_COLOR      : return GL_SRC1_COLOR;
+	case INV_SRC1_COLOR  : return GL_ONE_MINUS_SRC1_COLOR;
+	case SRC_ALPHA       : return GL_SRC_ALPHA;
+	case INV_SRC_ALPHA   : return GL_ONE_MINUS_SRC_ALPHA;
+	case DST_ALPHA       : return GL_DST_ALPHA;
+	case INV_DST_ALPHA   : return GL_ONE_MINUS_DST_ALPHA;
+	case SRC1_ALPHA      : return GL_SRC1_ALPHA;
+	case INV_SRC1_ALPHA  : return GL_ONE_MINUS_SRC1_ALPHA;
+	case CONST_COLOR     : return GL_CONSTANT_COLOR;
+	case INV_CONST_COLOR : return GL_ONE_MINUS_CONSTANT_COLOR;
+	case CONST_ONE       : return GL_ONE;
+	case CONST_ZERO      : return GL_ZERO;
+	case OP_ADD          : return GL_FUNC_ADD;
+	case OP_SUBTRACT     : return GL_FUNC_SUBTRACT;
+	case OP_REV_SUBTRACT : return GL_FUNC_REVERSE_SUBTRACT;
+	default              : ASSERT(0); return 0;
+	}
+}

@@ -21,6 +21,8 @@ namespace Omega_Red.Util
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void ThirdDelegate(int handler, int sampleTime, IntPtr buf, int size, uint is_keyframe, int streamIdx, int isVideo);
 
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int FourthDelegate(int handler);
 
 
 
@@ -42,6 +44,9 @@ namespace Omega_Red.Util
 
             //Запись на RTMP сервер.
             public ThirdDelegate Write;
+
+            //Проверка соединения с RTMP сервером.
+            public FourthDelegate IsConnected;
         }
 
 
@@ -151,5 +156,16 @@ namespace Omega_Red.Util
             if (m_RTMPFunc.Write != null)
                 m_RTMPFunc.Write(handler, sampleTime, buf, size, is_keyframe, streamIdx, isVideo);
         }
+
+        public  bool IsConnected(int handler)
+        {
+            if (!m_IsInitialized)
+                return false;
+
+            if (m_RTMPFunc.IsConnected != null)
+                return m_RTMPFunc.IsConnected(handler) > 0;
+
+            return false;
+        }        
     }
 }

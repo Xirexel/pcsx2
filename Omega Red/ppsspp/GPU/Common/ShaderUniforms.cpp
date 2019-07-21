@@ -30,21 +30,41 @@ void CalcCullRange(float minValues[4], float maxValues[4], bool flipViewport, bo
 	// Account for the projection viewport adjustment when viewport is too large.
 	auto reverseViewportX = [](float x) {
 		float pspViewport = (x - gstate.getViewportXCenter()) * (1.0f / gstate.getViewportXScale());
-		return (pspViewport - gstate_c.vpXOffset) * gstate_c.vpWidthScale;
+		return (pspViewport * gstate_c.vpWidthScale) - gstate_c.vpXOffset;
 	};
 	auto reverseViewportY = [flipViewport](float y) {
 		float heightScale = gstate_c.vpHeightScale;
+		float yOffset = gstate_c.vpYOffset;
 		if (flipViewport) {
 			// For D3D11 and GLES non-buffered.
 			heightScale = -heightScale;
+			yOffset = -yOffset;
 		}
 		float pspViewport = (y - gstate.getViewportYCenter()) * (1.0f / gstate.getViewportYScale());
-		return (pspViewport - gstate_c.vpYOffset) * heightScale;
+		return (pspViewport * heightScale) - yOffset;
 	};
 	auto reverseViewportZ = [hasNegZ](float z) {
-		float pspViewport = (z - gstate.getViewportZCenter()) * (1.0f / gstate.getViewportZScale());
-		// Differs from GLES: depth is 0 to 1, not -1 to 1.
-		float realViewport = (pspViewport - gstate_c.vpZOffset) * gstate_c.vpDepthScale;
+		float vpZScale = gstate.getViewportZScale();
+		float vpZCenter = gstate.getViewportZCenter();
+
+		float scale, center;
+		if (gstate_c.Supports(GPU_SUPPORTS_ACCURATE_DEPTH)) {
+			// These are just the reverse of the formulas in GPUStateUtils.
+			float halfActualZRange = vpZScale * (1.0f / gstate_c.vpDepthScale);
+			float minz = -((gstate_c.vpZOffset * halfActualZRange) - vpZCenter) - halfActualZRange;
+
+			// In accurate depth mode, we're comparing against a value scaled to (minz, maxz).
+			// And minz might be very negative, (e.g. if we're clamping in that direction.)
+			scale = halfActualZRange;
+			center = minz + halfActualZRange;
+		} else {
+			// In old-style depth mode, we're comparing against a value scaled to viewport.
+			// (and possibly incorrectly clipped against it.)
+			scale = vpZScale;
+			center = vpZCenter;
+		}
+
+		float realViewport = (z - center) * (1.0f / scale);
 		return hasNegZ ? realViewport : (realViewport * 0.5f + 0.5f);
 	};
 	auto sortPair = [](float a, float b) {
@@ -240,7 +260,7 @@ void BaseUpdateUniforms(UB_VS_FS_Base *ub, uint64_t dirtyUniforms, bool flipView
 	}
 
 	if (dirtyUniforms & DIRTY_BEZIERSPLINE) {
-		ub->spline_counts = BytesToUint32(gstate_c.spline_count_u, gstate_c.spline_count_v, gstate_c.spline_type_u, gstate_c.spline_type_v);
+		ub->spline_counts = gstate_c.spline_num_points_u;
 	}
 
 	if (dirtyUniforms & DIRTY_DEPAL) {

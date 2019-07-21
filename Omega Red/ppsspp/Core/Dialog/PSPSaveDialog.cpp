@@ -403,7 +403,7 @@ void PSPSaveDialog::DisplaySaveDataInfo1()
 		char saveDetail[1024];
 
 		char am_pm[] = "AM";
-		char hour_time[10] ;
+		char hour_time[32];
 		int hour = param.GetFileInfo(currentSelectedSave).modif_time.tm_hour;
 		int min  = param.GetFileInfo(currentSelectedSave).modif_time.tm_min;
 		switch (g_Config.iTimeFormat) {
@@ -412,17 +412,17 @@ void PSPSaveDialog::DisplaySaveDataInfo1()
 				strcpy(am_pm, "PM");
 				hour -= 12;
 			}
-			snprintf(hour_time,10,"%02d:%02d %s", hour, min, am_pm);
+			snprintf(hour_time, sizeof(hour_time), "%02d:%02d %s", hour, min, am_pm);
 			break;
 		case 2:
-			snprintf(hour_time,10,"%02d:%02d", hour, min); 
+			snprintf(hour_time, sizeof(hour_time), "%02d:%02d", hour, min);
 			break;
 		default:
 			if (hour > 12) {
 				strcpy(am_pm, "PM");
 				hour -= 12;
 			}
-			snprintf(hour_time,10,"%02d:%02d %s", hour, min, am_pm);
+			snprintf(hour_time, sizeof(hour_time), "%02d:%02d %s", hour, min, am_pm);
 		}
 
 		snprintf(title, sizeof(title), "%s", param.GetFileInfo(currentSelectedSave).title);
@@ -458,8 +458,8 @@ void PSPSaveDialog::DisplaySaveDataInfo1()
 		PPGeDrawText(timeTxt.c_str(), 180, 137, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
 		PPGeDrawText(saveTitleTxt.c_str(), 176, 162, PPGE_ALIGN_LEFT, 0.55f, CalcFadedColor(0x80000000));
 		PPGeDrawText(saveTitleTxt.c_str(), 175, 159, PPGE_ALIGN_LEFT, 0.55f, CalcFadedColor(0xFFFFFFFF));
-		PPGeDrawText(saveDetailTxt.c_str(), 176, 183, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0x80000000));
-		PPGeDrawText(saveDetailTxt.c_str(), 175, 181, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawTextWrapped(saveDetailTxt.c_str(), 176, 183, 480 - 175, 250 - 183, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0x80000000));
+		PPGeDrawTextWrapped(saveDetailTxt.c_str(), 175, 181, 480 - 175, 250 - 181, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
 	}
 }
 
@@ -485,7 +485,7 @@ void PSPSaveDialog::DisplaySaveDataInfo2(bool showNewData) {
 
 	char date[256];
 	char am_pm[] = "AM";
-	char hour_time[10] ;
+	char hour_time[32];
 	int hour = modif_time.tm_hour;
 	int min  = modif_time.tm_min;
 	switch (g_Config.iTimeFormat) {
@@ -494,17 +494,17 @@ void PSPSaveDialog::DisplaySaveDataInfo2(bool showNewData) {
 			strcpy(am_pm, "PM");
 			hour -= 12;
 		}
-		snprintf(hour_time, 10, "%02d:%02d %s", hour, min, am_pm);
+		snprintf(hour_time, sizeof(hour_time), "%02d:%02d %s", hour, min, am_pm);
 		break;
 	case 2:
-		snprintf(hour_time, 10, "%02d:%02d", hour, min);
+		snprintf(hour_time, sizeof(hour_time), "%02d:%02d", hour, min);
 		break;
 	default:
 		if (hour > 12) {
 			strcpy(am_pm, "PM");
 			hour -= 12;
 		}
-		snprintf(hour_time, 10, "%02d:%02d %s", hour, min, am_pm);
+		snprintf(hour_time, sizeof(hour_time), "%02d:%02d %s", hour, min, am_pm);
 	}
 
 	int day   = modif_time.tm_mday;
@@ -573,8 +573,8 @@ void PSPSaveDialog::DisplayMessage(std::string text, bool hasYesNo)
 			yesnoChoice = 0;
 		}
 	}
-	PPGeDrawTextWrapped(text.c_str(), 335.0f, y+2, WRAP_WIDTH, PPGE_ALIGN_CENTER, FONT_SCALE, CalcFadedColor(0x80000000));
-	PPGeDrawTextWrapped(text.c_str(), 334.0f, y, WRAP_WIDTH, PPGE_ALIGN_CENTER, FONT_SCALE, CalcFadedColor(0xFFFFFFFF));
+	PPGeDrawTextWrapped(text.c_str(), 335.0f, y+2, WRAP_WIDTH, 0, PPGE_ALIGN_CENTER, FONT_SCALE, CalcFadedColor(0x80000000));
+	PPGeDrawTextWrapped(text.c_str(), 334.0f, y, WRAP_WIDTH, 0, PPGE_ALIGN_CENTER, FONT_SCALE, CalcFadedColor(0xFFFFFFFF));
 	float sy = 122.0f - h2, ey = 150.0f + h2;
 	PPGeDrawRect(202.0f, sy, 466.0f, sy + 1.0f, CalcFadedColor(0xFFFFFFFF));
 	PPGeDrawRect(202.0f, ey, 466.0f, ey + 1.0f, CalcFadedColor(0xFFFFFFFF));
