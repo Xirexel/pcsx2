@@ -517,8 +517,9 @@ double FramerateManager::GetFramerate() const
 // times a second if not (ok, not quite, but you get the idea... I hope.)
 extern uint eecount_on_last_vdec;
 extern bool FMVstarted;
-extern bool renderswitch;
 extern bool EnableFMV;
+extern bool renderswitch;
+extern uint renderswitch_delay;
 
 void DoFmvSwitch(bool on)
 {
@@ -550,7 +551,7 @@ void Pcsx2App::LogicalVsync()
 	// Update / Calculate framerate!
 
 	FpsManager.DoFrame();
-	
+
 	if (EmuConfig.Gamefixes.FMVinSoftwareHack || g_Conf->GSWindow.FMVAspectRatioSwitch != FMV_AspectRatio_Switch_Off) {
 		if (EnableFMV) {
 			DevCon.Warning("FMV on");
@@ -567,6 +568,8 @@ void Pcsx2App::LogicalVsync()
 			}
 		}
 	}
+
+	renderswitch_delay >>= 1;
 
 	// Only call PADupdate here if we're using GSopen2.  Legacy GSopen plugins have the
 	// GS window belonging to the MTGS thread.

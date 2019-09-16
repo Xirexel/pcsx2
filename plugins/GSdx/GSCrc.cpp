@@ -40,6 +40,7 @@ CRC::Game CRC::m_games[] =
 	{0x6CF94A43, KazokuKeikakuKokoroNoKizuna, JP, PointListPalette},
 	{0xEDAF602D, DuelSaviorDestiny, JP, PointListPalette},
 	{0xA39517AB, FFX, EU, 0},
+	{0x78D83FD5, FFX, EU, 0}, // Demo
 	{0xA39517AE, FFX, FR, 0},
 	{0x941BB7D9, FFX, DE, 0},
 	{0xA39517A9, FFX, IT, 0},
@@ -49,6 +50,7 @@ CRC::Game CRC::m_games[] =
 	{0xEE97DB5B, FFX, RU, 0},
 	{0xAEC495CC, FFX, RU, 0},
 	{0xBB3D833A, FFX, US, 0},
+	{0xF0800C1E, FFX, US, 0}, // Prototype/Beta
 	{0x6A4EFE60, FFX, JP, 0},
 	{0x3866CA7E, FFX, ASIA, 0}, // int.
 	{0x658597E2, FFX, JP, 0}, // int.
@@ -285,6 +287,7 @@ CRC::Game CRC::m_games[] =
 	{0x3130A4D3, Sly3, US, 0}, // E3 Demo
 	{0x35CCFA60, Sly3, US, 0}, // Regular Demo
 	{0x8C146034, Sly3, EU, 0}, // Demo
+	{0x3670B6F9, Sly3, EU, 0}, // Prototype
 	{0x8164C614, Sly3, EU, 0},
 	{0xA8CC1583, Sly3, KO, 0},
 	{0x518DD841, Sly2, KO, 0},
@@ -301,6 +304,8 @@ CRC::Game CRC::m_games[] =
 	{0x22425C19, DemonStone, KO, 0},
 	{0x506644B3, BigMuthaTruckers, EU, 0},
 	{0x90F0D852, BigMuthaTruckers, US, 0},
+	{0x92624842, BigMuthaTruckers, US, 0},
+	{0xDD93DA88, BigMuthaTruckers, JP, 0}, // Bakusou Convoy Densetsu - Otoko Hanamichi America Roman
 	{0x5CC9BF81, TimeSplitters2, EU, 0},
 	{0x12532F1C, TimeSplitters2, US, 0},
 	{0xEB198738, LordOfTheRingsThirdAge, US, 0},
@@ -437,16 +442,25 @@ CRC::Game CRC::m_games[] =
 	{0XE8F7BAB6, SuperManReturns, EU, 0},
 	{0x06A7506A, SacredBlaze, JP, 0},
 	{0x4CE7FB04, ItadakiStreet, JP, 0},
-	{0x9C712FF0, Jak1, EU, 0}, // Jak and Daxter: The Precursor Legacy
-	{0x472E7699, Jak1, US, 0},
-	{0x2479F4A9, Jak2, EU, 0},
-	{0x9184AAF1, Jak2, US, 0},
-	{0xA2034C69, Jak2, US, 0}, // Demo
-	{0x12804727, Jak3, EU, 0},
-	{0x644CFD03, Jak3, US, 0},
-	{0x23F8D35B, Jak3, NoRegion, 0}, // EU Preview, US Internal test build
-	{0xDF659E77, JakX, EU, 0}, // Jak X: Combat Racing
-	{0x3091E6FB, JakX, US, 0},
+	{0x9C712FF0, Jak1, EU, TextureInsideRt}, // Jak and Daxter: The Precursor Legacy
+	{0x1B3976AB, Jak1, US, TextureInsideRt},
+	{0x472E7699, Jak1, US, TextureInsideRt},
+	{0xEDE4FE64, Jak1, JP, TextureInsideRt}, // Jak x Daxter: Kyuusekai no Isan
+	{0x2A7FD3B4, Jak1, JP, TextureInsideRt}, // Demo, Taikenba
+	{0x2479F4A9, Jak2, EU, TextureInsideRt},
+	{0xF41C1B29, Jak2, EU, TextureInsideRt}, // Demo
+	{0x9184AAF1, Jak2, US, TextureInsideRt},
+	{0xA2034C69, Jak2, US, TextureInsideRt}, // Demo
+	{0x12804727, Jak3, EU, TextureInsideRt},
+	{0xE59E10BF, Jak3, EU, TextureInsideRt},
+	{0xCA68E4D5, Jak3, EU, TextureInsideRt}, // Demo
+	{0x644CFD03, Jak3, US, TextureInsideRt},
+	{0xD401BC20, Jak3, US, TextureInsideRt}, // Demo
+	{0x23F8D35B, Jak3, NoRegion, TextureInsideRt}, // EU Preview, US Internal test build
+	{0xDF659E77, JakX, EU, TextureInsideRt}, // Jak X: Combat Racing
+	{0xC20596DB, JakX, EU, TextureInsideRt}, // Beta Trial Disc, v0.01
+	{0x3091E6FB, JakX, US, TextureInsideRt},
+	{0xDA366A53, JakX, US, TextureInsideRt}, // Public Beta v.1
 	{0x4653CA3E, HarleyDavidson, US, 0},
 	// Games list for Automatic Mipmapping
 	// Basic mipmapping
