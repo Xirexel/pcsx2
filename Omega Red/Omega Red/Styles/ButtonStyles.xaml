@@ -174,8 +174,9 @@
             </Setter.Value>
         </Setter>
     </Style>
-    
+
     <Style x:Key="RemoveBtn" TargetType="Button">
+        <Setter Property="Focusable" Value="True"/>
         <Setter Property="Margin" Value="5,0" />
         <Setter Property="Padding" Value="6" />
         <Setter Property="Width" Value="30" />
@@ -327,8 +328,9 @@
             </Setter.Value>
         </Setter>
     </Style>
-    
+
     <Style x:Key="DriveBtn" TargetType="Button">
+        <Setter Property="Focusable" Value="True"/>
         <Setter Property="Margin" Value="5,0" />
         <Setter Property="Padding" Value="6" />
         <Setter Property="Width" Value="30" />

@@ -14,6 +14,7 @@
 
 using Omega_Red.Managers;
 using Omega_Red.Models;
+using Omega_Red.SocialNetworks.Google;
 using Omega_Red.Tools;
 using System;
 using System.Collections.Generic;
@@ -32,6 +33,18 @@ namespace Omega_Red.ViewModels
         public MemoryCardInfoViewModel()
         {
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+
+            GoogleAccountManager.Instance.mEnableStateEvent += Instance_mEnableStateEvent;
+        }
+
+        private void Instance_mEnableStateEvent(bool obj)
+        {
+            IsVisibilityGoogleAccount = obj ? Visibility.Visible : Visibility.Collapsed;
+
+            if (obj)
+                GoogleAccountIsEnabled = GoogleAccountManager.Instance.isAuthorized;
+            else
+                GoogleAccountIsEnabled = false;
         }
 
         protected override Managers.IManager Manager
@@ -58,6 +71,34 @@ namespace Omega_Red.ViewModels
                 m_IsEnabled = value;
 
                 RaisePropertyChangedEvent("IsEnabled");
+            }
+        }
+
+
+        private Visibility m_IsVisibilityGoogleAccount = Visibility.Collapsed;
+
+        public Visibility IsVisibilityGoogleAccount
+        {
+            get { return m_IsVisibilityGoogleAccount; }
+            set
+            {
+                m_IsVisibilityGoogleAccount = value;
+
+                RaisePropertyChangedEvent("IsVisibilityGoogleAccount");
+            }
+        }
+
+
+        private bool mGoogleAccountIsEnabled = false;
+
+        public bool GoogleAccountIsEnabled
+        {
+            get { return mGoogleAccountIsEnabled; }
+            set
+            {
+                mGoogleAccountIsEnabled = value;
+
+                RaisePropertyChangedEvent("GoogleAccountIsEnabled");
             }
         }
     }

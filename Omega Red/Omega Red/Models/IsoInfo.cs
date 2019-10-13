@@ -47,5 +47,11 @@ namespace Omega_Red.Models
         public bool IsCurrent { get; set; }
 
         public GameType GameType { get; set; }
+
+        public bool IsCloudsave { get; set; }
+
+        public bool IsCloudOnlysave { get; set; }
+
+        public string SelectedMemoryCardFile { get; set; }
     }
 }

@@ -549,11 +549,6 @@ namespace Omega_Red.Tools
         
         public void Stop(bool aBlock = false)
         {
-            if (m_IsoInfo != null && m_IsoInfo.GameType != GameType.PSP)
-            {
-                ModuleControl.Instance.setMemoryCard();
-            }
-
             ThreadStart callStopStart = new ThreadStart(callStop);
 
             Thread callStopThread = new Thread(callStopStart);
@@ -662,7 +657,7 @@ namespace Omega_Red.Tools
                     {
                         PPSSPPControl.Instance.Launch(
                             m_IsoInfo.FilePath + "|--state=" + m_tempFile,
-                            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\PCSX2\",
+                            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\OmegaRed\",
                         ()=> {
                             LockScreenManager.Instance.hide();
 
@@ -690,6 +685,8 @@ namespace Omega_Red.Tools
 
                         m_reloadSettings = false;
                     }
+
+                    MemoryCardManager.Instance.setMemoryCard();
 
                     PCSX2LibNative.Instance.SysThreadBase_ResumeFunc();
                 }

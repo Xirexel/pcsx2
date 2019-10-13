@@ -457,9 +457,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Manifest Include="PCSX2Lib.manifest" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="PCSX2Lib.def">
       <Filter>Source Files</Filter>
     </None>

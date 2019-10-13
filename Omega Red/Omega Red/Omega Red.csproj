@@ -100,6 +100,7 @@
     <Compile Include="Capture\CaptureTargetTexture.cs" />
     <Compile Include="Managers\IStreamingManager.cs" />
     <Compile Include="Managers\MediaSourcesManager.cs" />
+    <Compile Include="Managers\RecordingCaptureConfigManager.cs" />
     <Compile Include="Managers\StreamingCaptureConfigManager.cs" />
     <Compile Include="Managers\YouTubeBroadcastManager.cs" />
     <Compile Include="Managers\YouTubeStreamManager.cs" />
@@ -113,6 +114,9 @@
     <Compile Include="Panels\MediaSourcePanel.xaml.cs">
       <DependentUpon>MediaSourcePanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Panels\RecordingCaptureConfig.xaml.cs">
+      <DependentUpon>RecordingCaptureConfig.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Panels\StreamControlPanel.xaml.cs">
       <DependentUpon>StreamControlPanel.xaml</DependentUpon>
     </Compile>
@@ -122,6 +126,7 @@
     <Compile Include="Panels\YouTubeStreamControl.xaml.cs">
       <DependentUpon>YouTubeStreamControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="SocialNetworks\Google\DriveManager.cs" />
     <Compile Include="SocialNetworks\Google\YouTubeManager.cs" />
     <Compile Include="Tools\Converters\BooleanToVisibilityConverter.cs" />
     <Compile Include="Tools\Converters\InverseBooleanConverter.cs" />
@@ -262,6 +267,7 @@
     <Compile Include="ViewModels\MediaSourcesInfoViewModel.cs" />
     <Compile Include="ViewModels\MemoryCardInfoViewModel.cs" />
     <Compile Include="ViewModels\PadControlViewModel.cs" />
+    <Compile Include="ViewModels\RecordControlViewModel.cs" />
     <Compile Include="ViewModels\SaveStateViewModel.cs" />
     <Compile Include="Panels\ControlPanel.xaml.cs">
       <DependentUpon>ControlPanel.xaml</DependentUpon>
@@ -351,6 +357,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Panels\ProgressBanner.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\RecordingCaptureConfig.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -18,12 +18,23 @@ namespace Omega_Red.Capture
     class BitRate
     {
         public uint Value { get; private set; }
+        public string EncoderCLSID { get; private set; }
+
+        public string EncoderModeCLSID { get; private set; }
 
         private string m_formatedValue = "";
 
-        public BitRate(uint a_bitrate, bool a_isVideo = true)
+        private string m_encoderName = "";
+
+        public BitRate(uint a_bitrate, bool a_isVideo = true, string a_encoderCLSID="", string a_encoderModeCLSID = "", string a_encoderName="")
         {
             Value = a_bitrate;
+
+            EncoderCLSID = a_encoderCLSID;
+
+            EncoderModeCLSID = a_encoderModeCLSID;
+
+            m_encoderName = a_encoderName;
 
             if (a_isVideo)
             {
@@ -38,13 +49,36 @@ namespace Omega_Red.Capture
             }
             else
             {
-                m_formatedValue = (a_bitrate / (1000)).ToString() + " kbit";
+                m_formatedValue = (a_bitrate / (1000)).ToString() + " Kbit";
             }
         }
         
         public override string ToString()
         {
-            return m_formatedValue;
+            string l_formatedValue = m_formatedValue;
+
+            if (Value == 0)
+            {
+                l_formatedValue = "Variable bitrate";
+
+                try
+                {
+                    var l_Title = new System.Windows.Controls.TextBlock();
+
+                    l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, "VariableBitrateTitle");
+
+                    l_formatedValue = l_Title.Text;
+                }
+                finally
+                {
+                }
+
+            }
+
+            if (!string.IsNullOrWhiteSpace(m_encoderName))
+                l_formatedValue += " - " + m_encoderName;
+
+            return l_formatedValue;
         }
 
         public override bool Equals(object obj)

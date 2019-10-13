@@ -14,6 +14,7 @@
 
 using Omega_Red.Models;
 using Omega_Red.Properties;
+using Omega_Red.SocialNetworks.Google;
 using Omega_Red.Tools;
 using Omega_Red.Tools.Converters;
 using System;
@@ -23,8 +24,12 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
+using System.Windows.Threading;
+using System.Xml.Serialization;
 
 namespace Omega_Red.Managers
 {
@@ -35,7 +40,7 @@ namespace Omega_Red.Managers
         {
             public bool Equals(MemoryCardInfo x, MemoryCardInfo y)
             {
-                if (x.FilePath == y.FilePath)
+                if (x.FileName == y.FileName)
                 {
                     return true;
                 }
@@ -59,6 +64,10 @@ namespace Omega_Red.Managers
 
         private List<int> m_ListSlotIndexes = new List<int>();
 
+        private bool m_GoogleDriveAccess = false;
+
+        private string m_disk_serial = "";
+
         private ICollectionView mCustomerView = null;
 
         private static MemoryCardManager m_Instance = null;
@@ -73,7 +82,7 @@ namespace Omega_Red.Managers
             }
 
             if (string.IsNullOrEmpty(Settings.Default.MemoryCardsFolder))
-                Settings.Default.MemoryCardsFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\PCSX2\memcards\";
+                Settings.Default.MemoryCardsFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\OmegaRed\memcards\";
 
             if (!System.IO.Directory.Exists(Settings.Default.MemoryCardsFolder))
             {
@@ -81,15 +90,24 @@ namespace Omega_Red.Managers
             }
 
             mCustomerView = CollectionViewSource.GetDefaultView(_memoryCardInfoCollection);
-
+                       
             mCustomerView.SortDescriptions.Add(
             new SortDescription("DateTime", ListSortDirection.Descending));
-
-            load();
-
+            
             mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
 
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+
+
+            GoogleAccountManager.Instance.mEnableStateEvent += (obj) =>
+            {
+                m_GoogleDriveAccess = obj;
+
+                m_disk_serial = "";
+
+                if (PCSX2Controller.Instance.IsoInfo != null)
+                    load();
+            };
         }
 
         void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
@@ -104,7 +122,15 @@ namespace Omega_Red.Managers
 
             if (l_MemoryCardInfo != null)
             {
-                selectMemoryCardInfo(l_MemoryCardInfo);
+                if(l_MemoryCardInfo.IsCloudOnlysave)
+                {
+                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                    {
+                        mCustomerView.MoveCurrentToPosition(-1);
+                    });
+                }
+                else
+                    selectMemoryCardInfo(l_MemoryCardInfo);
             }
         }
 
@@ -114,6 +140,14 @@ namespace Omega_Red.Managers
         {
             if (PCSX2Controller.Instance.IsoInfo == null)
                 return;
+
+            if (PCSX2Controller.Instance.IsoInfo.GameType == GameType.PSP)
+                return;
+
+            if (m_disk_serial == PCSX2Controller.Instance.IsoInfo.DiscSerial)
+                return;
+
+            m_disk_serial = PCSX2Controller.Instance.IsoInfo.DiscSerial;
 
             _memoryCardInfoCollection.Clear();
 
@@ -126,6 +160,7 @@ namespace Omega_Red.Managers
 
             if (System.IO.Directory.Exists(Settings.Default.MemoryCardsFolder))
             {
+                var l_SelectedMemoryCardFile = PCSX2Controller.Instance.IsoInfo.SelectedMemoryCardFile;
 
                 string[] files = System.IO.Directory.GetFiles(Settings.Default.MemoryCardsFolder, "*.ps2");
 
@@ -171,17 +206,49 @@ namespace Omega_Red.Managers
                             }
                         }
                     }
-                    else
-                        addMemoryCardInfo(new MemoryCardInfo()
-                        {
-                            Visibility = System.Windows.Visibility.Hidden,
-                            Index = -1,
-                            FileName = fi.Name,
-                            FilePath = fi.FullName,
-                            DateTime = fi.LastWriteTime,
-                            Date = fi.LastWriteTime.ToString("dd/MM/yyyy HH:mm:ss")
-                    });
+                    //else
+                    //    addMemoryCardInfo(new MemoryCardInfo()
+                    //    {
+                    //        Visibility = System.Windows.Visibility.Hidden,
+                    //        Index = -1,
+                    //        FileName = fi.Name,
+                    //        FilePath = fi.FullName,
+                    //        DateTime = fi.LastWriteTime,
+                    //        Date = fi.LastWriteTime.ToString("dd/MM/yyyy HH:mm:ss")
+                    //});
                 }
+
+                fetchCloudMemoryCard(PCSX2Controller.Instance.IsoInfo.DiscSerial);
+
+                bool l_selected = false;
+
+                foreach (var item in _memoryCardInfoCollection)
+                {
+                    if(item.FileName == l_SelectedMemoryCardFile)
+                    {
+                        selectMemoryCardInfo(item);
+
+                        l_selected = true;
+
+                        break;
+                    }
+                }
+
+                if(!l_selected && _memoryCardInfoCollection.Count > 0)
+                    selectMemoryCardInfo(_memoryCardInfoCollection[0]);
+
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    foreach (var item in _memoryCardInfoCollection)
+                    {
+                        if (item.IsCurrent)
+                        {
+                            mCustomerView.MoveCurrentTo(item);
+
+                            break;
+                        }
+                    }
+                });
             }
         }
 
@@ -262,6 +329,92 @@ namespace Omega_Red.Managers
             }
         }
 
+        private void fetchCloudMemoryCard(string a_disk_serial)
+        {
+            if (m_GoogleDriveAccess)
+            {
+                var l_MemoryCardList = DriveManager.Instance.getMemoryCardList(a_disk_serial);
+
+                foreach (var item in l_MemoryCardList)
+                {
+                    if (m_ListSlotIndexes.Contains(item.Index))
+                    {
+                        addMemoryCardInfo(item);
+
+                        m_ListSlotIndexes.Remove(item.Index);
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var l_memoryCard = _memoryCardInfoCollection.ToList().First(memoryCard => memoryCard.Index == item.Index);
+
+                            if (l_memoryCard != null)
+                            {
+                                l_memoryCard.IsCloudsave = true;
+                            }
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+                }
+            }
+        }
+
+        public void setMemoryCard()
+        {
+            bool l_isSelected = false;
+
+            foreach (var l_item in _memoryCardInfoCollection)
+            {
+                if(l_item.IsCurrent)
+                {
+                    l_isSelected = true;
+
+                    break;
+                }
+            }
+
+            if (l_isSelected)
+                return;
+
+            foreach (var l_item in _memoryCardInfoCollection)
+            {
+                if (!l_item.IsCloudOnlysave)
+                {
+                    l_isSelected = true;
+
+                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                    {
+                        mCustomerView.MoveCurrentTo(l_item);
+                    });
+
+                    break;
+                }
+            }
+
+            if (l_isSelected)
+                return;
+
+            addMemoryCardInfo();
+
+            foreach (var l_item in _memoryCardInfoCollection)
+            {
+                if (!l_item.IsCloudOnlysave)
+                {
+                    l_isSelected = true;
+
+                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                    {
+                        mCustomerView.MoveCurrentTo(l_item);
+                    });
+
+                    break;
+                }
+            }
+        }
+
         private void removeMemoryCardInfo(MemoryCardInfo aMemoryCardInfo)
         {
             if (_memoryCardInfoCollection.Contains(aMemoryCardInfo, new Compare()))
@@ -277,11 +430,23 @@ namespace Omega_Red.Managers
 
                 if (aMemoryCardInfo.Index >= 0)
                     m_ListSlotIndexes.Insert(0, aMemoryCardInfo.Index);
+
+                aMemoryCardInfo.IsCurrent = false;
+
+                if (aMemoryCardInfo.IsCloudsave)
+                {
+                    aMemoryCardInfo.IsCloudOnlysave = true;
+
+                    fetchCloudMemoryCard(m_disk_serial);
+                }
             }
         }
 
         private void selectMemoryCardInfo(MemoryCardInfo aMemoryCardInfo)
         {
+            if (aMemoryCardInfo.IsCloudOnlysave)
+                return;
+
             foreach (var item in _memoryCardInfoCollection)
             {
                 item.IsCurrent = false;
@@ -290,15 +455,35 @@ namespace Omega_Red.Managers
             aMemoryCardInfo.IsCurrent = true;
 
             ModuleControl.Instance.setMemoryCard(aMemoryCardInfo.FilePath);
-        }
 
-        public void removeItem(object a_Item)
+            if (PCSX2Controller.Instance.IsoInfo != null)
+            {
+                PCSX2Controller.Instance.IsoInfo.SelectedMemoryCardFile = aMemoryCardInfo.FileName;
+
+                IsoManager.Instance.save();
+            }
+        }
+        
+        public async void removeItem(object a_Item)
         {
             var l_MemoryCardInfo = a_Item as MemoryCardInfo;
 
             if (l_MemoryCardInfo != null)
             {
-                removeMemoryCardInfo(l_MemoryCardInfo);
+                if (l_MemoryCardInfo.IsCloudOnlysave)
+                {
+                    await DriveManager.Instance.startDeletingMemoryCardAsync(l_MemoryCardInfo.FilePath);
+
+                    if (_memoryCardInfoCollection.Contains(l_MemoryCardInfo, new Compare()))
+                    {
+                        _memoryCardInfoCollection.Remove(l_MemoryCardInfo);
+
+                        if (l_MemoryCardInfo.Index >= 0)
+                            m_ListSlotIndexes.Insert(0, l_MemoryCardInfo.Index);
+                    }
+                }
+                else
+                    removeMemoryCardInfo(l_MemoryCardInfo);
             }
         }
 
@@ -307,24 +492,112 @@ namespace Omega_Red.Managers
             addMemoryCardInfo();
         }
 
-        public void persistItemAsync(object a_Item)
+        public async void persistItemAsync(object a_Item)
         {
-            throw new NotImplementedException();
+            var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+            var l_MemoryCardInfo = l_Grid.DataContext as MemoryCardInfo;
+
+            if (l_MemoryCardInfo != null)
+            {
+                string lDescription = "Date=" + l_MemoryCardInfo.Date;
+
+                var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
+
+
+                var l_TempFileName = System.IO.Path.GetTempPath() + l_MemoryCardInfo.FileName; 
+
+                File.Copy(l_MemoryCardInfo.FilePath, l_TempFileName, true);
+
+
+                if (lProgressBannerGrid != null)
+                    await DriveManager.Instance.startUploadingMemoryCardAsync(l_TempFileName, lProgressBannerGrid, lDescription);
+
+                try
+                {
+                    File.Delete(l_TempFileName);
+                }
+                catch (Exception)
+                {
+                }
+
+                l_Grid.DataContext = null;
+
+                l_MemoryCardInfo.IsCloudsave = true;
+
+                l_Grid.DataContext = l_MemoryCardInfo;
+            }
         }
 
-        public void loadItemAsync(object a_Item)
+        public async void loadItemAsync(object a_Item)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(Settings.Default.MemoryCardsFolder))
+                return;
+
+            var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+            var l_MemoryCardInfo = l_Grid.DataContext as MemoryCardInfo;
+
+            if (l_MemoryCardInfo != null)
+            {
+                if (l_MemoryCardInfo.IsCurrent)
+                {
+                    ModuleControl.Instance.setMemoryCard();
+                }
+
+                var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
+
+                if (lProgressBannerGrid != null)
+                    await DriveManager.Instance.startDownloadingMemoryCardAsync(
+                        l_MemoryCardInfo.FilePath,
+                        lProgressBannerGrid);
+
+                l_MemoryCardInfo.IsCloudsave = true;
+
+                l_MemoryCardInfo.IsCloudOnlysave = false;
+
+                if (_memoryCardInfoCollection.Contains(l_MemoryCardInfo, new Compare()))
+                {
+                    _memoryCardInfoCollection.Remove(l_MemoryCardInfo);
+                }
+
+                addMemoryCardInfo(l_MemoryCardInfo);
+
+                m_ListSlotIndexes.Remove(l_MemoryCardInfo.Index);
+
+                if (l_MemoryCardInfo.IsCurrent)
+                {
+                    mCustomerView.MoveCurrentTo(l_MemoryCardInfo);
+                }
+            }
         }
 
         public bool accessPersistItem(object a_Item)
         {
+            var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+            var l_MemoryCardInfo = l_Grid.DataContext as MemoryCardInfo;
+
+            if (l_MemoryCardInfo != null)
+            {
+                return !l_MemoryCardInfo.IsCloudOnlysave;
+            }
+
             return true;
         }
 
         public bool accessLoadItem(object a_Item)
         {
-            return true;
+            var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+            var l_MemoryCardInfo = l_Grid.DataContext as MemoryCardInfo;
+
+            if (l_MemoryCardInfo != null)
+            {
+                return l_MemoryCardInfo.IsCloudsave;
+            }
+
+            return false;
         }
 
         public ICollectionView Collection

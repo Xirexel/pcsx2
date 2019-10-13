@@ -32,6 +32,7 @@ using System.Windows.Data;
 using System.Windows;
 using System.Windows.Threading;
 using System.Threading;
+using Omega_Red.SocialNetworks.Google;
 
 namespace Omega_Red.Managers
 {
@@ -419,25 +420,130 @@ namespace Omega_Red.Managers
             addIsoInfo();
         }
 
-        public void persistItemAsync(object a_Item)
+
+
+        public async void persistItemAsync(object a_Item)
         {
-            throw new NotImplementedException();
+            var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+            var l_IsoInfo = l_Grid.DataContext as IsoInfo;
+
+            if (l_IsoInfo != null)
+            {
+                string lDescription = "DiscSerial=" + l_IsoInfo.DiscSerial;
+
+                var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
+
+                if (lProgressBannerGrid != null)
+                    await DriveManager.Instance.startUploadingDiscAsync(l_IsoInfo.FilePath, lProgressBannerGrid, lDescription);
+
+                l_Grid.DataContext = null;
+
+                l_IsoInfo.IsCloudsave = true;
+
+                l_Grid.DataContext = l_IsoInfo;
+            }
         }
 
-        public void loadItemAsync(object a_Item)
+        public async void loadItemAsync(object a_Item)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(Settings.Default.SlotFolder))
+                return;
+
+            var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+            var l_IsoInfo = l_Grid.DataContext as IsoInfo;
+
+            if (l_IsoInfo != null)
+            {
+                var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
+
+                if (lProgressBannerGrid != null)
+                    await DriveManager.Instance.startDownloadingDiscAsync(
+                        l_IsoInfo.FilePath,
+                        lProgressBannerGrid);
+
+                l_IsoInfo = IsoManager.getGameDiscInfo(l_IsoInfo.FilePath);
+
+                if (l_IsoInfo != null && l_IsoInfo.GameDiscType != "Invalid or unknown disc.")
+                {
+                    IsoManager.Instance.addIsoInfo(l_IsoInfo);
+
+                    l_IsoInfo.IsCloudsave = true;
+
+                    l_IsoInfo.IsCloudOnlysave = false;
+                }
+                else
+                {
+                    var l_info = PPSSPPControl.Instance.getGameInfo(l_IsoInfo.FilePath);
+
+                    if (!string.IsNullOrEmpty(l_info.Item1))
+                    {
+                        l_IsoInfo.Title = l_info.Item1;
+
+                        l_IsoInfo.GameDiscType = "PSP Disc";
+
+                        l_IsoInfo.GameType = GameType.PSP;
+
+                        l_IsoInfo.DiscSerial = l_info.Item2;
+
+                        l_IsoInfo.DiscRegionType = "PAL";
+
+                        l_IsoInfo.SoftwareVersion = "1.0";
+
+                        l_IsoInfo.IsCloudsave = true;
+
+                        l_IsoInfo.IsCloudOnlysave = false;
+
+                        IsoManager.Instance.addIsoInfo(l_IsoInfo);
+                    }
+                }
+
+
+
+                //var lSaveState = IsoManager.Instance.addIsoInfo.readData(l_IsoInfo.FilePath, l_IsoInfo.Index, l_IsoInfo.IsAutosave, l_IsoInfo.IsQuicksave);
+
+
+
+                //if (_saveStateInfoCollection.Contains(l_IsoInfo, new Compare()))
+                //{
+                //    _saveStateInfoCollection.Remove(l_IsoInfo);
+                //}
+
+                //addSaveStateInfo(lSaveState);
+
+                //m_ListSlotIndexes.Remove(l_IsoInfo.Index);
+            }
         }
 
         public bool accessPersistItem(object a_Item)
         {
+            var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+            var l_IsoInfo = l_Grid.DataContext as IsoInfo;
+
+            if (l_IsoInfo != null)
+            {
+                return !l_IsoInfo.IsCloudOnlysave;
+            }
+
             return true;
         }
 
         public bool accessLoadItem(object a_Item)
         {
-            return true;
+            var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+            var l_IsoInfo = l_Grid.DataContext as IsoInfo;
+
+            if (l_IsoInfo != null)
+            {
+                return l_IsoInfo.IsCloudsave;
+            }
+
+            return false;
         }
+
 
         public System.ComponentModel.ICollectionView Collection
         {

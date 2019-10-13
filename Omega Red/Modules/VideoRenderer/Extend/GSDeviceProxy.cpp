@@ -225,6 +225,11 @@ bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd)
         return false;
     }
 
+    // Set maximum texture size limit based on supported feature level.
+    if (level >= D3D_FEATURE_LEVEL_11_0)
+        m_d3d_texsize = D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+    else
+        m_d3d_texsize = D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION;
     { // HACK: check nVIDIA
         // Note: It can cause issues on several games such as SOTC, Fatal Frame, plus it adds border offset.
         bool disable_safe_features = theApp.GetConfigB("UserHacks") && theApp.GetConfigB("UserHacks_Disable_Safe_Features");

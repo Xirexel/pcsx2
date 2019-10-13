@@ -75,8 +75,12 @@ namespace Omega_Red.Managers
         {            
             if(Value == MediaOutputType.Stream)
             {
-                return MediaRecorderManager.Instance.mInfoPanel;
+                return MediaRecorderManager.Instance.mStreamingCaptureConfigPanel;
             }
+            else if (Value == MediaOutputType.Capture)
+            {
+                return MediaRecorderManager.Instance.mRecordingCaptureConfig;
+            }                                            
 
             return null;
         }
@@ -94,7 +98,11 @@ namespace Omega_Red.Managers
 
     class MediaRecorderManager : IManager
     {
-        public StreamingCaptureConfig mInfoPanel = new StreamingCaptureConfig();
+        public StreamingCaptureConfig mStreamingCaptureConfigPanel = new StreamingCaptureConfig();
+
+        public RecordingCaptureConfig mRecordingCaptureConfig = new RecordingCaptureConfig();
+
+        
 
         private ICollectionView mCustomerView = null;
 
@@ -109,6 +117,8 @@ namespace Omega_Red.Managers
         public event Action<bool> RecordingStateEvent;
 
         public event Action<string> ShowWarningEvent;
+
+        public event Action<string> ShowInfoEvent;
 
         public string CaptureManagerVersion { get {
                 switch (MediaOutputType)
@@ -249,6 +259,7 @@ namespace Omega_Red.Managers
 
                 try
                 {
+                    bool l_result = true;
 
                     if (aState is Boolean)
                     {
@@ -257,7 +268,7 @@ namespace Omega_Red.Managers
                             switch (MediaOutputType)
                             {
                                 case MediaOutputType.Capture:
-                                    MediaCapture.Instance.start();
+                                    l_result = MediaCapture.Instance.start();
                                     break;
                                 case MediaOutputType.Stream:
                                     MediaStream.Instance.start();
@@ -266,7 +277,31 @@ namespace Omega_Red.Managers
                                     break;
                             }
 
-                            MediaSourcesManager.Instance.openSources();
+                            if(l_result)
+                                MediaSourcesManager.Instance.openSources();
+                            else
+                            {
+                                if (RecordingStateEvent != null)
+                                    RecordingStateEvent(false);
+                                
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                {
+                                    string l_title = "Recording cannot be started!!!";
+
+                                    try
+                                    {
+                                        var l_Title = new System.Windows.Controls.TextBlock();
+
+                                        l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, "VideoFileRecordingFailedTitle");
+
+                                        l_title = l_Title.Text;
+                                    }
+                                    finally
+                                    {
+                                        ShowWarning(l_title);
+                                    }
+                                });
+                            }
                         }
                         else
                         {
@@ -357,7 +392,20 @@ namespace Omega_Red.Managers
 
             if (l_gameData != null)
             {
-                l_add_file_path = l_gameData.FriendlyName + "_" + l_add_file_path;
+                var l_invalidChars = Path.GetInvalidFileNameChars();
+
+                bool l_hasInvalidChar = false;
+
+                foreach (var l_invalidChar in l_invalidChars)
+                {
+                    l_hasInvalidChar = l_gameData.FriendlyName.Contains(l_invalidChar);
+
+                    if (l_hasInvalidChar)
+                        break;
+                }
+
+                if(!l_hasInvalidChar)
+                    l_add_file_path = l_gameData.FriendlyName + "_" + l_add_file_path;
             }
 
             if (File.Exists(Settings.Default.VideosFolder + l_add_file_path))
@@ -366,8 +414,25 @@ namespace Omega_Red.Managers
 
                 return;
             }
+            
+            do
+            {
+                try
+                {                    
+                    Thread.Sleep(300);
 
-            File.Move(aTempFile, Settings.Default.VideosFolder + l_add_file_path);
+                    File.Move(aTempFile, Settings.Default.VideosFolder + l_add_file_path);
+
+                    break;
+                }
+                catch (Exception)
+                {
+                }
+
+            } while (true);
+            
+            if (!File.Exists(Settings.Default.VideosFolder + l_add_file_path))
+                return;
 
             MediaRecorderInfo l_MediaRecorderInfo = new MediaRecorderInfo();
 
@@ -380,6 +445,21 @@ namespace Omega_Red.Managers
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
             {
                 _mediaRecorderInfoCollection.Add(l_MediaRecorderInfo);
+
+                string l_title = l_MediaRecorderInfo.FileName;
+
+                try
+                {
+                    var l_Title = new System.Windows.Controls.TextBlock();
+
+                    l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, "VideoFileRecordedInfoTitle");
+
+                    l_title += l_Title.Text;
+                }
+                finally
+                {
+                    ShowInfo(l_title);
+                }
             });
         }
 
@@ -630,7 +710,15 @@ namespace Omega_Red.Managers
                 {
                     ShowWarningEvent(a_message);
                 });
-
         }
+
+        private void ShowInfo(string a_message)
+        {
+            if (ShowInfoEvent != null)
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    ShowInfoEvent(a_message);
+                });
+        }        
     }
 }

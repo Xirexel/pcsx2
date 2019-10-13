@@ -113,6 +113,7 @@ public:
 		// still be valid on future. However it ought to be good when the source is created
 		// so it can be used to access un-converted data for the current draw call.
 		GSTexture* m_from_target;
+		GIFRegTEX0 m_from_target_TEX0;  // TEX0 of the target texture, if any, else equal to texture TEX0
 		GIFRegTEX0 m_layer_TEX0[7]; // Detect already loaded value
 		// Keep a GSTextureCache::SourceMap::m_map iterator to allow fast erase
 		std::array<uint16, MAX_PAGES> m_erase_it;
@@ -184,6 +185,19 @@ public:
 		void RemoveAt(Source* s);
 	};
 
+	struct TexInsideRtCacheEntry
+	{
+		uint32 psm;
+		uint32 bp;
+		uint32 bp_end;
+		uint32 bw;
+		uint32 t_tex0_tbp0;
+		uint32 m_end_block;
+		bool has_valid_offset;
+		int x_offset;
+		int y_offset;
+	};
+
 protected:
 	GSRenderer* m_renderer;
 	PaletteMap m_palette_map;
@@ -198,6 +212,8 @@ protected:
 	static bool m_disable_partial_invalidation;
 	bool m_texture_inside_rt;
 	static bool m_wrap_gs_mem;
+	uint8 m_texture_inside_rt_cache_size = 255;
+	std::vector<TexInsideRtCacheEntry> m_texture_inside_rt_cache;
 
 	virtual Source* CreateSource(const GIFRegTEX0& TEX0, const GIFRegTEXA& TEXA, Target* t = NULL, bool half_right = false, int x_offset = 0, int y_offset = 0);
 	virtual Target* CreateTarget(const GIFRegTEX0& TEX0, int w, int h, int type);
@@ -229,6 +245,8 @@ public:
 	void IncAge();
 	bool UserHacks_HalfPixelOffset;
 	void ScaleTexture(GSTexture* texture);
+
+	bool ShallSearchTextureInsideRt();
 
 	const char* to_string(int type) {
 		return (type == DepthStencil) ? "Depth" : "Color";

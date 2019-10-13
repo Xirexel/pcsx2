@@ -57,7 +57,9 @@ namespace Omega_Red
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
 
             MediaRecorderManager.Instance.ShowWarningEvent += Instance_ShowWarningEvent;
-                        
+
+            MediaRecorderManager.Instance.ShowInfoEvent += Instance_ShowInfoEvent;
+
 #if DEBUG
 
             WindowState = System.Windows.WindowState.Normal;
@@ -69,6 +71,10 @@ namespace Omega_Red
         private void Instance_ShowWarningEvent(string a_message)
         {
             mTaskbarIcon.ShowBalloonTip(Title, a_message, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Warning);
+        }
+        private void Instance_ShowInfoEvent(string a_message)
+        {
+            mTaskbarIcon.ShowBalloonTip(Title, a_message, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
         }
 
         void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
@@ -121,6 +127,8 @@ namespace Omega_Red
                 {
                     break;
                 }
+
+                ModuleControl.Instance.setVersion();
 
                 if (!PCSX2LibNative.Instance.isInit)
                 {
@@ -348,7 +356,8 @@ namespace Omega_Red
 
                         mMediaChkBtn.RaiseEvent(l_mouseUpEvent);
 
-                        mMediaChkBtn.Command.Execute(true);
+                        if(mMediaChkBtn.Command != null)
+                            mMediaChkBtn.Command.Execute(true);
 
 
                         mIsOpened = true;

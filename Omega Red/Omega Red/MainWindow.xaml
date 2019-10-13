@@ -190,21 +190,32 @@
                     Grid.Column="1"
                 Visibility="{Binding Source={StaticResource mConfigViewModel}, Path=TouchControlVisibility}"
                 />
-            
+
         </Grid>
-        <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <UserControl 
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="6*"/>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="8*"/>
+                <RowDefinition Height="3*"/>
+            </Grid.RowDefinitions>
+            <Viewbox Grid.Column="1" Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Right">
+                <UserControl 
                 Opacity="{DynamicResource StandardOpacity}"
                 Visibility="{Binding VisibilityState}"
-                  Canvas.Bottom="10" 
-                  Canvas.Right="10"
                 Width="300"
                 Height="160">
-                <UserControl.DataContext>
-                    <viewModels:AutoSaveStateViewModel/>
-                </UserControl.DataContext>
-                <ListView Background="Transparent" BorderBrush="Transparent" ScrollViewer.VerticalScrollBarVisibility="Disabled" Style="{DynamicResource InfoListView}"/>
-            </UserControl>
+                    <UserControl.DataContext>
+                        <viewModels:AutoSaveStateViewModel/>
+                    </UserControl.DataContext>
+                    <ListView Background="Transparent" BorderBrush="Transparent" ScrollViewer.VerticalScrollBarVisibility="Disabled" Style="{DynamicResource InfoListView}"/>
+                </UserControl>
+            </Viewbox>
+        </Grid>
+        <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Grid x:Name="mControlGrid" 
                   Canvas.Top="0" 
                   Canvas.Left="{Binding ElementName=mControlPanel, Path=ActualWidth, Converter={StaticResource mControlWidthOffset}}">

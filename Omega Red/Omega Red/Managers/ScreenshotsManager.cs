@@ -192,7 +192,20 @@ namespace Omega_Red.Managers
 
             if (l_gameData != null)
             {
-                l_add_file_path = l_gameData.FriendlyName + "_" + l_add_file_path;
+                var l_invalidChars = Path.GetInvalidFileNameChars();
+
+                bool l_hasInvalidChar = false;
+
+                foreach (var l_invalidChar in l_invalidChars)
+                {
+                    l_hasInvalidChar = l_gameData.FriendlyName.Contains(l_invalidChar);
+
+                    if (l_hasInvalidChar)
+                        break;
+                }
+
+                if (!l_hasInvalidChar)
+                    l_add_file_path = l_gameData.FriendlyName + "_" + l_add_file_path;
             }
 
             if (File.Exists(Settings.Default.ScreenshotsFolder + l_add_file_path))

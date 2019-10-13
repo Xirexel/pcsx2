@@ -134,36 +134,5 @@ namespace Omega_Red.Managers
         {
         }
 
-        //public void cancel()
-        //{
-        //    if (m_UncheckEvent != null)
-        //        m_UncheckEvent(false);
-
-        //    LockScreenManager.Instance.hide();
-        //}
-
-        //public void confirm()
-        //{
-        //    LockScreenManager.Instance.hide();
-
-        //    Tuple<string, string> l_tuple = null;
-
-        //    if (m_Manager != null)
-        //    {
-        //        l_tuple = m_Manager.getConnectionToken();
-        //    }
-
-        //    if(l_tuple != null && !string.IsNullOrWhiteSpace(l_tuple.Item1) && !string.IsNullOrWhiteSpace(l_tuple.Item2))
-        //    {
-        //        Omega_Red.Capture.MediaStream.Instance.setConnectionToken(l_tuple);
-
-        //        MediaRecorderManager.Instance.IsAllowedStreaming = true;
-        //    }
-        //}
-
-        //public bool isAllowedConfirm()
-        //{
-        //    return m_IsAllowedConfirm;
-        //}
     }
 }

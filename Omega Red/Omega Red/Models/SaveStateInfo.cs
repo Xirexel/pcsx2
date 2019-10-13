@@ -45,5 +45,9 @@ namespace Omega_Red.Models
         public Visibility Visibility { get; set; }
         public System.Windows.Media.ImageSource ImageSource { get; set; }
         public SaveStateType Type { get; set; }
+
+
+        public string CloudSaveDate { get; set; }
+        public string CloudSaveDuration { get; set; }
     }
 }

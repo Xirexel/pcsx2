@@ -115,8 +115,8 @@
                             <Button Tag="0020" Style="{DynamicResource PadButtonStyle}" Grid.Row="2"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-10,0" >
                                 <Rectangle Margin="10" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Width="30" Height="20"/>
                             </Button>
-                            <Button Tag="0040" Style="{DynamicResource PadButtonStyle}" Grid.Row="3"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-40,-40" >
-                                <Ellipse Width="30" Height="30" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}"/>
+                            <Button Tag="0040" Style="{DynamicResource PadButtonStyle}" Grid.Row="3"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" VerticalAlignment="Bottom" HorizontalAlignment="Right"  Width="60" Height="60" Margin="0,0,-50,-50" >
+                                <Ellipse Width="40" Height="40" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}"/>
                             </Button>
                             <panels:AnalogStickPanel Grid.Row="3" Margin="170,10,0,0" Axises="{Binding LeftStickAxises, Mode=TwoWay}"
                     Visibility="{Binding TouchPadPanelVisibility}"/>
@@ -182,8 +182,8 @@
                             <Button Tag="0010" Style="{DynamicResource PadButtonStyle}"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" Grid.Row="2" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="0,0,-10,0" >
                                 <Path Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Data="M 10,4 L 35,15 L 10,27 Z"/>
                             </Button>
-                            <Button Tag="0080" Style="{DynamicResource PadButtonStyle}"  Margin="-40,0,0,-40" PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" Grid.Row="3" VerticalAlignment="Bottom" HorizontalAlignment="Left" >
-                                <Ellipse Width="30" Height="30" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}"/>
+                            <Button Tag="0080" Style="{DynamicResource PadButtonStyle}" Width="60" Height="60" Margin="-50,0,0,-50" PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" Grid.Row="3" VerticalAlignment="Bottom" HorizontalAlignment="Left" >
+                                <Ellipse Width="40" Height="40" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}"/>
                             </Button>
                             <panels:AnalogStickPanel Grid.Row="3" Grid.Column="2" Margin="-80,10,70,0" Axises="{Binding RightStickAxises, Mode=TwoWay}"
                         Visibility="{Binding TouchPadPanelVisibility}"/>

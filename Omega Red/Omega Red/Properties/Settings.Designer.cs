@@ -370,5 +370,41 @@ namespace Omega_Red.Properties {
                 this["MediaSourceInfoCollection"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int RecordingFileSizeMode {
+            get {
+                return ((int)(this["RecordingFileSizeMode"]));
+            }
+            set {
+                this["RecordingFileSizeMode"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public uint RecordingVideoBitRate {
+            get {
+                return ((uint)(this["RecordingVideoBitRate"]));
+            }
+            set {
+                this["RecordingVideoBitRate"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public uint RecordingAudioBitRate {
+            get {
+                return ((uint)(this["RecordingAudioBitRate"]));
+            }
+            set {
+                this["RecordingAudioBitRate"] = value;
+            }
+        }
     }
 }

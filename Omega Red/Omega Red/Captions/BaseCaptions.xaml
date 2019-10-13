@@ -84,7 +84,16 @@
     <sys:String x:Key="YouTubeBroadcastTitle">Трансляция</sys:String>
     <sys:String x:Key="YouTubeBroadcastTitleTitle">Заголовок трансляции:</sys:String>
     <sys:String x:Key="YouTubeBroadcastDescriptionTitle">Описание трансляции:</sys:String>
-    <sys:String x:Key="VideoStreamBitRateTitle">Видео битрате:</sys:String>
-    <sys:String x:Key="AudioStreamBitRateTitle">Аудио битрате:</sys:String>
+    <sys:String x:Key="VideoStreamBitRateTitle">Видео битрейт:</sys:String>
+    <sys:String x:Key="AudioStreamBitRateTitle">Аудио битрейт:</sys:String>
+    <sys:String x:Key="StreamServiceTitle">Стрим сервис:</sys:String>
+    <sys:String x:Key="StreamKeyTitle">Стрим идентификатор:</sys:String>
     <sys:String x:Key="StreamConnectionWarningTitle">Соединение с сервером потеряно!!!</sys:String>
+    <sys:String x:Key="RecordServiceTitle">Размер файла записи:</sys:String>
+    <sys:String x:Key="UnlimitedTitle">Не ограниченный</sys:String>
+    <sys:String x:Key="S_1_4_GbTitle">1.4 Гб</sys:String>
+    <sys:String x:Key="S_700_MbTitle">700 Мб</sys:String>
+    <sys:String x:Key="VariableBitrateTitle">Переменный битрейт</sys:String>
+    <sys:String xml:space="preserve" x:Key="VideoFileRecordedInfoTitle"> записан!!!</sys:String>
+    <sys:String xml:space="preserve" x:Key="VideoFileRecordingFailedTitle">Запись невозможна!!!</sys:String>
 </ResourceDictionary>

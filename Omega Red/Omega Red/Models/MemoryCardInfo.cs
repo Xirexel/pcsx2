@@ -36,5 +36,11 @@ namespace Omega_Red.Models
         public DateTime DateTime { get; set; }
 
         public bool IsCurrent { get; set; }
+
+        public bool IsCloudOnlysave { get; set; }
+
+        public bool IsCloudsave { get; set; }
+
+        public bool Focusable { get { return !IsCloudOnlysave; }}
     }
 }

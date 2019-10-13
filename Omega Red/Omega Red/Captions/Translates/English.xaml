@@ -86,5 +86,14 @@
     <sys:String x:Key="YouTubeBroadcastDescriptionTitle">Broadcasts' description:</sys:String>
     <sys:String x:Key="VideoStreamBitRateTitle">Video bitrate:</sys:String>
     <sys:String x:Key="AudioStreamBitRateTitle">Audio bitrate:</sys:String>
+    <sys:String x:Key="StreamServiceTitle">Stream service:</sys:String>
+    <sys:String x:Key="StreamKeyTitle">Stream identificator:</sys:String>
     <sys:String x:Key="StreamConnectionWarningTitle">Connection with the server is lost!!!</sys:String>
+    <sys:String x:Key="RecordServiceTitle">Size of the recorded file:</sys:String>
+    <sys:String x:Key="UnlimitedTitle">Unlimited</sys:String>
+    <sys:String x:Key="S_1_4_GbTitle">1.4 Gb</sys:String>
+    <sys:String x:Key="S_700_MbTitle">700 Mb</sys:String>
+    <sys:String x:Key="VariableBitrateTitle">Variable bitrate</sys:String>
+    <sys:String xml:space="preserve" x:Key="VideoFileRecordedInfoTitle"> recorded!!!</sys:String>
+    <sys:String xml:space="preserve" x:Key="VideoFileRecordingFailedTitle">Recording is failed!!!</sys:String>
 </ResourceDictionary>

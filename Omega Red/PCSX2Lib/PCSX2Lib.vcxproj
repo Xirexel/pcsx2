@@ -301,9 +301,6 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Manifest Include="PCSX2Lib.manifest" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Common\MemoryManager\MemoryManager.vcxproj">
       <Project>{1691294c-24f6-452d-9554-feb49c1c1c22}</Project>
     </ProjectReference>

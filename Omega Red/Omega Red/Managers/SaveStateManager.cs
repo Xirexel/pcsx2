@@ -90,7 +90,7 @@ namespace Omega_Red.Managers
             };
 
             if (string.IsNullOrEmpty(Settings.Default.SlotFolder))
-                Settings.Default.SlotFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\PCSX2\sstates\";
+                Settings.Default.SlotFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\OmegaRed\sstates\";
 
             mCustomerView = CollectionViewSource.GetDefaultView(_saveStateInfoCollection);
 
@@ -107,7 +107,7 @@ namespace Omega_Red.Managers
         public void init()
         {
             if (string.IsNullOrEmpty(Settings.Default.SlotFolder))
-                Settings.Default.SlotFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\PCSX2\sstates\";
+                Settings.Default.SlotFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\OmegaRed\sstates\";
 
             if (!System.IO.Directory.Exists(Settings.Default.SlotFolder))
             {
@@ -261,7 +261,7 @@ namespace Omega_Red.Managers
         {
             if (m_GoogleDriveAccess)
             {
-                var l_SaveStateList = GoogleAccountManager.Instance.getSaveStateList(a_disk_serial);
+                var l_SaveStateList = DriveManager.Instance.getSaveStateList(a_disk_serial);
 
                 foreach (var item in l_SaveStateList)
                 {
@@ -280,6 +280,10 @@ namespace Omega_Red.Managers
                             if (lsaveState != null)
                             {
                                 lsaveState.IsCloudsave = true;
+
+                                lsaveState.CloudSaveDate = item.Date;
+
+                                lsaveState.CloudSaveDuration = item.Duration;
                             }
                         }
                         catch (Exception)
@@ -689,7 +693,7 @@ namespace Omega_Red.Managers
             {
                 if (l_SaveStateInfo.IsCloudOnlysave)
                 {
-                    await GoogleAccountManager.Instance.startDeletingAsync(l_SaveStateInfo.FilePath);
+                    await DriveManager.Instance.startDeletingSStateAsync(l_SaveStateInfo.FilePath);
 
                     if (_saveStateInfoCollection.Contains(l_SaveStateInfo, new Compare()))
                     {
@@ -720,13 +724,22 @@ namespace Omega_Red.Managers
                 var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
 
                 if (lProgressBannerGrid != null)
-                    await GoogleAccountManager.Instance.startUploadingAsync(l_SaveStateInfo.FilePath, lProgressBannerGrid, lDescription);
+                    await DriveManager.Instance.startUploadingSStateAsync(l_SaveStateInfo.FilePath, lProgressBannerGrid, lDescription);
 
                 l_Grid.DataContext = null;
 
                 l_SaveStateInfo.IsCloudsave = true;
 
-                l_Grid.DataContext = l_SaveStateInfo;
+                l_SaveStateInfo.IsCloudOnlysave = false;
+
+                l_SaveStateInfo.CloudSaveDate = l_SaveStateInfo.Date;
+
+                l_SaveStateInfo.CloudSaveDuration = l_SaveStateInfo.Duration;
+                
+                await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    mCustomerView.Refresh();
+                });
             }
         }
 
@@ -744,7 +757,7 @@ namespace Omega_Red.Managers
                 var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
 
                 if (lProgressBannerGrid != null)
-                    await GoogleAccountManager.Instance.startDownloadingAsync(
+                    await DriveManager.Instance.startDownloadingSStateAsync(
                         l_SaveStateInfo.FilePath, 
                         lProgressBannerGrid);
                                
@@ -753,6 +766,10 @@ namespace Omega_Red.Managers
                 lSaveState.IsCloudsave = true;
 
                 lSaveState.IsCloudOnlysave = false;
+
+                lSaveState.CloudSaveDate = l_SaveStateInfo.Date;
+
+                lSaveState.CloudSaveDuration = l_SaveStateInfo.Duration;
 
                 if (_saveStateInfoCollection.Contains(l_SaveStateInfo, new Compare()))
                 {

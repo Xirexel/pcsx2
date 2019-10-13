@@ -69,7 +69,8 @@ namespace PboPool {
 
 	char* Map(uint32 size) {
 		char* map;
-		m_size = size;
+		// Note: keep offset aligned for SSE/AVX
+		m_size = (size + 63) & ~0x3F;
 
 		if (m_size > m_pbo_size) {
 			fprintf(stderr, "BUG: PBO too small %u but need %u\n", m_pbo_size, m_size);
@@ -120,6 +121,11 @@ namespace PboPool {
 			// Align current transfer on the start of the segment
 			m_offset = m_seg_size * segment_next;
 
+			if (m_size > m_seg_size) {
+				fprintf(stderr, "BUG: PBO Map size %u is bigger than a single segment %u. Crossing more than one fence is not supported yet, texture data may be corrupted.\n", m_size, m_seg_size);
+				// TODO Synchronize all crossed fences
+			}
+
 			// protect the left segment
 			m_fence[segment_current] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
@@ -142,14 +148,16 @@ namespace PboPool {
 	}
 
 	void EndTransfer() {
-		// Note: keep offset aligned for SSE/AVX
-		m_offset += (m_size + 63) & ~0x3F;
+		m_offset += m_size;
 	}
 }
 
 GSTextureOGL::GSTextureOGL(int type, int w, int h, int format, GLuint fbo_read, bool mipmap)
 	: m_clean(false), m_generate_mipmap(true), m_local_buffer(nullptr), m_r_x(0), m_r_y(0), m_r_w(0), m_r_h(0), m_layer(0)
 {
+	ASSERT(w > 0);
+	ASSERT(h > 0);
+
 	// OpenGL didn't like dimensions of size 0
 	m_size.x = std::max(1,w);
 	m_size.y = std::max(1,h);
