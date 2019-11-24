@@ -1,17 +1,5 @@
-﻿/*  Omega Red - Client PS2 Emulator for PCs
-*
-*  Omega Red is free software: you can redistribute it and/or modify it under the terms
-*  of the GNU Lesser General Public License as published by the Free Software Found-
-*  ation, either version 3 of the License, or (at your option) any later version.
-*
-*  Omega Red is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-*  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-*  PURPOSE.  See the GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License along with Omega Red.
-*  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+﻿using Omega_Red.Managers;
+using Omega_Red.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,15 +7,13 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Omega_Red.Util;
-using Omega_Red.Managers;
 
 namespace Omega_Red.Tools
 {
-    class ModuleManager
+    class PCSXModuleManager
     {
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        delegate IntPtr getPCSX2Lib_API();
+        delegate IntPtr getModule_API();
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         delegate void execute([MarshalAs(UnmanagedType.LPWStr)] string a_command, out IntPtr a_result);
@@ -37,14 +23,17 @@ namespace Omega_Red.Tools
 
         public enum ModuleType : int
         {
-            VideoRenderer = 0,
-            Pad = 1,
-            AudioRenderer = 2,
-            CDVD = 3,
-            USB = 4,
-	        FW = 5,
-            DEV9 = 6,
-            MemoryCard = 7,
+            DFXVideo = 0,
+            DFSound = 1,
+            bladesio1 = 2,
+            Pad = 3,
+            //Pad = 1,
+            //AudioRenderer = 2,
+            //CDVD = 3,
+            //USB = 4,
+            //FW = 5,
+            //DEV9 = 6,
+            //MemoryCard = 7,
             None = -1
         }
 
@@ -77,7 +66,7 @@ namespace Omega_Red.Tools
             Int32 l_ModuleID = -1;
 
             l_ModuleID = (int)a_ModuleType;
-            
+
             return l_ModuleID;
         }
 
@@ -85,56 +74,24 @@ namespace Omega_Red.Tools
         {
             string l_result = "";
 
-            switch (a_ModuleType)
-            {
-                case ModuleType.AudioRenderer:
-                    break;
-                case ModuleType.VideoRenderer:
-                    l_result = "GS";
-                    break;
-                case ModuleType.DEV9:
-                    break;
-                case ModuleType.MemoryCard:
-                    break;
-                case ModuleType.Pad:
-                    break;
-                case ModuleType.CDVD:
-                    break;
-                case ModuleType.USB:
-                    break;
-                default:
-                    break;
-            }
-
             return l_result;
         }
 
         public static int GetFreezeSize(ModuleType a_ModuleType)
         {
-	        freezeData fP = new freezeData(){ size = 0, data = IntPtr.Zero};
+            freezeData fP = new freezeData() { size = 0, data = IntPtr.Zero };
             if (!DoFreeze(a_ModuleType, FREEZE_TYPE.FREEZE_SIZE, fP)) return 0;
-	        return fP.size;
+            return fP.size;
         }
 
-        private static bool DoFreeze( ModuleType a_ModuleType, FREEZE_TYPE mode, freezeData fP )
+        private static bool DoFreeze(ModuleType a_ModuleType, FREEZE_TYPE mode, freezeData fP)
         {
-	        if( (a_ModuleType == ModuleType.VideoRenderer) && !PCSX2LibNative.Instance.MTGS_IsSelfFunc())
-	        {
-		        // GS needs some thread safety love...
-
-                //MTGS_FreezeData woot = { data, 0 };
-                //GetMTGS().Freeze( mode, woot );
-                //return woot.retval != -1;
-
-                return false;
-	        }
-	        else
-	        {
+            {
                 //ScopedLock lock( m_mtx_PluginStatus );
                 //return !m_info[pid] || m_info[pid]->CommonBindings.Freeze( mode, data ) != -1;
 
                 return false;
-	        }
+            }
         }
 
         class Module_API
@@ -210,7 +167,7 @@ namespace Omega_Red.Tools
 
                 do
                 {
-                
+
                     m_LibLoader = LibLoader.create(Enum.GetName(m_ModuleType.GetType(), m_ModuleType));
 
                     if (m_LibLoader == null)
@@ -225,15 +182,15 @@ namespace Omega_Red.Tools
                     }
 
                     m_initilized = true;
-                    
+
                 } while (false);
-                
+
                 LockScreenManager.Instance.displayMessage(
                     l_ModuleBeforeTitle
                     + Enum.GetName(m_ModuleType.GetType(), m_ModuleType)
                     + (m_initilized ? App.Current.Resources["ModuleIsLoadedTitle"] : App.Current.Resources["ModuleIsNotLoadedTitle"]));
             }
-            
+
             public void release()
             {
                 m_LibLoader.release();
@@ -262,7 +219,7 @@ namespace Omega_Red.Tools
                 return lresult;
             }
 
-            public IntPtr getPCSX2Lib_API()
+            public IntPtr getModule_API()
             {
                 IntPtr l_result = IntPtr.Zero;
 
@@ -272,8 +229,8 @@ namespace Omega_Red.Tools
                         break;
 
                     var l_getAPI = Marshal.GetDelegateForFunctionPointer(m_Module_API.getAPI,
-                        typeof(getPCSX2Lib_API))
-                        as getPCSX2Lib_API;
+                        typeof(getModule_API))
+                        as getModule_API;
 
                     if (l_getAPI == null)
                         break;
@@ -342,28 +299,24 @@ namespace Omega_Red.Tools
 
         private List<Module> m_Modules = new List<Module>()
         {
-            new Module(ModuleType.AudioRenderer),
-            new Module(ModuleType.VideoRenderer),
-            new Module(ModuleType.DEV9),
-            new Module(ModuleType.MemoryCard),
-            new Module(ModuleType.CDVD),
+            new Module(ModuleType.DFXVideo),
+            new Module(ModuleType.DFSound),
+            new Module(ModuleType.bladesio1),
             new Module(ModuleType.Pad),
-            new Module(ModuleType.USB),
-            new Module(ModuleType.FW)    
         };
 
-        
-        private ModuleManager() { }
 
-        private static ModuleManager m_Instance = null;
+        private PCSXModuleManager() { }
 
-        public static ModuleManager Instance
+        private static PCSXModuleManager m_Instance = null;
+
+        public static PCSXModuleManager Instance
         {
             get
             {
                 if (m_Instance == null)
                 {
-                    m_Instance = new ModuleManager();
+                    m_Instance = new PCSXModuleManager();
 
                     m_Instance.init();
                 }
@@ -383,7 +336,7 @@ namespace Omega_Red.Tools
 
             foreach (var item in Modules)
             {
-                if(item.ModuleType == a_ModuleType)
+                if (item.ModuleType == a_ModuleType)
                 {
                     l_result = item;
 
@@ -432,4 +385,3 @@ namespace Omega_Red.Tools
         }
     }
 }
-

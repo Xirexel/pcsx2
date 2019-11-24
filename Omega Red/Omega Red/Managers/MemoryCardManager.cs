@@ -33,7 +33,7 @@ using System.Xml.Serialization;
 
 namespace Omega_Red.Managers
 {
-    class MemoryCardManager: IManager
+    class MemoryCardManager : IManager
     {
 
         class Compare : IEqualityComparer<MemoryCardInfo>
@@ -53,6 +53,8 @@ namespace Omega_Red.Managers
 
 
         }
+
+        private const int MCDBLOCK_SIZE = 1024;
 
         private const int MCD_SIZE = 1024 * 8 * 16;		// Legacy PSX card default size
 
@@ -74,8 +76,9 @@ namespace Omega_Red.Managers
 
         public static MemoryCardManager Instance { get { if (m_Instance == null) m_Instance = new MemoryCardManager(); return m_Instance; } }
 
-        private MemoryCardManager() {
-            
+        private MemoryCardManager()
+        {
+
             for (int i = 0; i < m_effeffs.Length; i++)
             {
                 m_effeffs[i] = 0xff;
@@ -90,10 +93,14 @@ namespace Omega_Red.Managers
             }
 
             mCustomerView = CollectionViewSource.GetDefaultView(_memoryCardInfoCollection);
-                       
+
+            PropertyGroupDescription l_groupDescription = new PropertyGroupDescription("GameDiscType");
+
+            mCustomerView.GroupDescriptions.Add(l_groupDescription);
+
             mCustomerView.SortDescriptions.Add(
             new SortDescription("DateTime", ListSortDirection.Descending));
-            
+
             mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
 
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
@@ -117,12 +124,12 @@ namespace Omega_Red.Managers
         }
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
-        {            
+        {
             var l_MemoryCardInfo = mCustomerView.CurrentItem as MemoryCardInfo;
 
             if (l_MemoryCardInfo != null)
             {
-                if(l_MemoryCardInfo.IsCloudOnlysave)
+                if (l_MemoryCardInfo.IsCloudOnlysave)
                 {
                     Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                     {
@@ -135,13 +142,15 @@ namespace Omega_Red.Managers
         }
 
         private readonly ObservableCollection<MemoryCardInfo> _memoryCardInfoCollection = new ObservableCollection<MemoryCardInfo>();
-        
+
         public void load()
         {
             if (PCSX2Controller.Instance.IsoInfo == null)
                 return;
 
-            if (PCSX2Controller.Instance.IsoInfo.GameType == GameType.PSP)
+            string l_ext = getCurrentMemoryCardExtention();
+
+            if (string.IsNullOrWhiteSpace(l_ext))
                 return;
 
             if (m_disk_serial == PCSX2Controller.Instance.IsoInfo.DiscSerial)
@@ -150,6 +159,55 @@ namespace Omega_Red.Managers
             m_disk_serial = PCSX2Controller.Instance.IsoInfo.DiscSerial;
 
             _memoryCardInfoCollection.Clear();
+
+            if (PCSX2Controller.Instance.IsoInfo.GameType == GameType.PS1)
+            {
+                try
+                {
+                    var Name = "MemoryCard.shared" + l_ext;
+
+                    var FullName = Settings.Default.MemoryCardsFolder + Name;
+
+                    DateTime l_LastWriteTime = DateTime.Now;
+
+                    if (!File.Exists(FullName))
+                    {
+                        createPS1Mcd(FullName);
+                    }
+
+                    if (File.Exists(FullName))
+                    {
+                        System.IO.FileInfo fi = null;
+                        try
+                        {
+                            fi = new System.IO.FileInfo(FullName);
+
+                            l_LastWriteTime = fi.LastWriteTime;
+                        }
+                        catch (System.IO.FileNotFoundException e)
+                        {
+                            // To inform the user and continue is
+                            // sufficient for this demonstration.
+                            // Your application may require different behavior.
+                            Console.WriteLine(e.Message);
+                        }
+                    }
+
+                    addMemoryCardInfo(new MemoryCardInfo()
+                    {
+                        Visibility = System.Windows.Visibility.Hidden,
+                        Index = -1,
+                        Number = "Shared",
+                        FileName = Name,
+                        FilePath = FullName,
+                        DateTime = l_LastWriteTime,
+                        Date = l_LastWriteTime.ToString("dd/MM/yyyy HH:mm:ss")
+                    });
+                }
+                catch (Exception)
+                {
+                }
+            }
 
             m_ListSlotIndexes.Clear();
 
@@ -162,7 +220,7 @@ namespace Omega_Red.Managers
             {
                 var l_SelectedMemoryCardFile = PCSX2Controller.Instance.IsoInfo.SelectedMemoryCardFile;
 
-                string[] files = System.IO.Directory.GetFiles(Settings.Default.MemoryCardsFolder, "*.ps2");
+                string[] files = System.IO.Directory.GetFiles(Settings.Default.MemoryCardsFolder, "*" + l_ext);
 
                 foreach (string s in files)
                 {
@@ -198,6 +256,7 @@ namespace Omega_Red.Managers
                                 {
                                     Visibility = System.Windows.Visibility.Visible,
                                     Index = l_value,
+                                    Number = string.Format("{0:#}", l_value + 1),
                                     FileName = fi.Name,
                                     FilePath = fi.FullName,
                                     DateTime = fi.LastWriteTime,
@@ -218,13 +277,15 @@ namespace Omega_Red.Managers
                     //});
                 }
 
-                fetchCloudMemoryCard(PCSX2Controller.Instance.IsoInfo.DiscSerial);
+                fetchCloudMemoryCard(PCSX2Controller.Instance.IsoInfo.Title + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial);
+
+                fetchCloudMemoryCard("MemoryCard.shared");
 
                 bool l_selected = false;
 
                 foreach (var item in _memoryCardInfoCollection)
                 {
-                    if(item.FileName == l_SelectedMemoryCardFile)
+                    if (item.FileName == l_SelectedMemoryCardFile)
                     {
                         selectMemoryCardInfo(item);
 
@@ -234,7 +295,7 @@ namespace Omega_Red.Managers
                     }
                 }
 
-                if(!l_selected && _memoryCardInfoCollection.Count > 0)
+                if (!l_selected && _memoryCardInfoCollection.Count > 0)
                     selectMemoryCardInfo(_memoryCardInfoCollection[0]);
 
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
@@ -265,6 +326,11 @@ namespace Omega_Red.Managers
             if (PCSX2Controller.Instance.IsoInfo == null)
                 return;
 
+            string l_ext = getCurrentMemoryCardExtention();
+
+            if (string.IsNullOrWhiteSpace(l_ext))
+                return;
+
             if (m_ListSlotIndexes.Count > 0)
             {
                 var lIndexString = m_ListSlotIndexes[0].ToString();
@@ -272,44 +338,51 @@ namespace Omega_Red.Managers
                 if (lIndexString.Length == 1)
                     lIndexString = lIndexString.PadLeft(2, '0');
 
-                var Name = (PCSX2Controller.Instance.IsoInfo.Title + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial) + "." + lIndexString + ".ps2";
+                var Name = (PCSX2Controller.Instance.IsoInfo.Title + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial) + "." + lIndexString + l_ext;
 
                 var FullName = Settings.Default.MemoryCardsFolder + Name;
 
-                try
+                if (PCSX2Controller.Instance.IsoInfo.GameType == GameType.PS1)
                 {
-                    using (var fs = new FileStream(FullName, FileMode.Create, FileAccess.Write, FileShare.None))
+                    createPS1Mcd(FullName);
+                }
+                else if (PCSX2Controller.Instance.IsoInfo.GameType == GameType.PS2)
+                {
+                    try
                     {
-                        for (uint i = 0; i < (MC2_SIZE) / m_effeffs.Length; i++)
+                        using (var fs = new FileStream(FullName, FileMode.Create, FileAccess.Write, FileShare.None))
                         {
-                            try
+                            for (uint i = 0; i < (MC2_SIZE) / m_effeffs.Length; i++)
                             {
-                                fs.Write(m_effeffs, 0, m_effeffs.Length);
-                            }
-                            catch (Exception)
-                            {
-                                return;
+                                try
+                                {
+                                    fs.Write(m_effeffs, 0, m_effeffs.Length);
+                                }
+                                catch (Exception)
+                                {
+                                    return;
+                                }
                             }
                         }
                     }
-                }
-                catch (Exception)
-                {
-                    Name = PCSX2Controller.Instance.IsoInfo.DiscSerial + "." + lIndexString + ".ps2";
-
-                    FullName = Settings.Default.MemoryCardsFolder + Name;
-
-                    using (var fs = new FileStream(FullName, FileMode.Create, FileAccess.Write, FileShare.None))
+                    catch (Exception)
                     {
-                        for (uint i = 0; i < (MC2_SIZE) / m_effeffs.Length; i++)
+                        Name = PCSX2Controller.Instance.IsoInfo.DiscSerial + "." + lIndexString + l_ext;
+
+                        FullName = Settings.Default.MemoryCardsFolder + Name;
+
+                        using (var fs = new FileStream(FullName, FileMode.Create, FileAccess.Write, FileShare.None))
                         {
-                            try
+                            for (uint i = 0; i < (MC2_SIZE) / m_effeffs.Length; i++)
                             {
-                                fs.Write(m_effeffs, 0, m_effeffs.Length);
-                            }
-                            catch (Exception)
-                            {
-                                return;
+                                try
+                                {
+                                    fs.Write(m_effeffs, 0, m_effeffs.Length);
+                                }
+                                catch (Exception)
+                                {
+                                    return;
+                                }
                             }
                         }
                     }
@@ -319,6 +392,7 @@ namespace Omega_Red.Managers
                 {
                     Visibility = System.Windows.Visibility.Visible,
                     Index = m_ListSlotIndexes[0],
+                    Number = string.Format("{0:#}", m_ListSlotIndexes[0] + 1),
                     FileName = Name,
                     FilePath = FullName,
                     DateTime = DateTime.Now,
@@ -364,55 +438,60 @@ namespace Omega_Red.Managers
 
         public void setMemoryCard()
         {
-            bool l_isSelected = false;
-
-            foreach (var l_item in _memoryCardInfoCollection)
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
             {
-                if(l_item.IsCurrent)
+
+                bool l_isSelected = false;
+
+                foreach (var l_item in _memoryCardInfoCollection)
                 {
-                    l_isSelected = true;
-
-                    break;
-                }
-            }
-
-            if (l_isSelected)
-                return;
-
-            foreach (var l_item in _memoryCardInfoCollection)
-            {
-                if (!l_item.IsCloudOnlysave)
-                {
-                    l_isSelected = true;
-
-                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                    if (l_item.IsCurrent)
                     {
-                        mCustomerView.MoveCurrentTo(l_item);
-                    });
+                        l_isSelected = true;
 
-                    break;
+                        break;
+                    }
                 }
-            }
 
-            if (l_isSelected)
-                return;
+                if (l_isSelected)
+                    return;
 
-            addMemoryCardInfo();
-
-            foreach (var l_item in _memoryCardInfoCollection)
-            {
-                if (!l_item.IsCloudOnlysave)
+                foreach (var l_item in _memoryCardInfoCollection)
                 {
-                    l_isSelected = true;
-
-                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                    if (!l_item.IsCloudOnlysave)
                     {
-                        mCustomerView.MoveCurrentTo(l_item);
-                    });
+                        l_isSelected = true;
 
-                    break;
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                        {
+                            mCustomerView.MoveCurrentTo(l_item);
+                        });
+
+                        break;
+                    }
                 }
-            }
+
+                if (l_isSelected)
+                    return;
+
+                addMemoryCardInfo();
+
+                foreach (var l_item in _memoryCardInfoCollection)
+                {
+                    if (!l_item.IsCloudOnlysave)
+                    {
+                        l_isSelected = true;
+
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                        {
+                            mCustomerView.MoveCurrentTo(l_item);
+                        });
+
+                        break;
+                    }
+                }
+
+            });
         }
 
         private void removeMemoryCardInfo(MemoryCardInfo aMemoryCardInfo)
@@ -437,7 +516,7 @@ namespace Omega_Red.Managers
                 {
                     aMemoryCardInfo.IsCloudOnlysave = true;
 
-                    fetchCloudMemoryCard(m_disk_serial);
+                    fetchCloudMemoryCard(PCSX2Controller.Instance.IsoInfo.Title + "-" + m_disk_serial);
                 }
             }
         }
@@ -463,7 +542,123 @@ namespace Omega_Red.Managers
                 IsoManager.Instance.save();
             }
         }
-        
+
+        private string getCurrentMemoryCardExtention()
+        {
+            string l_result = "";
+
+            do
+            {
+                if (PCSX2Controller.Instance.IsoInfo == null)
+                    break;
+
+                switch (PCSX2Controller.Instance.IsoInfo.GameType)
+                {
+                    case GameType.Unknown:
+                        break;
+                    case GameType.PS1:
+                        l_result = ".ps1";
+                        break;
+                    case GameType.PS2:
+                        l_result = ".ps2";
+                        break;
+                    case GameType.PSP:
+                        break;
+                    default:
+                        break;
+                }
+
+            } while (false);
+
+            return l_result;
+        }
+
+
+        void createPS1Mcd(string a_filePath)
+        {
+            using (var fs = new FileStream(a_filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                int s = MCD_SIZE;
+
+                fs.WriteByte(Convert.ToByte('M'));
+                s--;
+                fs.WriteByte(Convert.ToByte('C'));
+                s--;
+                while (s-- > (MCD_SIZE - 127))
+                    fs.WriteByte(0);
+
+                fs.WriteByte(0xe);
+                s--;
+
+                int i = 0;
+
+                int j = 0;
+
+                for (i = 0; i < 15; i++)
+                { // 15 blocks
+                    fs.WriteByte(0xa0);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0xff);
+                    s--;
+                    fs.WriteByte(0xff);
+                    s--;
+                    for (j = 0; j < 117; j++)
+                    {
+                        fs.WriteByte(0x00);
+                        s--;
+                    }
+                    fs.WriteByte(0xa0);
+                    s--;
+                }
+
+                for (i = 0; i < 20; i++)
+                {
+                    fs.WriteByte(0xff);
+                    s--;
+                    fs.WriteByte(0xff);
+                    s--;
+                    fs.WriteByte(0xff);
+                    s--;
+                    fs.WriteByte(0xff);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0x00);
+                    s--;
+                    fs.WriteByte(0xff);
+                    s--;
+                    fs.WriteByte(0xff);
+                    s--;
+                    for (j = 0; j < 118; j++)
+                    {
+                        fs.WriteByte(0x00);
+                        s--;
+                    }
+                }
+
+                while ((s--) >= 0)
+                    fs.WriteByte(0);
+            }
+        }
+
         public async void removeItem(object a_Item)
         {
             var l_MemoryCardInfo = a_Item as MemoryCardInfo;
@@ -472,7 +667,7 @@ namespace Omega_Red.Managers
             {
                 if (l_MemoryCardInfo.IsCloudOnlysave)
                 {
-                    await DriveManager.Instance.startDeletingMemoryCardAsync(l_MemoryCardInfo.FilePath);
+                    await DriveManager.Instance.startDeletingMemoryCardAsync(l_MemoryCardInfo.FileName, l_MemoryCardInfo.FilePath);
 
                     if (_memoryCardInfoCollection.Contains(l_MemoryCardInfo, new Compare()))
                     {
@@ -505,13 +700,17 @@ namespace Omega_Red.Managers
                 var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
 
 
-                var l_TempFileName = System.IO.Path.GetTempPath() + l_MemoryCardInfo.FileName; 
+                var l_TempFileName = System.IO.Path.GetTempPath() + l_MemoryCardInfo.FileName;
 
                 File.Copy(l_MemoryCardInfo.FilePath, l_TempFileName, true);
 
+                string l_disk_serial = PCSX2Controller.Instance.IsoInfo.Title + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial;
+
+                if (l_MemoryCardInfo.Index == -1)
+                    l_disk_serial = "MemoryCard.shared";
 
                 if (lProgressBannerGrid != null)
-                    await DriveManager.Instance.startUploadingMemoryCardAsync(l_TempFileName, lProgressBannerGrid, lDescription);
+                    await DriveManager.Instance.startUploadingMemoryCardAsync(l_disk_serial, l_TempFileName, lProgressBannerGrid, lDescription);
 
                 try
                 {

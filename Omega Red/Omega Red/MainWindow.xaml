@@ -11,14 +11,15 @@
         WindowStyle="None"
         Title="{DynamicResource MainName}" Height="600" Width="800"
         Loaded="Window_Loaded"
+        Closed="Window_Closed"
         StateChanged="Window_StateChanged"
         Background="{DynamicResource MainWindowBackgroundBrush}"
         >
     <Window.Resources>
         <viewModels:ConfigViewModel x:Key="mConfigViewModel"/>
         <tools:PlayingControl x:Key="mPlayingControl"/>
-        <convertor:WidthConverter Offset="-5.0" Scale="-1.0" x:Key="mControlWidthOffset"/>
-        <!--<convertor:WidthConverter Offset="0.0" Scale="0.5" x:Key="mTouchHeightScale"/>-->
+        <convertor:WidthConverter Offset="-5.0" Scale="-1.0" x:Key="mControlLeftWidthOffset"/>
+        <convertor:WidthConverter Offset="-5.0" Scale="-1.0" x:Key="mControlRightWidthOffset"/>
         <Storyboard x:Key="AnimOpenControlPanel" x:Shared="False">
             <DoubleAnimation 
                             Storyboard.TargetName="mControlGrid"
@@ -34,7 +35,7 @@
                             Storyboard.TargetName="mControlGrid"
                             Storyboard.TargetProperty="(Canvas.Left)"
                             FillBehavior="Stop"
-                            To="{Binding ElementName=mControlPanel, Path=ActualWidth, Converter={StaticResource mControlWidthOffset}}"
+                            To="{Binding ElementName=mControlPanel, Path=ActualWidth, Converter={StaticResource mControlRightWidthOffset}}"
                 Duration="0:0:0.25">
                 <DoubleAnimation.EasingFunction>
                     <CircleEase EasingMode="EaseIn" />
@@ -56,7 +57,7 @@
                             Storyboard.TargetName="mMediaGrid"
                             Storyboard.TargetProperty="(Canvas.Right)"
                             FillBehavior="Stop"
-                            To="{Binding ElementName=mMediaPanel, Path=ActualWidth, Converter={StaticResource mControlWidthOffset}}" 
+                            To="{Binding ElementName=mMediaPanel, Path=ActualWidth, Converter={StaticResource mControlRightWidthOffset}}" 
                 Duration="0:0:0.25">
                 <DoubleAnimation.EasingFunction>
                     <CircleEase EasingMode="EaseIn" />
@@ -65,9 +66,9 @@
         </Storyboard>
     </Window.Resources>
     <Grid>
-        <tb:TaskbarIcon x:Name="mTaskbarIcon"/>
+        <tb:TaskbarIcon x:Name="mTaskbarIcon" IconSource="Omega_red_64.ico"/>
         <Grid>
-            <panels:TouchPadPanel x:Name="m_PadPanel" >
+            <panels:TouchPadPanel x:Name="m_PadPanel">
                 <panels:DisplayControl HorizontalAlignment="Stretch"/>
             </panels:TouchPadPanel>
             <Border BorderBrush="{DynamicResource StandardBorderBrush}" 
@@ -105,8 +106,11 @@
                 <ColumnDefinition/>
                 <ColumnDefinition Width="auto"/>
             </Grid.ColumnDefinitions>
-            
-            
+
+            <Border Grid.RowSpan="4" Margin="0,0,-20,0" Background="Transparent"/>
+
+            <Border Grid.RowSpan="4" Grid.Column="2" Margin="-20,0,0,0" Background="Transparent"/>
+
             <Viewbox Grid.Row="0" Grid.Column="2" VerticalAlignment="Top">
                 <Button Style="{DynamicResource IconBtn}"  Margin="10" Command="{Binding AddCommand}">
                     <Image Source="/Assests/Images/TakeScreenshot.png" 
@@ -176,20 +180,7 @@
                 <panels:SoundControl Orientation="Vertical" Margin="10,0,10,10" Opacity="{DynamicResource StandardOpacity}" IsMuted="{Binding Source={StaticResource mConfigViewModel}, Path=IsMuted, Mode=TwoWay}"  Volume="{Binding Source={StaticResource mConfigViewModel}, Path=SoundLevel, Mode=TwoWay}"/>
             </Viewbox>
 
-
-
-            <Canvas x:Name="mTouchCtr" 
-                Background="Transparent"
-                MouseDown="mTouchCtr_MouseChange" 
-                MouseUp="mTouchCtr_MouseChange" 
-                MouseMove="mTouchCtr_MouseMove"
-                MouseLeave="mTouchCtr_MouseLeave"
-                Height="240"                
-                VerticalAlignment="Top" 
-                Margin="35, 0, 80, 0"
-                    Grid.Column="1"
-                Visibility="{Binding Source={StaticResource mConfigViewModel}, Path=TouchControlVisibility}"
-                />
+            
 
         </Grid>
         <Grid>
@@ -218,7 +209,7 @@
         <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Grid x:Name="mControlGrid" 
                   Canvas.Top="0" 
-                  Canvas.Left="{Binding ElementName=mControlPanel, Path=ActualWidth, Converter={StaticResource mControlWidthOffset}}">
+                  Canvas.Left="{Binding ElementName=mControlPanel, Path=ActualWidth, Converter={StaticResource mControlLeftWidthOffset}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition Width="Auto"/>
@@ -226,6 +217,7 @@
                 </Grid.ColumnDefinitions>
                 <Border Grid.ColumnSpan="2" Background="{DynamicResource MainBackgroundBrush}"/>
                 <panels:ControlPanel x:Name="mControlPanel"/>
+                <Border Grid.ColumnSpan="2" BorderThickness="{DynamicResource StandardBorderThickness}" BorderBrush="{DynamicResource StandardBorderBrush}" />
                 <Viewbox  VerticalAlignment="Center" 
                           Grid.Column="2" >
                     <CheckBox Style="{DynamicResource PanelCheckBoxStyle}" 
@@ -260,7 +252,7 @@
             </Grid>
             <Grid x:Name="mMediaGrid" 
                   Canvas.Top="0" 
-                  Canvas.Right="{Binding ElementName=mMediaPanel, Path=ActualWidth, Converter={StaticResource mControlWidthOffset}}">
+                  Canvas.Right="{Binding ElementName=mMediaPanel, Path=ActualWidth, Converter={StaticResource mControlRightWidthOffset}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -268,6 +260,10 @@
                 </Grid.ColumnDefinitions>
                 <Border Grid.Column="1" Grid.ColumnSpan="2" Background="{DynamicResource MainBackgroundBrush}"/>
                 <panels:MediaPanel x:Name="mMediaPanel" Grid.Column="2"/>
+                <Border Grid.Column="1" Grid.ColumnSpan="2" BorderThickness="{DynamicResource StandardBorderThickness}" BorderBrush="{DynamicResource StandardBorderBrush}"/>
+
+                
+
                 <Viewbox VerticalAlignment="Center">
                     <CheckBox Style="{DynamicResource PanelCheckBoxStyle}"
                           Visibility="{Binding Source={StaticResource mConfigViewModel}, Path=TouchControlHideVisibility}"

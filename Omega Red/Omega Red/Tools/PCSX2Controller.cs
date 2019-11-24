@@ -214,13 +214,32 @@ namespace Omega_Red.Tools
                 m_Status != StatusEnum.Stopped)
                 return;
 
-            if ((m_BiosInfo != null && m_IsoInfo != null) || (m_IsoInfo != null && m_IsoInfo.GameType == GameType.PSP))
+            if(m_BiosInfo == null)
             {
-                setStatus(StatusEnum.Initilized);
+                if ((m_IsoInfo != null && m_IsoInfo.GameType == GameType.PSP) ||
+                    (m_IsoInfo != null && m_IsoInfo.GameType == GameType.PS1))
+                {
+                    setStatus(StatusEnum.Initilized);
+                }
+                else
+                {
+                    setStatus(StatusEnum.NoneInitilized);
+                }
             }
             else
             {
-                setStatus(StatusEnum.NoneInitilized);
+                if (m_BiosInfo.GameType == GameType.PS2 && m_IsoInfo != null)
+                {
+                    setStatus(StatusEnum.Initilized);
+                }
+                else if (m_BiosInfo.GameType == GameType.PS1 && m_IsoInfo != null && m_IsoInfo.GameType != GameType.PS2)
+                {
+                    setStatus(StatusEnum.Initilized);
+                }
+                else
+                {
+                    setStatus(StatusEnum.NoneInitilized);
+                }
             }
         }
 
@@ -279,7 +298,20 @@ namespace Omega_Red.Tools
 
                     innerCallQuickSaveStartThread.Start();
                 }
-                else
+                else if (m_IsoInfo.GameType == GameType.PS1)
+                {
+                    ThreadStart innerCallQuickSaveStart = new ThreadStart(() => {
+                        PlayPause();
+                        SaveStateManager.Instance.quickSavePCSX(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
+                        PlayPause();
+                        LockScreenManager.Instance.hide();
+                    });
+
+                    Thread innerCallQuickSaveStartThread = new Thread(innerCallQuickSaveStart);
+
+                    innerCallQuickSaveStartThread.Start();
+                }
+                else if (m_IsoInfo.GameType == GameType.PS2)
                 {
 
                     ThreadStart innerCallQuickSaveStart = new ThreadStart(()=> {  
@@ -330,7 +362,21 @@ namespace Omega_Red.Tools
 
                     innerCallSaveStartThread.Start();
                 }
-                else
+                else if (m_IsoInfo.GameType == GameType.PS1)
+                {
+
+                    ThreadStart innerCallSaveStart = new ThreadStart(() =>
+                    {
+                        SaveStateManager.Instance.savePCSXState(a_SaveStateInfo, a_SaveStateInfo.Date, a_SaveStateInfo.DurationNative.TotalSeconds);
+
+                        LockScreenManager.Instance.hide();
+                    });
+
+                    Thread innerCallSaveStartThread = new Thread(innerCallSaveStart);
+
+                    innerCallSaveStartThread.Start();
+                }
+                else if (m_IsoInfo.GameType == GameType.PS2)
                 {
                     ThreadStart innerCallSaveStart = new ThreadStart(() =>
                     {
@@ -451,6 +497,33 @@ namespace Omega_Red.Tools
                         }
                     }
                     break;
+                case SaveStateType.PCSX:
+                    {
+                        LockScreenManager.Instance.showStarting();
+
+                        SaveStateManager.Instance.loadPCSXState(m_SaveStateInfo, m_tempFile);
+
+                        if (m_Status == StatusEnum.Paused)
+                        {
+                            PCSXControl.Instance.loadState(m_tempFile,
+                            () => {
+
+                                Thread.Sleep(500);
+
+                                if (File.Exists(m_tempFile))
+                                    File.Delete(m_tempFile);
+
+                                LockScreenManager.Instance.hide();
+
+                                PlayPause();
+                            });
+                        }
+                        else
+                        {
+                            PlayPause();
+                        }
+                    }
+                    break;
                 case SaveStateType.PPSSPP:
                     {
                         LockScreenManager.Instance.showStarting();
@@ -524,7 +597,11 @@ namespace Omega_Red.Tools
                 {
                     SaveStateManager.Instance.autoPPSSPPSave(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
                 }
-                else
+                else if (m_IsoInfo.GameType == GameType.PS1)
+                {
+                    SaveStateManager.Instance.autoPCSXSave(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
+                }
+                else if (m_IsoInfo.GameType == GameType.PS2)
                 {
                     SaveStateManager.Instance.autoSave(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
                 }
@@ -562,14 +639,14 @@ namespace Omega_Red.Tools
 
         private void Bind()
         {
-            foreach (var l_Module in ModuleManager.Instance.Modules)
+            foreach (var l_Module in PCSX2ModuleManager.Instance.Modules)
             {
                 PCSX2LibNative.Instance.setModule(l_Module);
             }
 
             PCSX2LibNative.Instance.setPluginsInitCallback = delegate()
             {
-                ModuleControl.Instance.init();
+                //ModuleControl.Instance.init();
             };
 
             PCSX2LibNative.Instance.setPluginsCloseCallback = delegate()
@@ -581,7 +658,7 @@ namespace Omega_Red.Tools
             {
                 //MediaCapture.Instance.stop();
 
-                ModuleControl.Instance.shutdown();
+                ModuleControl.Instance.shutdownPCSX2();
             };
 
             PCSX2LibNative.Instance.setPluginsOpenCallback = delegate()
@@ -607,7 +684,7 @@ namespace Omega_Red.Tools
 
             PCSX2LibNative.Instance.setLoadBIOSCallbackCallback = delegate(IntPtr a_FirstArg, Int32 a_SecondArg)
             {
-                Omega_Red.Tools.BiosControl.LoadBIOS(a_FirstArg, a_SecondArg);
+                Omega_Red.Tools.BiosControl.LoadBIOS(a_FirstArg, a_SecondArg, GameType.PS2);
             };
 
             PCSX2LibNative.Instance.setCDVDNVMCallback = delegate(IntPtr buffer, Int32 offset, Int32 bytes, Boolean read)
@@ -670,7 +747,42 @@ namespace Omega_Red.Tools
                         });
                     }
                 }
-                else
+                else if (m_IsoInfo.GameType == GameType.PS1)
+                {
+                    if (m_Status == StatusEnum.Paused ||
+                        m_Status == StatusEnum.Started)
+                    {
+                        PCSXControl.Instance.resumeGame();
+
+                        LockScreenManager.Instance.hide();
+                    }
+                    else
+                    {
+                        PCSXControl.Instance.Launch(m_IsoInfo.FilePath,
+                        () =>
+                        {
+                            if(!string.IsNullOrWhiteSpace(m_tempFile))
+                            {
+                                PauseInner();
+
+                                PCSXControl.Instance.loadState(m_tempFile, () => {
+                                    StartInner();
+                                    Thread.Sleep(2000);
+
+                                    if (File.Exists(m_tempFile))
+                                        File.Delete(m_tempFile);
+
+                                    m_tempFile = "";
+                                });
+                            }
+
+                            MemoryCardManager.Instance.setMemoryCard();
+
+                            LockScreenManager.Instance.hide();
+                        });
+                    }
+                }
+                else if (m_IsoInfo.GameType == GameType.PS2)
                 {
                     init();
 
@@ -702,7 +814,11 @@ namespace Omega_Red.Tools
                 {
                     PPSSPPControl.Instance.pauseGame();
                 }
-                else
+                else if (m_IsoInfo.GameType == GameType.PS1)
+                {
+                    PCSXControl.Instance.pauseGame();
+                }
+                else if (m_IsoInfo.GameType == GameType.PS2)
                 {
                     PCSX2LibNative.Instance.SysThreadBase_SuspendFunc();
                 }
@@ -721,7 +837,11 @@ namespace Omega_Red.Tools
                 {
                     PPSSPPControl.Instance.close();
                 }
-                else
+                else if (m_IsoInfo.GameType == GameType.PS1)
+                {
+                    PCSXControl.Instance.close();
+                }
+                else if (m_IsoInfo.GameType == GameType.PS2)
                 {
                     PCSX2LibNative.Instance.SysThreadBase_ResetFunc();
                 }
@@ -740,7 +860,11 @@ namespace Omega_Red.Tools
                 {
                     PPSSPPControl.Instance.setLimitFrame(a_state);
                 }
-                else
+                else if (m_IsoInfo.GameType == GameType.PS1)
+                {
+                    PCSXControl.Instance.setLimitFrame(a_state);
+                }
+                else if (m_IsoInfo.GameType == GameType.PS2)
                 {
                     PCSX2Controller.Instance.m_Pcsx2Config.GS.FrameLimitEnable = a_state;
 

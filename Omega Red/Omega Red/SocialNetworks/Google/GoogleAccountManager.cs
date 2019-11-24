@@ -108,8 +108,6 @@ namespace Omega_Red.SocialNetworks.Google
             {
                 Settings.Default.GoogleAccountIsChecked = a_status;
 
-                Settings.Default.Save();
-
                 if (a_status)
                     tryAuthorize();
 

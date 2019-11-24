@@ -11,10 +11,13 @@
 
 
     <SolidColorBrush x:Key="MainWindowBackgroundBrush" Color="#550101" />
-    <SolidColorBrush x:Key="MainBackgroundBrush" Color="#FF0000" />
+    <SolidColorBrush x:Key="MainBackgroundBrush" Color="#9F0000" />
     <SolidColorBrush x:Key="StandardBorderBrush" Color="#0000FF" />
     <SolidColorBrush x:Key="MainForegroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#552001" />
+    <SolidColorBrush x:Key="ExpanderToggleButtonBrush" Color="#FFFFFF" />
     <Color x:Key="DropShadowColor"  A="50" R="255" G="0" B="0"/>
+    <Color x:Key="PressedColor"  A="255" R="0" G="255" B="0"/>
 
     <SolidColorBrush x:Key="PadBorderBrush" Color="#FFFDFD0B" />
 

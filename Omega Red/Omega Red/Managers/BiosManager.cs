@@ -14,6 +14,7 @@
 
 using Omega_Red.Models;
 using Omega_Red.Properties;
+using Omega_Red.SocialNetworks.Google;
 using Omega_Red.Tools;
 using System;
 using System.Collections.Generic;
@@ -52,6 +53,10 @@ namespace Omega_Red.Managers
 
         }
 
+        private bool m_GoogleDriveAccess = false;
+
+        private string m_disk_serial = "";
+
         private ICollectionView mCustomerView = null;
 
         private readonly ObservableCollection<BiosInfo> _biosInfoCollection = new ObservableCollection<BiosInfo>();
@@ -61,13 +66,17 @@ namespace Omega_Red.Managers
         public static BiosManager Instance { get { if (m_Instance == null) m_Instance = new BiosManager(); return m_Instance; } }
 
         private BiosManager() {
-
-            load();
-
+            
             mCustomerView = CollectionViewSource.GetDefaultView(_biosInfoCollection);
+
+            PropertyGroupDescription l_groupDescription = new PropertyGroupDescription("GameType");
+
+            mCustomerView.GroupDescriptions.Add(l_groupDescription);
 
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate()
             {
+                load();
+
                 foreach (var item in _biosInfoCollection)
                 {
                     if (item.IsCurrent)
@@ -80,7 +89,18 @@ namespace Omega_Red.Managers
             });
 
             mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
+                       
+            GoogleAccountManager.Instance.mEnableStateEvent += (obj) =>
+            {
+                m_GoogleDriveAccess = obj;
+
+                m_disk_serial = "";
+
+                if (PCSX2Controller.Instance.IsoInfo != null)
+                    load();
+            };
         }
+
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
         {
@@ -92,7 +112,6 @@ namespace Omega_Red.Managers
         
         public void save()
         {
-
             XmlSerializer ser = new XmlSerializer(typeof(ObservableCollection<BiosInfo>));
 
             MemoryStream stream = new MemoryStream();
@@ -107,12 +126,33 @@ namespace Omega_Red.Managers
 
             Settings.Default.Save();
 
+            App.saveCopy();
+        }
+        public void load()
+        {
+            loadInner();
+
+            //foreach (var item in _biosInfoCollection)
+            //{
+            //    if (item.IsCurrent)
+            //    {
+            //        mCustomerView.MoveCurrentTo(item);
+
+            //        break;
+            //    }
+            //}
         }
 
-        public void load()
+        private void loadInner()
         {
             if (string.IsNullOrEmpty(Settings.Default.BiosInfoCollection))
                 return;
+
+            if (PCSX2Controller.Instance.IsoInfo != null &&
+                PCSX2Controller.Instance.IsoInfo.GameType != GameType.PS2)
+                return;
+
+            _biosInfoCollection.Clear();
 
             XmlSerializer ser = new XmlSerializer(typeof(ObservableCollection<BiosInfo>));
 
@@ -130,6 +170,19 @@ namespace Omega_Red.Managers
                     }
                 }
             }
+            
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
+            {
+                foreach (var item in _biosInfoCollection)
+                {
+                    if (item.IsCurrent)
+                    {
+                        mCustomerView.MoveCurrentTo(item);
+
+                        break;
+                    }
+                }
+            });
         }
 
         public void addBiosInfo(BiosInfo a_BiosInfo)
@@ -139,9 +192,9 @@ namespace Omega_Red.Managers
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate()
                 {
                     _biosInfoCollection.Add(a_BiosInfo);
-                });
 
-                save();
+                    save();
+                });
             }
         }
 
@@ -214,6 +267,7 @@ namespace Omega_Red.Managers
                 string data = "";
                 string build = "";
                 int versionInt = 0;
+                Models.GameType gameType = GameType.Unknown;
 
                 string l_file_path = (string)a_file_path;
 
@@ -223,7 +277,8 @@ namespace Omega_Red.Managers
                                         ref version,
                                         ref versionInt,
                                         ref data,
-                                        ref build))
+                                        ref build,
+                                        ref gameType))
                 {
 
                     byte[] l_NVM = null;
@@ -272,7 +327,8 @@ namespace Omega_Red.Managers
                         CheckSum = Omega_Red.Tools.BiosControl.getBIOSChecksum(l_file_path),
                         FilePath = l_file_path,
                         NVM = l_NVM,
-                        MEC = l_MEC
+                        MEC = l_MEC,
+                        GameType = gameType
                     });
                 }
                 else
@@ -308,7 +364,8 @@ namespace Omega_Red.Managers
                                                                             ref version,
                                                                             ref versionInt,
                                                                             ref data,
-                                                                            ref build))
+                                                                            ref build,
+                                                                            ref gameType))
                                                     {
                                                         var lname = item.Name.Remove(item.Name.Length - 4).ToLower();
 
@@ -381,7 +438,8 @@ namespace Omega_Red.Managers
                                                             CheckSum = Omega_Red.Tools.BiosControl.getBIOSChecksum(l_result),
                                                             FilePath = l_file_path + "|" + item.Name,
                                                             NVM = l_NVM,
-                                                            MEC = l_MEC
+                                                            MEC = l_MEC,
+                                                            GameType = gameType
                                                         });
                                                     }
                                                 }
@@ -430,12 +488,10 @@ namespace Omega_Red.Managers
 
         public void persistItemAsync(object a_Item)
         {
-            throw new NotImplementedException();
         }
 
         public void loadItemAsync(object a_Item)
         {
-            throw new NotImplementedException();
         }
 
         public bool accessPersistItem(object a_Item)

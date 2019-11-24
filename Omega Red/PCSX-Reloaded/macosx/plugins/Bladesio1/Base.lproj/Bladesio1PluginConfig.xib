@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6185.7" systemVersion="13E28" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+    <dependencies>
+        <deployment defaultVersion="1080" identifier="macosx"/>
+        <development version="5100" identifier="xcode"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6185.7"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="Bladesio1PluginConfigController">
+            <connections>
+                <outlet property="configBox" destination="193" id="218"/>
+                <outlet property="enabledButton" destination="194" id="196"/>
+                <outlet property="ipAddressField" destination="204" id="217"/>
+                <outlet property="playerMenu" destination="208" id="219"/>
+                <outlet property="portField" destination="206" id="215"/>
+                <outlet property="window" destination="5" id="141"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application"/>
+        <window title="BladeSIO1 Configuration" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="5" userLabel="Window">
+            <windowStyleMask key="styleMask" titled="YES" miniaturizable="YES"/>
+            <rect key="contentRect" x="131" y="362" width="315" height="203"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1058"/>
+            <view key="contentView" id="6">
+                <rect key="frame" x="0.0" y="0.0" width="315" height="203"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="7">
+                        <rect key="frame" x="137" y="13" width="82" height="32"/>
+                        <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" borderStyle="border" inset="2" id="186">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                            <string key="keyEquivalent" base64-UTF8="YES">
+Gw
+</string>
+                        </buttonCell>
+                        <connections>
+                            <action selector="cancel:" target="-2" id="134"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="8">
+                        <rect key="frame" x="219" y="13" width="82" height="32"/>
+                        <buttonCell key="cell" type="push" title="OK" bezelStyle="rounded" alignment="center" borderStyle="border" inset="2" id="187">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                            <string key="keyEquivalent" base64-UTF8="YES">
+DQ
+</string>
+                        </buttonCell>
+                        <connections>
+                            <action selector="ok:" target="-2" id="133"/>
+                            <outlet property="nextKeyView" destination="7" id="9"/>
+                        </connections>
+                    </button>
+                    <box autoresizesSubviews="NO" title="Box" borderType="line" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="193">
+                        <rect key="frame" x="17" y="57" width="281" height="106"/>
+                        <view key="contentView">
+                            <rect key="frame" x="1" y="1" width="279" height="104"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <subviews>
+                                <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="198">
+                                    <rect key="frame" x="16" y="75" width="83" height="17"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="79" id="255"/>
+                                    </constraints>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="IP Address:" id="199">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="200">
+                                    <rect key="frame" x="16" y="47" width="83" height="17"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Player:" id="201">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="202">
+                                    <rect key="frame" x="16" y="16" width="83" height="17"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Port:" id="203">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="204">
+                                    <rect key="frame" x="105" y="73" width="156" height="22"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="205">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="206">
+                                    <rect key="frame" x="105" y="14" width="156" height="22"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="207">
+                                        <numberFormatter key="formatter" formatterBehavior="default10_4" positiveFormat="#" negativeFormat="#" localizesFormat="NO" usesGroupingSeparator="NO" paddingCharacter="*" groupingSize="0" minimumIntegerDigits="0" maximumIntegerDigits="42" decimalSeparator="." groupingSeparator="," currencyDecimalSeparator="." plusSign="+" minusSign="-" notANumberSymbol="NaN" perMillSymbol="‰" percentSymbol="%" exponentSymbol="E" positivePrefix="" positiveSuffix="" negativePrefix="-" negativeSuffix="" id="220">
+                                            <real key="minimum" value="0.0"/>
+                                            <integer key="maximum" value="65535"/>
+                                        </numberFormatter>
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="208">
+                                    <rect key="frame" x="103" y="41" width="161" height="26"/>
+                                    <popUpButtonCell key="cell" type="push" title="Disabled" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="213" id="209">
+                                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                        <font key="font" metaFont="menu"/>
+                                        <menu key="menu" title="OtherViews" id="210">
+                                            <items>
+                                                <menuItem title="Disabled" state="on" id="213"/>
+                                                <menuItem title="Master" id="211"/>
+                                                <menuItem title="Slave" id="212"/>
+                                            </items>
+                                        </menu>
+                                    </popUpButtonCell>
+                                </popUpButton>
+                            </subviews>
+                        </view>
+                        <constraints>
+                            <constraint firstItem="198" firstAttribute="leading" secondItem="193" secondAttribute="leading" constant="16" id="225"/>
+                            <constraint firstItem="208" firstAttribute="leading" secondItem="206" secondAttribute="leading" id="228"/>
+                            <constraint firstItem="204" firstAttribute="top" secondItem="193" secondAttribute="top" constant="8" id="229"/>
+                            <constraint firstItem="204" firstAttribute="leading" secondItem="198" secondAttribute="trailing" constant="8" symbolic="YES" id="230"/>
+                            <constraint firstItem="208" firstAttribute="top" secondItem="204" secondAttribute="bottom" constant="8" id="234"/>
+                            <constraint firstAttribute="trailing" secondItem="204" secondAttribute="trailing" constant="16" id="235"/>
+                            <constraint firstItem="202" firstAttribute="baseline" secondItem="206" secondAttribute="baseline" id="237"/>
+                            <constraint firstItem="208" firstAttribute="leading" secondItem="204" secondAttribute="leading" id="238"/>
+                            <constraint firstItem="198" firstAttribute="baseline" secondItem="204" secondAttribute="baseline" id="241"/>
+                            <constraint firstItem="198" firstAttribute="leading" secondItem="200" secondAttribute="leading" id="0Vb-di-fma"/>
+                            <constraint firstItem="208" firstAttribute="leading" secondItem="206" secondAttribute="leading" id="5Sf-oa-iz8"/>
+                            <constraint firstItem="202" firstAttribute="trailing" secondItem="200" secondAttribute="trailing" id="F7Q-lM-NYN"/>
+                            <constraint firstItem="208" firstAttribute="trailing" secondItem="204" secondAttribute="trailing" id="WvP-kO-Nyi"/>
+                            <constraint firstAttribute="bottom" secondItem="206" secondAttribute="bottom" constant="11" id="bV5-m5-X9h"/>
+                            <constraint firstItem="200" firstAttribute="baseline" secondItem="208" secondAttribute="baseline" id="fre-iJ-E54"/>
+                            <constraint firstItem="208" firstAttribute="trailing" secondItem="206" secondAttribute="trailing" id="naz-qG-nEB"/>
+                            <constraint firstItem="208" firstAttribute="leading" secondItem="204" secondAttribute="leading" id="rzJ-hk-WGc"/>
+                            <constraint firstItem="202" firstAttribute="trailing" secondItem="198" secondAttribute="trailing" id="tbT-tq-FPQ"/>
+                            <constraint firstItem="206" firstAttribute="top" secondItem="208" secondAttribute="bottom" constant="8" symbolic="YES" id="vh1-xJ-e4A"/>
+                            <constraint firstItem="198" firstAttribute="leading" secondItem="202" secondAttribute="leading" id="yRW-kH-rzA"/>
+                        </constraints>
+                        <color key="borderColor" white="0.0" alpha="0.41999999999999998" colorSpace="calibratedWhite"/>
+                        <color key="fillColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                    </box>
+                    <button translatesAutoresizingMaskIntoConstraints="NO" id="194">
+                        <rect key="frame" x="16" y="166" width="57" height="22"/>
+                        <buttonCell key="cell" type="check" title="Enabled" bezelStyle="regularSquare" imagePosition="left" controlSize="mini" state="on" inset="2" id="195">
+                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                            <font key="font" metaFont="miniSystem"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="toggleEnabled:" target="-2" id="197"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="221">
+                        <rect key="frame" x="14" y="13" width="74" height="32"/>
+                        <buttonCell key="cell" type="push" title="Reset" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="222">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="resetPreferences:" target="-2" id="223"/>
+                        </connections>
+                    </button>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="194" firstAttribute="leading" secondItem="6" secondAttribute="leading" constant="20" symbolic="YES" id="242"/>
+                    <constraint firstItem="193" firstAttribute="top" secondItem="194" secondAttribute="bottom" constant="8" symbolic="YES" id="243"/>
+                    <constraint firstItem="8" firstAttribute="leading" secondItem="7" secondAttribute="trailing" constant="12" symbolic="YES" id="245"/>
+                    <constraint firstAttribute="trailing" secondItem="8" secondAttribute="trailing" constant="20" symbolic="YES" id="246"/>
+                    <constraint firstItem="221" firstAttribute="top" secondItem="193" secondAttribute="bottom" constant="20" symbolic="YES" id="247"/>
+                    <constraint firstAttribute="trailing" secondItem="193" secondAttribute="trailing" constant="20" symbolic="YES" id="249"/>
+                    <constraint firstItem="194" firstAttribute="top" secondItem="6" secondAttribute="top" constant="20" symbolic="YES" id="250"/>
+                    <constraint firstItem="193" firstAttribute="leading" secondItem="6" secondAttribute="leading" constant="20" symbolic="YES" id="251"/>
+                    <constraint firstItem="221" firstAttribute="leading" secondItem="6" secondAttribute="leading" constant="20" symbolic="YES" id="252"/>
+                    <constraint firstAttribute="bottom" secondItem="8" secondAttribute="bottom" constant="20" symbolic="YES" id="253"/>
+                    <constraint firstItem="7" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="221" secondAttribute="trailing" constant="12" symbolic="YES" id="KnE-pJ-PbU"/>
+                    <constraint firstItem="8" firstAttribute="baseline" secondItem="221" secondAttribute="baseline" id="iGD-Hx-cif"/>
+                    <constraint firstItem="7" firstAttribute="width" secondItem="8" secondAttribute="width" id="l37-tZ-gsX"/>
+                    <constraint firstItem="8" firstAttribute="baseline" secondItem="7" secondAttribute="baseline" id="q6S-UG-37H"/>
+                </constraints>
+            </view>
+            <connections>
+                <outlet property="delegate" destination="-2" id="158"/>
+            </connections>
+        </window>
+    </objects>
+</document>

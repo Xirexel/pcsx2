@@ -62,16 +62,6 @@ namespace Omega_Red
                 File.Copy(lMainDirInfo.FullName + @"\Config.xml", ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
             }
 
-            Settings.Default.PropertyChanged += (sender, e) =>
-            {
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                {
-                    ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).SaveAs(
-                        lMainDirInfo.FullName + @"\Config.xml", ConfigurationSaveMode.Full);
-                });
-
-            };
-
             Startup += (object sender, StartupEventArgs e)=>
             {                
                 this.StartupUri = new Uri("pack://application:,,,/Omega Red;component/MainWindow.xaml");
@@ -95,6 +85,8 @@ namespace Omega_Red
         
         private void Application_Exit(object sender, ExitEventArgs e)
         {
+            saveCopy();
+
             m_is_exit = true;
 
             Capture.MediaCapture.Instance.stop();
@@ -113,17 +105,37 @@ namespace Omega_Red
 
             PCSX2LibNative.Instance.MTGS_CancelFunc();
 
-            ModuleControl.Instance.shutdown();
+            ModuleControl.Instance.shutdownPCSX2();
+
+            ModuleControl.Instance.shutdownPCSX();
 
             PCSX2LibNative.Instance.resetCallbacksFunc();
 
-            ModuleManager.Instance.release();
+            PCSX2ModuleManager.Instance.release();
 
             Thread.Sleep(1500);
 
             PCSX2LibNative.Instance.release();
 
             PPSSPPNative.Instance.release();
+
+            PCSXNative.Instance.release();
+        }
+
+        public static void saveCopy()
+        {
+            var lDirectory = Path.GetDirectoryName(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+
+            var lMainDirInfo = Directory.GetParent(lDirectory);
+
+            lMainDirInfo = Directory.GetParent(lMainDirInfo.FullName);
+
+            if (File.Exists(lMainDirInfo.FullName + @"\Config.xml"))
+            {
+                File.Delete(lMainDirInfo.FullName + @"\Config.xml");
+            }
+
+            File.Copy(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath, lMainDirInfo.FullName + @"\Config.xml");
         }
     }
 }

@@ -97,18 +97,6 @@ namespace Omega_Red.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public int PadIndex {
-            get {
-                return ((int)(this["PadIndex"]));
-            }
-            set {
-                this["PadIndex"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string ControlMode {
             get {
@@ -404,6 +392,30 @@ namespace Omega_Red.Properties {
             }
             set {
                 this["RecordingAudioBitRate"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string PadControlConfigCollection {
+            get {
+                return ((string)(this["PadControlConfigCollection"]));
+            }
+            set {
+                this["PadControlConfigCollection"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool IsVisualVibrationEnabled {
+            get {
+                return ((bool)(this["IsVisualVibrationEnabled"]));
+            }
+            set {
+                this["IsVisualVibrationEnabled"] = value;
             }
         }
     }

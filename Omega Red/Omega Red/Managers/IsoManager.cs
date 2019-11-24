@@ -75,9 +75,11 @@ namespace Omega_Red.Managers
 
         public IsoManager()
         {
-            load();
-
             mCustomerView = CollectionViewSource.GetDefaultView(_isoInfoCollection);
+
+            PropertyGroupDescription l_groupDescription = new PropertyGroupDescription("GameType");
+
+            mCustomerView.GroupDescriptions.Add(l_groupDescription);
 
             foreach (var item in _isoInfoCollection)
             {
@@ -101,8 +103,22 @@ namespace Omega_Red.Managers
                 selectIsoInfo(l_selectedIsoInfo);
             }
         }
-
         public void load()
+        {
+            loadInner();
+
+            foreach (var item in _isoInfoCollection)
+            {
+                if (item.IsCurrent)
+                {
+                    mCustomerView.MoveCurrentTo(item);
+
+                    break;
+                }
+            }
+        }
+
+        public void loadInner()
         {
             if (string.IsNullOrEmpty(Settings.Default.IsoInfoCollection))
                 return;
@@ -150,6 +166,7 @@ namespace Omega_Red.Managers
 
             Settings.Default.Save();
 
+            App.saveCopy();
         }
 
         public IEnumerable<IsoInfo> IsoInfoCollection
@@ -203,7 +220,7 @@ namespace Omega_Red.Managers
             
             do
             {
-                var l_module = ModuleManager.Instance.getModule(Omega_Red.Tools.ModuleManager.ModuleType.CDVD);
+                var l_module = PCSX2ModuleManager.Instance.getModule(Omega_Red.Tools.PCSX2ModuleManager.ModuleType.CDVD);
 
                 string l_commandResult = "";
 
@@ -315,21 +332,38 @@ namespace Omega_Red.Managers
                                 || l_ElfCRC == null)
                                 break;
 
-                            if (l_GameDiscType != null)
+                            if (l_GameDiscType != null && !string.IsNullOrWhiteSpace(l_GameDiscType.Value))
                             {
                                 local_result.GameDiscType = l_GameDiscType.Value;
-                                local_result.GameType = GameType.PS2;
+
+                                local_result.GameType = GameType.Unknown;
+
+                                if (l_GameDiscType.Value.Contains("PS1"))
+                                    local_result.GameType = GameType.PS1;
+                                else if (l_GameDiscType.Value.Contains("PS2"))
+                                    local_result.GameType = GameType.PS2;
                             }
 
-                            if (l_DiscSerial != null)
+                            if (l_DiscSerial != null && l_DiscSerial.Value != null)
                             {
-                                local_result.DiscSerial = l_DiscSerial.Value;
+                                local_result.DiscSerial = l_DiscSerial.Value.ToUpper();
 
                                 var l_gameData = GameIndex.Instance.convert(local_result.DiscSerial);
 
                                 if (l_gameData != null)
                                 {
                                     local_result.Title = l_gameData.FriendlyName;
+                                }
+                                else
+                                {
+                                    FileInfo l_FileInfo = new FileInfo(aFilePath);
+
+                                    var l_name = l_FileInfo.Name;
+
+                                    if (!string.IsNullOrWhiteSpace(l_FileInfo.Extension))
+                                        l_name = l_name.Replace(l_FileInfo.Extension, "");
+
+                                    local_result.Title = l_name;
                                 }
                             }
 
@@ -369,7 +403,8 @@ namespace Omega_Red.Managers
 
             l_OpenFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-            l_OpenFileDialog.Filter = "ISO Files|*.iso";
+            l_OpenFileDialog.Filter = "ISO File|*.iso" +
+                                      "|BIN File|*.bin";
 
             bool l_result = (bool)l_OpenFileDialog.ShowDialog();
 
@@ -385,7 +420,7 @@ namespace Omega_Red.Managers
                 {
                     var l_info = PPSSPPControl.Instance.getGameInfo(l_OpenFileDialog.FileName);
 
-                    if(!string.IsNullOrEmpty(l_info.Item1))
+                    if(!string.IsNullOrWhiteSpace(l_info.Item1) && !string.IsNullOrWhiteSpace(l_info.Item2))
                     {
                         l_IsoInfo.Title = l_info.Item1;
 
@@ -393,7 +428,7 @@ namespace Omega_Red.Managers
 
                         l_IsoInfo.GameType = GameType.PSP;
 
-                        l_IsoInfo.DiscSerial = l_info.Item2;
+                        l_IsoInfo.DiscSerial = l_info.Item2.ToUpper();
 
                         l_IsoInfo.DiscRegionType = "PAL";
 
@@ -477,7 +512,7 @@ namespace Omega_Red.Managers
                 {
                     var l_info = PPSSPPControl.Instance.getGameInfo(l_IsoInfo.FilePath);
 
-                    if (!string.IsNullOrEmpty(l_info.Item1))
+                    if (!string.IsNullOrEmpty(l_info.Item1) && !string.IsNullOrWhiteSpace(l_info.Item2))
                     {
                         l_IsoInfo.Title = l_info.Item1;
 
@@ -485,7 +520,7 @@ namespace Omega_Red.Managers
 
                         l_IsoInfo.GameType = GameType.PSP;
 
-                        l_IsoInfo.DiscSerial = l_info.Item2;
+                        l_IsoInfo.DiscSerial = l_info.Item2.ToUpper();
 
                         l_IsoInfo.DiscRegionType = "PAL";
 

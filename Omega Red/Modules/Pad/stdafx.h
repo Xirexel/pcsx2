@@ -43,3 +43,4 @@ struct EnterScopedSection
 extern void DEBUG_NEW_SET();
 
 extern void *ptrButtonUpdateCallback;
+extern void *ptrVibrationCallback;

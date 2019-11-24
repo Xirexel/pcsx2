@@ -41,5 +41,7 @@ namespace Omega_Red.Models
         public byte[] NVM { get; set; }
 
         public byte[] MEC { get; set; }
+
+        public GameType GameType { get; set; }
     }
 }

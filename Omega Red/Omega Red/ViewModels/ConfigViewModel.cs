@@ -145,30 +145,26 @@ namespace Omega_Red.ViewModels
                     App.Current.MainWindow.Topmost = value;
 
                     Settings.Default.Topmost = value;
-
-                    Settings.Default.Save();
                 }
 
                 RaisePropertyChangedEvent("Topmost");
             }
         }
 
-        public bool DisableWideScreen
+        public bool EnableWideScreen
         {
             get {
 
-                return Settings.Default.DisableWideScreen;
+                return !Settings.Default.DisableWideScreen;
             }
             set
             {
 
-                Settings.Default.DisableWideScreen = value;
-
-                Settings.Default.Save();
+                Settings.Default.DisableWideScreen = !value;
 
                 PCSX2Controller.Instance.setVideoAspectRatio(value ? AspectRatio.Ratio_4_3 : AspectRatio.Ratio_16_9);
 
-                RaisePropertyChangedEvent("DisableWideScreen");
+                RaisePropertyChangedEvent("EnableWideScreen");
             }
         }
 
@@ -244,9 +240,9 @@ namespace Omega_Red.ViewModels
         {
             get
             {
-                ModuleControl.Instance.setVolume(Settings.Default.SoundLevel);
+                ModuleControl.Instance.setSoundLevel(Settings.Default.SoundLevel);
 
-                PPSSPPControl.Instance.setAudioVolume(Settings.Default.SoundLevel);
+                PPSSPPControl.Instance.setSoundLevel(Settings.Default.SoundLevel);
 
                 return Settings.Default.SoundLevel;
             }
@@ -254,11 +250,9 @@ namespace Omega_Red.ViewModels
             {
                 Settings.Default.SoundLevel = value;
 
-                ModuleControl.Instance.setVolume(Settings.Default.SoundLevel);
+                ModuleControl.Instance.setSoundLevel(Settings.Default.SoundLevel);
 
-                PPSSPPControl.Instance.setAudioVolume(Settings.Default.SoundLevel);
-
-                Settings.Default.Save();
+                PPSSPPControl.Instance.setSoundLevel(Settings.Default.SoundLevel);
 
                 RaisePropertyChangedEvent("SoundLevel");
             }
@@ -282,8 +276,6 @@ namespace Omega_Red.ViewModels
 
                 PPSSPPControl.Instance.setIsMuted(Settings.Default.IsMuted);
 
-                Settings.Default.Save();
-
                 RaisePropertyChangedEvent("IsMuted");
             }
         }
@@ -304,8 +296,6 @@ namespace Omega_Red.ViewModels
             set
             {
                 Settings.Default.IsFXAA = value;
-
-                Settings.Default.Save();
 
                 ModuleControl.Instance.setIsFXAA(Settings.Default.IsFXAA);
 

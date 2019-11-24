@@ -66,7 +66,8 @@ u32 BlockDevice::CalculateCRC() {
 void BlockDevice::NotifyReadError() {
 	I18NCategory *err = GetI18NCategory("Error");
 	if (!reportedError_) {
-		host->NotifyUserMessage(err->T("Game disc read error - ISO corrupt"), 6.0f);
+        if (host)
+			host->NotifyUserMessage(err->T("Game disc read error - ISO corrupt"), 6.0f);
 		reportedError_ = true;
 	}
 }

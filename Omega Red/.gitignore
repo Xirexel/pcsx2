@@ -113,3 +113,4 @@ packages/
 Omega Red/bin/
 bin/
 Win32/
+!/PCSX-Reloaded/win32

@@ -366,10 +366,7 @@ namespace Omega_Red.SocialNetworks.Google
                     updateBroadcast(a_broadcast);
                 }
                 
-
                 Settings.Default.YouTubeBroadcastSelectedId = a_broadcast.Id;
-
-                Settings.Default.Save();
 
             } while (false);
 

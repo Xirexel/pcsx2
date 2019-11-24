@@ -14,6 +14,7 @@
 
 using Omega_Red.Managers;
 using Omega_Red.Models;
+using Omega_Red.Panels;
 using Omega_Red.Properties;
 using Omega_Red.Tools;
 using System;
@@ -41,9 +42,6 @@ namespace Omega_Red.ViewModels
     [DataTemplateNameAttribute("BiosInfoItem")]
     public class BiosInfoViewModel : BaseViewModel
     {
-        [DllImport("user32.dll")]
-        static extern bool SetForegroundWindow(IntPtr hWnd);
-
         protected override Managers.IManager Manager
         {
             get { return BiosManager.Instance; }
@@ -72,6 +70,16 @@ namespace Omega_Red.ViewModels
             IsEnabled = a_Status == PCSX2Controller.StatusEnum.Stopped 
                 || a_Status == PCSX2Controller.StatusEnum.Initilized
                 || a_Status == PCSX2Controller.StatusEnum.NoneInitilized;
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
+            {
+                CurrentBiosZone = "";
+
+                if (PCSX2Controller.Instance.BiosInfo == null)
+                    return;
+
+                CurrentBiosZone = ": " + PCSX2Controller.Instance.BiosInfo.Zone + " " + PCSX2Controller.Instance.BiosInfo.Version;
+            });
         }  
 
         public bool IsEnabled
@@ -102,46 +110,29 @@ namespace Omega_Red.ViewModels
         {
             get {
 
-                Border lBackBorder = new Border();
+                TipInfoPanel l_TipInfoPanel = new TipInfoPanel();
 
-                TextBlock lTextBlock = new TextBlock();
-
-                lTextBlock.Foreground = System.Windows.Media.Brushes.Black;
-
-                lTextBlock.TextWrapping = TextWrapping.Wrap;
-
-                lBackBorder.Child = lTextBlock;
-
-                lBackBorder.Margin = new Thickness(5);
+                l_TipInfoPanel.addHyperLink(@"https://www.google.com.au/search?client=opera&q=ps2+bios+pack&sourceid=opera&ie=UTF-8&oe=UTF-8");
                 
-                var lHyperlink = new Hyperlink();
+                var l_TipTitle = App.Current.Resources["BiosTipTitle"];
 
-                lHyperlink.Inlines.Add(@"https://www.google.com.au/search?client=opera&q=ps2+bios+pack&sourceid=opera&ie=UTF-8&oe=UTF-8");
+                if (l_TipTitle != null)
+                    l_TipInfoPanel.setTipTitle(l_TipTitle.ToString());
 
-                lHyperlink.Click += delegate (object sender, RoutedEventArgs e)
-                {
-                    var lHyperlink1 = sender as Hyperlink;
+                return l_TipInfoPanel;
+            }
+        }
 
-                    if (lHyperlink1 == null)
-                        return;
+        private string mCurrentBiosZone = "";
 
-                    var lRun = lHyperlink1.Inlines.FirstInline as Run;
+        public string CurrentBiosZone
+        {
+            get { return mCurrentBiosZone; }
+            set
+            {
+                mCurrentBiosZone = value;
 
-                    if (lRun == null)
-                        return;
-
-                    Native.openURL(lRun.Text);
-                };
-
-                var l_BiosTipTitle = App.Current.Resources["BiosTipTitle"];
-                               
-                lTextBlock.Inlines.Add(l_BiosTipTitle as string);
-
-                lTextBlock.Inlines.Add(new LineBreak());
-
-                lTextBlock.Inlines.Add(lHyperlink);
-
-                return lBackBorder;
+                RaisePropertyChangedEvent("CurrentBiosZone");
             }
         }
     }

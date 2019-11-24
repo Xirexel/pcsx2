@@ -68,7 +68,10 @@ void MemoryCard::execute(const wchar_t* a_command, wchar_t** a_result)
 				{
 					close();
 
-					m_McdFiles.clear();
+					for (auto &l_item : m_McdFiles) {
+
+                        l_item.second.m_file_stream = std::fstream();
+                    }
 				}
 
 				l_ChildNode = l_ChildNode.next_sibling();

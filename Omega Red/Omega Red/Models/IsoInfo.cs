@@ -23,7 +23,9 @@ namespace Omega_Red.Models
     public enum GameType
     {
         PS2,
-        PSP
+        PS1,
+        PSP,
+        Unknown
     }
 
     public class IsoInfo

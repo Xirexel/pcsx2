@@ -1,6 +1,11 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+
+    <Style TargetType="{x:Type CheckBox}">
+        <Setter Property="Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+    </Style>
+
     <Style x:Key="PanelCheckBoxStyle" TargetType="{x:Type CheckBox}">
         <Setter Property="SnapsToDevicePixels" Value="False"/>
         <Setter Property="Background" Value="{DynamicResource StandardBackgroundBrush}"/>
@@ -160,17 +165,11 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="mBorder" Property="Background" Value="#10FF10" />
+                            <Setter TargetName="mBorder" Property="Background" Value="{DynamicResource PressedButtonBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.25" />
                         </Trigger>
-                        <!--<DataTrigger Binding="{Binding Status}" Value="Stopped" >
-                            <Setter Property="IsChecked" Value="False" />
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Status}" Value="Started" >
-                            <Setter Property="IsChecked" Value="True" />
-                        </DataTrigger>-->
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -203,12 +202,6 @@
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.25" />
                         </Trigger>
-                        <!--<DataTrigger Binding="{Binding Status}" Value="Stopped" >
-                            <Setter Property="IsChecked" Value="False" />
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Status}" Value="Started" >
-                            <Setter Property="IsChecked" Value="True" />
-                        </DataTrigger>-->
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

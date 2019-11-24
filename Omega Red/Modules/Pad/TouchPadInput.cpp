@@ -57,8 +57,6 @@
 //_XInputSetState pXInputSetState = 0;
 
 
-
-
 struct TOUCH_PAD_GAMEPAD {
 	WORD  wButtons;
 	BYTE  bLeftTrigger;
@@ -75,7 +73,10 @@ struct TOUCH_PAD_STATE {
 };
 
 
-static int s_activeCount = 0;
+
+typedef DWORD(STDAPICALLTYPE *VibrationCallback)(
+    DWORD VibrationCombo);
+
 
 // Completely unncessary, really.
 __forceinline int ShortToAxis(int v)
@@ -154,7 +155,7 @@ public:
 	{
 		if (active)
 			Deactivate();
-		s_activeCount++;
+
 		active = 1;
 		AllocState();
 
@@ -267,6 +268,13 @@ public:
 			//if (ERROR_SUCCESS == pXInputSetState(index, &newv)) {
 			//	xInputVibration = newv;
 			//}
+
+			DWORD l_VibrationCombo = (WORD)newVibration[0] | (((WORD)newVibration[1]) << 16);
+
+			if (ptrVibrationCallback != nullptr)
+                ((VibrationCallback)ptrVibrationCallback)(l_VibrationCombo);
+
+			xInputVibration = newv;
 		}
 	}
 

@@ -23,6 +23,7 @@ namespace Omega_Red.Models
 {
     public enum SaveStateType
     {
+        PCSX,
         PCSX2,
         PPSSPP
     }

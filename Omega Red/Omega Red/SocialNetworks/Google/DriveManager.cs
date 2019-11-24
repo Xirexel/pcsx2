@@ -35,12 +35,12 @@ namespace Omega_Red.SocialNetworks.Google
 
         IDictionary<string, IList<MemoryCardInfo>> m_Online_MemoryCards = new Dictionary<string, IList<MemoryCardInfo>>();
 
-        
+
 
         private static DriveManager m_Instance = null;
         public static DriveManager Instance { get { if (m_Instance == null) m_Instance = new DriveManager(); return m_Instance; } }
 
-        private DriveManager(){}
+        private DriveManager() { }
 
         public void reset()
         {
@@ -313,7 +313,7 @@ namespace Omega_Red.SocialNetworks.Google
             }
 
             int l_index = -1;
-            
+
             var l_nameSplitList = a_name.Split(new char[] { '.' });
 
             if (l_nameSplitList != null && l_nameSplitList.Length == 4)
@@ -344,7 +344,7 @@ namespace Omega_Red.SocialNetworks.Google
                     }
                 }
             }
-            
+
             var l_DataFixed = l_Date.Replace('\n', ' ');
 
             DateTime lDateTime = DateTime.Now;
@@ -352,13 +352,20 @@ namespace Omega_Red.SocialNetworks.Google
             if (!DateTime.TryParseExact(l_DataFixed, "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out lDateTime))
                 lDateTime = DateTime.Now;
 
+            var l_Number = string.Format("{0:#}", l_index + 1);
+
+            if (l_index == -1)
+                l_Number = "Shared";
+
             MemoryCardInfo l_MemoryCardInfo = new MemoryCardInfo()
             {
                 FileName = a_name,
                 FilePath = Settings.Default.MemoryCardsFolder + a_name,
+                CloudSaveDate = l_Date,
                 Date = l_Date,
                 DateTime = lDateTime,
                 Index = l_index,
+                Number = l_Number,
                 IsCloudOnlysave = true,
                 IsCloudsave = true
             };
@@ -371,24 +378,29 @@ namespace Omega_Red.SocialNetworks.Google
         public async Task startUploadingSStateAsync(string a_file_path, FrameworkElement a_banner_grid, string a_description)
         {
             await startUploadingAsync(
-                a_file_path, 
-                a_banner_grid, 
-                a_description, 
+                a_file_path,
+                a_banner_grid,
+                a_description,
                 getSStates,
-                (Name, Description)=> {
+                (Name, Description) => {
                     addSaveState(m_Current_online_savings, Name, Description);
                 });
         }
 
-        public async Task startUploadingMemoryCardAsync(string a_file_path, FrameworkElement a_banner_grid, string a_description)
+        public async Task startUploadingMemoryCardAsync(string a_disk_serial, string a_file_path, FrameworkElement a_banner_grid, string a_description)
         {
+            IList<MemoryCardInfo> l_Current_online_MemoryCards = DriveManager.Instance.getMemoryCardList(a_disk_serial);
+
+            if (l_Current_online_MemoryCards == null)
+                return;
+
             await startUploadingAsync(
-                a_file_path, 
-                a_banner_grid, 
-                a_description, 
+                a_file_path,
+                a_banner_grid,
+                a_description,
                 getMemoryCards,
                 (Name, Description) => {
-                    addMemoryCard(m_Current_online_MemoryCards, Name, Description);
+                    addMemoryCard(l_Current_online_MemoryCards, Name, Description);
                 });
         }
 
@@ -397,14 +409,14 @@ namespace Omega_Red.SocialNetworks.Google
         {
             await startUploadingAsync(
                 a_file_path,
-                a_banner_grid, 
-                a_description, 
+                a_banner_grid,
+                a_description,
                 getDiscs,
                 (Name, Description) => {
 
                 });
         }
-        
+
 
         private async Task startUploadingAsync(
             string a_file_path,
@@ -489,7 +501,7 @@ namespace Omega_Red.SocialNetworks.Google
         }
 
         public async Task startDownloadingAsync(
-            string a_file_path, 
+            string a_file_path,
             FrameworkElement a_banner_grid,
             getDriveDirectoryDel a_getDriveDirectoryDel,
             string a_target_folder)
@@ -547,9 +559,9 @@ namespace Omega_Red.SocialNetworks.Google
             }
         }
 
-        public async Task startDeletingMemoryCardAsync(string a_file_path)
+        public async Task startDeletingMemoryCardAsync(string a_id_name, string a_file_path)
         {
-            await startDeletingAsync(a_file_path, getMemoryCards,
+            await startDeletingAsync(a_id_name, getMemoryCards,
                 () => {
                     if (m_Current_online_MemoryCards != null)
                         m_Current_online_MemoryCards.Remove(m_Current_online_MemoryCards.First(memoryCard => memoryCard.FilePath == a_file_path));
@@ -559,7 +571,7 @@ namespace Omega_Red.SocialNetworks.Google
         public async Task startDeletingSStateAsync(string a_file_path)
         {
             await startDeletingAsync(a_file_path, getSStates,
-                ()=> {
+                () => {
                     if (m_Current_online_savings != null)
                         m_Current_online_savings.Remove(m_Current_online_savings.First(saveState => saveState.FilePath == a_file_path));
                 });
@@ -598,7 +610,7 @@ namespace Omega_Red.SocialNetworks.Google
                     return;
                 }
 
-                var lName = System.IO.Path.GetFileName(a_file_path);
+                var lName = a_file_path;// System.IO.Path.GetFileName(a_file_path);
 
                 FilesResource.ListRequest list = service.Files.List();
 
@@ -618,7 +630,7 @@ namespace Omega_Red.SocialNetworks.Google
                 }
             }
         }
-        
+
         private static string GetMimeType(string fileName)
         {
             string mimeType = "application/unknown";
@@ -709,7 +721,7 @@ namespace Omega_Red.SocialNetworks.Google
             catch (Exception)
             {
             }
-            
+
             return lDirectory;
         }
         private File getDiscs(DriveService service, File a_OmegaRedDirectory)
@@ -852,12 +864,12 @@ namespace Omega_Red.SocialNetworks.Google
         }
 
         private Task<IUploadProgress> updateFile(
-            DriveService service, 
-            File originalFile, 
-            string a_file_path, 
-            string a_description, 
-            string a_parent_id, 
-            FrameworkElement a_banner_grid, 
+            DriveService service,
+            File originalFile,
+            string a_file_path,
+            string a_description,
+            string a_parent_id,
+            FrameworkElement a_banner_grid,
             TextBlock a_title_textblock,
             Action<string, string> a_addAction)
         {
@@ -945,8 +957,8 @@ namespace Omega_Red.SocialNetworks.Google
 
         private async Task downloadFile(
             DriveService service,
-            File downloadFile, 
-            FrameworkElement a_banner_grid, 
+            File downloadFile,
+            FrameworkElement a_banner_grid,
             TextBlock a_title_textblock,
             string a_target_folder)
         {

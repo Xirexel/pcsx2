@@ -2,19 +2,20 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <sys:String x:Key="MainName">Красный Омега PS2/PSP эмулятор</sys:String>
+    <sys:String x:Key="MainName">Красный Омега PS1/PS2/PSP эмулятор</sys:String>
     <sys:String x:Key="ControlTitle">Настройка</sys:String>
     <sys:String x:Key="MediaTitle">Медиа</sys:String>
     <sys:String x:Key="DisplayModeTitle">Режим отображения:</sys:String>
     <sys:String x:Key="ControlModeTitle">Режим управления:</sys:String>
     <sys:String x:Key="TopmostTitle">Установить окно поверх всех</sys:String>
     <sys:String x:Key="CompressionQualityTitle">Качество сжатия видео:</sys:String>
-    <sys:String x:Key="DisableWideScreenTitle">Отключить широкоформатный режим</sys:String>
+    <sys:String x:Key="EnableWideScreenTitle">Включить широкоформатный режим</sys:String>
     <sys:String x:Key="LanguageTitle">Текущий перевод</sys:String>
     <sys:String x:Key="ColourSchemaTitle">Цветовая схема</sys:String>
     <sys:String x:Key="CaptureManagerTitle">Поддерживает CaptureManager SDK</sys:String>
     <sys:String x:Key="PCSX2Title">Поддерживает PCSX2</sys:String>
     <sys:String x:Key="PPSSPPTitle">Поддерживает PPSSPP</sys:String>
+    <sys:String x:Key="PCSXRTitle">Поддерживает PCSX-Reloaded</sys:String>
     <sys:String x:Key="YesTitle">Выполнить</sys:String>
     <sys:String x:Key="NoTitle">Отменить</sys:String>
     <sys:String xml:space="preserve" x:Key="VersionTitle">Версия: </sys:String>
@@ -96,4 +97,8 @@
     <sys:String x:Key="VariableBitrateTitle">Переменный битрейт</sys:String>
     <sys:String xml:space="preserve" x:Key="VideoFileRecordedInfoTitle"> записан!!!</sys:String>
     <sys:String xml:space="preserve" x:Key="VideoFileRecordingFailedTitle">Запись невозможна!!!</sys:String>
+    <sys:String xml:space="preserve" x:Key="MemoryCardInfoTitle">Карта памяти </sys:String>
+    <sys:String x:Key="SharedTitle">общая</sys:String>
+    <sys:String x:Key="VisualVibrationIsEnabledTitle">Визуальная вибрация включена</sys:String>
+    <sys:String x:Key="GroupTitle">Количество</sys:String>
 </ResourceDictionary>

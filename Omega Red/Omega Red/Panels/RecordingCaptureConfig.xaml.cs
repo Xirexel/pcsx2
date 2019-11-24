@@ -40,9 +40,6 @@ namespace Omega_Red.Panels
                     Capture.MediaCapture.Instance.setFileSize(l_sizeFile);
                 }
             }
-
-
-            Omega_Red.Properties.Settings.Default.Save();
         }
     }
 }

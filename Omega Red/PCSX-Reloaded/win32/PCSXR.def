@@ -1,0 +1,20 @@
+LIBRARY "pcsxr"
+EXPORTS
+	Launch						PRIVATE
+	Pause						PRIVATE
+	Resume						PRIVATE
+	Shutdown					PRIVATE
+	SaveLibState				PRIVATE
+	LoadLibState				PRIVATE
+	SetMcd						PRIVATE
+
+	
+	setPluginsOpenCallback		PRIVATE
+	setPluginsCloseCallback		PRIVATE
+	setBIOSMemoryCallback		PRIVATE
+
+
+	setGS						PRIVATE
+	setSPU						PRIVATE
+	setPAD						PRIVATE
+	setSIO1						PRIVATE

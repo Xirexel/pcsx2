@@ -23,6 +23,30 @@ namespace Omega_Red.Panels
         public DisplayControl()
         {
             InitializeComponent();
+
+            Managers.PadControlManager.Instance.VibrationEvent += Instance_VibrationEvent;
+
+            Tools.PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+        }
+
+        private void Instance_ChangeStatusEvent(Tools.PCSX2Controller.StatusEnum obj)
+        {
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Background,
+            (System.Threading.ThreadStart)delegate ()
+            {
+                m_vibrationRotateTransform.Angle = 0;
+            });
+        }
+
+        private void Instance_VibrationEvent(uint arg1, uint arg2)
+        {
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Background,
+            (System.Threading.ThreadStart)delegate ()
+            {
+                m_vibrationRotateTransform.Angle = 20.0 * ((double)arg2 / (double)0xFFFFF) - 20.0 * ((double)arg1 / (double)0xFFFFF);
+            });
         }
 
         internal VideoPanel VideoPanel { get { return (VideoPanel)m_TargetRenderBorder.Child; } }

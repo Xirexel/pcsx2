@@ -487,6 +487,8 @@ namespace Omega_Red.Managers
             Settings.Default.MediaSourceInfoCollection = reader.ReadToEnd();
 
             Settings.Default.Save();
+
+            App.saveCopy();
         }
 
         public void load()

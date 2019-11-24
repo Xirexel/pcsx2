@@ -53,7 +53,7 @@ namespace Omega_Red.Tools
 
                 m_is_launched = true;
 
-                setAudioVolume(m_Audiolevel);
+                setSoundLevel(m_Audiolevel);
 
                 setIsMuted(m_is_muted);
 
@@ -87,7 +87,7 @@ namespace Omega_Red.Tools
         {
             if (m_is_launched && m_is_paused)
             {
-                setAudioVolume(m_Audiolevel);
+                setSoundLevel(m_Audiolevel);
 
                 PPSSPPNative.Instance.resume();
 
@@ -103,7 +103,7 @@ namespace Omega_Red.Tools
 
                 m_is_launched = true;
 
-                setAudioVolume(m_Audiolevel);
+                setSoundLevel(m_Audiolevel);
 
                 setIsMuted(m_is_muted);
             }
@@ -140,7 +140,7 @@ namespace Omega_Red.Tools
             return Tuple.Create<string, string>(l_title, l_id);
         }
 
-        public void setAudioVolume(double a_level)
+        public void setSoundLevel(double a_level)
         {
             if (m_is_launched)
                 if (m_is_muted)
@@ -157,9 +157,9 @@ namespace Omega_Red.Tools
 
             if (m_is_launched)
                 if (m_is_muted)
-                    setAudioVolume(0.0f);
+                    setSoundLevel(0.0f);
                 else
-                    setAudioVolume(m_Audiolevel);
+                    setSoundLevel(m_Audiolevel);
         }
 
         public void setLimitFrame(bool a_state)

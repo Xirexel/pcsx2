@@ -23,7 +23,7 @@
                 <ColumnDefinition/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
-            <TextBlock Foreground="Black" VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource VideoStreamBitRateTitle}" Margin="5"/>
+            <TextBlock  VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource VideoStreamBitRateTitle}" Margin="5"/>
             <ComboBox IsSynchronizedWithCurrentItem="True" VerticalAlignment="Center" ItemsSource="{Binding VideoBitRateCollection}" Grid.Column="1"/>
         </Grid>
         <Grid Margin="0,5" Grid.Row="1">
@@ -31,13 +31,13 @@
                 <ColumnDefinition/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
-            <TextBlock Foreground="Black" VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource AudioStreamBitRateTitle}" Margin="5"/>
+            <TextBlock  VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource AudioStreamBitRateTitle}" Margin="5"/>
             <ComboBox IsSynchronizedWithCurrentItem="True" VerticalAlignment="Center" ItemsSource="{Binding AudioBitRateCollection}" Grid.Column="1"/>
         </Grid>
 
 
         <StackPanel Grid.Row="2" Margin="0,10,0,0">
-            <TextBlock HorizontalAlignment="Center" Foreground="Black" VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource StreamServiceTitle}" Margin="5"/>
+            <TextBlock HorizontalAlignment="Center"  VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource StreamServiceTitle}" Margin="5"/>
             <ComboBox x:Name="m_AddressCmbBx" IsEditable="True" TextBoxBase.TextChanged="m_AddressCmbBx_TextChanged"  SelectionChanged="m_AddressCmbBx_SelectionChanged">
                 <ComboBoxItem Content="rtmp://a.rtmp.youtube.com/live2"/>
                 <ComboBoxItem Content="rtmps://live-api-s.facebook.com:443/rtmp/"/>
@@ -46,7 +46,7 @@
         </StackPanel>
 
         <StackPanel Grid.Row="3" Margin="0,10,0,0">
-            <TextBlock HorizontalAlignment="Center" Foreground="Black" VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource StreamKeyTitle}" Margin="5"/>
+            <TextBlock HorizontalAlignment="Center"  VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource StreamKeyTitle}" Margin="5"/>
             <Grid Margin="5" Width="100">
                 <PasswordBox x:Name="m_PassBx" PasswordChanged="PasswordBox_PasswordChanged" PasswordChar="$" 
                          BorderBrush="{DynamicResource StandardBorderBrush}" 

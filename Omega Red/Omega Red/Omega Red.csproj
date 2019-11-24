@@ -46,26 +46,26 @@
     <StartupObject>Omega_Red.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Google.Apis, Version=1.40.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.1.40.2\lib\net45\Google.Apis.dll</HintPath>
+    <Reference Include="Google.Apis, Version=1.41.1.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.1.41.1\lib\net45\Google.Apis.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Auth, Version=1.40.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.Auth.1.40.2\lib\net45\Google.Apis.Auth.dll</HintPath>
+    <Reference Include="Google.Apis.Auth, Version=1.41.1.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Auth.1.41.1\lib\net45\Google.Apis.Auth.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Auth.PlatformServices, Version=1.40.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.Auth.1.40.2\lib\net45\Google.Apis.Auth.PlatformServices.dll</HintPath>
+    <Reference Include="Google.Apis.Auth.PlatformServices, Version=1.41.1.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Auth.1.41.1\lib\net45\Google.Apis.Auth.PlatformServices.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Core, Version=1.40.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.Core.1.40.2\lib\net45\Google.Apis.Core.dll</HintPath>
+    <Reference Include="Google.Apis.Core, Version=1.41.1.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Core.1.41.1\lib\net45\Google.Apis.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Drive.v3, Version=1.40.2.1631, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.Drive.v3.1.40.2.1631\lib\net45\Google.Apis.Drive.v3.dll</HintPath>
+    <Reference Include="Google.Apis.Drive.v3, Version=1.41.1.1734, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Drive.v3.1.41.1.1734\lib\net45\Google.Apis.Drive.v3.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.PlatformServices, Version=1.40.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.1.40.2\lib\net45\Google.Apis.PlatformServices.dll</HintPath>
+    <Reference Include="Google.Apis.PlatformServices, Version=1.41.1.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.1.41.1\lib\net45\Google.Apis.PlatformServices.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.YouTube.v3, Version=1.40.2.1593, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.YouTube.v3.1.40.2.1593\lib\net45\Google.Apis.YouTube.v3.dll</HintPath>
+    <Reference Include="Google.Apis.YouTube.v3, Version=1.41.1.1699, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.YouTube.v3.1.41.1.1699\lib\net45\Google.Apis.YouTube.v3.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -105,6 +105,7 @@
     <Compile Include="Managers\YouTubeBroadcastManager.cs" />
     <Compile Include="Managers\YouTubeStreamManager.cs" />
     <Compile Include="Models\MediaSourceInfo.cs" />
+    <Compile Include="Models\PadControlConfig.cs" />
     <Compile Include="Models\StreamingCaptureConfigInfo.cs" />
     <Compile Include="Models\YouTubeBroadcastInfo.cs" />
     <Compile Include="Models\YouTubeStreamInfo.cs" />
@@ -123,6 +124,12 @@
     <Compile Include="Panels\StreamingCaptureConfig.xaml.cs">
       <DependentUpon>StreamingCaptureConfig.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Panels\TipInfoPanel.xaml.cs">
+      <DependentUpon>TipInfoPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\TouchPadConfigPanel.xaml.cs">
+      <DependentUpon>TouchPadConfigPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Panels\YouTubeStreamControl.xaml.cs">
       <DependentUpon>YouTubeStreamControl.xaml</DependentUpon>
     </Compile>
@@ -132,6 +139,8 @@
     <Compile Include="Tools\Converters\InverseBooleanConverter.cs" />
     <Compile Include="Tools\Converters\PrivacyStatusConvertor.cs" />
     <Compile Include="Tools\Extensions.cs" />
+    <Compile Include="Tools\PCSXControl.cs" />
+    <Compile Include="Tools\PCSXModuleManager.cs" />
     <Compile Include="Util\Interop\ComInterface.cs" />
     <Compile Include="Util\Interop\D3D11Texture2D.cs" />
     <Compile Include="Util\Interop\Direct3D11.cs" />
@@ -154,6 +163,7 @@
     <Compile Include="SocialNetworks\Google\GoogleAccountManager.cs" />
     <Compile Include="Tools\PPSSPPControl.cs" />
     <Compile Include="Util\Direct3D11Device.cs" />
+    <Compile Include="Util\PCSXNative.cs" />
     <Compile Include="Util\PPSSPPNative.cs" />
     <Compile Include="Models\BiosInfo.cs" />
     <Compile Include="Models\IsoInfo.cs" />
@@ -209,7 +219,7 @@
     <Compile Include="Managers\LockScreenManager.cs" />
     <Compile Include="Managers\MemoryCardManager.cs" />
     <Compile Include="Tools\ModuleControl.cs" />
-    <Compile Include="Tools\ModuleManager.cs" />
+    <Compile Include="Tools\PCSX2ModuleManager.cs" />
     <Compile Include="Managers\PadControlManager.cs" />
     <Compile Include="Tools\PadInput.cs" />
     <Compile Include="Panels\AnalogStickPanel.xaml.cs">
@@ -324,6 +334,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="ColourSchemes\Black.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
     <Page Include="ColourSchemes\Default.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -373,6 +387,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Panels\StreamingCaptureConfig.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\TipInfoPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\TouchPadConfigPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -605,6 +627,18 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Modules\x86\AudioRenderer.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\x86\pcsxr.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\x86\DFXVideo.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\x86\DFSound.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\x86\bladesio1.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

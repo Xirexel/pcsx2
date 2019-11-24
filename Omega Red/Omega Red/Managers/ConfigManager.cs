@@ -319,8 +319,6 @@ namespace Omega_Red.Managers
             }
 
             Settings.Default.RenderingSchema = ltitle;
-
-            Settings.Default.Save();
         }
 
         private void mMediaOutputTypeModeView_CurrentChanged(object sender, EventArgs e)
@@ -345,8 +343,6 @@ namespace Omega_Red.Managers
             Managers.MediaRecorderManager.Instance.setMediaOutputType(l_MediaOutputType.Value);
 
             Settings.Default.MediaOutputType = l_MediaOutputType.Value.ToString();
-
-            Settings.Default.Save();
         }
 
         void mColourSchemaModeView_CurrentChanged(object sender, EventArgs e)
@@ -382,8 +378,6 @@ namespace Omega_Red.Managers
                 {
                     Settings.Default.ColourSchema = "Default";
 
-                    Settings.Default.Save();
-
                     return;
                 }
 
@@ -394,8 +388,6 @@ namespace Omega_Red.Managers
                     App.Current.Resources.MergedDictionaries.Add(m_colourSchemaResource);
 
                     Settings.Default.ColourSchema = a_colourSchema;
-
-                    Settings.Default.Save();
                 }
             }
         }
@@ -435,8 +427,6 @@ namespace Omega_Red.Managers
                 {
                     Settings.Default.Language = "Русский";
 
-                    Settings.Default.Save();
-
                     return;
                 }
 
@@ -447,8 +437,6 @@ namespace Omega_Red.Managers
                     App.Current.Resources.MergedDictionaries.Add(m_languageResource);
 
                     Settings.Default.Language = a_language;
-
-                    Settings.Default.Save();
                 }
             }
         }
@@ -503,8 +491,6 @@ namespace Omega_Red.Managers
 
 
             Settings.Default.ControlMode = l_ControlMode.Value.ToString();
-
-            Settings.Default.Save();
         }
 
         void mDisplayModeView_CurrentChanged(object sender, EventArgs e)
@@ -530,8 +516,6 @@ namespace Omega_Red.Managers
             }
 
             Settings.Default.DisplayMode = l_DisplayMode.Value.ToString();
-
-            Settings.Default.Save();
         }
         
         public ICollectionView DisplayModeCollection

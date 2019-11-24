@@ -52,14 +52,21 @@ namespace Omega_Red.Tools.Savestate
 	        new SavestateEntry_VU1mem(),
 	        new SavestateEntry_VU0prog(),
 	        new SavestateEntry_VU1prog(),
-            new PluginSavestateEntry(ModuleManager.ModuleType.VideoRenderer),
-            new PluginSavestateEntry(ModuleManager.ModuleType.AudioRenderer)
+            new PluginSavestateEntry(PCSX2ModuleManager.ModuleType.VideoRenderer),
+            new PluginSavestateEntry(PCSX2ModuleManager.ModuleType.AudioRenderer)
         };
 
         private List<IBaseSavestateEntry> m_PPSSPPSavestateEntries = new List<IBaseSavestateEntry>()
         {
             new SavestateEntry_StateVersion(),
             new SavestateEntry_PPSSPPInternalStructures(),
+            new SavestateEntry_Screenshot(takeScreenshot)
+        };
+
+        private List<IBaseSavestateEntry> m_PCSXSavestateEntries = new List<IBaseSavestateEntry>()
+        {
+            new SavestateEntry_StateVersion(),
+            new SavestateEntry_PCSXInternalStructures(),
             new SavestateEntry_Screenshot(takeScreenshot)
         };
 
@@ -224,6 +231,37 @@ namespace Omega_Red.Tools.Savestate
             }
         }
 
+        public void SavePCSX(string a_FilePath, string a_TempFilePath, string aDate, double aDurationInSeconds)
+        {
+            using (FileStream zipToOpen = new FileStream(a_FilePath, FileMode.Create))
+            {
+                using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Update))
+                {
+                    var lSavestateEntry_TimeSession = new SavestateEntry_TimeSession(aDate, aDurationInSeconds);
+
+                    m_PCSXSavestateEntries.Add(lSavestateEntry_TimeSession);
+
+                    var lSavestateEntry_PCSXState = new SavestateEntry_PCSXState(a_TempFilePath);
+
+                    m_PCSXSavestateEntries.Add(lSavestateEntry_PCSXState);
+
+                    foreach (var l_SavestateEntry in m_PCSXSavestateEntries)
+                    {
+                        ZipArchiveEntry l_InternalStructuresEntry = archive.CreateEntry(l_SavestateEntry.GetFilename());
+
+                        using (BinaryWriter writer = new BinaryWriter(l_InternalStructuresEntry.Open()))
+                        {
+                            l_SavestateEntry.FreezeOut(new MemSavingState(writer));
+                        }
+                    }
+
+                    m_PCSXSavestateEntries.Remove(lSavestateEntry_TimeSession);
+
+                    m_PCSXSavestateEntries.Remove(lSavestateEntry_PCSXState);
+                }
+            }
+        }
+
         public void Load(string a_FilePath)
         {
 
@@ -263,6 +301,28 @@ namespace Omega_Red.Tools.Savestate
                         using (BinaryReader reader = new BinaryReader(l_InternalStructuresEntry.Open()))
                         {
                             lSavestateEntry_PPSSPPSState.FreezeIn(new MemLoadingState(reader));
+                        }
+                    }
+                }
+            }
+        }
+
+        public void LoadPCSX(string a_FilePath, string a_tempFilePath)
+        {
+
+            using (FileStream zipToOpen = new FileStream(a_FilePath, FileMode.Open))
+            {
+                using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
+                {
+                    var lSavestateEntry_PCSXState = new SavestateEntry_PCSXState(a_tempFilePath);
+
+                    ZipArchiveEntry l_InternalStructuresEntry = archive.GetEntry(lSavestateEntry_PCSXState.GetFilename());
+
+                    if (l_InternalStructuresEntry != null)
+                    {
+                        using (BinaryReader reader = new BinaryReader(l_InternalStructuresEntry.Open()))
+                        {
+                            lSavestateEntry_PCSXState.FreezeIn(new MemLoadingState(reader));
                         }
                     }
                 }

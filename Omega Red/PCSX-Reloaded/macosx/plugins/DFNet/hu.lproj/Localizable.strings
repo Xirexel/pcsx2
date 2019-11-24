@@ -1,0 +1,16 @@
+﻿/* 
+ Localizable.strings
+ DFNet
+ 
+ Created by C.W. Betts on 11/17/11.
+ Copyright 2011 __MyCompanyName__. All rights reserved.
+ */
+
+"Error allocating memory!\n" = "Memória kiosztási hiba!\n";
+"error connecting to %s: %s\n" = "hiba a következőhöz történő kapcsolódáskor: %s: %s\n";
+"Socket Driver" = "Socket illesztőprogram";
+
+//"Address Too Long" = "Address Too Long";
+//"The address is too long.\n\nTry to use only the IP address and not a host name." = "The address is too long.\n\nTry to use only the IP address and not a host name.";
+//"Blank Address" = "Blank Address";
+//"The address specified is either blank, or can't be converted to ASCII.\n\nTry connecting directly using the IP address using latin numerals." = "The address specified is either blank, or can't be converted to ASCII.\n\nTry connecting directly using the IP address using latin numerals.";

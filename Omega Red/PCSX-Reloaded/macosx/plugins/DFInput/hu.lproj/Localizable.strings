@@ -1,0 +1,63 @@
+﻿/* 
+ Localizable.strings
+ DFInput
+ 
+ Created by C.W. Betts on 11/16/11.
+ Copyright 2011 __MyCompanyName__. All rights reserved.
+ */
+
+"Gamepad/Keyboard/Mouse Input" = "Játékirányító/Billentyűzet bemenet";
+"Joystick: Button %d" = "Joystick: %d gomb";
+"Joystick: Axis %d%c" = "Joystick: %d%c irány";
+"Joystick: Hat %d %s" = "Joystick: %d %s hat";
+"Keyboard: %s" = "Billentyűzet: %s";
+
+//"(Keyboard only)" = "(Keyboard only)";
+"(Not Set)" = "(Nincs beállítva)";
+
+"D-Pad Up" = "Digitális FEL";
+"D-Pad Down" = "Digitális LE";
+"D-Pad Left" = "Digitális BALRA";
+"D-Pad Right" = "Digitális JOBBRA";
+"Cross" = "KERESZT";
+"Circle" = "KÖR";
+"Square" = "NÉGYSZÖG";
+"Triangle" = "HÁROMSZÖG";
+"L1" = "L1";
+"R1" = "R1";
+"L2" = "L2";
+"R2" = "R2";
+"Select" = "Select";
+"Start" = "Start";
+"L3" = "L3";
+"R3" = "R3";
+"Analog" = "Analóg irányító";
+"L-Stick Right" = "Bal kar jobbra";
+"L-Stick Left" = "Bal kar balra";
+"L-Stick Down" = "Bal kar le";
+"L-Stick Up" = "Bal kar fel";
+"R-Stick Right" = "Jobb kar jobbra";
+"R-Stick Left" = "Jobb kar balra";
+"R-Stick Down" = "Jobb kar le";
+"R-Stick Up" = "Jobb kar fel";
+
+// Game Controller names
+//"Left Bumper" = "Left Bumper";
+//"Right Bumper" = "Right Bumper";
+//"Left Trigger" = "Left Trigger";
+//"Right Trigger" = "Right Trigger";
+//"Guide" = "Guide";
+//"Back" = "Back";
+
+// Unused right now
+"Centered" = "Középen";
+"Up" = "Fel";
+"Right" = "Jobbra";
+"Rightup" = "Jobbra fel";
+"Down" = "Le";
+"Rightdown" = "Jobbra le";
+"Left" = "Balra";
+"Leftup" = "Balra fel";
+"Leftdown" = "Balra le";
+
+

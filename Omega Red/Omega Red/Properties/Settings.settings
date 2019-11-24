@@ -20,9 +20,6 @@
     <Setting Name="DisplayMode" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="PadIndex" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
     <Setting Name="ControlMode" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
@@ -97,6 +94,12 @@
     </Setting>
     <Setting Name="RecordingAudioBitRate" Type="System.UInt32" Scope="User">
       <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="PadControlConfigCollection" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="IsVisualVibrationEnabled" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>

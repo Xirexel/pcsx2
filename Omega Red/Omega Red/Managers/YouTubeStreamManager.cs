@@ -67,8 +67,6 @@ namespace Omega_Red.Managers
                 
                 Settings.Default.YouTubeStreamSelectedId = "";
 
-                Settings.Default.Save();
-
             } while (false);
         }
     }

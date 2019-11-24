@@ -116,7 +116,7 @@ namespace Omega_Red
             {
                 lock (this)
                 {
-                    if (!ModuleManager.Instance.isInit)
+                    if (!PCSX2ModuleManager.Instance.isInit)
                     {
                         break;
                     }
@@ -142,7 +142,7 @@ namespace Omega_Red
 
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
             {
-                if (ModuleManager.Instance.isInit && PCSX2LibNative.Instance.isInit)
+                if (PCSX2ModuleManager.Instance.isInit && PCSX2LibNative.Instance.isInit)
                     LockScreenManager.Instance.hide();
             });
         }

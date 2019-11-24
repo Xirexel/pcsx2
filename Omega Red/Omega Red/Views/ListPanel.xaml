@@ -7,7 +7,14 @@
              d:DesignHeight="300" d:DesignWidth="300"
              ClipToBounds="True">
     <Grid>
-        <ListView Style="{DynamicResource InfoListView}"/>
+        <ListView BorderThickness="0"
+                  Background="{DynamicResource PanelBackgroundBrush}"
+                  HorizontalAlignment="Stretch"
+                  Style="{DynamicResource InfoListView}" >
+            <ListView.GroupStyle>
+                <GroupStyle />
+            </ListView.GroupStyle>
+        </ListView>
         <ContentPresenter Content="{Binding TipInfo}" Visibility="{Binding VisibilityTipInfo}" />
         <Grid
             Margin="10,10,20,0"

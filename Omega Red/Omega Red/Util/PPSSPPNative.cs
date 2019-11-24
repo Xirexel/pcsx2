@@ -45,7 +45,7 @@ namespace Omega_Red.Util
 
         class PPSSPPFunctions
         {
-            //Запуск игроаого диска.
+            //Запуск игрового диска.
             public FirstDelegate Launch;
 
             //Остановка игры.

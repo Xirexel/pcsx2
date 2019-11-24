@@ -26,11 +26,33 @@ namespace Omega_Red.ViewModels
 {
     class PadControlViewModel : ItemsPanelTemplateManager
     {
-        public PadControlViewModel(){}
-        
+        public PadControlViewModel(){
+            PadControlManager.Instance.PadConfigPanelEvent += Instance_PadConfigPanelEvent;
+
+            PadConfigPanel = PadControlManager.Instance.PadConfigPanel;
+        }
+
+        private void Instance_PadConfigPanelEvent(object obj)
+        {
+            PadConfigPanel = obj;
+        }
+
         public ICollectionView PadControlCollection
         {
             get { return PadControlManager.Instance.Collection; }
-        }        
+        }
+
+        private object mPadConfigPanel = null;
+
+        public object PadConfigPanel
+        {
+            get { return mPadConfigPanel; }
+            set
+            {
+                mPadConfigPanel = value;
+
+                RaisePropertyChangedEvent("PadConfigPanel");
+            }
+        }
     }
 }

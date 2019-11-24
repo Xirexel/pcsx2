@@ -13,27 +13,42 @@
 */
 
 using Omega_Red.Models;
+using Omega_Red.Panels;
 using Omega_Red.Tools;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Data;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace Omega_Red.Managers
 {
+    delegate void VibrationCallbackDelegate(uint a_vibrationCombo);
+
     class PadControlManager
     {
         private static PadControlManager m_Instance = null;
 
+        public event Action<object> PadConfigPanelEvent;
+
+        public event Action<uint, uint> VibrationEvent;
+
+        private List<PadControlConfig> m_PadControlConfig = new List<PadControlConfig>();
+
+        public VibrationCallbackDelegate VibrationCallback = null;
+
         public static PadControlManager Instance { get { if (m_Instance == null) m_Instance = new PadControlManager(); return m_Instance; } }
 
-        private PadControlInfo mPadControlInfo = new PadControlInfo(){
-            Title_Key = "TouchPadTitle", 
-            IsTouchPad=true,
-            Instance_ID="Touch Pad 0",
+        private PadControlInfo mTouchPadControlInfo = new PadControlInfo()
+        {
+            Title_Key = "TouchPadTitle",
+            IsTouchPad = true,
+            Instance_ID = "Touch Pad 0",
             API = "18",
             Type = "3",
             Product_ID = "TOUCH PAD 0",
@@ -99,14 +114,23 @@ namespace Omega_Red.Managers
             },
             Force_Feedback_Bindings_Data = new string[] {
                             "Constant 0, 0, 0, 1, 0, 65536, 1, 0",
-                            "Constant 0, 1, 0, 1, 0, 0, 1, 65536"}
+                            "Constant 0, 1, 0, 1, 0, 0, 1, 65536"},
+            PadConfigPanel = new TouchPadConfigPanel()
         };
         
-        private PadControlManager() {
-            
+        private PadControlInfo mPadControlInfo = null;
+        
+        private PadControlManager()
+        {
+            VibrationCallback = VibrationCallbackInner;
+
+            mPadControlInfo = mTouchPadControlInfo;
+
+            load();
+
             mCustomerView = CollectionViewSource.GetDefaultView(
-                new PadControlInfo[] { 
-                    mPadControlInfo, 
+                new PadControlInfo[] {
+                    mTouchPadControlInfo, 
                     new PadControlInfo(){ 
                     Title_Key = "GamePadTitle", 
                     IsTouchPad=false,
@@ -224,27 +248,28 @@ namespace Omega_Red.Managers
                     //}
                     //}                 
                 }
-
                 );
-
-
+            
             System.Windows.Application.Current.Dispatcher.BeginInvoke(
                 System.Windows.Threading.DispatcherPriority.Background,
                 (System.Threading.ThreadStart)delegate()
                 {
                     mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
 
-                    mCustomerView.MoveCurrentToPosition(Omega_Red.Properties.Settings.Default.PadIndex);
+                    if(m_PadControlConfig.Count != 0)
+                        mCustomerView.MoveCurrentToPosition(m_PadControlConfig[0].PadIndex);
                 });
 
         }
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
         {
-            select(mCustomerView.CurrentItem as PadControlInfo);
+            select(mCustomerView.CurrentItem as PadControlInfo, 0);
         }
 
         public PadControlInfo PadControlInfo { get { return mPadControlInfo; } }
+
+        public object PadConfigPanel { get { return mPadControlInfo.PadConfigPanel; } }
 
         public event Action<bool> ShowTouchPadPanelEvent;
         
@@ -255,7 +280,7 @@ namespace Omega_Red.Managers
             get { return mCustomerView; }
         }
 
-        private void select(PadControlInfo a_PadControlInfo)
+        private void select(PadControlInfo a_PadControlInfo, int a_pad)
         {
             if (a_PadControlInfo != null)
             {
@@ -266,9 +291,12 @@ namespace Omega_Red.Managers
                 if (ShowTouchPadPanelEvent != null)
                     ShowTouchPadPanelEvent(a_PadControlInfo.IsTouchPad);
 
-                Omega_Red.Properties.Settings.Default.PadIndex = mCustomerView.CurrentPosition;
+                if (PadConfigPanelEvent != null)
+                    PadConfigPanelEvent(a_PadControlInfo.PadConfigPanel);
+                
+                m_PadControlConfig[a_pad].PadIndex = mCustomerView.CurrentPosition;
 
-                Omega_Red.Properties.Settings.Default.Save();
+                save();
 
                 ModuleControl.Instance.closePad();
 
@@ -276,6 +304,64 @@ namespace Omega_Red.Managers
 
                 ModuleControl.Instance.initPad();
             }
+        }
+
+        private void load()
+        {
+
+            m_PadControlConfig.Clear();
+
+            if (string.IsNullOrEmpty(Omega_Red.Properties.Settings.Default.PadControlConfigCollection))
+            {
+                m_PadControlConfig.Add(new PadControlConfig() { PadIndex = 0});
+
+                save();
+
+                return;
+            }
+
+            XmlSerializer ser = new XmlSerializer(typeof(List<PadControlConfig>));
+
+            XmlReader xmlReader = XmlReader.Create(new StringReader(Omega_Red.Properties.Settings.Default.PadControlConfigCollection));
+
+            if (ser.CanDeserialize(xmlReader))
+            {
+                var l_collection = ser.Deserialize(xmlReader) as List<PadControlConfig>;
+
+                if (l_collection != null)
+                {
+                    m_PadControlConfig.AddRange(l_collection);
+                }
+            }
+        }
+
+        private void save()
+        {
+
+            XmlSerializer ser = new XmlSerializer(typeof(List<PadControlConfig>));
+
+            MemoryStream stream = new MemoryStream();
+
+            ser.Serialize(stream, m_PadControlConfig);
+
+            stream.Seek(0, SeekOrigin.Begin);
+
+            StreamReader reader = new StreamReader(stream);
+
+            Omega_Red.Properties.Settings.Default.PadControlConfigCollection = reader.ReadToEnd();
+        }
+
+
+        private void VibrationCallbackInner(uint a_vibrationCombo)
+        {
+            if (!Properties.Settings.Default.IsVisualVibrationEnabled)
+                return;
+
+            uint l_LeftMotorSpeed = a_vibrationCombo &0xFFFF;
+            uint l_RightMotorSpeed = (a_vibrationCombo >> 16) & 0xFFFF;
+
+            if (VibrationEvent != null)
+                VibrationEvent(l_LeftMotorSpeed, l_RightMotorSpeed);
         }
     }
 }

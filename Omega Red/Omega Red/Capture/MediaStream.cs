@@ -434,8 +434,6 @@ namespace Omega_Red.Capture
 
 
                             Settings.Default.VideoBitRate = l_SelectedVideoBitStream.Value;
-
-                            Settings.Default.Save();
                         };
                     }
 
@@ -452,8 +450,6 @@ namespace Omega_Red.Capture
 
 
                             Settings.Default.AudioBitRate = l_SelectedAudioBitStream.Value;
-
-                            Settings.Default.Save();
                         };
                     }
 

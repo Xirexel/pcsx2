@@ -881,49 +881,48 @@ namespace Omega_Red.Util
             return false;
         }
                        
-        public void setModule(ModuleManager.Module a_Module)
+        public void setModule(PCSX2ModuleManager.Module a_Module)
         {
             if (!m_IsInitialized)
                 return;
 
             switch (a_Module.ModuleType)
 	        {
-                case ModuleManager.ModuleType.AudioRenderer:
+                case PCSX2ModuleManager.ModuleType.AudioRenderer:
                     if (m_PCSX2Modules.setSPU2 != null)
                         m_PCSX2Modules.setSPU2(a_Module.getPCSX2Lib_API());
                  break;
-                case ModuleManager.ModuleType.VideoRenderer:
+                case PCSX2ModuleManager.ModuleType.VideoRenderer:
                  if (m_PCSX2Modules.setGS != null)
                      m_PCSX2Modules.setGS(a_Module.getPCSX2Lib_API());
                  break;
-                case ModuleManager.ModuleType.DEV9:
+                case PCSX2ModuleManager.ModuleType.DEV9:
                  if (m_PCSX2Modules.setDEV9 != null)
                      m_PCSX2Modules.setDEV9(a_Module.getPCSX2Lib_API());
                  break;
-                case ModuleManager.ModuleType.MemoryCard:
+                case PCSX2ModuleManager.ModuleType.MemoryCard:
                  if (m_PCSX2Modules.setMcd != null)
                      m_PCSX2Modules.setMcd(a_Module.getPCSX2Lib_API());
                  break;
-                case ModuleManager.ModuleType.CDVD:
+                case PCSX2ModuleManager.ModuleType.CDVD:
                  if (m_PCSX2Modules.setCDVD != null)
                      m_PCSX2Modules.setCDVD(a_Module.getPCSX2Lib_API());
                  break;
-                case ModuleManager.ModuleType.Pad:
+                case PCSX2ModuleManager.ModuleType.Pad:
                  if (m_PCSX2Modules.setPAD != null)
                      m_PCSX2Modules.setPAD(a_Module.getPCSX2Lib_API());
                  break;
-                case ModuleManager.ModuleType.FW:
+                case PCSX2ModuleManager.ModuleType.FW:
                  if (m_PCSX2Modules.setFW != null)
                      m_PCSX2Modules.setFW(a_Module.getPCSX2Lib_API());
                  break;
-                case ModuleManager.ModuleType.USB:
+                case PCSX2ModuleManager.ModuleType.USB:
                  if (m_PCSX2Modules.setUSB != null)
                      m_PCSX2Modules.setUSB(a_Module.getPCSX2Lib_API());
                  break;
                 default:
                  break;
 	        }
-        }
-        
+        }        
     }
 }

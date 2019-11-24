@@ -2,19 +2,20 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <sys:String x:Key="MainName">Omega Red PS2/PSP emulator</sys:String>
+    <sys:String x:Key="MainName">Omega Red PS1/PS2/PSP emulator</sys:String>
     <sys:String x:Key="ControlTitle">Config</sys:String>
     <sys:String x:Key="MediaTitle">Media</sys:String>
     <sys:String x:Key="DisplayModeTitle">Display mode:</sys:String>
     <sys:String x:Key="ControlModeTitle">Control mode:</sys:String>
     <sys:String x:Key="TopmostTitle">Set on top all windows</sys:String>
     <sys:String x:Key="CompressionQualityTitle">Video compression quality:</sys:String>
-    <sys:String x:Key="DisableWideScreenTitle">Turn off widescreen mode</sys:String>
+    <sys:String x:Key="EnableWideScreenTitle">Turn on widescreen mode</sys:String>
     <sys:String x:Key="LanguageTitle">Current language:</sys:String>
     <sys:String x:Key="ColourSchemaTitle">Current colour schema:</sys:String>
     <sys:String x:Key="CaptureManagerTitle">Powered by CaptureManager SDK</sys:String>
     <sys:String x:Key="PCSX2Title">Powered by PCSX2</sys:String>
     <sys:String x:Key="PPSSPPTitle">Powered by PPSSPP</sys:String>
+    <sys:String x:Key="PCSXRTitle">Powered by PCSX-Reloaded</sys:String>
     <sys:String x:Key="YesTitle">Confirm</sys:String>
     <sys:String xml:space="preserve" x:Key="NoTitle">Cancel </sys:String>
     <sys:String xml:space="preserve" x:Key="VersionTitle">Version: </sys:String>
@@ -96,4 +97,8 @@
     <sys:String x:Key="VariableBitrateTitle">Variable bitrate</sys:String>
     <sys:String xml:space="preserve" x:Key="VideoFileRecordedInfoTitle"> recorded!!!</sys:String>
     <sys:String xml:space="preserve" x:Key="VideoFileRecordingFailedTitle">Recording is failed!!!</sys:String>
+    <sys:String xml:space="preserve" x:Key="MemoryCardInfoTitle">Memory card </sys:String>
+    <sys:String x:Key="SharedTitle">shared</sys:String>
+    <sys:String x:Key="VisualVibrationIsEnabledTitle">Visual vibration is enabled</sys:String>
+    <sys:String x:Key="GroupTitle">Count</sys:String>
 </ResourceDictionary>

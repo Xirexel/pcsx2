@@ -25,7 +25,7 @@ using System.Windows.Threading;
 
 namespace Omega_Red.ViewModels
 {
-    [DataTemplateNameAttribute("ScreenshotInfoItem")]
+    [DataTemplateNameAttribute("VideoInfoItem")]
     class MediaRecorderInfoViewModel : BaseViewModel
     {
         public MediaRecorderInfoViewModel()

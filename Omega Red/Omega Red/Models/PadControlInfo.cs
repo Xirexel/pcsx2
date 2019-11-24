@@ -35,5 +35,7 @@ namespace Omega_Red.Models
         {
             return App.Current.Resources[Title_Key] as String;
         }
+
+        public object PadConfigPanel { get; set; }
     }
 }

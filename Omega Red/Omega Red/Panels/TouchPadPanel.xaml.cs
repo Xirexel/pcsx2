@@ -344,5 +344,198 @@ namespace Omega_Red.Panels
         // Using a DependencyProperty as the backing store for CurrentBorderThickness.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty IsEnabledLimitFrameProperty =
             DependencyProperty.Register("IsEnabledLimitFrame", typeof(bool), typeof(TouchPadPanel), new PropertyMetadata(false));
+
+
+
+
+        private bool mIsPressed = false;
+
+        private bool mIsOpened = false;
+
+        private Point mStartPosition = new Point();
+
+        private Ellipse mTouchMark = null;
+
+        private Canvas mTouchCtr = null;
+
+        private void mTouchCtr_MouseChange(object sender, MouseButtonEventArgs e)
+        {
+            mIsPressed = e.ButtonState == MouseButtonState.Pressed;
+
+            if (mIsPressed)
+            {
+                mStartPosition = e.GetPosition(this);
+
+                e.MouseDevice.Capture(this, CaptureMode.SubTree);
+
+                mTouchCtr = sender as Canvas;
+
+                if (mTouchMark == null)
+                {
+                    mTouchMark = new Ellipse();
+
+                    mTouchMark.Width = 100;
+
+                    mTouchMark.Height = 100;
+
+                    mTouchMark.Fill = new SolidColorBrush(Color.FromArgb(128, 0, 255, 0));
+
+                    var l_position = e.GetPosition(mTouchCtr);
+
+                    Canvas.SetLeft(mTouchMark, l_position.X - mTouchMark.Width / 2);
+
+                    Canvas.SetTop(mTouchMark, l_position.Y - mTouchMark.Height / 2);
+
+                    mTouchCtr.Children.Add(mTouchMark);
+                }
+            }
+            else
+            {
+                if (mTouchMark != null && mTouchCtr != null)
+                {
+                    mTouchCtr.Children.Remove(mTouchMark);
+                }
+
+                mTouchMark = null;
+
+                mTouchCtr = null;
+
+                mStartPosition = new Point();
+
+                if (!mIsOpened)
+                {
+                    var l_MainWindow = App.Current.MainWindow as MainWindow;
+
+                    if(l_MainWindow != null)
+                    {
+                        l_MainWindow.rebindControlPanel();
+
+                        l_MainWindow.rebindMediaPanel();
+                    }
+                }
+
+                e.MouseDevice.Capture(null);
+            }
+
+            mIsOpened = false;
+        }
+
+        private void mTouchCtr_MouseMove(object sender, MouseEventArgs e)
+        {
+            var l_MainWindow = App.Current.MainWindow as MainWindow;
+
+            if (l_MainWindow == null)
+            {
+                return;
+            }
+
+            if (mIsPressed)
+            {
+                var l_position = e.GetPosition(this);
+
+                if (mTouchMark != null && mTouchCtr != null)
+                {
+                    var l_positionCanvas = e.GetPosition(mTouchCtr);
+
+                    Canvas.SetLeft(mTouchMark, l_positionCanvas.X - mTouchMark.Width / 2);
+
+                    Canvas.SetTop(mTouchMark, l_positionCanvas.Y - mTouchMark.Height / 2);
+                }
+
+                var l_x_Delta = l_position.X - mStartPosition.X;
+
+                var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
+
+                if (l_x_Delta > 0)
+                {
+                    Canvas.SetRight(l_MainWindow.getMediaGrid(), -l_MainWindow.getMediaPanel().ActualWidth - l_TouchDragBtnWidth - 2);
+
+                    l_MainWindow.rebindMediaPanel();
+
+                    var l_leftProp = l_x_Delta / l_MainWindow.getControlPanel().ActualWidth;
+
+                    if (l_leftProp > 0.45)
+                    {
+                        mIsPressed = false;
+
+                        e.MouseDevice.Capture(null);
+
+
+                        int timestamp = new TimeSpan(DateTime.Now.Ticks).Milliseconds;
+
+                        MouseButton l_mouseButton = MouseButton.Left;
+
+                        MouseButtonEventArgs l_mouseUpEvent = new MouseButtonEventArgs(Mouse.PrimaryDevice, timestamp, l_mouseButton);
+
+                        l_mouseUpEvent.RoutedEvent = CheckBox.CheckedEvent;
+
+                        l_mouseUpEvent.Source = l_MainWindow.getControlChkBtn();
+
+                        l_MainWindow.getControlChkBtn().RaiseEvent(l_mouseUpEvent);
+
+                        l_MainWindow.getControlChkBtn().Command.Execute(true);
+
+
+                        mIsOpened = true;
+                    }
+                    else
+                    {
+                        Canvas.SetLeft(l_MainWindow.getControlGrid(), l_x_Delta - l_MainWindow.getControlPanel().ActualWidth - l_TouchDragBtnWidth);
+                    }
+                }
+                else
+                {
+                    Canvas.SetLeft(l_MainWindow.getControlGrid(), -l_MainWindow.getControlPanel().ActualWidth - l_TouchDragBtnWidth - 2);
+
+                    l_MainWindow.rebindControlPanel();
+
+                    l_x_Delta = Math.Abs(l_x_Delta);
+
+                    var l_leftProp = l_x_Delta / l_MainWindow.getMediaPanel().ActualWidth;
+
+                    if (l_leftProp > 0.45)
+                    {
+                        mIsPressed = false;
+
+                        e.MouseDevice.Capture(null);
+
+
+                        int timestamp = new TimeSpan(DateTime.Now.Ticks).Milliseconds;
+
+                        MouseButton l_mouseButton = MouseButton.Left;
+
+                        MouseButtonEventArgs l_mouseUpEvent = new MouseButtonEventArgs(Mouse.PrimaryDevice, timestamp, l_mouseButton);
+
+                        l_mouseUpEvent.RoutedEvent = CheckBox.CheckedEvent;
+
+                        l_mouseUpEvent.Source = l_MainWindow.getControlChkBtn();
+
+                        l_MainWindow.getMediaChkBtn().RaiseEvent(l_mouseUpEvent);
+
+                        if (l_MainWindow.getMediaChkBtn().Command != null)
+                            l_MainWindow.getMediaChkBtn().Command.Execute(true);
+
+
+                        mIsOpened = true;
+                    }
+                    else
+                    {
+                        Canvas.SetRight(l_MainWindow.getMediaGrid(), l_x_Delta - l_MainWindow.getMediaPanel().ActualWidth - l_TouchDragBtnWidth);
+                    }
+                }
+            }
+        }
+
+        private void mTouchCtr_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (mTouchMark != null && mTouchCtr != null)
+            {
+                mTouchCtr.Children.Remove(mTouchMark);
+            }
+
+            mTouchMark = null;
+
+            mTouchCtr = null;
+        }
     }
 }

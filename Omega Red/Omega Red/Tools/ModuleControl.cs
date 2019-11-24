@@ -57,9 +57,9 @@ namespace Omega_Red.Tools
             m_WindowHandler = a_WindowHandler;
         }
 
-        public void init()
+        public void initPCSX2()
         {
-            foreach (var l_Module in ModuleManager.Instance.Modules)
+            foreach (var l_Module in PCSX2ModuleManager.Instance.Modules)
             {
 
                 XmlDocument l_XmlDocument = new XmlDocument();
@@ -74,22 +74,22 @@ namespace Omega_Red.Tools
                 
                 switch (l_Module.ModuleType)
                 {
-                    case ModuleManager.ModuleType.AudioRenderer:
+                    case PCSX2ModuleManager.ModuleType.AudioRenderer:
                         setAudioRendererConfig(l_XmlDocument, l_PropertyNode);
                         break;
-                    case ModuleManager.ModuleType.VideoRenderer:
+                    case PCSX2ModuleManager.ModuleType.VideoRenderer:
                         setVideoRendererConfig(l_XmlDocument, l_PropertyNode);
                         break;
-                    case ModuleManager.ModuleType.DEV9:
+                    case PCSX2ModuleManager.ModuleType.DEV9:
                         break;
-                    case ModuleManager.ModuleType.MemoryCard:
+                    case PCSX2ModuleManager.ModuleType.MemoryCard:
+                        continue;
+                    case PCSX2ModuleManager.ModuleType.Pad:
+                        setPadConfig(l_XmlDocument, l_PropertyNode);
                         break;
-                    case ModuleManager.ModuleType.Pad:
-                        setPadConfig(l_Module, l_XmlDocument, l_PropertyNode);
+                    case PCSX2ModuleManager.ModuleType.CDVD:
                         break;
-                    case ModuleManager.ModuleType.CDVD:
-                        break;
-                    case ModuleManager.ModuleType.FW:
+                    case PCSX2ModuleManager.ModuleType.FW:
                         break;
                     default:
                         break;
@@ -111,9 +111,64 @@ namespace Omega_Red.Tools
             }
         }
 
+        public void initPCSX()
+        {
+            foreach (var l_Module in PCSXModuleManager.Instance.Modules)
+            {
+
+                XmlDocument l_XmlDocument = new XmlDocument();
+
+                XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+
+                l_XmlDocument.AppendChild(ldocNode);
+
+                XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+
+                XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Init");
+
+                switch (l_Module.ModuleType)
+                {
+                    case PCSXModuleManager.ModuleType.DFSound:
+                        setAudioRendererConfig(l_XmlDocument, l_PropertyNode);
+                        break;
+                    case PCSXModuleManager.ModuleType.DFXVideo:
+                        setVideoRendererConfig(l_XmlDocument, l_PropertyNode);
+                        break;
+                    case PCSXModuleManager.ModuleType.Pad:
+                        setPadConfig(l_XmlDocument, l_PropertyNode);
+                        break;
+                    case PCSXModuleManager.ModuleType.bladesio1:
+                        break;
+                    default:
+                        break;
+                }
+
+                rootNode.AppendChild(l_PropertyNode);
+
+                if (l_Module.ModuleType == PCSXModuleManager.ModuleType.DFSound)
+                {
+                    XmlNode l_OpenPropertyNode = l_XmlDocument.CreateElement("Open");
+                    setWindowHandlerOpenConfig(l_XmlDocument, l_OpenPropertyNode);
+                    rootNode.AppendChild(l_OpenPropertyNode);
+                }
+
+                l_XmlDocument.AppendChild(rootNode);
+
+                using (var stringWriter = new StringWriter())
+                using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+                {
+                    l_XmlDocument.WriteTo(xmlTextWriter);
+
+                    xmlTextWriter.Flush();
+
+                    l_Module.execute(stringWriter.GetStringBuilder().ToString());
+                }
+            }
+        }
+
         public void setGameCRC(uint a_CRC)
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.VideoRenderer);
+            var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.VideoRenderer);
 
             XmlDocument l_XmlDocument = new XmlDocument();
 
@@ -152,7 +207,7 @@ namespace Omega_Red.Tools
         
         public void setIsWired(bool a_value)
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.VideoRenderer);
+            var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.VideoRenderer);
 
             XmlDocument l_XmlDocument = new XmlDocument();
 
@@ -191,7 +246,7 @@ namespace Omega_Red.Tools
                
         public void setIsTessellated(bool a_value)
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.VideoRenderer);
+            var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.VideoRenderer);
 
             XmlDocument l_XmlDocument = new XmlDocument();
 
@@ -230,7 +285,9 @@ namespace Omega_Red.Tools
 
         public void setIsFXAA(bool a_value)
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.VideoRenderer);
+            var l_PCSXModule = PCSXModuleManager.Instance.getModule(PCSXModuleManager.ModuleType.DFXVideo);
+
+            var l_PCSX2Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.VideoRenderer);
 
             XmlDocument l_XmlDocument = new XmlDocument();
 
@@ -263,13 +320,15 @@ namespace Omega_Red.Tools
 
                 xmlTextWriter.Flush();
 
-                l_Module.execute(stringWriter.GetStringBuilder().ToString());
+                l_PCSX2Module.execute(stringWriter.GetStringBuilder().ToString());
+
+                l_PCSXModule.execute(stringWriter.GetStringBuilder().ToString());
             }
         }
         
         public void setVideoAspectRatio(AspectRatio a_AspectRatio)
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.VideoRenderer);
+            var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.VideoRenderer);
 
             XmlDocument l_XmlDocument = new XmlDocument();
 
@@ -308,7 +367,7 @@ namespace Omega_Red.Tools
         
         public void initPad()
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.Pad);
+            var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.Pad);
 
             XmlDocument l_XmlDocument = new XmlDocument();
 
@@ -320,7 +379,7 @@ namespace Omega_Red.Tools
 
             XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Init");
 
-            setPadConfig(l_Module, l_XmlDocument, l_PropertyNode);
+            setPadConfig(l_XmlDocument, l_PropertyNode);
 
             rootNode.AppendChild(l_PropertyNode);
 
@@ -339,7 +398,7 @@ namespace Omega_Red.Tools
 
         public void closePad()
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.Pad);
+            var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.Pad);
 
             XmlDocument l_XmlDocument = new XmlDocument();
 
@@ -368,7 +427,7 @@ namespace Omega_Red.Tools
 
         public void openPad()
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.Pad);
+            var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.Pad);
 
             XmlDocument l_XmlDocument = new XmlDocument();
 
@@ -397,6 +456,19 @@ namespace Omega_Red.Tools
 
         public void setMemoryCard(string a_file_path = null)
         {
+            if (PCSX2Controller.Instance.IsoInfo != null && PCSX2Controller.Instance.IsoInfo.GameType == GameType.PS1)
+            {
+                int l_slot = 0;
+
+                if (string.IsNullOrWhiteSpace(a_file_path))
+                    l_slot = -1;
+
+                PCSXNative.Instance.setMcd(a_file_path, l_slot);
+
+                return;
+            }
+
+
 
             XmlDocument l_XmlDocument = new XmlDocument();
 
@@ -443,7 +515,7 @@ namespace Omega_Red.Tools
 
                 xmlTextWriter.Flush();
 
-                var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.MemoryCard);
+                var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.MemoryCard);
 
                 l_Module.execute(stringWriter.GetStringBuilder().ToString());
             }
@@ -451,7 +523,7 @@ namespace Omega_Red.Tools
 
         public void close()
         {
-            foreach (var l_Module in ModuleManager.Instance.Modules)
+            foreach (var l_Module in PCSX2ModuleManager.Instance.Modules)
             {
 
                 XmlDocument l_XmlDocument = new XmlDocument();
@@ -481,21 +553,21 @@ namespace Omega_Red.Tools
 
                 switch (l_Module.ModuleType)
                 {
-                    case ModuleManager.ModuleType.AudioRenderer:
+                    case PCSX2ModuleManager.ModuleType.AudioRenderer:
                         break;
-                    case ModuleManager.ModuleType.VideoRenderer:
+                    case PCSX2ModuleManager.ModuleType.VideoRenderer:
                         if(!PCSX2LibNative.Instance.MTGS_IsSelfFunc())
                             PCSX2LibNative.Instance.MTGS_SuspendFunc();
                         break;
-                    case ModuleManager.ModuleType.DEV9:
+                    case PCSX2ModuleManager.ModuleType.DEV9:
                         break;
-                    case ModuleManager.ModuleType.MemoryCard:
+                    case PCSX2ModuleManager.ModuleType.MemoryCard:
                         break;
-                    case ModuleManager.ModuleType.Pad:
+                    case PCSX2ModuleManager.ModuleType.Pad:
                         break;
-                    case ModuleManager.ModuleType.CDVD:
+                    case PCSX2ModuleManager.ModuleType.CDVD:
                         break;
-                    case ModuleManager.ModuleType.FW:
+                    case PCSX2ModuleManager.ModuleType.FW:
                         break;
                     default:
                         break;
@@ -503,9 +575,9 @@ namespace Omega_Red.Tools
             }
         }
 
-        public void shutdown()
+        public void shutdownPCSX2()
         {
-            foreach (var l_Module in ModuleManager.Instance.Modules)
+            foreach (var l_Module in PCSX2ModuleManager.Instance.Modules)
             {
 
                 XmlDocument l_XmlDocument = new XmlDocument();
@@ -535,31 +607,61 @@ namespace Omega_Red.Tools
 
                 switch (l_Module.ModuleType)
                 {
-                    case ModuleManager.ModuleType.AudioRenderer:
+                    case PCSX2ModuleManager.ModuleType.AudioRenderer:
                         break;
-                    case ModuleManager.ModuleType.VideoRenderer:
+                    case PCSX2ModuleManager.ModuleType.VideoRenderer:
                         PCSX2LibNative.Instance.MTGS_CancelFunc();
                         break;
-                    case ModuleManager.ModuleType.DEV9:
+                    case PCSX2ModuleManager.ModuleType.DEV9:
                         break;
-                    case ModuleManager.ModuleType.MemoryCard:
+                    case PCSX2ModuleManager.ModuleType.MemoryCard:
                         break;
-                    case ModuleManager.ModuleType.Pad:
+                    case PCSX2ModuleManager.ModuleType.Pad:
                         break;
-                    case ModuleManager.ModuleType.CDVD:
+                    case PCSX2ModuleManager.ModuleType.CDVD:
                         break;
-                    case ModuleManager.ModuleType.FW:
+                    case PCSX2ModuleManager.ModuleType.FW:
                         break;
                     default:
                         break;
                 }
             }
+        }
 
+        public void shutdownPCSX()
+        {            
+            foreach (var l_Module in PCSXModuleManager.Instance.Modules)
+            {
+
+                XmlDocument l_XmlDocument = new XmlDocument();
+
+                XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+
+                l_XmlDocument.AppendChild(ldocNode);
+
+                XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+
+                XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Shutdown");
+
+                rootNode.AppendChild(l_PropertyNode);
+
+                l_XmlDocument.AppendChild(rootNode);
+
+                using (var stringWriter = new StringWriter())
+                using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+                {
+                    l_XmlDocument.WriteTo(xmlTextWriter);
+
+                    xmlTextWriter.Flush();
+
+                    l_Module.execute(stringWriter.GetStringBuilder().ToString());
+                }
+            }
         }
 
         public void shutdownPad()
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.Pad);
+            var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.Pad);
 
             XmlDocument l_XmlDocument = new XmlDocument();
 
@@ -590,9 +692,9 @@ namespace Omega_Red.Tools
         {
             Int32 l_result = -1;
 
-            var l_ModuleType = ModuleManager.getModuleType(a_ModuleCode);
+            var l_ModuleType = PCSX2ModuleManager.getModuleType(a_ModuleCode);
 
-            foreach (var l_Module in ModuleManager.Instance.Modules)
+            foreach (var l_Module in PCSX2ModuleManager.Instance.Modules)
             {
                 if (l_Module.ModuleType != l_ModuleType)
                     continue;
@@ -646,7 +748,7 @@ namespace Omega_Red.Tools
 
         public void open()
         {
-            foreach (var l_Module in ModuleManager.Instance.Modules)
+            foreach (var l_Module in PCSX2ModuleManager.Instance.Modules)
             {
 
                 XmlDocument l_XmlDocument = new XmlDocument();
@@ -661,23 +763,23 @@ namespace Omega_Red.Tools
 
                 switch (l_Module.ModuleType)
                 {
-                    case ModuleManager.ModuleType.AudioRenderer:
-                        setWindowHandlerOpenConfig(l_Module, l_XmlDocument, l_PropertyNode);
+                    case PCSX2ModuleManager.ModuleType.AudioRenderer:
+                        setWindowHandlerOpenConfig(l_XmlDocument, l_PropertyNode);
                         break;
-                    case ModuleManager.ModuleType.VideoRenderer:
+                    case PCSX2ModuleManager.ModuleType.VideoRenderer:
                         PCSX2LibNative.Instance.MTGS_ResumeFunc();
                         break;
-                    case ModuleManager.ModuleType.DEV9:
+                    case PCSX2ModuleManager.ModuleType.DEV9:
                         break;
-                    case ModuleManager.ModuleType.MemoryCard:
+                    case PCSX2ModuleManager.ModuleType.MemoryCard:
                         break;
-                    case ModuleManager.ModuleType.Pad:
+                    case PCSX2ModuleManager.ModuleType.Pad:
                         break;
-                    case ModuleManager.ModuleType.CDVD:
+                    case PCSX2ModuleManager.ModuleType.CDVD:
                         setCDVDOpenConfig(l_Module, l_XmlDocument, l_PropertyNode);
                         break;
-                    case ModuleManager.ModuleType.FW:
-                        setWindowHandlerOpenConfig(l_Module, l_XmlDocument, l_PropertyNode);
+                    case PCSX2ModuleManager.ModuleType.FW:
+                        setWindowHandlerOpenConfig(l_XmlDocument, l_PropertyNode);
                         break;
                     default:
                         break;
@@ -700,7 +802,7 @@ namespace Omega_Red.Tools
 
             if (App.m_AppType != App.AppType.Screen)
             {
-                setVolume(0.0);
+                setSoundLevel(0.0);
             }
             
             PCSX2LibNative.Instance.openPlugin_SPU2Func();
@@ -713,7 +815,7 @@ namespace Omega_Red.Tools
 
             PCSX2LibNative.Instance.MTGS_WaitForOpenFunc();
         }
-
+        
         public bool areLoaded()
         {
             return true;
@@ -725,7 +827,7 @@ namespace Omega_Red.Tools
 
             do
             {
-                var l_module = ModuleManager.Instance.getModule(Omega_Red.Tools.ModuleManager.ModuleType.AudioRenderer);
+                var l_module = PCSX2ModuleManager.Instance.getModule(Omega_Red.Tools.PCSX2ModuleManager.ModuleType.AudioRenderer);
 
                 string l_commandResult = "";
 
@@ -834,7 +936,7 @@ namespace Omega_Red.Tools
             }            
         }
 
-        private void setWindowHandlerOpenConfig(ModuleManager.Module a_module, XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
+        private void setWindowHandlerOpenConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
         {
 
             if (m_WindowHandler == IntPtr.Zero)
@@ -848,7 +950,7 @@ namespace Omega_Red.Tools
         }
 
 
-        private void setCDVDOpenConfig(ModuleManager.Module a_module, XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
+        private void setCDVDOpenConfig(PCSX2ModuleManager.Module a_module, XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
         {
             if (PCSX2Controller.Instance.IsoInfo == null)
                 return;
@@ -866,7 +968,7 @@ namespace Omega_Red.Tools
         }
 
 
-        private void setPadConfig(ModuleManager.Module a_module, XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
+        private void setPadConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
         {
 
             var l_Atrr = a_XmlDocument.CreateAttribute("TouchPadHandler");
@@ -982,11 +1084,14 @@ namespace Omega_Red.Tools
             
             a_PropertyNode.AppendChild(l_touch_pad_node);
 
+
+
             l_Atrr = a_XmlDocument.CreateAttribute("Ports");
 
             l_Atrr.Value = m_ports.ToString();
 
             a_PropertyNode.Attributes.Append(l_Atrr);
+
             
             l_Atrr = a_XmlDocument.CreateAttribute("ButtonUpdateCallback");
 
@@ -994,29 +1099,24 @@ namespace Omega_Red.Tools
 
             a_PropertyNode.Attributes.Append(l_Atrr);
 
+
+
+            l_Atrr = a_XmlDocument.CreateAttribute("VibrationCallback");
+
+            l_Atrr.Value = Marshal.GetFunctionPointerForDelegate(PadControlManager.Instance.VibrationCallback).ToString();
+
+            a_PropertyNode.Attributes.Append(l_Atrr);
+
         }
 
-        private double m_prevValue = -1;
-
-        private bool m_busySetVolume = false;
-
-        public void setVolume(double a_value)
+        public void setSoundLevel(double a_value)
         {
-            m_prevValue = a_value;
-
-            if (m_busySetVolume)
-                return;
-
-            m_busySetVolume = true;
-
-            m_prevValue = -1;
-
-            double l_currentValue = a_value;
-
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.AudioRenderer);
-            
             System.Threading.ThreadPool.QueueUserWorkItem((object state) =>
             {
+                var l_PCSX2Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.AudioRenderer);
+
+                var l_PCSXModule = PCSXModuleManager.Instance.getModule(PCSXModuleManager.ModuleType.DFSound);
+
                 do
                 {
 
@@ -1034,7 +1134,7 @@ namespace Omega_Red.Tools
 
                     var l_Atrr = l_XmlDocument.CreateAttribute("Value");
 
-                    l_Atrr.Value = String.Format("{0:0.##}", l_currentValue * 100.0);
+                    l_Atrr.Value = String.Format("{0:0.##}", a_value * 100.0);
 
                     l_PropertyNode.Attributes.Append(l_Atrr);
 
@@ -1051,24 +1151,20 @@ namespace Omega_Red.Tools
 
                         xmlTextWriter.Flush();
 
-                        l_Module.execute(stringWriter.GetStringBuilder().ToString());
+                        l_PCSX2Module.execute(stringWriter.GetStringBuilder().ToString());
+
+                        l_PCSXModule.execute(stringWriter.GetStringBuilder().ToString());
                     }
 
-                    if (m_prevValue == -1)
-                        break;
-
-                    l_currentValue = m_prevValue;
-
-                } while (true);
-
-                m_busySetVolume = false;
+                } while (false);
             });
-
         }
 
         public void setIsMuted(bool a_value)
         {
-            var l_Module = ModuleManager.Instance.getModule(ModuleManager.ModuleType.AudioRenderer);
+            var l_PCSX2Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.AudioRenderer);
+
+            var l_PCSXModule = PCSXModuleManager.Instance.getModule(PCSXModuleManager.ModuleType.DFSound);
 
             System.Threading.ThreadPool.QueueUserWorkItem((object state) =>
             {
@@ -1103,7 +1199,9 @@ namespace Omega_Red.Tools
 
                     xmlTextWriter.Flush();
 
-                    l_Module.execute(stringWriter.GetStringBuilder().ToString());
+                    l_PCSX2Module.execute(stringWriter.GetStringBuilder().ToString());
+
+                    l_PCSXModule.execute(stringWriter.GetStringBuilder().ToString());
                 }
 
             });

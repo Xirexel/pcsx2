@@ -1012,7 +1012,7 @@ void AddDevice(
 			int port, slot, motor, padtype;
 			int w = 0;
 
-			char effect[1000];
+			wchar_t effect[1000];
 			
 			auto string = l_item.node().attribute(L"Data").value();
 			// wcstok not in ntdll.  More effore than its worth to shave off

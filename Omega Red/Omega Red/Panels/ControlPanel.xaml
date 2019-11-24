@@ -90,13 +90,22 @@
                     <viewModels:BiosInfoViewModel/>
                 </Expander.DataContext>
                 <Expander.Header>
-                    <TextBlock
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
                         TextAlignment="Left"
                         Text="{DynamicResource BIOSTitle}" 
                         FontSize="{DynamicResource TitleFontSize}" 
                         FontWeight="{DynamicResource TitleFontWeight}"
                         Foreground="{DynamicResource MainForegroundBrush}"
                         />
+                        <TextBlock
+                        TextAlignment="Left"
+                        Text="{Binding CurrentBiosZone}" 
+                        FontSize="{DynamicResource TitleFontSize}" 
+                        FontWeight="{DynamicResource TitleFontWeight}"
+                        Foreground="{DynamicResource MainForegroundBrush}"
+                        />
+                    </StackPanel>
                 </Expander.Header>
                 <Expander.Content>
                     <views:ListPanel/>
@@ -124,13 +133,24 @@
                     <viewModels:IsoInfoViewModel/>
                 </Expander.DataContext>
                 <Expander.Header>
-                    <TextBlock
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
                         TextAlignment="Left"
                         Text="{DynamicResource ISOTitle}" 
                         FontSize="{DynamicResource TitleFontSize}" 
                         FontWeight="{DynamicResource TitleFontWeight}"
                         Foreground="{DynamicResource MainForegroundBrush}"
                         />
+                        <TextBlock
+                        TextAlignment="Left"
+                        Text="{Binding CurrentGameTitle}" 
+                        FontSize="{DynamicResource TitleFontSize}" 
+                        FontWeight="{DynamicResource TitleFontWeight}"
+                        Foreground="{DynamicResource MainForegroundBrush}"
+                        />
+
+                    </StackPanel>
+                    
                 </Expander.Header>
                 <Expander.Content>
                     <views:ListPanel/>
