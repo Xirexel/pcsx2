@@ -64,8 +64,8 @@ bool GSC_Bully(const GSFrameInfo& fi, int& skip)
 		{
 			// ntsc 0x02300, pal 0x02800
 			// Don't enable hack on native res if crc is below aggressive.
-			// skip 9 for pal but maybe 6 is enough, dump looks fine.
-			skip = 6; // Upscaling blur/ghosting
+			// Previous value 6, ntsc didn't like it.
+			skip = 8; // Upscaling blur/ghosting
 		}
 	}
 
@@ -605,10 +605,6 @@ bool GSC_BurnoutGames(const GSFrameInfo& fi, int& skip)
 			// Multiplayer tested only on Takedown.
 			skip = 4;
 		}
-		else if (fi.TME && (fi.FBP == 0x02d60 || fi.FBP == 0x033a0) && fi.FPSM == fi.TPSM && (fi.TBP0 == 0x02d60 || fi.TBP0 == 0x033a0) && fi.TPSM == PSM_PSMCT32 && fi.FBMSK == 0x0)
-		{
-			skip = 2; // impact screen
-		}
 	}
 
 	return true;
@@ -620,6 +616,9 @@ bool GSC_MidnightClub3(const GSFrameInfo& fi, int& skip)
 	{
 		if(fi.TME && (fi.FBP > 0x01d00 && fi.FBP <= 0x02a00) && fi.FPSM == PSM_PSMCT32 && (fi.FBP >= 0x01600 && fi.FBP < 0x03260) && fi.TPSM == PSM_PSMT8H)
 		{
+			// Vram usage.
+			// Tested: tokyo default cruise.
+			// Move around a bit, stop car, wait as vram goes down, start moving again, vram spike.
 			skip = 1;
 		}
 	}
@@ -1256,19 +1255,6 @@ bool GSC_RedDeadRevolver(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
-bool GSC_ResidentEvil4(const GSFrameInfo& fi, int& skip)
-{
-	if (skip == 0)
-	{
-		if (fi.TME && fi.FBP == 0x03100 && fi.FPSM == PSM_PSMCT32 && fi.TBP0 == 0x01c00 && fi.TPSM == PSM_PSMZ24)
-		{
-			skip = 176; // Removes fog, but no longer required, does offer a decent speed boost.
-		}
-	}
-
-	return true;
-}
-
 bool GSC_ShinOnimusha(const GSFrameInfo& fi, int& skip)
 {
 	if(skip == 0)
@@ -1539,7 +1525,6 @@ void GSState::SetupCrcHack()
 		lut[CRC::FFX] = GSC_FFXGames;
 		lut[CRC::FFXII] = GSC_FFXGames;
 		lut[CRC::RedDeadRevolver] = GSC_RedDeadRevolver;
-		lut[CRC::ResidentEvil4] = GSC_ResidentEvil4;
 		lut[CRC::ShinOnimusha] = GSC_ShinOnimusha;
 		lut[CRC::SMTDDS1] = GSC_SMTNocturneDDS<0x203BA820>;
 		lut[CRC::SMTDDS2] = GSC_SMTNocturneDDS<0x20435BF0>;
