@@ -324,6 +324,7 @@ Region = NTSC-Unk
 Serial = SCAJ-20023
 Name   = Soul Calibur II
 Region = NTSC-Unk
+vuClampMode = 2 // Respawn issues, SPS.
 ---------------------------------------------
 Serial = SCAJ-20024
 Name   = dot Hack Vol.4
@@ -2166,10 +2167,6 @@ Name   = Jak X - Combat Racing
 Region = PAL-M7
 // reads Ratchet Gladiator data
 MemCardFilter = SCES-53286/SCES-53285
-[patches = df659e77]
-	comment=patched by Ge-Force
-	patch=1,EE,00275CF7,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = SCES-53300
 Name   = SOCOM 3 - U.S. Navy SEALs
@@ -2197,7 +2194,7 @@ Region = PAL-M5
 Compat = 5
 ---------------------------------------------
 Serial = SCES-53312
-Name   = Soul Calibur 3
+Name   = Soul Calibur III
 Region = PAL-M5
 Compat = 5
 vuRoundMode = 3
@@ -2831,10 +2828,10 @@ Region = NTSC-K
 Compat = 5
 ---------------------------------------------
 Serial = SCKA-20016
-Name   = Soul Calibur 2
+Name   = Soul Calibur II
 Region = NTSC-K
 Compat = 5
-vuClampMode = 2 // SPS(Spikey Polygon Syndrome) solution.
+vuClampMode = 2 // Respawn issues, SPS.
 ---------------------------------------------
 Serial = SCKA-20018
 Name   = The Getaway
@@ -5561,10 +5558,6 @@ Name   = Jak X - Combat Racing
 Region = NTSC-U
 Compat = 5
 MemCardFilter = SCUS-97429/SCUS-97465
-[patches = 3091e6fb]
-	comment=patched by Ge-Force
-	patch=1,EE,00275C67,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = SCUS-97430
 Name   = Hot Shots Golf FORE! [Regular Demo]
@@ -5773,11 +5766,6 @@ Serial = SCUS-97488
 Name   = Jak X - Combat Racing [Public Beta v.1]
 Region = NTSC-U
 Compat = 5
-[patches = DA366A53]
-	comment=Patched by Luminar Light
-	// Patch fixes inability to boot.
-	patch=1,EE,00265ACB,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = SCUS-97489
 Name   = SOCOM 3 - U.S. Navy SEALs [Public Beta v.1]
@@ -6504,6 +6492,10 @@ Serial = SLED-52488
 Name   = The Suffering [Demo]
 Region = PAL-E
 ---------------------------------------------
+Serial = SLED-52597
+Name   = Burnout 3 - Takedown [Demo]
+Region = PAL-Unk 
+---------------------------------------------
 Serial = SLED-52929
 Name   = Prince of Persia - Warrior Within [Demo]
 Region = PAL-M5
@@ -6708,7 +6700,7 @@ Name   = F1 Racing Championship
 Region = PAL-F-G
 Compat = 2
 [patches = EDD7E0FF]
-	comment=patches by Nachbrenner
+	author=Nachbrenner
 	// Skip Videos.
 	patch=0,EE,0024ddc0,word,24020001
 [/patches]
@@ -6717,6 +6709,12 @@ Serial = SLES-50047
 Name   = F1 Racing Championship
 Region = PAL-M3
 Compat = 5
+[patches = 3063bd41]
+	author=Prafull
+	// Fixes IPU issues causing a hang at loading menu.
+	patch=1,EE,00258e34,word,00000000
+	patch=1,EE,00217484,word,00000000
+[/patches]
 ---------------------------------------------
 Serial = SLES-50048
 Name   = Donald Duck - Quack Attack
@@ -10607,6 +10605,7 @@ Serial = SLES-51799
 Name   = Soul Calibur II
 Region = PAL-M5
 Compat = 5
+vuClampMode = 2 // Respawn issues, SPS.
 ---------------------------------------------
 Serial = SLES-51800
 Name   = Smash Cars Racing
@@ -11063,12 +11062,6 @@ EETimingHack = 1	//broken textures
 Serial = SLES-51968
 Name   = Spongebob Squarepants - Battle for Bikini Bottom
 Region = PAL-E
-[patches]
-	// CRC 8570b62d
-	comment=Patch by Prafull
-	// Fixes hang at start.
-	patch=1,EE,001ba624,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = SLES-51970
 Name   = Spongebob Schwammkopf - Schlacht um Bikini Bottom
@@ -12916,12 +12909,6 @@ Serial = SLES-52812
 Name   = Disney-Pixar's The Incredibles
 Region = PAL-E
 Compat = 5
-[patches = EBDB6E4B]
-	comment=Patch by Prafull
-	// Fixes hanging at loading screen.
-	patch=1,EE,0010ec20,word,00000000
-	comment=- This disc has the same CRC as SLUS-20905, the NTSC-U disc.
-[/patches]
 ---------------------------------------------
 Serial = SLES-52813
 Name   = Incredibles, The
@@ -12939,11 +12926,6 @@ Region = PAL-G
 Serial = SLES-52816
 Name   = Incredibles, The
 Region = PAL-S
-[patches = 197641AA]
-	comment=Patch by Prafull
-	// Fixes hanging at loading screen.
-	patch=1,EE,0010ec20,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = SLES-52820
 Name   = Incredibles, The
@@ -13100,12 +13082,6 @@ Serial = SLES-52895
 Name   = Spongebob Squarepants - The Movie
 Region = PAL-E
 Compat = 5
-[patches = 536FEB77]
-	comment=Patch by Prafull
-	// Fixes hanging at loading screen.
-	patch=1,EE,0010f3e0,word,00000000
-	comment=- This disc has the same CRC as SLUS-20904, the NTSC-U disc.
-[/patches]
 ---------------------------------------------
 Serial = SLES-52896
 Name   = Spongebob Squarepants - The Movie
@@ -13334,20 +13310,10 @@ Region = PAL-E
 Serial = SLES-52985
 Name   = Spongebob Squarepants - The Movie
 Region = PAL-G
-[patches = B3C11E2D]
-	comment=Patch by Prafull
-	// Fixes hanging at loading screen.
-	patch=1,EE,0010f3e0,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = SLES-52986
 Name   = Spongebob Squarepants - The Movie
 Region = PAL-S
-[patches = 34DA05D2]
-	comment=Patch by Prafull
-	// Fixes hanging at loading screen.
-	patch=1,EE,0010f3e0,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = SLES-52988
 Name   = MegaMan X8
@@ -14404,11 +14370,6 @@ Region = PAL-M3
 Serial = SLES-53474
 Name   = Incredibles, The - Rise of the Underminer
 Region = PAL-M3
-[patches = F3AE68FC]
-	comment=Patch by Prafull
-	// Fixes hanging at loading screen.
-	patch=1,EE,001110e0,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = SLES-53480
 Name   = Harvest Moon - A Wonderful Life [Special Edition]
@@ -14798,6 +14759,10 @@ Serial = SLES-53599
 Name   = The Ultimate Music Quiz
 Region = PAL-M6
 ---------------------------------------------
+Serial = SLES-53601
+Name   = International Cue Club 2
+Region = PAL-Unk
+---------------------------------------------
 Serial = SLES-53614
 Name   = Classic British Motor Racing
 Region = PAL-E
@@ -15128,6 +15093,7 @@ Name   = Castlevania - Curse of Darkness
 Region = PAL-M5
 Compat = 5
 vuClampMode = 0 // SPS with microVU.
+eeClampMode = 2 // Fixes missing blade.
 // Reads Lament of Innocence save for easter egg.
 MemCardFilter = SLES-53755/SLES-52118
 ---------------------------------------------
@@ -17600,6 +17566,10 @@ Serial = SLES-55039
 Name   = Rock Band
 Region = PAL-M5
 ---------------------------------------------
+Serial = SLES-55040
+Name   = Telly Addicts
+Region = PAL-E
+---------------------------------------------
 Serial = SLES-55049
 Name   = Toy Golf Extreme
 Region = PAL-M5
@@ -19167,6 +19137,7 @@ Name   = Castlevania - Curse of Darkness
 Region = NTSC-K
 Compat = 5
 vuClampMode = 0 // SPS with microVU.
+eeClampMode = 2 // Fixes missing blade.
 MemCardFilter = SLKA-25328/SLKA-25082
 ---------------------------------------------
 Serial = SLKA-25329
@@ -19543,6 +19514,10 @@ Serial = SLPM-61120
 Name   = Drag-on Dragoon 2 - Fuuin no Kurenai [Trial Version]
 Region = NTSC-J
 eeClampMode = 2 // Fixes wrong color on some characters and breakable objects.
+---------------------------------------------
+Serial = SLPM-61133
+Name   = Soul Calibur III [Trial Version]
+Region = NTSC-J
 ---------------------------------------------
 Serial = SLPM-61135
 Name   = Naruto - Narutimett Hero 3 [Trial Version]
@@ -29951,6 +29926,12 @@ Region = NTSC-J
 Serial = SLPS-20042
 Name   = F1 Racing Championship
 Region = NTSC-J
+[patches = 32F1FA12]
+	author=Prafull
+	// Fixes IPU issues causing a hang at loading menu.
+	patch=1,EE,00251f94,word,00000000 //0440fffa
+	patch=1,EE,0020e7a4,word,00000000 //1440fffa
+[/patches]
 ---------------------------------------------
 Serial = SLPS-20043
 Name   = Lake Masters Fishing EX
@@ -31915,6 +31896,7 @@ Serial = SLPS-25230
 Name   = Soul Calibur II
 Region = NTSC-J
 Compat = 5
+vuClampMode = 2 // Respawn issues, SPS.
 ---------------------------------------------
 Serial = SLPS-25231
 Name   = Myst III - Exile
@@ -32940,12 +32922,6 @@ Region = NTSC-J
 Serial = SLPS-25500
 Name   = namCollection - Namco 50th Anniversary
 Region = NTSC-J
-[patches = D150759B]
-	author=Refraction - PSI
-	// Fixes a non-implemented EE kernel bug
-	// that cause an infinite loop when booting.
-	patch=0,EE,00111C90,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = SLPS-25501
 Name   = Onmyou Taisenki - Hasha no In
@@ -36533,9 +36509,11 @@ Name   = Knockout Kings 2002
 Region = NTSC-U
 Compat = 5
 [patches = 36FEEE3A]
-	comment=patches by Nachbrenner
-	// Fix DMA loop.
-	patch=0,EE,001d8020,word,1000000f
+	author=Nachbrenner - Prafull
+	// Fixes DMA loop causing Hanging at start of fight.
+	patch=1,EE,001d7fec,word,1000000f
+	patch=1,EE,001d8020,word,1000000f
+	patch=1,EE,001d8074,word,1000000f
 [/patches]
 ---------------------------------------------
 Serial = SLUS-20370
@@ -36665,6 +36643,15 @@ Serial = SLUS-20394
 Name   = Ecco the Dolphin - Defender of the Future
 Region = NTSC-U
 Compat = 2
+[patches = B78EAA30]
+	author=PSI
+	// Ecco has an evil race condition: one of its custom IOP modules resets CDVDMAN while it's loading a module from disc.
+	// The race condition is resolved by making the EE slower. This gives enough time for CDVDMAN to reset itself before
+	// the EE sends a request to load a module.
+	// Alternatively, this patch swaps the load order of the modules.
+	patch=1,EE,201018d8,extended,24040007
+	patch=1,EE,201018e4,extended,24040006
+[/patches]
 ---------------------------------------------
 Serial = SLUS-20395
 Name   = GTC Africa
@@ -37794,9 +37781,10 @@ Region = NTSC-U
 Compat = 5
 ---------------------------------------------
 Serial = SLUS-20643
-Name   = Soul Calibur 2
+Name   = Soul Calibur II
 Region = NTSC-U
 Compat = 5
+vuClampMode = 2 // Respawn issues, SPS.
 ---------------------------------------------
 Serial = SLUS-20643BD
 Name   = Namco Transmission Demo Disc v1.03 [Soul Calibur II Pack-In]
@@ -39005,23 +38993,11 @@ Serial = SLUS-20904
 Name   = SpongeBob Squarepants - The Movie
 Region = NTSC-U
 Compat = 5
-[patches = 536FEB77]
-	comment=Patch by Prafull
-	// Fixes hanging at loading screen.
-	patch=1,EE,0010f3e0,word,00000000
-	comment=- This disc has the same CRC as SLES-52895, the PAL-E disc.
-[/patches]
 ---------------------------------------------
 Serial = SLUS-20905
 Name   = Incredibles, The
 Region = NTSC-U
 Compat = 5
-[patches = EBDB6E4B]
-	comment=Patch by Prafull
-	// Fixes hanging at loading screen.
-	patch=1,EE,0010ec20,word,00000000
-	comment=- This disc has the same CRC as SLES-52812, the PAL-E disc.
-[/patches]
 ---------------------------------------------
 Serial = SLUS-20906
 Name   = Fight Night 2004
@@ -40349,6 +40325,7 @@ Name   = Castlevania - Curse of Darkness
 Region = NTSC-U
 Compat = 5
 vuClampMode = 0 // SPS with microVU.
+eeClampMode = 2 // Fixes missing blade.
 MemCardFilter = SLUS-21168/SLUS-20733
 ---------------------------------------------
 Serial = SLUS-21169
@@ -40593,11 +40570,6 @@ Serial = SLUS-21217
 Name   = Incredibles, The - Rise of the Underminers
 Region = NTSC-U
 Compat = 5
-[patches = 6DFE8ED7]
-	comment=Patch by Prafull
-	// Fixes hanging at loading screen.
-	patch=1,EE,001110e0,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = SLUS-21218
 Name   = Tak - The Great Juju Challenge
@@ -42400,6 +42372,23 @@ Compat = 5
 Serial = SLUS-21601
 Name   = Sprint Cars 2 - Showdown at Eldora
 Region = NTSC-U
+[patches = 75D13A19]
+	author=Kozarovv
+	// Rearrange COP2 instructions to fix bad mac flag stuff. Fix for bouncing vehicles. 
+	patch=1,EE,0027573c,word,48448800
+	patch=1,EE,00275740,word,309000E0
+	patch=1,EE,00275748,word,4BF0116C
+	patch=1,EE,00275750,word,00908024
+	patch=1,EE,00275754,word,4A0002FF
+	patch=1,EE,00275758,word,4BF019AC
+	patch=1,EE,0027576c,word,48448800
+	patch=1,EE,00275770,word,309000E0
+	patch=1,EE,00275774,word,4BE2896C
+	patch=1,EE,00275778,word,48448800
+	patch=1,EE,0027577c,word,4BE389AC
+	patch=1,EE,00275780,word,4A0002FF
+	patch=1,EE,00275784,word,4A0002FF
+[/patches]
 ---------------------------------------------
 Serial = SLUS-21602
 Name   = Transformers - The Game
@@ -43085,7 +43074,14 @@ Compat = 5
 Serial = SLUS-21744
 Name   = NASCAR '09
 Region = NTSC-U
-Compat = 5 // The game only load with the EE set to interpreter + cache enable.
+Compat = 5
+[patches = 1B6C22B9]
+	author=PSI
+	// This game intentionally corrupts a DMA transfer by writing junk values to a buffer just before starting a transfer. 
+	// Normally this would require EE data cache, but this patch NOPs out the bad writes. This is likely anti-emulation code
+	patch=1,EE,003cb014,word,00000000
+	patch=1,EE,003cb124,word,00000000
+[/patches]
 ---------------------------------------------
 Serial = SLUS-21746
 Name   = Call Of Duty - World At War - Final Fronts
@@ -44719,11 +44715,6 @@ Serial = TCES-53286
 Name   = Jak X Beta Trial Code
 Region = PAL-E
 Compat = 5
-[patches = C20596DB]
-	comment=Patched by Luminar Light
-	// Patch fixes inability to boot.
-	patch=1,EE,00265B57,word,00000000
-[/patches]
 ---------------------------------------------
 Serial = TCPS-10058
 Name   = Densha de Go! Shinkansen [with Controller]
