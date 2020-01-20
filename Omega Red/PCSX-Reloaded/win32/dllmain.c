@@ -18,6 +18,9 @@
 #include "misc.h"
 #include "cheat.h"
 
+#include <avrt.h>
+
+#pragma comment(lib, "Avrt.lib")
 
 typedef void(CALLBACK *_Callback)();
 
@@ -89,6 +92,10 @@ void SysLibClose()
         fclose(emuLog);
 }
 
+static HANDLE mmcssHandle = NULL;
+
+static DWORD mmcssTaskIndex = 0;
+
 int StartGame()
 {
     if (OpenLibPlugins() == -1) {
@@ -115,6 +122,11 @@ int StartGame()
     if (Config.HideCursor)
         ShowCursor(FALSE);
     Running = 1;
+
+    mmcssHandle = AvSetMmThreadCharacteristics(L"Audio", &mmcssTaskIndex);
+
+    if (mmcssHandle != NULL)
+        AvSetMmThreadPriority(mmcssHandle, AVRT_PRIORITY_CRITICAL);
 
     return StartEmul();
 }
@@ -159,6 +171,8 @@ int __stdcall Launch(LPSTR lpCmdLine)
 int __stdcall Shutdown()
 {
     int l_result = ShutdownEmul();
+
+    AvRevertMmThreadCharacteristics(mmcssHandle);
 
     SysLibClose();
 

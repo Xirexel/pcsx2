@@ -54,6 +54,14 @@ namespace Omega_Red.ViewModels
                 VisibilityDiskState = Visibility.Collapsed;
             else
                 VisibilityDiskState = Visibility.Visible;
+
+
+
+            VisibilityTexturePackMode = Visibility.Collapsed;
+
+            if (obj == PCSX2Controller.StatusEnum.Stopped ||
+                obj == PCSX2Controller.StatusEnum.Initilized)
+                VisibilityTexturePackMode = Visibility.Visible;
         }
 
         void Instance_SwitchTopmostEvent(bool obj)
@@ -97,7 +105,14 @@ namespace Omega_Red.ViewModels
         {
             get { return ConfigManager.Instance.ColourSchemaCollection; }
         }
+
+        public ICollectionView TexturePackModeCollection
+        {
+            get { return ConfigManager.Instance.TexturePackModeCollection; }
+        }
+
         
+
 
         public ICollectionView MediaOutputTypeCollection
         {
@@ -336,5 +351,21 @@ namespace Omega_Red.ViewModels
             }
         }
 
+
+        private Visibility mVisibilityTexturePackMode = Visibility.Visible;
+
+        public Visibility VisibilityTexturePackMode
+        {
+            get
+            {
+                return mVisibilityTexturePackMode;
+            }
+            set
+            {
+                mVisibilityTexturePackMode = value;
+
+                RaisePropertyChangedEvent("VisibilityTexturePackMode");
+            }
+        }
     }
 }

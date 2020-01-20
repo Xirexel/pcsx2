@@ -244,6 +244,11 @@ namespace Omega_Red.Util
 
         public void setLimitFrame(bool a_value) { }
 
+        public void clearModules()
+        {
+            if (m_PCSXModules.setGS != null)
+                m_PCSXModules.setGS(IntPtr.Zero);
+        }
 
         public void setModule(PCSXModuleManager.Module a_Module)
         {
@@ -253,6 +258,10 @@ namespace Omega_Red.Util
             switch (a_Module.ModuleType)
             {
                 case PCSXModuleManager.ModuleType.DFXVideo:
+                    if (m_PCSXModules.setGS != null)
+                        m_PCSXModules.setGS(a_Module.getModule_API());
+                    break;
+                case PCSXModuleManager.ModuleType.GPUHardware:
                     if (m_PCSXModules.setGS != null)
                         m_PCSXModules.setGS(a_Module.getModule_API());
                     break;

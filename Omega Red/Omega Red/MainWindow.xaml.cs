@@ -50,6 +50,8 @@ namespace Omega_Red
         {
             SaveStateManager.Instance.init();
 
+            TexturePackControl.Instance.init();
+
             InitializeComponent();
 
             LockScreenManager.Instance.show();

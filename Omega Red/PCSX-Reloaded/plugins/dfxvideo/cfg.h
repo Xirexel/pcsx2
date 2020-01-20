@@ -28,8 +28,6 @@
 #define _GPU_CFG_H_
 
 void ReadConfig(void);
-void WriteConfig(void);
-void ReadWinSizeConfig(void);
 
 #ifdef _WINDOWS
 BOOL CALLBACK SoftDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam ); 

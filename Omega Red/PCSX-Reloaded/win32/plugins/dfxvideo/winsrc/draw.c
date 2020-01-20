@@ -38,7 +38,6 @@ unsigned short sSetMask=0;
 unsigned long  lSetMask=0;
 int            iDesktopCol=16;
 int            iShowFPS=0;
-int            iWinSize; 
 int            iMaintainAspect = 0;
 int            iUseScanLines=0;
 int            iUseNoStretchBlt=0;

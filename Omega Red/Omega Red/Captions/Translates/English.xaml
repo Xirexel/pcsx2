@@ -101,4 +101,8 @@
     <sys:String x:Key="SharedTitle">shared</sys:String>
     <sys:String x:Key="VisualVibrationIsEnabledTitle">Visual vibration is enabled</sys:String>
     <sys:String x:Key="GroupTitle">Count</sys:String>
+    <sys:String x:Key="TexturePackModeTitle">Texture pack load mode</sys:String>
+    <sys:String x:Key="TexturePackModeNoneTitle">Without texture pack</sys:String>
+    <sys:String x:Key="TexturePackModeLoadTitle">Load texture pack</sys:String>
+    <sys:String x:Key="TexturePackModeSaveTitle">Save textures</sys:String>
 </ResourceDictionary>

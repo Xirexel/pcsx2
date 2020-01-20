@@ -734,7 +734,7 @@ namespace Omega_Red.Tools
                     {
                         PPSSPPControl.Instance.Launch(
                             m_IsoInfo.FilePath + "|--state=" + m_tempFile,
-                            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\OmegaRed\",
+                            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\"+ App .m_MainFolderName + @"\",
                         ()=> {
                             LockScreenManager.Instance.hide();
 
@@ -758,7 +758,9 @@ namespace Omega_Red.Tools
                     }
                     else
                     {
-                        PCSXControl.Instance.Launch(m_IsoInfo.FilePath,
+                        PCSXControl.Instance.Launch(
+                            m_IsoInfo.FilePath,
+                            m_IsoInfo.DiscSerial,
                         () =>
                         {
                             if(!string.IsNullOrWhiteSpace(m_tempFile))

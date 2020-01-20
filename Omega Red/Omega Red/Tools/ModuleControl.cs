@@ -43,6 +43,8 @@ namespace Omega_Red.Tools
 
         private IntPtr m_WindowHandler = IntPtr.Zero;
 
+        private int m_TexturePackMode = 0;
+
         private static ModuleControl m_Instance = null;
 
         public static ModuleControl Instance { get { if (m_Instance == null) m_Instance = new ModuleControl(); return m_Instance; } }
@@ -111,58 +113,76 @@ namespace Omega_Red.Tools
             }
         }
 
-        public void initPCSX()
+        public void initPCSX(PCSXModuleManager.Module a_Module = null)
         {
-            foreach (var l_Module in PCSXModuleManager.Instance.Modules)
+            if(a_Module != null)
             {
-
-                XmlDocument l_XmlDocument = new XmlDocument();
-
-                XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
-
-                l_XmlDocument.AppendChild(ldocNode);
-
-                XmlNode rootNode = l_XmlDocument.CreateElement("Config");
-
-                XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Init");
-
-                switch (l_Module.ModuleType)
+                initPCSXModule(a_Module);
+            }
+            else
+            {
+                foreach (var l_Module in PCSXModuleManager.Instance.Modules)
                 {
-                    case PCSXModuleManager.ModuleType.DFSound:
-                        setAudioRendererConfig(l_XmlDocument, l_PropertyNode);
-                        break;
-                    case PCSXModuleManager.ModuleType.DFXVideo:
+                    initPCSXModule(l_Module);
+                }
+            }
+        }
+
+        private void initPCSXModule(PCSXModuleManager.Module a_Module)
+        {
+
+            XmlDocument l_XmlDocument = new XmlDocument();
+
+            XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+
+            l_XmlDocument.AppendChild(ldocNode);
+
+            XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+
+            XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Init");
+            
+            switch (a_Module.ModuleType)
+            {
+                case PCSXModuleManager.ModuleType.DFSound:
+                    setAudioRendererConfig(l_XmlDocument, l_PropertyNode);
+                    break;
+                case PCSXModuleManager.ModuleType.DFXVideo:
+                    setVideoRendererConfig(l_XmlDocument, l_PropertyNode);
+                    break;
+                case PCSXModuleManager.ModuleType.GPUHardware:
+                    {
                         setVideoRendererConfig(l_XmlDocument, l_PropertyNode);
-                        break;
-                    case PCSXModuleManager.ModuleType.Pad:
-                        setPadConfig(l_XmlDocument, l_PropertyNode);
-                        break;
-                    case PCSXModuleManager.ModuleType.bladesio1:
-                        break;
-                    default:
-                        break;
-                }
+                        setTexturePackMode(a_Module);
+                    }
+                    break;
+                case PCSXModuleManager.ModuleType.Pad:
+                    setPadConfig(l_XmlDocument, l_PropertyNode);
+                    break;
+                case PCSXModuleManager.ModuleType.bladesio1:
+                    break;
+                default:
+                    break;
+            }
 
-                rootNode.AppendChild(l_PropertyNode);
+            rootNode.AppendChild(l_PropertyNode);
 
-                if (l_Module.ModuleType == PCSXModuleManager.ModuleType.DFSound)
-                {
-                    XmlNode l_OpenPropertyNode = l_XmlDocument.CreateElement("Open");
-                    setWindowHandlerOpenConfig(l_XmlDocument, l_OpenPropertyNode);
-                    rootNode.AppendChild(l_OpenPropertyNode);
-                }
+            if (a_Module.ModuleType == PCSXModuleManager.ModuleType.DFSound)
+            {
+                XmlNode l_OpenPropertyNode = l_XmlDocument.CreateElement("Open");
+                setWindowHandlerOpenConfig(l_XmlDocument, l_OpenPropertyNode);
+                rootNode.AppendChild(l_OpenPropertyNode);
+            }
 
-                l_XmlDocument.AppendChild(rootNode);
+            l_XmlDocument.AppendChild(rootNode);
 
-                using (var stringWriter = new StringWriter())
-                using (var xmlTextWriter = XmlWriter.Create(stringWriter))
-                {
-                    l_XmlDocument.WriteTo(xmlTextWriter);
+            using (var stringWriter = new StringWriter())
+            using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+            {
+                l_XmlDocument.WriteTo(xmlTextWriter);
 
-                    xmlTextWriter.Flush();
+                xmlTextWriter.Flush();
 
-                    l_Module.execute(stringWriter.GetStringBuilder().ToString());
-                }
+                a_Module.execute(stringWriter.GetStringBuilder().ToString());
             }
         }
 
@@ -285,8 +305,6 @@ namespace Omega_Red.Tools
 
         public void setIsFXAA(bool a_value)
         {
-            var l_PCSXModule = PCSXModuleManager.Instance.getModule(PCSXModuleManager.ModuleType.DFXVideo);
-
             var l_PCSX2Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.VideoRenderer);
 
             XmlDocument l_XmlDocument = new XmlDocument();
@@ -321,8 +339,6 @@ namespace Omega_Red.Tools
                 xmlTextWriter.Flush();
 
                 l_PCSX2Module.execute(stringWriter.GetStringBuilder().ToString());
-
-                l_PCSXModule.execute(stringWriter.GetStringBuilder().ToString());
             }
         }
         
@@ -914,11 +930,13 @@ namespace Omega_Red.Tools
             if (m_VideoPanel == null)
                 return;
 
+
             var l_Atrr = a_XmlDocument.CreateAttribute("ShareHandler");
 
             l_Atrr.Value = m_VideoPanel.SharedHandle.ToString();
 
             a_PropertyNode.Attributes.Append(l_Atrr);
+
 
             l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
 
@@ -926,7 +944,22 @@ namespace Omega_Red.Tools
 
             a_PropertyNode.Attributes.Append(l_Atrr);
 
-            if(Direct3D11Device.Instance.Native != IntPtr.Zero)
+
+            l_Atrr = a_XmlDocument.CreateAttribute("TexturePacksPath");
+            
+            l_Atrr.Value = Settings.Default.TexturePacksFolder.Replace(' ', '\x20');
+            
+            a_PropertyNode.Attributes.Append(l_Atrr);
+            
+
+            l_Atrr = a_XmlDocument.CreateAttribute("TexturePackCallbackHandler");
+
+            l_Atrr.Value = TexturePackControl.Instance.TexturePackCallbackHandler.ToString();
+
+            a_PropertyNode.Attributes.Append(l_Atrr);
+
+
+            if (Direct3D11Device.Instance.Native != IntPtr.Zero)
             {
                 l_Atrr = a_XmlDocument.CreateAttribute("DirectXDeviceNative");
 
@@ -1206,5 +1239,87 @@ namespace Omega_Red.Tools
 
             });
         }
+
+        public void setDiscSerial(string a_discSerial)
+        {
+            var l_PCSXModule = PCSXModuleManager.Instance.GPU;
+
+            XmlDocument l_XmlDocument = new XmlDocument();
+
+            XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+
+            l_XmlDocument.AppendChild(ldocNode);
+
+            XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+
+            XmlNode l_PropertyNode = l_XmlDocument.CreateElement("DiscSerial");
+
+
+
+            var l_Atrr = l_XmlDocument.CreateAttribute("Value");
+
+            l_Atrr.Value = a_discSerial;
+
+            l_PropertyNode.Attributes.Append(l_Atrr);
+
+
+
+            rootNode.AppendChild(l_PropertyNode);
+
+            l_XmlDocument.AppendChild(rootNode);
+
+            using (var stringWriter = new StringWriter())
+            using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+            {
+                l_XmlDocument.WriteTo(xmlTextWriter);
+
+                xmlTextWriter.Flush();
+
+                l_PCSXModule.execute(stringWriter.GetStringBuilder().ToString());
+            }
+        }
+
+        private void setTexturePackMode(IModule a_Module)
+        {
+            if (a_Module == null)
+                return;
+
+            XmlDocument l_XmlDocument = new XmlDocument();
+
+            XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+
+            l_XmlDocument.AppendChild(ldocNode);
+
+            XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+
+            XmlNode l_PropertyNode = l_XmlDocument.CreateElement("TexturePackMode");
+
+
+
+            var l_Atrr = l_XmlDocument.CreateAttribute("Value");
+
+            l_Atrr.Value = m_TexturePackMode.ToString();
+
+            l_PropertyNode.Attributes.Append(l_Atrr);
+
+
+
+            rootNode.AppendChild(l_PropertyNode);
+
+            l_XmlDocument.AppendChild(rootNode);
+
+            using (var stringWriter = new StringWriter())
+            using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+            {
+                l_XmlDocument.WriteTo(xmlTextWriter);
+
+                xmlTextWriter.Flush();
+
+                a_Module.execute(stringWriter.GetStringBuilder().ToString());
+            }
+        }
+
+        public int TexturePackMode { set { m_TexturePackMode = value; } }
+
     }
 }

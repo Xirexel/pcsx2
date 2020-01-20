@@ -85,7 +85,7 @@ namespace Omega_Red.Managers
             }
 
             if (string.IsNullOrEmpty(Settings.Default.MemoryCardsFolder))
-                Settings.Default.MemoryCardsFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\OmegaRed\memcards\";
+                Settings.Default.MemoryCardsFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\" + App.m_MainFolderName + @"\memcards\";
 
             if (!System.IO.Directory.Exists(Settings.Default.MemoryCardsFolder))
             {

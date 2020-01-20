@@ -101,4 +101,8 @@
     <sys:String x:Key="SharedTitle">общая</sys:String>
     <sys:String x:Key="VisualVibrationIsEnabledTitle">Визуальная вибрация включена</sys:String>
     <sys:String x:Key="GroupTitle">Количество</sys:String>
+    <sys:String x:Key="TexturePackModeTitle">Режим загрузки внешних текстур</sys:String>
+    <sys:String x:Key="TexturePackModeNoneTitle">Без внешних текстур</sys:String>
+    <sys:String x:Key="TexturePackModeLoadTitle">Загрузка внешних текстур</sys:String>
+    <sys:String x:Key="TexturePackModeSaveTitle">Сохранение текстур</sys:String>
 </ResourceDictionary>

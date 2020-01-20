@@ -112,7 +112,6 @@
 #include "prim.h"
 #include "psemu.h"
 #include "menu.h"
-#include "key.h"
 #include "fps.h"
 #include "swap.h"
 
@@ -306,10 +305,7 @@ char * pGetConfigInfos(int iCfg)
  sprintf(szTxt,"Author: %s\r\n\r\n",PluginAuthor);
  strcat(pB,szTxt);
  //----------------------------------------------------//
- if(iCfg && iWindowMode)
-  sprintf(szTxt,"Resolution/Color:\r\n- %dx%d ",LOWORD(iWinSize),HIWORD(iWinSize));
- else
-  sprintf(szTxt,"Resolution/Color:\r\n- %dx%d ",iResX,iResY);
+
  strcat(pB,szTxt);
  if(iWindowMode && iCfg) 
    strcpy(szTxt,"Window mode\r\n");
@@ -511,16 +507,10 @@ long CALLBACK GPUinit()                                // GPU INIT
 long CALLBACK GPUopen(HWND hwndGPU) // GPU OPEN
 {
     hWGPU = hwndGPU; // store hwnd
+	
+	ReadConfig(); // read registry
 
-    //SetKeyHandler(); // sub-class window
-
-    if (bChangeWinMode)
-        ReadWinSizeConfig(); // alt+enter toggle?
-    else                     // or first time startup?
-    {
-        ReadConfig(); // read registry
-        InitFPS();
-    }
+    InitFPS();
 
     bIsFirstFrame = TRUE; // we have to init later
     bDoVSyncUpdate = TRUE;
@@ -568,10 +558,7 @@ long GPUopen(unsigned long *disp, char *CapText, char *CfgFile)
 ////////////////////////////////////////////////////////////////////////
 
 long CALLBACK GPUclose()                               // GPU CLOSE
-{
-
- ReleaseKeyHandler();                                  // de-subclass window
-
+{	
  CloseDisplay();                                       // shutdown direct draw
 
  return 0;
@@ -600,17 +587,6 @@ void updateDisplay(void)                               // UPDATE DISPLAY
    return;                                             // -> and bye
   }
 
- if(dwActFixes&32)                                     // pc fps calculation fix
-  {
-   if(UseFrameLimit) PCFrameCap();                     // -> brake
-   if(UseFrameSkip || ulKeybits&KEY_SHOWFPS)  
-    PCcalcfps();         
-  }
-
- if(ulKeybits&KEY_SHOWFPS)                             // make fps display buf
-  {
-   sprintf(szDispBuf,"FPS %06.1f",fps_cur);
-  }
 
  if(iFastFwd)                                          // fastfwd ?
   {

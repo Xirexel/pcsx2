@@ -21,12 +21,6 @@
     <ClCompile Include="winsrc\fps.c">
       <Filter>winsrc</Filter>
     </ClCompile>
-    <ClCompile Include="winsrc\key.c">
-      <Filter>winsrc</Filter>
-    </ClCompile>
-    <ClCompile Include="winsrc\record.c">
-      <Filter>winsrc</Filter>
-    </ClCompile>
     <ClCompile Include="winsrc\winmain.c">
       <Filter>winsrc</Filter>
     </ClCompile>
@@ -55,9 +49,6 @@
     <ClCompile Include="GSDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="winsrc\record.h">
-      <Filter>winsrc</Filter>
-    </ClInclude>
     <ClInclude Include="winsrc\d3d.h">
       <Filter>winsrc\directx</Filter>
     </ClInclude>
@@ -122,5 +113,6 @@
   <ItemGroup>
     <FxCompile Include="PixelShader.hlsl" />
     <FxCompile Include="VertexShader.hlsl" />
+    <FxCompile Include="SmoothPixelShader.hlsl" />
   </ItemGroup>
 </Project>

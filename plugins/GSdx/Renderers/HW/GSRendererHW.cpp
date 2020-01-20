@@ -214,6 +214,7 @@ void GSRendererHW::SetGameCRC(uint32 crc, int options)
 			case CRC::Jak3:
 			case CRC::LegacyOfKainDefiance:
 			case CRC::NicktoonsUnite:
+			case CRC::Persona3:
 			case CRC::ProjectSnowblind:
 			case CRC::Quake3Revolution:
 			case CRC::RatchetAndClank:
@@ -462,8 +463,11 @@ void GSRendererHW::ConvertSpriteTextureShuffle(bool& write_ba, bool& read_ba)
 	// 32bits emulation means we can do the effect once but double the size.
 	// Test cases: Crash Twinsantiy and DBZ BT3
 	int height_delta = m_src->m_valid_rect.height() - m_r.height();
+	// Xenosaga handles the half bottom as an vertex offset instead of a buffer offset which does the effect twice.
+	// Half bottom won't trigger a cache miss that skip the draw because it is still the normal buffer but with a vertices offset.
+	const bool cant_handle_half_bottom_fix = m_game.title == CRC::XenosagaE3;
 	// Test Case: NFS: HP2 splits the effect h:256 and h:192 so 64
-	bool half_bottom = abs(height_delta) <= 64 && !m_disable_ts_half_bottom;
+	const bool half_bottom = abs(height_delta) <= 64 && !(m_disable_ts_half_bottom || cant_handle_half_bottom_fix);
 
 	if (PRIM->FST) {
 		GL_INS("First vertex is  P: %d => %d    T: %d => %d", v[0].XYZ.X, v[1].XYZ.X, v[0].U, v[1].U);

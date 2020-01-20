@@ -39,6 +39,8 @@ namespace Omega_Red
         public static bool m_is_exit = false;
 
         public static AppType m_AppType = AppType.Screen;
+
+        public const string m_MainFolderName = "OmegaRed";
                
         public App()
         {

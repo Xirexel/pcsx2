@@ -27,6 +27,7 @@ namespace Omega_Red.Tools
             DFSound = 1,
             bladesio1 = 2,
             Pad = 3,
+            GPUHardware = 4,
             //Pad = 1,
             //AudioRenderer = 2,
             //CDVD = 3,
@@ -76,24 +77,7 @@ namespace Omega_Red.Tools
 
             return l_result;
         }
-
-        public static int GetFreezeSize(ModuleType a_ModuleType)
-        {
-            freezeData fP = new freezeData() { size = 0, data = IntPtr.Zero };
-            if (!DoFreeze(a_ModuleType, FREEZE_TYPE.FREEZE_SIZE, fP)) return 0;
-            return fP.size;
-        }
-
-        private static bool DoFreeze(ModuleType a_ModuleType, FREEZE_TYPE mode, freezeData fP)
-        {
-            {
-                //ScopedLock lock( m_mtx_PluginStatus );
-                //return !m_info[pid] || m_info[pid]->CommonBindings.Freeze( mode, data ) != -1;
-
-                return false;
-            }
-        }
-
+        
         class Module_API
         {
             public IntPtr getAPI = IntPtr.Zero;
@@ -145,7 +129,7 @@ namespace Omega_Red.Tools
             }
         }
 
-        public class Module
+        public class Module: IModule
         {
             public bool m_initilized = false;
             private Module_API m_Module_API = new Module_API();
@@ -299,12 +283,15 @@ namespace Omega_Red.Tools
 
         private List<Module> m_Modules = new List<Module>()
         {
-            new Module(ModuleType.DFXVideo),
+            //new Module(ModuleType.DFXVideo),
             new Module(ModuleType.DFSound),
             new Module(ModuleType.bladesio1),
             new Module(ModuleType.Pad),
         };
 
+        private Module m_GPU = null;
+
+        public Module GPU { get { return m_GPU; } }
 
         private PCSXModuleManager() { }
 
@@ -382,6 +369,24 @@ namespace Omega_Red.Tools
             }
 
             m_Modules.Clear();
+        }
+
+        public void initGPU()
+        {
+            if (m_GPU == null)
+            {
+                m_GPU = new Module(ModuleType.GPUHardware);
+            }
+        }
+
+        public void releaseGPU()
+        {
+            if (m_GPU != null)
+                m_GPU.release();
+
+            m_GPU = null;
+
+            GC.Collect();
         }
     }
 }

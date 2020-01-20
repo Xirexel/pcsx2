@@ -44,4 +44,4 @@
 typedef unsigned int uint;
 typedef long long s64;
 
-
+#include <assert.h>

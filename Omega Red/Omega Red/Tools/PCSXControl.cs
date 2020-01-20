@@ -27,7 +27,7 @@ namespace Omega_Red.Tools
             m_VideoPanelHandler = a_VideoPanelHandler;
         }
 
-        public void Launch(string a_filepath, Action a_callBackDel)
+        public void Launch(string a_filepath, string a_discSerial, Action a_callBackDel)
         {
             init();
 
@@ -37,6 +37,18 @@ namespace Omega_Red.Tools
 
                 return;
             }
+
+            PCSXModuleManager.Instance.initGPU();
+
+            ModuleControl.Instance.initPCSX(PCSXModuleManager.Instance.GPU);
+
+
+            System.IO.Directory.CreateDirectory(Properties.Settings.Default.TexturePacksFolder + @"\Dump\" + a_discSerial);
+
+            ModuleControl.Instance.setDiscSerial(a_discSerial);
+            
+
+            PCSXNative.Instance.setModule(PCSXModuleManager.Instance.GPU);
 
             ThreadStart innerCallStart = new ThreadStart(() => {
 
@@ -59,6 +71,10 @@ namespace Omega_Red.Tools
         {
             if (m_is_launched)
                 PCSXNative.Instance.shutdown();
+
+            PCSXNative.Instance.clearModules();
+
+            PCSXModuleManager.Instance.releaseGPU();
 
             m_is_launched = false;
         }

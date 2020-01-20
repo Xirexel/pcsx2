@@ -69,7 +69,34 @@ namespace Omega_Red.Managers
                     App.Current.Resources["ControlModeTouchTitle"] as String;
             }
         }
-        
+
+        enum TexturePackMode
+        {
+            None = 0,
+            Load = 1,
+            Save = 2
+        }
+
+        class TexturePackModeInfo
+        {
+            public TexturePackMode Value { get; set; }
+
+            public override string ToString()
+            {
+                switch (Value)
+                {
+                    case TexturePackMode.None:
+                        return App.Current.Resources["TexturePackModeNoneTitle"] as String;
+                    case TexturePackMode.Load:
+                        return App.Current.Resources["TexturePackModeLoadTitle"] as String;
+                    case TexturePackMode.Save:
+                        return App.Current.Resources["TexturePackModeSaveTitle"] as String;
+                    default:
+                        return "";
+                }
+            }
+        }
+
 
         private ICollectionView mDisplayModeView = null;
 
@@ -98,6 +125,13 @@ namespace Omega_Red.Managers
         private ICollectionView mColourSchemaModeView = null;
 
         private readonly ObservableCollection<String> _colourSchemaCollection = new ObservableCollection<String>();
+
+
+
+
+        private ICollectionView mTexturePackModeView = null;
+
+        private readonly ObservableCollection<TexturePackModeInfo> _TexturePackModeCollection = new ObservableCollection<TexturePackModeInfo>();
 
 
 
@@ -208,6 +242,25 @@ namespace Omega_Red.Managers
 
 
 
+                _TexturePackModeCollection.Add(new TexturePackModeInfo() { Value = TexturePackMode.None });
+
+                _TexturePackModeCollection.Add(new TexturePackModeInfo() { Value = TexturePackMode.Load });
+
+                _TexturePackModeCollection.Add(new TexturePackModeInfo() { Value = TexturePackMode.Save });
+
+                
+
+
+                mTexturePackModeView = CollectionViewSource.GetDefaultView(_TexturePackModeCollection);
+
+
+
+
+
+
+
+
+
 
                 mDisplayModeView.CurrentChanged += mDisplayModeView_CurrentChanged;
 
@@ -220,7 +273,10 @@ namespace Omega_Red.Managers
                 mMediaOutputTypeModeView.CurrentChanged += mMediaOutputTypeModeView_CurrentChanged;
 
                 mRenderingSchemaModeView.CurrentChanged += mRenderingSchemaCollection_CurrentChanged;
-                               
+
+                mTexturePackModeView.CurrentChanged += mTexturePackModeView_CurrentChanged;
+
+
                 if (SwitchTopmostEvent != null)
                     SwitchTopmostEvent(Settings.Default.Topmost);
 
@@ -232,6 +288,31 @@ namespace Omega_Red.Managers
                 reset();
             });
 
+        }
+
+        private void mTexturePackModeView_CurrentChanged(object sender, EventArgs e)
+        {
+            if (mTexturePackModeView == null)
+                return;
+
+            if (mTexturePackModeView.CurrentItem == null)
+                return;
+
+            if (App.Current == null)
+                return;
+
+            if (App.Current.MainWindow == null)
+                return;
+
+
+            var l_TexturePackModeInfo = (TexturePackModeInfo)mTexturePackModeView.CurrentItem;
+
+            if (l_TexturePackModeInfo == null)
+                return;
+
+            Tools.ModuleControl.Instance.TexturePackMode = (int)l_TexturePackModeInfo.Value;
+
+            Settings.Default.TexturePackMode = l_TexturePackModeInfo.Value.ToString();
         }
 
         private void reset()
@@ -285,6 +366,16 @@ namespace Omega_Red.Managers
 
                 mMediaOutputTypeModeView.MoveCurrentToPosition(-1);
                 mMediaOutputTypeModeView.MoveCurrentToPosition((int)l_MediaOutputType);
+
+
+
+                TexturePackMode l_TexturePackMode = TexturePackMode.None;
+
+                Enum.TryParse<TexturePackMode>(Settings.Default.TexturePackMode, out l_TexturePackMode);
+
+                mTexturePackModeView.MoveCurrentToPosition(-1);
+                mTexturePackModeView.MoveCurrentToPosition((int)l_TexturePackMode);
+                
 
             });
         }
@@ -546,6 +637,11 @@ namespace Omega_Red.Managers
         public ICollectionView RenderingSchemaCollection
         {
             get { return mRenderingSchemaModeView; }
+        }
+
+        public ICollectionView TexturePackModeCollection
+        {
+            get { return mTexturePackModeView; }
         }
     }
 }

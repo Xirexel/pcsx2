@@ -418,5 +418,29 @@ namespace Omega_Red.Properties {
                 this["IsVisualVibrationEnabled"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string TexturePacksFolder {
+            get {
+                return ((string)(this["TexturePacksFolder"]));
+            }
+            set {
+                this["TexturePacksFolder"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("None")]
+        public string TexturePackMode {
+            get {
+                return ((string)(this["TexturePackMode"]));
+            }
+            set {
+                this["TexturePackMode"] = value;
+            }
+        }
     }
 }

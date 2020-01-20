@@ -93,7 +93,7 @@ namespace Omega_Red.Managers
             };
 
             if (string.IsNullOrEmpty(Settings.Default.SlotFolder))
-                Settings.Default.SlotFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\OmegaRed\sstates\";
+                Settings.Default.SlotFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\" + App.m_MainFolderName + @"\sstates\";
 
             mCustomerView = CollectionViewSource.GetDefaultView(_saveStateInfoCollection);
 
@@ -114,7 +114,7 @@ namespace Omega_Red.Managers
         public void init()
         {
             if (string.IsNullOrEmpty(Settings.Default.SlotFolder))
-                Settings.Default.SlotFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\OmegaRed\sstates\";
+                Settings.Default.SlotFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\" + App.m_MainFolderName + @"\sstates\";
 
             if (!System.IO.Directory.Exists(Settings.Default.SlotFolder))
             {

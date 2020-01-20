@@ -896,7 +896,12 @@ bool GSDeviceProxy::Reset(int w, int h)
     else
         return false;
 
-    return true;
+	ClearRenderTarget(m_backbuffer, 0);
+
+    Flip();
+
+	if (m_ctx)
+		m_ctx->Flush();
 
     return true;
 }

@@ -99,7 +99,7 @@
 
 // fast solid loops... a bit more additional code, of course
 
-#define FASTSOLID
+//#define FASTSOLID
 
 // psx blending mode 3 with 25% incoming color (instead 50% without the define)
 

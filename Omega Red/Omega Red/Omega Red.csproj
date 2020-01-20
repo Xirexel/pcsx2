@@ -139,8 +139,10 @@
     <Compile Include="Tools\Converters\InverseBooleanConverter.cs" />
     <Compile Include="Tools\Converters\PrivacyStatusConvertor.cs" />
     <Compile Include="Tools\Extensions.cs" />
+    <Compile Include="Tools\IModule.cs" />
     <Compile Include="Tools\PCSXControl.cs" />
     <Compile Include="Tools\PCSXModuleManager.cs" />
+    <Compile Include="Tools\TexturePackControl.cs" />
     <Compile Include="Util\Interop\ComInterface.cs" />
     <Compile Include="Util\Interop\D3D11Texture2D.cs" />
     <Compile Include="Util\Interop\Direct3D11.cs" />
@@ -632,13 +634,16 @@
     <EmbeddedResource Include="Modules\x86\pcsxr.dll" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\DFXVideo.dll" />
+    <None Include="Modules\x86\DFXVideo.dll" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Modules\x86\DFSound.dll" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Modules\x86\bladesio1.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\x86\GPUHardware.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

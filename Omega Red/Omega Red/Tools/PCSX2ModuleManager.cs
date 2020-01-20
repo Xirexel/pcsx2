@@ -188,7 +188,7 @@ namespace Omega_Red.Tools
             }
         }
 
-        public class Module
+        public class Module: IModule
         {
             public bool m_initilized = false;
             private Module_API m_Module_API = new Module_API();

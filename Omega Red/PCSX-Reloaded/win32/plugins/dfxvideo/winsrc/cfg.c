@@ -21,7 +21,6 @@
 #include "externals.h"
 #include "cfg.h"
 #include "gpu.h"
-#include "record.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // globals
@@ -41,14 +40,10 @@ void OnCfgDef1(HWND hW);
 void OnCfgDef2(HWND hW);
 void OnBugFixes(HWND hW);
 
-void OnRecording(HWND hW);
 
 void SelectDev(HWND hW);
-BOOL bTestModes(void);
 void OnKeyConfig(HWND hW);
-void GetSettings(HWND hW);
 void OnClipboard(HWND hW);
-void DoDevEnum(HWND hW);
 char * pGetConfigInfos(int iCfg);
 
 ////////////////////////////////////////////////////////////////////////
@@ -79,12 +74,10 @@ BOOL CALLBACK SoftDlgProc(HWND hW, UINT uMsg, WPARAM wParam, LPARAM lParam)
        case IDC_DEF2:      OnCfgDef2(hW);   return TRUE;
        case IDC_SELFIX:    OnBugFixes(hW);  return TRUE;
        case IDC_KEYCONFIG: OnKeyConfig(hW); return TRUE;
-       case IDC_SELDEV:    SelectDev(hW);   return TRUE;
        case IDCANCEL:      OnCfgCancel(hW); return TRUE;
        case IDOK:          OnSoftOK(hW);    return TRUE;
        case IDC_CLIPBOARD: OnClipboard(hW); return TRUE;
 
-       case IDC_RECORDING: OnRecording(hW);  return TRUE;
       }
     }
   }
@@ -162,8 +155,6 @@ BOOL OnInitSoftDialog(HWND hW)
  ComboBox_AddString(hWC,"Scanlines enabled (double blitting - nVidia fix)");
  ComboBox_SetCurSel(hWC,iUseScanLines);
 
- SetDlgItemInt(hW,IDC_WINX,LOWORD(iWinSize),FALSE);    // window size
- SetDlgItemInt(hW,IDC_WINY,HIWORD(iWinSize),FALSE);
 
  if(UseFrameLimit)    CheckDlgButton(hW,IDC_USELIMIT,TRUE);
  if(UseFrameSkip)     CheckDlgButton(hW,IDC_USESKIPPING,TRUE);
@@ -216,92 +207,8 @@ BOOL OnInitSoftDialog(HWND hW)
 // on ok: take vals
 ////////////////////////////////////////////////////////////////////////
 
-void GetSettings(HWND hW) 
-{
- HWND hWC;char cs[256];int i,j;char * p;
-
- hWC=GetDlgItem(hW,IDC_RESOLUTION);                    // get resolution
- i=ComboBox_GetCurSel(hWC);
- ComboBox_GetLBText(hWC,i,cs);
- iResX=atol(cs);
- p=strchr(cs,'x');
- iResY=atol(p+1);
- p=strchr(cs,',');									   // added by syo
- if(p) iRefreshRate=atol(p+1);						   // get refreshrate
- else  iRefreshRate=0;
-
- hWC=GetDlgItem(hW,IDC_COLDEPTH);                      // get color depth
- i=ComboBox_GetCurSel(hWC);
- ComboBox_GetLBText(hWC,i,cs);
- iColDepth=atol(cs);
-
- hWC=GetDlgItem(hW,IDC_SCANLINES);                     // scanlines
- iUseScanLines=ComboBox_GetCurSel(hWC);
-
- i=GetDlgItemInt(hW,IDC_WINX,NULL,FALSE);              // get win size
- if(i<50) i=50; if(i>20000) i=20000;
- j=GetDlgItemInt(hW,IDC_WINY,NULL,FALSE);
- if(j<50) j=50; if(j>20000) j=20000;
- iWinSize=MAKELONG(i,j);
-
- if(IsDlgButtonChecked(hW,IDC_DISPMODE2))              // win mode
-  iWindowMode=1; else iWindowMode=0;
-
- if(IsDlgButtonChecked(hW,IDC_USELIMIT))               // fps limit
-  UseFrameLimit=1; else UseFrameLimit=0;
-
- if(IsDlgButtonChecked(hW,IDC_USESKIPPING))            // fps skip
-  UseFrameSkip=1; else UseFrameSkip=0;
-
- if(IsDlgButtonChecked(hW,IDC_GAMEFIX))                // game fix
-  iUseFixes=1; else iUseFixes=0;
-
- if(IsDlgButtonChecked(hW,IDC_SYSMEMORY))              // use system memory
-  iSysMemory=1; else iSysMemory=0;
-
- if(IsDlgButtonChecked(hW,IDC_STOPSAVER))              // stop screen saver
-  iStopSaver=1; else iStopSaver=0;
-
- if(IsDlgButtonChecked(hW,IDC_VSYNC))                  // wait VSYNC
-  bVsync=bVsync_Key=TRUE; else bVsync=bVsync_Key=FALSE;
-
- if(IsDlgButtonChecked(hW,IDC_TRANSPARENT))            // transparent menu
-  bTransparent=TRUE; else bTransparent=FALSE;
-
- if(IsDlgButtonChecked(hW,IDC_SHOWFPS))                // show fps
-  iShowFPS=1; else iShowFPS=0;
-
- if(IsDlgButtonChecked(hW,IDC_DEBUGMODE))              // debug mode
-  iDebugMode=1; else iDebugMode=0;
-
- hWC=GetDlgItem(hW,IDC_NOSTRETCH);
- iUseNoStretchBlt=ComboBox_GetCurSel(hWC);
-
- hWC=GetDlgItem(hW,IDC_DITHER);
- iUseDither=ComboBox_GetCurSel(hWC);
-
- if(IsDlgButtonChecked(hW,IDC_FRAMEAUTO))              // frame rate
-      iFrameLimit=2;
- else iFrameLimit=1;
-
- GetDlgItemText(hW,IDC_FRAMELIM,cs,255);
- fFrameRate=(float)atof(cs);
- if(fFrameRate<10.0f)  fFrameRate=10.0f;
- if(fFrameRate>200.0f) fFrameRate=200.0f;
-}
-
 void OnSoftOK(HWND hW)                                 
-{
- GetSettings(hW);
-
- if(!iWindowMode && !bTestModes())                     // check fullscreen sets
-  {
-   MessageBox(hW,"Resolution/color depth not supported!","Error",MB_ICONERROR|MB_OK);
-   return;
-  }
-
- WriteConfig();                                        // write registry
-
+{	 
  EndDialog(hW,TRUE);
 }
 
@@ -313,7 +220,6 @@ void OnClipboard(HWND hW)
 {
  HWND hWE=GetDlgItem(hW,IDC_CLPEDIT);
  char * pB;
- GetSettings(hW);
  pB=pGetConfigInfos(1);
 
  if(pB)
@@ -382,156 +288,6 @@ void OnBugFixes(HWND hW)
 {
  DialogBox(hInst,MAKEINTRESOURCE(IDD_FIXES),
            hW,(DLGPROC)BugFixesDlgProc);
-}
-
-////////////////////////////////////////////////////////////////////////
-// Recording options
-////////////////////////////////////////////////////////////////////////
-
-void RefreshCodec(HWND hW)
-{
-char buffer[255];
-union {
-	char chFCC[5];
-	DWORD dwFCC;
-	} fcc;
-ICINFO icinfo;
-memset(&icinfo,0,sizeof(icinfo));
-icinfo.dwSize = sizeof(icinfo);
-strcpy(fcc.chFCC,"VIDC");
-RECORD_COMPRESSION1.hic = ICOpen(fcc.dwFCC,RECORD_COMPRESSION1.fccHandler,ICMODE_QUERY);
-if(RECORD_COMPRESSION1.hic)
-	{
-	ICGetInfo(RECORD_COMPRESSION1.hic,&icinfo,sizeof(icinfo));
-	ICClose(RECORD_COMPRESSION1.hic);
-	wsprintf(buffer,"16 bit Compression: %ws",icinfo.szDescription);
-	}
-else
-	wsprintf(buffer,"16 bit Compression: Full Frames (Uncompressed)");
-SetDlgItemText(hW,IDC_COMPRESSION1,buffer);
-
-memset(&icinfo,0,sizeof(icinfo));
-icinfo.dwSize = sizeof(icinfo);
-RECORD_COMPRESSION2.hic = ICOpen(fcc.dwFCC,RECORD_COMPRESSION2.fccHandler,ICMODE_QUERY);
-if(RECORD_COMPRESSION2.hic)
-	{
-	ICGetInfo(RECORD_COMPRESSION2.hic,&icinfo,sizeof(icinfo));
-	ICClose(RECORD_COMPRESSION2.hic);
-	wsprintf(buffer,"24 bit Compression: %ws",icinfo.szDescription);
-	}
-else
-	wsprintf(buffer,"24 bit Compression: Full Frames (Uncompressed)");
-SetDlgItemText(hW,IDC_COMPRESSION2,buffer);
-}
-
-
-BOOL CALLBACK RecordingDlgProc(HWND hW, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
- switch(uMsg)
-  {
-   case WM_INITDIALOG:
-    {
-	 HWND hWC;
-     CheckDlgButton(hW,IDC_REC_MODE1,RECORD_RECORDING_MODE==0);
-     CheckDlgButton(hW,IDC_REC_MODE2,RECORD_RECORDING_MODE==1);
-     hWC = GetDlgItem(hW,IDC_VIDEO_SIZE);
-     ComboBox_ResetContent(hWC);
-     ComboBox_AddString(hWC,"Full");
-     ComboBox_AddString(hWC,"Half");
-     ComboBox_AddString(hWC,"Quarter");
-     ComboBox_SetCurSel(hWC,RECORD_VIDEO_SIZE);
-
-     SetDlgItemInt(hW,IDC_REC_WIDTH,RECORD_RECORDING_WIDTH,FALSE);
-     SetDlgItemInt(hW,IDC_REC_HEIGHT,RECORD_RECORDING_HEIGHT,FALSE);
-
-     hWC = GetDlgItem(hW,IDC_FRAME_RATE);
-     ComboBox_ResetContent(hWC);
-     ComboBox_AddString(hWC,"1");
-     ComboBox_AddString(hWC,"2");
-     ComboBox_AddString(hWC,"3");
-     ComboBox_AddString(hWC,"4");
-     ComboBox_AddString(hWC,"5");
-     ComboBox_AddString(hWC,"6");
-     ComboBox_AddString(hWC,"7");
-     ComboBox_AddString(hWC,"8");
-     ComboBox_SetCurSel(hWC,RECORD_FRAME_RATE_SCALE);
-     CheckDlgButton(hW,IDC_COMPRESSION1,RECORD_COMPRESSION_MODE==0);
-     CheckDlgButton(hW,IDC_COMPRESSION2,RECORD_COMPRESSION_MODE==1);
-     RefreshCodec(hW);
-    }
-
-   case WM_COMMAND:
-    {
-     switch(LOWORD(wParam))
-      {
-       case IDC_RECCFG:
-	    {
-		if(IsDlgButtonChecked(hW,IDC_COMPRESSION1))
-			{
-			BITMAPINFOHEADER bitmap = {40,640,480,1,16,0,640*480*2,2048,2048,0,0};
-			if(!ICCompressorChoose(hW,ICMF_CHOOSE_DATARATE|ICMF_CHOOSE_KEYFRAME,&bitmap,NULL,&RECORD_COMPRESSION1,"16 bit Compression")) return TRUE;
-			if(RECORD_COMPRESSION1.cbState>sizeof(RECORD_COMPRESSION_STATE1))
-				{
-				memset(&RECORD_COMPRESSION1,0,sizeof(RECORD_COMPRESSION1));
-				memset(&RECORD_COMPRESSION_STATE1,0,sizeof(RECORD_COMPRESSION_STATE1));
-				RECORD_COMPRESSION1.cbSize	= sizeof(RECORD_COMPRESSION1);
-				}
-			else
-				{
-				if(RECORD_COMPRESSION1.lpState!=RECORD_COMPRESSION_STATE1)
-					memcpy(RECORD_COMPRESSION_STATE1,RECORD_COMPRESSION1.lpState,RECORD_COMPRESSION1.cbState);
-				}
-			RECORD_COMPRESSION1.lpState = RECORD_COMPRESSION_STATE1;
-			}
-		else
-			{
-			BITMAPINFOHEADER bitmap = {40,640,480,1,24,0,640*480*3,2048,2048,0,0};
-			if(!ICCompressorChoose(hW,ICMF_CHOOSE_DATARATE|ICMF_CHOOSE_KEYFRAME,&bitmap,NULL,&RECORD_COMPRESSION2,"24 bit Compression")) return TRUE;
-			if(RECORD_COMPRESSION2.cbState>sizeof(RECORD_COMPRESSION_STATE2))
-				{
-				memset(&RECORD_COMPRESSION2,0,sizeof(RECORD_COMPRESSION2));
-				memset(&RECORD_COMPRESSION_STATE2,0,sizeof(RECORD_COMPRESSION_STATE2));
-				RECORD_COMPRESSION2.cbSize	= sizeof(RECORD_COMPRESSION2);
-				}
-			else
-				{
-				if(RECORD_COMPRESSION2.lpState!=RECORD_COMPRESSION_STATE2)
-					memcpy(RECORD_COMPRESSION_STATE2,RECORD_COMPRESSION2.lpState,RECORD_COMPRESSION2.cbState);
-				}
-			RECORD_COMPRESSION2.lpState = RECORD_COMPRESSION_STATE2;
-			}
-		RefreshCodec(hW);
-		return TRUE;
-		}
-       case IDCANCEL: EndDialog(hW,FALSE);return TRUE;
-
-       case IDOK:     
-        {
-		HWND hWC;
-		if(IsDlgButtonChecked(hW,IDC_REC_MODE1))	RECORD_RECORDING_MODE = 0;
-		else										RECORD_RECORDING_MODE = 1;
-		hWC = GetDlgItem(hW,IDC_VIDEO_SIZE);
-		RECORD_VIDEO_SIZE = ComboBox_GetCurSel(hWC);
-		RECORD_RECORDING_WIDTH = GetDlgItemInt(hW,IDC_REC_WIDTH,NULL,FALSE);
-		RECORD_RECORDING_HEIGHT = GetDlgItemInt(hW,IDC_REC_HEIGHT,NULL,FALSE);
-		hWC = GetDlgItem(hW,IDC_FRAME_RATE);
-		RECORD_FRAME_RATE_SCALE = ComboBox_GetCurSel(hWC);
-		if(IsDlgButtonChecked(hW,IDC_COMPRESSION1))	RECORD_COMPRESSION_MODE = 0;
-		else										RECORD_COMPRESSION_MODE = 1;
-        EndDialog(hW,TRUE);
-        return TRUE;
-        }
-      }
-    }
-  }
- return FALSE;
-}
-
-void OnRecording(HWND hW)
-{
- DialogBox(hInst,MAKEINTRESOURCE(IDD_RECORDING),
-           hW,(DLGPROC)RecordingDlgProc);
-
 }
 
 
@@ -612,14 +368,13 @@ void ReadConfig(void)
 // DWORD size;
 
  // predefines
- iResX=640;iResY=480;
+ iResX=960;iResY=720;
  iColDepth=16;
  iWindowMode=0;
  UseFrameLimit=1;
  UseFrameSkip=0;
  iFrameLimit=2;
  fFrameRate=200.0f;
- iWinSize=MAKELONG(640,480);
  dwCfgFixes=0;
  iUseFixes=0;
  iUseGammaVal=2048;
@@ -633,7 +388,6 @@ void ReadConfig(void)
  bTransparent=FALSE;
  iRefreshRate=0;
  iDebugMode=0;
- lstrcpy(szGPUKeys,szKeyDefaults);
 
  memset(szDevName,0,128);
  memset(&guiDev,0,sizeof(GUID));
@@ -776,245 +530,8 @@ void ReadConfig(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-void ReadWinSizeConfig(void)
-{
- HKEY myKey;
- DWORD temp;
- DWORD type;               
- DWORD size;
-
- iResX=640;iResY=480;
- iWinSize=MAKELONG(320,240);
-
- //if (RegOpenKeyEx(HKEY_CURRENT_USER,"Software\\Vision Thing\\PSEmu Pro\\GPU\\DFXVideo",0,KEY_ALL_ACCESS,&myKey)==ERROR_SUCCESS)
- // {
- //  size = 4;
- //  if(RegQueryValueEx(myKey,"ResX",0,&type,(LPBYTE)&temp,&size)==ERROR_SUCCESS)
- //   iResX=(int)temp;
- //  size = 4;
- //  if(RegQueryValueEx(myKey,"ResY",0,&type,(LPBYTE)&temp,&size)==ERROR_SUCCESS)
- //   iResY=(int)temp;
- //  size = 4;
- //  if(RegQueryValueEx(myKey,"WinSize",0,&type,(LPBYTE)&temp,&size)==ERROR_SUCCESS)
- //   iWinSize=(int)temp;
-
- //  RegCloseKey(myKey);
- // }
-}
-
-////////////////////////////////////////////////////////////////////////
-// write registry
-////////////////////////////////////////////////////////////////////////
-
-void WriteConfig(void)
-{
-// HKEY myKey;
-// DWORD myDisp;
-// DWORD temp;
-//  
-// RegCreateKeyEx(HKEY_CURRENT_USER,"Software\\Vision Thing\\PSEmu Pro\\GPU\\DFXVideo",0,NULL,REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,NULL,&myKey,&myDisp);
-// temp=iResX;
-// RegSetValueEx(myKey,"ResX",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iResY;
-// RegSetValueEx(myKey,"ResY",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iRefreshRate;
-// RegSetValueEx(myKey,"RefreshRate",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iWinSize;
-// RegSetValueEx(myKey,"WinSize",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iWindowMode;
-// RegSetValueEx(myKey,"WindowMode",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iColDepth;
-// RegSetValueEx(myKey,"ColDepth",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=UseFrameLimit;
-// RegSetValueEx(myKey,"UseFrameLimit",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=UseFrameSkip;
-// RegSetValueEx(myKey,"UseFrameSkip",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=dwCfgFixes;
-// RegSetValueEx(myKey,"CfgFixes",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iUseFixes;
-// RegSetValueEx(myKey,"UseFixes",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iUseScanLines;
-// RegSetValueEx(myKey,"UseScanLines",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iShowFPS;
-// RegSetValueEx(myKey,"ShowFPS",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iUseNoStretchBlt;
-// RegSetValueEx(myKey,"UseNoStrechBlt",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iUseDither;
-// RegSetValueEx(myKey,"UseDither",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iFrameLimit;
-// RegSetValueEx(myKey,"FrameLimit",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iUseGammaVal;
-// RegSetValueEx(myKey,"UseGamma",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=(DWORD)fFrameRate;
-// RegSetValueEx(myKey,"FrameRate",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=*((DWORD *)&fFrameRate);
-// RegSetValueEx(myKey,"FrameRateFloat",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=bVsync;
-// RegSetValueEx(myKey,"WaitVSYNC",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=bTransparent;
-// RegSetValueEx(myKey,"Transparent",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iSysMemory;
-// RegSetValueEx(myKey,"UseSysMemory",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iStopSaver;
-// RegSetValueEx(myKey,"StopSaver",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// temp=iDebugMode;
-// RegSetValueEx(myKey,"DebugMode",0,REG_DWORD,(LPBYTE) &temp,sizeof(temp));
-// RegSetValueEx(myKey,"GPUKeys",0,REG_BINARY,(LPBYTE)szGPUKeys,11);
-// RegSetValueEx(myKey,"DeviceName",0,REG_BINARY,(LPBYTE)szDevName,128);  
-// RegSetValueEx(myKey,"GuiDev",0,REG_BINARY,(LPBYTE)&guiDev,sizeof(GUID));
-//
-////
-//// Recording options
-////
-//if(RECORD_COMPRESSION1.cbState>sizeof(RECORD_COMPRESSION_STATE1) || RECORD_COMPRESSION1.lpState!=RECORD_COMPRESSION_STATE1)
-//	{
-//	memset(&RECORD_COMPRESSION1,0,sizeof(RECORD_COMPRESSION1));
-//	memset(&RECORD_COMPRESSION_STATE1,0,sizeof(RECORD_COMPRESSION_STATE1));
-//	RECORD_COMPRESSION1.cbSize	= sizeof(RECORD_COMPRESSION1);
-//	RECORD_COMPRESSION1.lpState = RECORD_COMPRESSION_STATE1;
-//	}
-//if(RECORD_COMPRESSION2.cbState>sizeof(RECORD_COMPRESSION_STATE2) || RECORD_COMPRESSION2.lpState!=RECORD_COMPRESSION_STATE2)
-//	{
-//	memset(&RECORD_COMPRESSION2,0,sizeof(RECORD_COMPRESSION2));
-//	memset(&RECORD_COMPRESSION_STATE2,0,sizeof(RECORD_COMPRESSION_STATE2));
-//	RECORD_COMPRESSION2.cbSize	= sizeof(RECORD_COMPRESSION2);
-//	RECORD_COMPRESSION2.lpState = RECORD_COMPRESSION_STATE2;
-//	}
-//
-//#define SetDWORD(xa,xb) RegSetValueEx(myKey,xa,0,REG_DWORD,(LPBYTE)&xb,sizeof(xb));
-//#define SetBINARY(xa,xb) RegSetValueEx(myKey,xa,0,REG_BINARY,(LPBYTE)&xb,sizeof(xb));
-//
-//SetDWORD("RecordingMode",				RECORD_RECORDING_MODE);
-//SetDWORD("RecordingVideoSize",			RECORD_VIDEO_SIZE);
-//SetDWORD("RecordingWidth",				RECORD_RECORDING_WIDTH);
-//SetDWORD("RecordingHeight",				RECORD_RECORDING_HEIGHT);
-//SetDWORD("RecordingFrameRateScale",		RECORD_FRAME_RATE_SCALE);
-//SetDWORD("RecordingCompressionMode",	RECORD_COMPRESSION_MODE);
-//SetBINARY("RecordingCompression1",		RECORD_COMPRESSION1);
-//SetBINARY("RecordingCompressionState1",	RECORD_COMPRESSION_STATE1);
-//SetBINARY("RecordingCompression2",		RECORD_COMPRESSION2);
-//SetBINARY("RecordingCompressionState2",	RECORD_COMPRESSION_STATE2);
-////
-////
-////
-// RegCloseKey(myKey);
-}
-
-////////////////////////////////////////////////////////////////////////
-
 HWND gHWND;
 
-
-typedef struct
-{
-    void *g;
-} D3DDEVICEDESC, *LPD3DDEVICEDESC;
-
-#define DDENUMRET_OK S_OK
-#define D3DENUMRET_OK DDENUMRET_OK
-
-
-static HRESULT WINAPI Enum3DDevicesCallback( GUID* pGUID, LPSTR strDesc,
-                                LPSTR strName, LPD3DDEVICEDESC pHALDesc, 
-                                LPD3DDEVICEDESC pHELDesc, LPVOID pvContext )
-{
- //BOOL IsHardware;
-
- //// Check params
- //if( NULL==pGUID || NULL==pHALDesc || NULL==pHELDesc)
- // return D3DENUMRET_CANCEL;
-
- //// Handle specific device GUIDs. NullDevice renders nothing
- //if( IsEqualGUID( pGUID, &IID_IDirect3DNullDevice ) )
- // return D3DENUMRET_OK;
-
- //IsHardware = ( 0 != pHALDesc->dwFlags );
- //if(!IsHardware) return D3DENUMRET_OK;
- //
- //bDeviceOK=TRUE;
-
- return D3DENUMRET_OK;
-}
-
-static BOOL WINAPI DirectDrawEnumCallbackEx( GUID FAR* pGUID, LPSTR strDesc,
-                                             LPSTR strName, VOID* pV,
-                                             HMONITOR hMonitor )
-{ 
- //// Use the GUID to create the DirectDraw object, so that information
- //// can be extracted from it.
-
- //LPDIRECTDRAW pDD;
- //LPDIRECTDRAW4 g_pDD;
- //LPDIRECT3D3 pD3D;
- //HRESULT (WINAPI *pDDrawCreateFn)(GUID *,LPDIRECTDRAW *,IUnknown *);
-
- //pDDrawCreateFn = (LPVOID)GetProcAddress( hDDrawDLL, "DirectDrawCreate" );
-
- //if( pDDrawCreateFn == NULL || FAILED( pDDrawCreateFn( pGUID, &pDD, 0L ) ) )
- // {
- //  return D3DENUMRET_OK;
- // }
-
- //// Query the DirectDraw driver for access to Direct3D.
- //if( FAILED(IDirectDraw_QueryInterface(pDD, &IID_IDirectDraw4, (VOID**)&g_pDD)))
- // {
- //  IDirectDraw_Release(pDD);
- //  return D3DENUMRET_OK;
- // }
- //IDirectDraw_Release(pDD);
-
- //// Query the DirectDraw driver for access to Direct3D.
-
- //if( FAILED( IDirectDraw4_QueryInterface(g_pDD,&IID_IDirect3D3, (VOID**)&pD3D)))
- // {
- //  IDirectDraw4_Release(g_pDD);
- //  return D3DENUMRET_OK;
- // }
-
- //bDeviceOK=FALSE;
-
- //// Now, enumerate all the 3D devices
- //IDirect3D3_EnumDevices(pD3D,Enum3DDevicesCallback,NULL);
-
- //if(bDeviceOK)
- // {
- //  HWND hWC=GetDlgItem(gHWND,IDC_DEVICE);
- //  int i=ComboBox_AddString(hWC,strDesc);
- //  GUID * g=(GUID *)malloc(sizeof(GUID));
- //  if(NULL != pGUID) *g=*pGUID;
- //  else              memset(g,0,sizeof(GUID));
- //  ComboBox_SetItemData(hWC,i,g);
- // }
-
- //IDirect3D3_Release(pD3D);
- //IDirectDraw4_Release(g_pDD);
- return DDENUMRET_OK;
-}
-
-//-----------------------------------------------------------------------------
-
-static BOOL WINAPI DirectDrawEnumCallback( GUID FAR* pGUID, LPSTR strDesc,
-                                           LPSTR strName, VOID* pV)
-{
- return DirectDrawEnumCallbackEx( pGUID, strDesc, strName, NULL, NULL );
-}
-
-//-----------------------------------------------------------------------------
-
-void DoDevEnum(HWND hW)
-{
- LPDIRECTDRAWENUMERATEEX pDDrawEnumFn;
-
- gHWND=hW;
-
- pDDrawEnumFn = (LPVOID)GetProcAddress(hDDrawDLL, "DirectDrawEnumerateExA");
-
- if (pDDrawEnumFn != NULL)
-  pDDrawEnumFn( DirectDrawEnumCallbackEx, NULL,
-               DDENUM_ATTACHEDSECONDARYDEVICES |
-               DDENUM_DETACHEDSECONDARYDEVICES |
-               DDENUM_NONDISPLAYDEVICES );
-}
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -1027,151 +544,6 @@ void FreeGui(HWND hW)
   {
    free((GUID *)ComboBox_GetItemData(hWC,i));
   }
-}
-
-////////////////////////////////////////////////////////////////////////
-
-BOOL CALLBACK DeviceDlgProc(HWND hW, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
- switch(uMsg)
-  {
-   case WM_INITDIALOG:
-    {
-     HWND hWC;int i;
-     DoDevEnum(hW);
-     hWC=GetDlgItem(hW,IDC_DEVICE);
-     i=ComboBox_FindStringExact(hWC,-1,szDevName);
-     if(i==CB_ERR) i=0;
-     ComboBox_SetCurSel(hWC,i);
-     hWC=GetDlgItem(hW,IDC_GAMMA);
-     ScrollBar_SetRange(hWC,0,1024,FALSE);
-     if(iUseGammaVal==2048) ScrollBar_SetPos(hWC,512,FALSE);
-     else
-      {
-       ScrollBar_SetPos(hWC,iUseGammaVal,FALSE);
-       CheckDlgButton(hW,IDC_USEGAMMA,TRUE);
-      }
-    }
-
-   case WM_HSCROLL:
-    {
-     HWND hWC=GetDlgItem(hW,IDC_GAMMA);
-     int pos=ScrollBar_GetPos(hWC);
-     switch(LOWORD(wParam))
-      {
-       case SB_THUMBPOSITION:    
-        pos=HIWORD(wParam);break; 
-       case SB_LEFT:
-        pos=0;break;
-       case SB_RIGHT:  
-        pos=1024;break;
-       case SB_LINELEFT:
-        pos-=16;break;
-       case SB_LINERIGHT:
-        pos+=16;break;
-       case SB_PAGELEFT:  
-        pos-=128;break;
-       case SB_PAGERIGHT: 
-        pos+=128;break;
-
-      }
-     ScrollBar_SetPos(hWC,pos,TRUE);
-     return TRUE;
-    }
-
-   case WM_COMMAND:
-    {
-     switch(LOWORD(wParam))
-      {
-       case IDCANCEL: FreeGui(hW);
-                      EndDialog(hW,FALSE);return TRUE;
-       case IDOK:     
-        {
-         HWND hWC=GetDlgItem(hW,IDC_DEVICE);
-         int i=ComboBox_GetCurSel(hWC);
-         if(i==CB_ERR) return TRUE;
-         guiDev=*((GUID *)ComboBox_GetItemData(hWC,i));
-         ComboBox_GetLBText(hWC,i,szDevName);
-         FreeGui(hW);
-
-         if(!IsDlgButtonChecked(hW,IDC_USEGAMMA))
-          iUseGammaVal=2048;
-         else
-          iUseGammaVal=ScrollBar_GetPos(GetDlgItem(hW,IDC_GAMMA));
-
-         EndDialog(hW,TRUE);
-         return TRUE;
-        }
-      }
-    }
-  }
- return FALSE;
-}                             
-
-////////////////////////////////////////////////////////////////////////
-
-void SelectDev(HWND hW)
-{
- if(DialogBox(hInst,MAKEINTRESOURCE(IDD_DEVICE),
-              hW,(DLGPROC)DeviceDlgProc)==IDOK)
-  {
-   SetDlgItemText(hW,IDC_DEVICETXT,szDevName);
-  }
-}
-
-
-////////////////////////////////////////////////////////////////////////
-
-static HRESULT WINAPI EnumDisplayModesCallback( DDSURFACEDESC2* pddsd,
-                                                VOID* pvContext )
-{
- if(NULL==pddsd) return DDENUMRET_CANCEL;
-
- if(pddsd->ddpfPixelFormat.dwRGBBitCount==(unsigned int)iColDepth &&
-    pddsd->dwWidth==(unsigned int)iResX &&
-    pddsd->dwHeight==(unsigned int)iResY)
-  {
-   bDeviceOK=TRUE;
-   return DDENUMRET_CANCEL;
-  }
-
- return DDENUMRET_OK;
-}
-
-////////////////////////////////////////////////////////////////////////
-
-BOOL bTestModes(void)
-{
- LPDIRECTDRAW pDD;
- LPDIRECTDRAW4 g_pDD;
- HRESULT (WINAPI *pDDrawCreateFn)(GUID *,LPDIRECTDRAW *,IUnknown *);
-
- GUID FAR * guid=0;
- int i;unsigned char * c=(unsigned char *)&guiDev;
- for(i=0;i<sizeof(GUID);i++,c++)
-  {if(*c) {guid=&guiDev;break;}}
-
- bDeviceOK=FALSE;
-
- pDDrawCreateFn = (LPVOID)GetProcAddress(hDDrawDLL, "DirectDrawCreate");
-
- if( pDDrawCreateFn == NULL || FAILED( pDDrawCreateFn(guid, &pDD, 0L ) ) )
-  {
-   return FALSE;
-  }
-
- if(FAILED(IDirectDraw_QueryInterface(pDD, &IID_IDirectDraw4, (VOID**)&g_pDD)))
-  {
-   IDirectDraw_Release(pDD);
-   return FALSE;
-  }
- IDirectDraw_Release(pDD);
-
- IDirectDraw4_EnumDisplayModes(g_pDD,0,NULL,NULL,EnumDisplayModesCallback);
-
- IDirectDraw4_Release(g_pDD);
-
- return bDeviceOK;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1264,7 +636,6 @@ BOOL CALLBACK KeyDlgProc(HWND hW, UINT uMsg, WPARAM wParam, LPARAM lParam)
          k=ComboBox_AddString(hWC,szB);
          ComboBox_SetItemData(hWC,k,j);
         }                              
-       SetGPUKey(GetDlgItem(hW,i),szGPUKeys[i-IDC_KEY1]);
       }
     }return TRUE;
 
@@ -1282,13 +653,6 @@ BOOL CALLBACK KeyDlgProc(HWND hW, UINT uMsg, WPARAM wParam, LPARAM lParam)
        case IDCANCEL:     EndDialog(hW,FALSE); return TRUE;
        case IDOK:
         {
-         HWND hWC;int i;
-         for(i=IDC_KEY1;i<=IDC_KEY10;i++)
-          {
-           hWC=GetDlgItem(hW,i);
-           szGPUKeys[i-IDC_KEY1]=(char)ComboBox_GetItemData(hWC,ComboBox_GetCurSel(hWC));
-           if(szGPUKeys[i-IDC_KEY1]<0x20) szGPUKeys[i-IDC_KEY1]=0x20;
-          }
          EndDialog(hW,TRUE);  
          return TRUE;
         }

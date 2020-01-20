@@ -56,7 +56,6 @@
 
 #ifdef _WINDOWS
 
-#include "record.h"
 
 HFONT hGFont=NULL;
 BOOL  bTransparent=FALSE;
@@ -108,7 +107,6 @@ void DisplayText(void)                                 // DISPLAY TEXT
 
 void BuildDispMenu(int iInc)
 {
- if(!(ulKeybits&KEY_SHOWFPS)) return;                  // mmm, cheater ;)
 
  iMPos+=iInc;                                          // up or down
  if(iMPos<0) iMPos=3;                                  // wrap around
@@ -166,7 +164,6 @@ void BuildDispMenu(int iInc)
 
 void SwitchDispMenu(int iStep)                         // SWITCH DISP MENU
 {
- if(!(ulKeybits&KEY_SHOWFPS)) return;                  // tststs
 
  switch(iMPos)
   {//////////////////////////////////////////////////////

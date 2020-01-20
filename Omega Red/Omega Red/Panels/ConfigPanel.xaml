@@ -127,6 +127,12 @@
                 </CheckBox>
                 </StackPanel>
             </Border>
+            <!--<Border Visibility="{Binding VisibilityTexturePackMode}">
+                <StackPanel Margin="5">
+                    <TextBlock Text="{DynamicResource TexturePackModeTitle}" TextAlignment="Center"  Margin="5"/>
+                    <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding TexturePackModeCollection}" Margin="5,0,5,5"/>
+                </StackPanel>
+            </Border>-->
         </WrapPanel>
     </ScrollViewer>
 </UserControl>

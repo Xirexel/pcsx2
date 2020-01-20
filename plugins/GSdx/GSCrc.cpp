@@ -146,6 +146,7 @@ CRC::Game CRC::m_games[] =
 	{0x33C6E35E, GT4, US, 0},
 	{0x70538747, GT4, US, 0}, // Toyota Prius Trial
 	{0x32A1C752, GT4, US, 0}, // GT4 Online Beta
+	{0x2A84A1E2, GT4, US, 0}, // Mazda MX-5 Edition
 	{0x0087EEC4, GT4, NoRegion, 0}, // JP and US versions have the same CRC - GT4 Online Beta
 	{0xC164550A, WildArms5, JPUNDUB, 0},
 	{0xC1640D2C, WildArms5, US, 0},
@@ -163,11 +164,7 @@ CRC::Game CRC::m_games[] =
 	{0x5188ABCA, CrashBandicootWoC, US, 0},
 	{0x34E2EEC7, CrashBandicootWoC, RU, 0},
 	{0x3A03D62F, CrashBandicootWoC, EU, 0},
-	{0x013E349D, ResidentEvil4, US, 0},
-	{0xDBB7A559, ResidentEvil4, US, 0},
-	{0x6BA2F6B9, ResidentEvil4, EU, 0},
-	{0x60FA8C69, ResidentEvil4, JP, 0},
-	{0x5F254B7C, ResidentEvil4, KO, 0},
+	{0x35D70452, CrashBandicootWoC, EU, 0},
 	{0x72E1E60E, Spartan, EU, 0},
 	{0x26689C87, Spartan, JP, 0},
 	{0x08277A9E, Spartan, US, 0},
@@ -344,6 +341,7 @@ CRC::Game CRC::m_games[] =
 	{0x137C792E, StarWarsForceUnleashed, US, 0},
 	{0xCC9BFDE3, StarWarsForceUnleashed, JP, 0},
 	{0xDAF2145C, StarWarsForceUnleashed, EU, 0},
+	{0x87109051, StarWarsForceUnleashed, EU, 0},
 	{0x25FC361B, DevilMayCry3, US, 0}, // SE
 	{0x2F7D8AD5, DevilMayCry3, US, 0},
 	{0x0BED0AF9, DevilMayCry3, US, 0},
@@ -445,6 +443,7 @@ CRC::Game CRC::m_games[] =
 	{0x9C712FF0, Jak1, EU, TextureInsideRt}, // Jak and Daxter: The Precursor Legacy
 	{0x1B3976AB, Jak1, US, TextureInsideRt},
 	{0x472E7699, Jak1, US, TextureInsideRt},
+	{0x96A608C5, Jak1, US, TextureInsideRt}, // Cingular Wireless Demo, PS Underground Demo
 	{0xEDE4FE64, Jak1, JP, TextureInsideRt}, // Jak x Daxter: Kyuusekai no Isan
 	{0x2A7FD3B4, Jak1, JP, TextureInsideRt}, // Demo, Taikenba
 	{0x2479F4A9, Jak2, EU, TextureInsideRt},
@@ -461,6 +460,7 @@ CRC::Game CRC::m_games[] =
 	{0xC20596DB, JakX, EU, TextureInsideRt}, // Beta Trial Disc, v0.01
 	{0x3091E6FB, JakX, US, TextureInsideRt},
 	{0xDA366A53, JakX, US, TextureInsideRt}, // Public Beta v.1
+	{0x7B564230, JakX, US, TextureInsideRt}, // Jak and Daxter Complete Trilogy Demo
 	{0x4653CA3E, HarleyDavidson, US, 0},
 	// Games list for Automatic Mipmapping
 	// Basic mipmapping
@@ -514,6 +514,12 @@ CRC::Game CRC::m_games[] =
 	{0x018AC37C, LegacyOfKainDefiance, RU, 0}, // Unofficial RU-version
 	{0x28D09BF9, NicktoonsUnite, US, 0},
 	{0xF25266C4, NicktoonsUnite, EU, 0}, // Nickelodeon SpongeBob SquarePants And Friends Unite
+	{0x7AE1C04B, Persona3, US, 0}, // Regular Version
+	{0x05C3D28F, Persona3, JP, 0},
+	{0x8A557EE5, Persona3, EU, 0},
+	{0x94A82AAA, Persona3, US, 0}, // FES
+	{0x232C7D72, Persona3, JP, 0},
+	{0xF64A6AE5, Persona3, EU, 0},
 	{0x2BDA8ADB, ProjectSnowblind, US, 0},
 	{0xF00CA82B, ProjectSnowblind, EU, 0},
 	{0xF1583665, ProjectSnowblind, EU, 0},
@@ -531,6 +537,7 @@ CRC::Game CRC::m_games[] =
 	{0x2F486E6F, RatchetAndClank2, EU, 0},
 	{0x45FE0CC4, RatchetAndClank3, US, 0}, // Up Your Arsenal
 	{0x2A12175A, RatchetAndClank3, US, 0}, // Regular Demo
+	{0xD8EB2C29, RatchetAndClank3, US, 0}, // 1108 Beta
 	{0x64DC6000, RatchetAndClank3, JP, 0}, // Totsugeki! Galactic Rangers
 	{0x17125698, RatchetAndClank3, EU, 0},
 	{0x9BFBCD42, RatchetAndClank4, US, 0}, // Deadlocked
