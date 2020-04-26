@@ -109,6 +109,11 @@ namespace Omega_Red.ViewModels
                 RaisePropertyChangedEvent("LockVisibility");
             }
         }
+               
+        public Visibility VisibilityVideoRecordingState
+        {
+            get { return App.OffVideoRecording ? Visibility.Collapsed : Visibility.Visible; }
+        }
 
         protected override Managers.IManager Manager
         {

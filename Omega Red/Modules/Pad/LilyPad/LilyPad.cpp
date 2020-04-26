@@ -290,7 +290,7 @@ void LilyPad::UpdateEnabledDevices(int updateList)
 	}
 }
 
-static void* s_TouchPadHandler = nullptr;
+static GetTouchPadCallback s_getTouchPad = nullptr;
 
 s32 LilyPad::init(u32 flags, pugi::xml_node& a_init_node)
 {
@@ -305,7 +305,7 @@ s32 LilyPad::init(u32 flags, pugi::xml_node& a_init_node)
 		return init(2, a_init_node);
 	}
 
-	s_TouchPadHandler = (void*)a_init_node.attribute(L"TouchPadHandler").as_llong();
+	s_getTouchPad = (GetTouchPadCallback)a_init_node.attribute(L"GetTouchPadCallbackHandler").as_llong();
 
 #if defined(PCSX2_DEBUG) && defined(_MSC_VER)
 	int tmpFlag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
@@ -543,7 +543,7 @@ void LilyPad::Update(unsigned int port, unsigned int slot)
 		0, 0, 
 		nullptr, // hWndTop, 
 		nullptr,  // &hWndGSProc
-		s_TouchPadHandler
+        s_getTouchPad
 	};
 #endif
 	dm->Update(&info);

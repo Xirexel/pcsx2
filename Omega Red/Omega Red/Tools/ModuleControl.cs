@@ -87,7 +87,7 @@ namespace Omega_Red.Tools
                     case PCSX2ModuleManager.ModuleType.MemoryCard:
                         continue;
                     case PCSX2ModuleManager.ModuleType.Pad:
-                        setPadConfig(l_XmlDocument, l_PropertyNode);
+                        setPadConfig(l_XmlDocument, l_PropertyNode, Tools.PadInput.Instance.TouchPadCallbackHandler);
                         break;
                     case PCSX2ModuleManager.ModuleType.CDVD:
                         break;
@@ -153,10 +153,11 @@ namespace Omega_Red.Tools
                     {
                         setVideoRendererConfig(l_XmlDocument, l_PropertyNode);
                         setTexturePackMode(a_Module);
+                        setIsFXAA(Settings.Default.IsFXAA);
                     }
                     break;
                 case PCSXModuleManager.ModuleType.Pad:
-                    setPadConfig(l_XmlDocument, l_PropertyNode);
+                    setPadConfig(l_XmlDocument, l_PropertyNode, Tools.PadInput.Instance.TouchPadCallbackHandler);
                     break;
                 case PCSXModuleManager.ModuleType.bladesio1:
                     break;
@@ -307,6 +308,8 @@ namespace Omega_Red.Tools
         {
             var l_PCSX2Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.VideoRenderer);
 
+            var l_PCSXModule = PCSXModuleManager.Instance.GPU;
+
             XmlDocument l_XmlDocument = new XmlDocument();
 
             XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
@@ -338,7 +341,11 @@ namespace Omega_Red.Tools
 
                 xmlTextWriter.Flush();
 
-                l_PCSX2Module.execute(stringWriter.GetStringBuilder().ToString());
+                if (l_PCSX2Module != null)
+                    l_PCSX2Module.execute(stringWriter.GetStringBuilder().ToString());
+
+                if(l_PCSXModule != null)
+                    l_PCSXModule.execute(stringWriter.GetStringBuilder().ToString());
             }
         }
         
@@ -395,7 +402,7 @@ namespace Omega_Red.Tools
 
             XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Init");
 
-            setPadConfig(l_XmlDocument, l_PropertyNode);
+            setPadConfig(l_XmlDocument, l_PropertyNode, Tools.PadInput.Instance.TouchPadCallbackHandler);
 
             rootNode.AppendChild(l_PropertyNode);
 
@@ -1001,12 +1008,12 @@ namespace Omega_Red.Tools
         }
 
 
-        private void setPadConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
+        private void setPadConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode, IntPtr a_getTouchPadCallbackHandler)
         {
 
-            var l_Atrr = a_XmlDocument.CreateAttribute("TouchPadHandler");
+            var l_Atrr = a_XmlDocument.CreateAttribute("GetTouchPadCallbackHandler");
 
-            l_Atrr.Value = PadInput.Instance.Hanler.ToString();
+            l_Atrr.Value = a_getTouchPadCallbackHandler.ToString();
 
             a_PropertyNode.Attributes.Append(l_Atrr);
 
@@ -1016,49 +1023,43 @@ namespace Omega_Red.Tools
 
             // Add devices
 
-            var lPadControlInfo = PadControlManager.Instance.PadControlInfo;
-
-            if(App.m_AppType == App.AppType.OffScreen)
-            {                
-                if(PadControlManager.Instance.Collection.MoveCurrentToPosition(1))                    
-                    lPadControlInfo = PadControlManager.Instance.Collection.CurrentItem as PadControlInfo;
-            }
-
+            var l_PadInputConfig = PadInput.Instance.PadInputConfig;
+            
 
             var l_touch_pad_node = a_XmlDocument.CreateElement("Device");
 
 
             l_Atrr = a_XmlDocument.CreateAttribute("Display_Name");
 
-            l_Atrr.Value = lPadControlInfo.ToString();
+            l_Atrr.Value = l_PadInputConfig.ToString();
 
             l_touch_pad_node.Attributes.Append(l_Atrr);
 
 
             l_Atrr = a_XmlDocument.CreateAttribute("Instance_ID");
 
-            l_Atrr.Value = lPadControlInfo.Instance_ID;
+            l_Atrr.Value = l_PadInputConfig.Instance_ID;
 
             l_touch_pad_node.Attributes.Append(l_Atrr);
 
 
             l_Atrr = a_XmlDocument.CreateAttribute("API");
 
-            l_Atrr.Value = lPadControlInfo.API;
+            l_Atrr.Value = l_PadInputConfig.API;
 
             l_touch_pad_node.Attributes.Append(l_Atrr);
 
 
             l_Atrr = a_XmlDocument.CreateAttribute("Type");
 
-            l_Atrr.Value = lPadControlInfo.Type;
+            l_Atrr.Value = l_PadInputConfig.Type;
 
             l_touch_pad_node.Attributes.Append(l_Atrr);
 
 
             l_Atrr = a_XmlDocument.CreateAttribute("Product_ID");
 
-            l_Atrr.Value = lPadControlInfo.Product_ID;
+            l_Atrr.Value = l_PadInputConfig.Product_ID;
 
             l_touch_pad_node.Attributes.Append(l_Atrr);
                         
@@ -1066,7 +1067,7 @@ namespace Omega_Red.Tools
             {
                 // Regular Bindings
 
-                foreach (var item in lPadControlInfo.Bindings_Data)
+                foreach (var item in l_PadInputConfig.Bindings_Data)
                 {
                     var l_binding_node = a_XmlDocument.CreateElement("Binding");
 
@@ -1091,7 +1092,7 @@ namespace Omega_Red.Tools
 
                 // Force Feedback Bindings
 
-                foreach (var item in lPadControlInfo.Force_Feedback_Bindings_Data)
+                foreach (var item in l_PadInputConfig.Force_Feedback_Bindings_Data)
                 {
                     var l_binding_node = a_XmlDocument.CreateElement("Binding");
 
@@ -1122,13 +1123,6 @@ namespace Omega_Red.Tools
             l_Atrr = a_XmlDocument.CreateAttribute("Ports");
 
             l_Atrr.Value = m_ports.ToString();
-
-            a_PropertyNode.Attributes.Append(l_Atrr);
-
-            
-            l_Atrr = a_XmlDocument.CreateAttribute("ButtonUpdateCallback");
-
-            l_Atrr.Value = Marshal.GetFunctionPointerForDelegate(AdditionalControlManager.Instance.ButtonUpdateCallback).ToString();
 
             a_PropertyNode.Attributes.Append(l_Atrr);
 
@@ -1320,6 +1314,48 @@ namespace Omega_Red.Tools
         }
 
         public int TexturePackMode { set { m_TexturePackMode = value; } }
+               
+        public void setLimitFrame(bool a_value)
+        {
+            var l_Module = PCSXModuleManager.Instance.GPU;
 
+            if(l_Module != null)
+            {
+
+                XmlDocument l_XmlDocument = new XmlDocument();
+
+                XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+
+                l_XmlDocument.AppendChild(ldocNode);
+
+                XmlNode rootNode = l_XmlDocument.CreateElement("Config");
+
+                XmlNode l_PropertyNode = l_XmlDocument.CreateElement("IsFrameLimit");
+
+
+
+                var l_Atrr = l_XmlDocument.CreateAttribute("Value");
+
+                l_Atrr.Value = (a_value ? 1 : 0).ToString();
+
+                l_PropertyNode.Attributes.Append(l_Atrr);
+
+
+
+                rootNode.AppendChild(l_PropertyNode);
+
+                l_XmlDocument.AppendChild(rootNode);
+
+                using (var stringWriter = new StringWriter())
+                using (var xmlTextWriter = XmlWriter.Create(stringWriter))
+                {
+                    l_XmlDocument.WriteTo(xmlTextWriter);
+
+                    xmlTextWriter.Flush();
+
+                    l_Module.execute(stringWriter.GetStringBuilder().ToString());
+                }
+            }
+        }
     }
 }

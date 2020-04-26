@@ -140,7 +140,7 @@ namespace Omega_Red.Tools
         
         public void setLimitFrame(bool a_state)
         {
-            PCSXNative.Instance.setLimitFrame(a_state);
+            ModuleControl.Instance.setLimitFrame(a_state);
         }
 
         private bool m_isinitilized = false;

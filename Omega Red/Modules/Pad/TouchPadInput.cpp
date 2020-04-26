@@ -96,7 +96,7 @@ class TouchPadInput : public Device
 	// When there's no change, no need to do anything.
 	XINPUT_VIBRATION xInputVibration;
 
-	void* m_TouchPadHandler = nullptr;
+	GetTouchPadCallback m_getTouchPad = nullptr;
 
 public:
 	int index;
@@ -159,8 +159,8 @@ public:
 		active = 1;
 		AllocState();
 
-		if (initInfo->m_TouchPadHandler != nullptr)
-			m_TouchPadHandler = initInfo->m_TouchPadHandler;
+		if (initInfo->m_getTouchPad != nullptr)
+            m_getTouchPad = initInfo->m_getTouchPad;
 
 		return 1;
 	}
@@ -171,9 +171,9 @@ public:
 			return 0;
 		XINPUT_STATE state;
 
-		if (m_TouchPadHandler != nullptr)
+		if (m_getTouchPad != nullptr)
 		{
-			state = *((_XINPUT_STATE*)m_TouchPadHandler);
+            state = *((_XINPUT_STATE *)m_getTouchPad(index));
 
 			auto buttons = state.Gamepad.wButtons;
 			for (int i = 0; i < 15; i++) {

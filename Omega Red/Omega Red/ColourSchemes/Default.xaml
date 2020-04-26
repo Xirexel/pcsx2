@@ -91,5 +91,17 @@
     </LinearGradientBrush>
     <SolidColorBrush x:Key="GlyphBrush" Color="#444" />
 
+    <LinearGradientBrush x:Key="QuickSaveGradientBackgroundBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientBrush.GradientStops>
+            <GradientStopCollection>
+                <GradientStop Color="#ccffffff" Offset="0.67" />
+                <!--<GradientStop Color="#77000000" Offset="0.66" />-->
+                <!--<GradientStop Color="#99ffffff" Offset="0.6" />-->
+                <GradientStop Color="#88000000" Offset="0" />
+            </GradientStopCollection>
+        </GradientBrush.GradientStops>
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="QuickSaveMainBackgroundBrush" Color="#ccffffff" />
 
 </ResourceDictionary>

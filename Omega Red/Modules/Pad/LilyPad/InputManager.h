@@ -212,6 +212,9 @@ struct PadBindings
     int numFFBindings;
 };
 
+
+typedef void *(__stdcall *GetTouchPadCallback)(UINT32);
+
 class WndProcEater;
 
 struct InitInfo
@@ -229,7 +232,7 @@ struct InitInfo
 
     WndProcEater *hWndProc;
 
-	void* m_TouchPadHandler;
+	GetTouchPadCallback m_getTouchPad;
 #else
     // Linux equivalent to HWND
     Display *GSdsp;

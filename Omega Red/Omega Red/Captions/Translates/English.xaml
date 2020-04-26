@@ -61,7 +61,7 @@
     <sys:String x:Key="MediaOutputTypeStreamNotSupportingTitle">Freeware is not supported</sys:String>
     <sys:String x:Key="TouchPadScaleTitle">Touch pad scale:</sys:String>
     <sys:String x:Key="RenderingSchemaTitle">Rendering schema:</sys:String>
-    <sys:String x:Key="IsFXAATitle">Enable FXAA</sys:String>
+    <sys:String x:Key="IsFXAATitle">Enable PS2-FXAA &amp; PS1-Sharpen</sys:String>
     <sys:String x:Key="SavingTitle">Saving...</sys:String>
     <sys:String x:Key="BiosTipTitle">Bios is not accessible, try download by link:</sys:String>
     <sys:String x:Key="IsoTipTitle">Iso disc is not accessible, try download by links:</sys:String>
@@ -105,4 +105,6 @@
     <sys:String x:Key="TexturePackModeNoneTitle">Without texture pack</sys:String>
     <sys:String x:Key="TexturePackModeLoadTitle">Load texture pack</sys:String>
     <sys:String x:Key="TexturePackModeSaveTitle">Save textures</sys:String>
+    <sys:String x:Key="LowBatteryTitle">has low battery!!!</sys:String>
+    <sys:String x:Key="EmptyBatteryTitle">has empty battery!!!</sys:String>
 </ResourceDictionary>

@@ -34,7 +34,8 @@ public:
     virtual void enableScissor(BOOL aEnable) {}
     virtual void setScissor(INT32 aX, INT32 aY, INT32 aWidth, INT32 aHeight) {}
     virtual void setTexturePackMode(UINT32 a_TexturePackMode);
-    virtual void setTexturePacksPath(const std::wstring& a_RefTexturePackPath);
+    virtual void setTexturePacksPath(const std::wstring &a_RefTexturePackPath);
+    virtual void setFXAA(BOOL a_value) {}
 
     static GPUDevice *s_instance;
     virtual void setRawTexture(void *a_PtrMemory, const char *a_StringIDs) = 0;

@@ -62,7 +62,7 @@
                     <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ControlModeCollection}" Margin="5,0,5,5"/>
                 </StackPanel>
             </Border>
-            <Border>
+            <Border Visibility="{Binding VisibilityVideoRecordingState}">
                 <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
                     <TextBlock Text="{DynamicResource CaptureModeTitle}" TextAlignment="Center"  Margin="5"/>
                     <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding MediaOutputTypeCollection}" Margin="5,0,5,5"/>
@@ -76,7 +76,7 @@
                 </CheckBox>
                 </StackPanel>
             </Border>
-            <Border>
+            <Border Visibility="{Binding VisibilityVideoRecordingState}">
                 <StackPanel Margin="5" VerticalAlignment="Center" Visibility="{Binding VisibilityState}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <TextBlock Text="{DynamicResource CompressionQualityTitle}" TextAlignment="Center"  Margin="2,5"/>

@@ -62,6 +62,8 @@ namespace Omega_Red
 
             MediaRecorderManager.Instance.ShowWarningEvent += Instance_ShowWarningEvent;
 
+            PadControlManager.Instance.ShowWarningEvent += Instance_ShowWarningEvent;
+
             MediaRecorderManager.Instance.ShowInfoEvent += Instance_ShowInfoEvent;
 
 #if DEBUG
@@ -124,6 +126,8 @@ namespace Omega_Red
 
         public void loadModules()
         {
+            string l_warning = "";
+
             do
             {
 
@@ -133,31 +137,43 @@ namespace Omega_Red
 
                 if (!RTMPNative.Instance.isInit)
                 {
+                    l_warning = "RTMP is not nitialized!!!";
+
                     break;
                 }
 
                 if (!PCSX2ModuleManager.Instance.isInit)
                 {
+                    l_warning = "PCSX2 modules are not nitialized!!!";
+
                     break;
                 }
 
                 if (!PCSXModuleManager.Instance.isInit)
                 {
+                    l_warning = "PCSX modules are not nitialized!!!";
+
                     break;
                 }
 
                 if (!PCSX2LibNative.Instance.isInit)
                 {
+                    l_warning = "PCSX2 library is not nitialized!!!";
+
                     break;
                 }
 
                 if (!PPSSPPNative.Instance.isInit)
                 {
+                    l_warning = "PPSSPP library is not nitialized!!!";
+
                     break;
                 }
 
                 if (!PCSXNative.Instance.isInit)
                 {
+                    l_warning = "PCSX library is not nitialized!!!";
+
                     break;
                 }
 
@@ -165,7 +181,7 @@ namespace Omega_Red
                 {
                     PCSXNative.Instance.setModule(l_Module);
                 }
-
+                
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                 {
 
@@ -192,14 +208,7 @@ namespace Omega_Red
 
                         PCSX2Controller.Instance.updateInitilize();
 
-                        if (
-                        PCSX2ModuleManager.Instance.isInit &&
-                        PCSX2LibNative.Instance.isInit && 
-                        PPSSPPNative.Instance.isInit &&
-                        PCSXNative.Instance.isInit &&
-                        PCSXModuleManager.Instance.isInit
-                        )
-                            LockScreenManager.Instance.hide();
+                        LockScreenManager.Instance.hide();
                     });
 
                     ModuleControl.Instance.initPCSX();
@@ -218,6 +227,16 @@ namespace Omega_Red
                 Capture.MediaStream.Instance.setIsConnectedFunc(RTMPNative.Instance.IsConnected);
 
             } while (false);
+
+            if(!string.IsNullOrWhiteSpace(l_warning))
+            {
+                LockScreenManager.Instance.hide();
+
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    Instance_ShowWarningEvent(l_warning);
+                });
+            }
         }
         
         private void Window_Loaded(object sender, RoutedEventArgs e)

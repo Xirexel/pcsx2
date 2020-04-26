@@ -637,6 +637,40 @@
         </DataTemplate.Triggers>
     </DataTemplate>
 
+    <DataTemplate x:Key="QuickStateInfoItem">
+        <Grid Height="90" Width="{DynamicResource ItemWidth}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <Border Margin="5"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}">
+                <Image Margin="5" RenderOptions.BitmapScalingMode="Fant" x:Name="m_icon" Stretch="Uniform" Source="{Binding ImageSource}"/>
+            </Border>
+
+            <StackPanel Margin="5,0" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Left" x:Name="m_Onlinesave_StackPanel">
+                <TextBlock Text="{Binding Date}" TextWrapping="Wrap" />
+                <TextBlock x:Name="mDurationTitle" Visibility="Visible"  Margin="0, 3, 0 , 0" Text="{DynamicResource DurationTitle}" />
+                <TextBlock Text="{Binding Duration}" />
+            </StackPanel>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
+                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/None.png" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Duration}" Value="{x:Null}">
+                <Setter TargetName="mDurationTitle" Property="Visibility" Value="Hidden"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
     <DataTemplate x:Key="ScreenshotInfoItem">
         <Grid Height="105" Width="{DynamicResource ImageItemWidth}">
             <Grid.ColumnDefinitions>

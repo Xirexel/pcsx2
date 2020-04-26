@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace Omega_Red.Managers
 {
@@ -11,33 +12,78 @@ namespace Omega_Red.Managers
 
     class AdditionalControlManager
     {
+        public event Action<ControlEnum, IPadControl> ChangeControlEvent;
+
+        public enum ControlEnum
+        {
+            QuickSavePanel
+        }
+
+
+        private bool m_button_is_pressed = false;
+
         private static AdditionalControlManager m_Instance = null;
 
         public static AdditionalControlManager Instance { get { if (m_Instance == null) m_Instance = new AdditionalControlManager(); return m_Instance; } }
-
-        public ButtonUpdateCallbackDelegate ButtonUpdateCallback = null;
-
-        private AdditionalControlManager()
-        {
-            ButtonUpdateCallback = ButtonUpdateCallbackInner;
-        }
+        
+        private AdditionalControlManager(){}
 
         const ushort XINPUT_GAMEPAD_LEFT_SHOULDER = 0x0100;
 
         const ushort XINPUT_GAMEPAD_RIGHT_SHOULDER = 0x0200;
 
 
-        private void ButtonUpdateCallbackInner(ushort aButtons)
+        public bool ButtonCheck(ushort aButtons, IPadControl aPadControl)
         {
-            if((aButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) > 0)
+            bool l_result = false;
+
+            if (((aButtons & Util.XInputNative.XINPUT_GAMEPAD_START) != 0) &&
+                ((aButtons & ~Util.XInputNative.XINPUT_GAMEPAD_START) != 0))
             {
-                PCSX2Controller.Instance.quickSave();
+
+
+                if ((aButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) > 0)
+                {
+                    if(!m_button_is_pressed)
+                    {
+                        PCSX2Controller.Instance.quickSave();
+
+                        l_result = true;
+
+                        m_button_is_pressed = true;
+                    }
+                }
+                else
+                if ((aButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) > 0)
+                {
+                    if (!m_button_is_pressed)
+                    {
+                        if (PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Started)
+                        {
+                            if (ChangeControlEvent != null)
+                            {
+                                Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, (System.Threading.ThreadStart)delegate ()
+                                {
+                                    ChangeControlEvent(ControlEnum.QuickSavePanel, aPadControl);
+
+                                    PCSX2Controller.Instance.PlayPause();
+                                });
+                            }
+
+                            l_result = true;
+
+                            m_button_is_pressed = true;
+                        }
+                    }
+                }
+                else
+                    m_button_is_pressed = false;
             }
             else
-            if ((aButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) > 0)
-            {
-                PCSX2Controller.Instance.quickLoad();
-            }
+                m_button_is_pressed = false;
+
+
+            return l_result;
         }
     }
 }

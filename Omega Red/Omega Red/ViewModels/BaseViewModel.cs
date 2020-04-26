@@ -134,6 +134,8 @@ namespace Omega_Red.ViewModels
 
                 }, () => {
                     return App.m_AppType == App.AppType.Screen;
+                }, (a_item) => {
+                    Manager.registerItem(a_item);
                 });
             }
         }

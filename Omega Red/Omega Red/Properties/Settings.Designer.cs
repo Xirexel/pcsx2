@@ -169,7 +169,7 @@ namespace Omega_Red.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Blue")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Black")]
         public string ColourSchema {
             get {
                 return ((string)(this["ColourSchema"]));

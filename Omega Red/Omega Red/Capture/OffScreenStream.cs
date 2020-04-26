@@ -41,25 +41,8 @@ namespace Omega_Red.Capture
             try
             {
                 var l_ExecutingAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-
-                AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
-                {
-                    using (var lStreamManagerToCSharpProxyStream = l_ExecutingAssembly.GetManifestResourceStream("Omega_Red.Modules.x86.CaptureManagerToCSharpProxy.dll"))
-                    {
-                        if (lStreamManagerToCSharpProxyStream == null)
-                            return null;
-
-                        byte[] lStreamManagerToCSharpProxybuffer = new byte[(int)lStreamManagerToCSharpProxyStream.Length];
-
-                        lStreamManagerToCSharpProxyStream.Read(lStreamManagerToCSharpProxybuffer, 0, lStreamManagerToCSharpProxybuffer.Length);
-
-                        var lStreamManagerToCSharpProxyAssembly = Assembly.Load(lStreamManagerToCSharpProxybuffer);
-
-                        return lStreamManagerToCSharpProxyAssembly;
-                    }
-                };
-
-                using (var lStream = l_ExecutingAssembly.GetManifestResourceStream("Omega_Red.Modules.x86.MediaStream.dll"))
+                
+                using (var lStream = l_ExecutingAssembly.GetManifestResourceStream("Omega_Red.Modules.AnyCPU.MediaStream.dll"))
                 {
                     if (lStream == null)
                         return;

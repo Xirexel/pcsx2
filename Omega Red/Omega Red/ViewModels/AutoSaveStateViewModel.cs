@@ -18,6 +18,16 @@ namespace Omega_Red.ViewModels
         public AutoSaveStateViewModel()
         {
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+
+            SaveStateManager.Instance.RefreshEvent += Instance_RefreshEvent;
+        }
+
+        private void Instance_RefreshEvent()
+        {
+            VisibilityState =
+                (m_Status == PCSX2Controller.StatusEnum.Initilized || m_Status == PCSX2Controller.StatusEnum.Stopped)
+                && !SaveStateManager.Instance.AutoSaveCollection.IsEmpty ?
+                Visibility.Visible : Visibility.Collapsed;
         }
 
         private Visibility mVisibilityState = Visibility.Collapsed;

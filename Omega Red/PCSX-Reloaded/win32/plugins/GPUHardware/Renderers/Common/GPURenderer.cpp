@@ -58,6 +58,7 @@ void GPURenderer::setOrtho(double aLeft, double aRight, double aBottom, double a
 
 void GPURenderer::draw(DWORD aDrawMode, void* aPtrVertexes, BOOL aIsTextured)
 {
+    m_dev->setFXAA(m_fxaa);
 	m_dev->draw(aDrawMode, aPtrVertexes, aIsTextured);
 }
 
@@ -104,4 +105,12 @@ void GPURenderer::setTexturePacksMode(UINT32 a_TexturePackMode)
 void GPURenderer::setTexturePacksPath(const std::wstring &a_RefTexturePacksPath)
 {
     m_dev->setTexturePacksPath(a_RefTexturePacksPath);
+}
+
+void GPURenderer::setFXAA(BOOL a_value)
+{
+    if (a_value == FALSE)
+        m_fxaa = false;
+    else
+        m_fxaa = true;
 }

@@ -611,6 +611,8 @@ void CALLBACK GPUwriteStatus(uint32_t gdata)
 
 		bDisplayNotSet = TRUE;
 
+        iDrawnSomething = 1;
+
 		if (!(PSXDisplay.Interlaced))
 		{
 			updateDisplay();
@@ -839,6 +841,8 @@ STARTVRAM:
 
 	if (iDataWriteMode == DR_VRAMTRANSFER)
 	{
+        BOOL bFinished = FALSE;
+
 		// make sure we are in vram
 		while (VRAMWrite.ImagePtr >= psxVuw_eom)
 			VRAMWrite.ImagePtr -= iGPUHeight * 1024;
@@ -889,9 +893,14 @@ STARTVRAM:
 			VRAMWrite.RowsRemaining = VRAMWrite.Width;
 			VRAMWrite.ColsRemaining--;
 			VRAMWrite.ImagePtr += 1024 - VRAMWrite.Width;
+
+			bFinished = TRUE;
 		}
 
 		FinishedVRAMWrite();
+
+        if (bFinished)
+            iDrawnSomething = 1;
 	}
 
 ENDVRAM:

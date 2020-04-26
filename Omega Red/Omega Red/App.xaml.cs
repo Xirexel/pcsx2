@@ -40,17 +40,37 @@ namespace Omega_Red
 
         public static AppType m_AppType = AppType.Screen;
 
+        public static bool OffVideoRecording { get; set; }
+
+        public static bool OffPPSSPP { get; set; }
+
         public const string m_MainFolderName = "OmegaRed";
-               
+
+        private static string m_MainStoreDirectoryPath = "";
+
+        public static string MainStoreDirectoryPath { get {
+
+                if(string.IsNullOrWhiteSpace(m_MainStoreDirectoryPath))
+                {
+                    var lDirectory = Path.GetDirectoryName(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+
+                    var lMainDirInfo = Directory.GetParent(lDirectory);
+
+                    lMainDirInfo = Directory.GetParent(lMainDirInfo.FullName);
+
+                    m_MainStoreDirectoryPath = lMainDirInfo.FullName;
+                }
+
+                return m_MainStoreDirectoryPath;
+            } }
+
         public App()
         {
-            var lDirectory = Path.GetDirectoryName(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+            OffVideoRecording = false;
 
-            var lMainDirInfo = Directory.GetParent(lDirectory);
+            OffPPSSPP = false;
 
-            lMainDirInfo = Directory.GetParent(lMainDirInfo.FullName);
-
-            if (File.Exists(lMainDirInfo.FullName + @"\Config.xml"))
+            if (File.Exists(MainStoreDirectoryPath + @"\Config.xml"))
             {
                 if (File.Exists(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath))
                     File.Delete(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
@@ -61,7 +81,7 @@ namespace Omega_Red
                     System.IO.Directory.CreateDirectory(lMainDirectory);
                 }
 
-                File.Copy(lMainDirInfo.FullName + @"\Config.xml", ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+                File.Copy(MainStoreDirectoryPath + @"\Config.xml", ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
             }
 
             Startup += (object sender, StartupEventArgs e)=>
@@ -79,6 +99,14 @@ namespace Omega_Red
 
                         this.StartupUri = new Uri("pack://application:,,,/Omega Red;component/OffScreenWindow.xaml");
                     }
+                    else if (e.Args[i] == "/OffVideoRecording")
+                    {
+                        OffVideoRecording = true;
+                    }
+                    else if (e.Args[i] == "/OffPPSSPP")
+                    {
+                        OffPPSSPP = true;
+                    }
                 }
             };
 
@@ -87,6 +115,8 @@ namespace Omega_Red
         
         private void Application_Exit(object sender, ExitEventArgs e)
         {
+            Managers.PadControlManager.Instance.stopTimer();
+            
             saveCopy();
 
             m_is_exit = true;
@@ -126,18 +156,12 @@ namespace Omega_Red
 
         public static void saveCopy()
         {
-            var lDirectory = Path.GetDirectoryName(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
-
-            var lMainDirInfo = Directory.GetParent(lDirectory);
-
-            lMainDirInfo = Directory.GetParent(lMainDirInfo.FullName);
-
-            if (File.Exists(lMainDirInfo.FullName + @"\Config.xml"))
+            if (File.Exists(MainStoreDirectoryPath + @"\Config.xml"))
             {
-                File.Delete(lMainDirInfo.FullName + @"\Config.xml");
+                File.Delete(MainStoreDirectoryPath + @"\Config.xml");
             }
 
-            File.Copy(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath, lMainDirInfo.FullName + @"\Config.xml");
+            File.Copy(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath, MainStoreDirectoryPath + @"\Config.xml");
         }
     }
 }

@@ -41,7 +41,7 @@ DWORD          dwFrameRateTicks=16;
 float          fFrameRate;
 int            iFrameLimit;
 BOOL           bUseFrameLimit=FALSE;
-BOOL           bUseFrameSkip=0;
+BOOL           bUseFrameSkip=FALSE;
 DWORD          dwLaceCnt=0;
 
 LARGE_INTEGER  liCPUFrequency;

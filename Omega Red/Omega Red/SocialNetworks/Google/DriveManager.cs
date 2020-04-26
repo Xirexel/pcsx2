@@ -375,52 +375,111 @@ namespace Omega_Red.SocialNetworks.Google
             a_list.Add(l_MemoryCardInfo);
         }
 
-        public async Task startUploadingSStateAsync(string a_file_path, FrameworkElement a_banner_grid, string a_description)
+        public void startUploadingSState(string a_file_path, FrameworkElement a_banner_grid, string a_description, Action<bool> a_callback)
         {
-            await startUploadingAsync(
+            TextBlock lUploadProgressTitleTextBlock = a_banner_grid.FindName("mUploadProgressTitleTextBlock") as TextBlock;
+
+            TextBlock lProgressTextBlock = a_banner_grid.FindName("mProgressTextBlock") as TextBlock;
+
+            ThreadStart l_uploadThreadStart = new ThreadStart(() =>
+            {
+                startUploading(
                 a_file_path,
                 a_banner_grid,
+                lUploadProgressTitleTextBlock,
+                lProgressTextBlock,
                 a_description,
                 getSStates,
-                (Name, Description) => {
+                (Name, Description) =>
+                {
+                    if (a_callback != null)
+                    {
+                        a_callback(true);
+                    }
+
                     addSaveState(m_Current_online_savings, Name, Description);
                 });
+                
+            });
+            
+            Thread l_uploadThread = new Thread(l_uploadThreadStart);
+
+            l_uploadThread.Start();
         }
 
-        public async Task startUploadingMemoryCardAsync(string a_disk_serial, string a_file_path, FrameworkElement a_banner_grid, string a_description)
+        public void startUploadingMemoryCard(string a_disk_serial, string a_file_path, FrameworkElement a_banner_grid, string a_description, Action<bool> a_callback)
         {
             IList<MemoryCardInfo> l_Current_online_MemoryCards = DriveManager.Instance.getMemoryCardList(a_disk_serial);
 
             if (l_Current_online_MemoryCards == null)
                 return;
+                       
+            TextBlock lUploadProgressTitleTextBlock = a_banner_grid.FindName("mUploadProgressTitleTextBlock") as TextBlock;
 
-            await startUploadingAsync(
+            TextBlock lProgressTextBlock = a_banner_grid.FindName("mProgressTextBlock") as TextBlock;
+
+            ThreadStart l_uploadThreadStart = new ThreadStart(() =>
+            {
+                startUploading(
                 a_file_path,
                 a_banner_grid,
+                lUploadProgressTitleTextBlock,
+                lProgressTextBlock,
                 a_description,
                 getMemoryCards,
-                (Name, Description) => {
+                (Name, Description) =>
+                {
+                    if (a_callback != null)
+                    {
+                        a_callback(true);
+                    }
+
                     addMemoryCard(l_Current_online_MemoryCards, Name, Description);
                 });
+
+            });
+
+            Thread l_uploadThread = new Thread(l_uploadThreadStart);
+
+            l_uploadThread.Start();
         }
 
 
-        public async Task startUploadingDiscAsync(string a_file_path, FrameworkElement a_banner_grid, string a_description)
+        public void startUploadingDisc(string a_file_path, FrameworkElement a_banner_grid, string a_description, Action<bool> a_callback)
         {
-            await startUploadingAsync(
+
+            TextBlock lUploadProgressTitleTextBlock = a_banner_grid.FindName("mUploadProgressTitleTextBlock") as TextBlock;
+
+            TextBlock lProgressTextBlock = a_banner_grid.FindName("mProgressTextBlock") as TextBlock;
+
+            ThreadStart l_uploadThreadStart = new ThreadStart(() =>
+            {
+                startUploading(
                 a_file_path,
                 a_banner_grid,
+                lUploadProgressTitleTextBlock,
+                lProgressTextBlock,
                 a_description,
                 getDiscs,
                 (Name, Description) => {
-
+                    if (a_callback != null)
+                    {
+                        a_callback(true);
+                    }
                 });
+
+            });
+
+            Thread l_uploadThread = new Thread(l_uploadThreadStart);
+
+            l_uploadThread.Start();
         }
 
-
-        private async Task startUploadingAsync(
+        private void startUploading(
             string a_file_path,
             FrameworkElement a_banner_grid,
+            TextBlock a_UploadProgressTitleTextBlock,
+            TextBlock a_ProgressTextBlock,
             string a_description,
             getDriveDirectoryDel a_getDriveDirectoryDel,
             Action<string, string> a_addAction)
@@ -437,7 +496,7 @@ namespace Omega_Red.SocialNetworks.Google
             if (a_getDriveDirectoryDel == null)
                 return;
 
-            using (var service = new DriveService(l_Initializer))
+            using (var service = new DriveService(l_Initializer) { HttpClient = { Timeout = TimeSpan.FromSeconds(15) } })
             {
                 var lDirectory = getOmegaRedDirectory(service);
 
@@ -465,26 +524,27 @@ namespace Omega_Red.SocialNetworks.Google
 
                     FileList filesFeed = list.Execute();
 
-                    a_banner_grid.Visibility = Visibility.Visible;
+                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                    {
+                        a_banner_grid.Visibility = Visibility.Visible;
 
-                    var lUploadProgressTitleTextBlock = a_banner_grid.FindName("mUploadProgressTitleTextBlock") as TextBlock;
+                        a_UploadProgressTitleTextBlock.Visibility = Visibility.Visible;
+                    });
 
-                    lUploadProgressTitleTextBlock.Visibility = Visibility.Visible;
 
                     if (filesFeed.Files.Count == 0)
                     {
-                        await createFile(service, a_file_path, a_description, l_DriveDirectory.Id, a_banner_grid, lUploadProgressTitleTextBlock, a_addAction);
+                        createFile(service, a_file_path, a_description, l_DriveDirectory.Id, a_banner_grid, a_UploadProgressTitleTextBlock, a_ProgressTextBlock, a_addAction);
                     }
                     else
-                        await updateFile(service, filesFeed.Files[0], a_file_path, a_description, l_DriveDirectory.Id, a_banner_grid, lUploadProgressTitleTextBlock, a_addAction);
+                        updateFile(service, filesFeed.Files[0], a_file_path, a_description, l_DriveDirectory.Id, a_banner_grid, a_UploadProgressTitleTextBlock, a_ProgressTextBlock, a_addAction);
                 }
                 else
                 {
-                    MessageBox.Show("The file does not exist.", "404");
                 }
             }
         }
-
+        
         public async Task startDownloadingMemoryCardAsync(string a_file_path, FrameworkElement a_banner_grid)
         {
             await startDownloadingAsync(a_file_path, a_banner_grid, getMemoryCards, Settings.Default.MemoryCardsFolder);
@@ -515,7 +575,7 @@ namespace Omega_Red.SocialNetworks.Google
             if (a_getDriveDirectoryDel == null)
                 return;
 
-            using (var service = new DriveService(l_Initializer))
+            using (var service = new DriveService(l_Initializer) { HttpClient = { Timeout = TimeSpan.FromSeconds(15) } })
             {
                 var lDirectory = getOmegaRedDirectory(service);
 
@@ -772,17 +832,20 @@ namespace Omega_Red.SocialNetworks.Google
             return lfolder;
         }
 
-        private Task<IUploadProgress> createFile(
+        private void createFile(
             DriveService service,
             string a_file_path,
             string a_description,
             string a_parent_id,
             FrameworkElement a_banner_grid,
             TextBlock a_title_textblock,
+            TextBlock a_ProgressTextBlock,
             Action<string, string> a_addAction)
         {
-
-            var lProgressTextBlock = a_banner_grid.FindName("mProgressTextBlock") as TextBlock;
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                a_ProgressTextBlock.Text = "";
+            });
 
 
             File body = new File();
@@ -792,28 +855,41 @@ namespace Omega_Red.SocialNetworks.Google
             body.Parents = new List<string>() { a_parent_id };
 
             byte[] byteArray = System.IO.File.ReadAllBytes(a_file_path);
-            System.IO.MemoryStream stream = new System.IO.MemoryStream(byteArray);
-            try
+
+            using (var stream = new System.IO.MemoryStream(byteArray))
             {
-                var request = service.Files.Create(body, stream, GetMimeType(a_file_path));
 
-                request.ChunkSize = ResumableUpload.MinimumChunkSize;
-
-                request.ProgressChanged += (obj) =>
+                try
                 {
-                    switch (obj.Status)
-                    {
-                        case UploadStatus.Starting:
-                        case UploadStatus.Uploading:
-                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                            {
-                                lProgressTextBlock.Text = string.Format("{0:0.00} %", (float)obj.BytesSent * 100.0 / (float)byteArray.Length);
-                            });
-                            break;
-                        case UploadStatus.Completed:
-                            {
-                                a_addAction(body.Name, body.Description);
+                    var request = service.Files.Create(body, stream, GetMimeType(a_file_path));
 
+                    request.ChunkSize = ResumableUpload.MinimumChunkSize;
+
+                    request.ProgressChanged += (obj) =>
+                    {
+                        switch (obj.Status)
+                        {
+                            case UploadStatus.Starting:
+                            case UploadStatus.Uploading:
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                {
+                                    a_ProgressTextBlock.Text = string.Format("{0:0.00} %", (float)obj.BytesSent * 100.0 / (float)byteArray.Length);
+                                });
+                                break;
+                            case UploadStatus.Completed:
+                                {
+                                    a_addAction(body.Name, body.Description);
+
+                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                    {
+                                        a_banner_grid.Visibility = Visibility.Collapsed;
+
+                                        a_title_textblock.Visibility = Visibility.Collapsed;
+
+                                    });
+                                }
+                                break;
+                            default:
                                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                                 {
                                     a_banner_grid.Visibility = Visibility.Collapsed;
@@ -821,49 +897,30 @@ namespace Omega_Red.SocialNetworks.Google
                                     a_title_textblock.Visibility = Visibility.Collapsed;
 
                                 });
-                            }
-                            break;
-                        default:
-                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                            {
-                                a_banner_grid.Visibility = Visibility.Collapsed;
+                                break;
+                        }
+                    };
 
-                                a_title_textblock.Visibility = Visibility.Collapsed;
-
-                            });
-                            break;
-                    }
-                };
-
-                request.ResponseReceived += (File obj) =>
-                {
-                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                    request.ResponseReceived += (File obj) =>
                     {
-                        a_banner_grid.Visibility = Visibility.Collapsed;
-                    });
-                };
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                        {
+                            a_banner_grid.Visibility = Visibility.Collapsed;
+                        });
+                    };
 
-                var task = request.UploadAsync();
+                    var task = request.UploadAsync();
 
-                task.ContinueWith(t =>
+                    if (task != null)
+                        task.Wait();
+                }
+                catch (Exception)
                 {
-                }, TaskContinuationOptions.NotOnRanToCompletion);
-                task.ContinueWith(t =>
-                {
-                    stream.Dispose();
-                });
-
-                return task;
+                }
             }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message, "Error Occured");
-            }
-
-            return null;
         }
 
-        private Task<IUploadProgress> updateFile(
+        private void updateFile(
             DriveService service,
             File originalFile,
             string a_file_path,
@@ -871,12 +928,13 @@ namespace Omega_Red.SocialNetworks.Google
             string a_parent_id,
             FrameworkElement a_banner_grid,
             TextBlock a_title_textblock,
+            TextBlock a_ProgressTextBlock,
             Action<string, string> a_addAction)
         {
-
-            var lProgressTextBlock = a_banner_grid.FindName("mProgressTextBlock") as TextBlock;
-
-            lProgressTextBlock.Text = "";
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                a_ProgressTextBlock.Text = "";
+            });
 
             File body = new File();
             body.Name = System.IO.Path.GetFileName(a_file_path);
@@ -885,74 +943,64 @@ namespace Omega_Red.SocialNetworks.Google
 
 
             byte[] byteArray = System.IO.File.ReadAllBytes(a_file_path);
-            System.IO.MemoryStream stream = new System.IO.MemoryStream(byteArray);
-            try
+
+            using (var stream = new System.IO.MemoryStream(byteArray))
             {
-                var request = service.Files.Update(body, originalFile.Id, stream, GetMimeType(a_file_path));
-
-                request.ChunkSize = ResumableUpload.MinimumChunkSize;
-
-                request.ProgressChanged += (Upload.IUploadProgress obj) =>
+                try
                 {
-                    switch (obj.Status)
+                    var request = service.Files.Update(body, originalFile.Id, stream, GetMimeType(a_file_path));
+
+                    request.ChunkSize = ResumableUpload.MinimumChunkSize;
+
+                    request.ProgressChanged += (Upload.IUploadProgress obj) =>
                     {
-                        case UploadStatus.Starting:
-                        case UploadStatus.Uploading:
-                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                            {
-                                lProgressTextBlock.Text = string.Format("{0:0.00} %", (float)obj.BytesSent * 100.0 / (float)byteArray.Length);
-                            });
-                            break;
-                        case UploadStatus.Completed:
-                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                            {
-                                a_addAction(body.Name, body.Description);
+                        switch (obj.Status)
+                        {
+                            case UploadStatus.Starting:
+                            case UploadStatus.Uploading:
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                {
+                                    a_ProgressTextBlock.Text = string.Format("{0:0.00} %", (float)obj.BytesSent * 100.0 / (float)byteArray.Length);
+                                });
+                                break;
+                            case UploadStatus.Completed:
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                {
+                                    a_addAction(body.Name, body.Description);
 
-                                a_banner_grid.Visibility = Visibility.Collapsed;
+                                    a_banner_grid.Visibility = Visibility.Collapsed;
 
-                                a_title_textblock.Visibility = Visibility.Collapsed;
-                            });
-                            break;
-                        default:
-                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                            {
-                                a_banner_grid.Visibility = Visibility.Collapsed;
+                                    a_title_textblock.Visibility = Visibility.Collapsed;
+                                });
+                                break;
+                            default:
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                {
+                                    a_banner_grid.Visibility = Visibility.Collapsed;
 
-                                a_title_textblock.Visibility = Visibility.Collapsed;
-                            });
-                            break;
-                    }
-                };
+                                    a_title_textblock.Visibility = Visibility.Collapsed;
+                                });
+                                break;
+                        }
+                    };
 
-                request.ResponseReceived += (File obj) =>
-                {
-                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                    request.ResponseReceived += (File obj) =>
                     {
-                        a_banner_grid.Visibility = Visibility.Collapsed;
-                    });
-                };
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                        {
+                            a_banner_grid.Visibility = Visibility.Collapsed;
+                        });
+                    };
 
-                var task = request.UploadAsync();
+                    var task = request.UploadAsync();
 
-                task.ContinueWith(t =>
+                    if (task != null)
+                        task.Wait();
+                }
+                catch (Exception)
                 {
-                    // NotOnRanToCompletion - this code will be called if the upload fails
-                    Console.WriteLine("Upload Failed. " + t.Exception);
-                }, TaskContinuationOptions.NotOnRanToCompletion);
-                task.ContinueWith(t =>
-                {
-                    stream.Dispose();
-                });
-
-
-                return task;
+                }
             }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message, "Error Occured");
-            }
-
-            return null;
         }
 
         private async Task downloadFile(

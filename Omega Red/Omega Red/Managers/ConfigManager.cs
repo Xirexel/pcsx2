@@ -375,8 +375,9 @@ namespace Omega_Red.Managers
 
                 mTexturePackModeView.MoveCurrentToPosition(-1);
                 mTexturePackModeView.MoveCurrentToPosition((int)l_TexturePackMode);
-                
 
+
+                PadControlManager.Instance.reset();
             });
         }
 

@@ -32,6 +32,7 @@ public:
 	virtual void setDepthFunc(UINT32 aFunc)override;
 	virtual void enableScissor(BOOL aEnable)override;
 	virtual void setScissor(INT32 aX, INT32 aY, INT32 aWidth, INT32 aHeight)override;
+    virtual void setFXAA(BOOL a_value)override;
 
 protected:
     virtual void setRawTexture(void *a_PtrMemory, const char *a_StringIDs) override;
@@ -45,7 +46,8 @@ private:
 	BOOL m_blend_enabled = FALSE;
 	D3D11_BLEND_OP m_color_blend_op;
 	D3D11_BLEND_OP m_alpha_blend_op;
-	BOOL m_IsTextured;
+    BOOL m_IsTextured;
+    BOOL m_fxaa;
 	BOOL m_vertical_flip_state = FALSE;
 	UINT m_Height;
     UINT m_Width;
@@ -60,7 +62,6 @@ private:
 	CComPtrCustom<ID3D11InputLayout> m_InputLayout;
 	CComPtrCustom<ID3D11RasterizerState> m_RasterizerState;
 	CComPtrCustom<ID3D11VertexShader> m_VertexShader;
-	CComPtrCustom<ID3D11SamplerState> m_SamplerState;
 	CComPtrCustom<ID3D11DepthStencilState> m_DepthStencilState;
 	CComPtrCustom<ID3D11Buffer> m_directx_projection_buffer;
 	CComPtrCustom<ID3D11Buffer> m_alpha_fun_buffer;
@@ -71,7 +72,9 @@ private:
 	
 	CComPtrCustom<ID3D11DepthStencilView> m_DSTV;
 
+    CComPtrCustom<ID3D11PixelShader> m_SimplePixelShader_textured;
 	CComPtrCustom<ID3D11PixelShader> m_SimplePixelShader;
+    CComPtrCustom<ID3D11PixelShader> m_SimplePixelShader_sharpen;
 	CComPtrCustom<ID3D11PixelShader> m_SimplePixelShader_none_textured;
 	CComPtrCustom<ID3D11Buffer> m_DrawVertexBuffer;
 
@@ -86,5 +89,7 @@ private:
 	void Flip();
 
 	void setBlendState(ID3D11BlendState* aPtrBlendState);
+
+
 };
 

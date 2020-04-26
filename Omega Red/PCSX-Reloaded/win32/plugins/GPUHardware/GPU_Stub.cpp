@@ -98,6 +98,8 @@ EXPORT_C glTexImage2DStub(GLenum target, GLint level, GLint internalformat, GLsi
 	if (s_gpu != NULL)
 	{
 		s_gpu->addTexture(s_currentTexName, internalformat, width, height, border, format, type, pixels);
+
+        s_gpu->setTexture(s_currentTexName);
 	}
 }
 

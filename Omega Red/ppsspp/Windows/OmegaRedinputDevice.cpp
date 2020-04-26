@@ -14,7 +14,7 @@
 
 // Utilities to dynamically load XInput. Adapted from SDL.
 
-extern void* g_TouchPadHandler;
+extern GetTouchPadCallback g_getTouchPad;
 
 #ifndef XUSER_MAX_COUNT
 #define XUSER_MAX_COUNT 4
@@ -159,12 +159,9 @@ int OmegaRedinputDevice::UpdateState() {
 		if (check_delay[i]-- > 0)
 			continue;
 		
-		if (g_TouchPadHandler != nullptr) {
-            state = *((_XINPUT_STATE *)g_TouchPadHandler);
+		if (g_getTouchPad != nullptr) {
+            state = *((_XINPUT_STATE *)g_getTouchPad(0));
 			UpdatePad(i, state);
-
-			if(state.dwPacketNumber != -1)
-				anySuccess = true;
 		} else {
 			check_delay[i] = 30;
 		}

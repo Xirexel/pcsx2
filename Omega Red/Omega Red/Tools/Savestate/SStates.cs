@@ -99,6 +99,8 @@ namespace Omega_Red.Tools.Savestate
 
             l_result.Visibility = System.Windows.Visibility.Visible;
 
+            l_result.Item = null;
+
             using (FileStream zipToOpen = new FileStream(a_file_path, FileMode.Open))
             {
                 using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))

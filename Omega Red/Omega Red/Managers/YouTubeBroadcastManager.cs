@@ -64,5 +64,9 @@ namespace Omega_Red.Managers
 
             } while (false);
         }
+
+        public void registerItem(object a_Item)
+        {
+        }
     }
 }

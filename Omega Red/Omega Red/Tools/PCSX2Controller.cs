@@ -330,10 +330,15 @@ namespace Omega_Red.Tools
 
         public void quickLoad()
         {
-            var lSaveState = SaveStateManager.Instance.quickLoad();
+            if(m_Status == StatusEnum.Started)
+            {
 
-            if (lSaveState != null)
-                PCSX2Controller.Instance.loadState(lSaveState);
+
+                //var lSaveState = SaveStateManager.Instance.quickLoad();
+
+                //if (lSaveState != null)
+                //    PCSX2Controller.Instance.loadState(lSaveState);
+            }
         }
 
         public void saveState(SaveStateInfo a_SaveStateInfo)
@@ -732,8 +737,13 @@ namespace Omega_Red.Tools
                     }
                     else
                     {
+                        string l_filepath = m_IsoInfo.FilePath;
+
+                        if(!string.IsNullOrWhiteSpace(m_tempFile) && File.Exists(m_tempFile))
+                            l_filepath += "|--state=" + m_tempFile;
+
                         PPSSPPControl.Instance.Launch(
-                            m_IsoInfo.FilePath + "|--state=" + m_tempFile,
+                            l_filepath,
                             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\"+ App .m_MainFolderName + @"\",
                         ()=> {
                             LockScreenManager.Instance.hide();

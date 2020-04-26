@@ -3,7 +3,7 @@
 #include "LilyPad\LilyPad.h"
 
 static LilyPad s_LilyPad;
-void *ptrButtonUpdateCallback = nullptr;
+
 void *ptrVibrationCallback = nullptr;
 
 
@@ -39,22 +39,6 @@ void Pad::execute(const wchar_t* a_command, wchar_t** a_result)
 					{
 						l_ports = l_Attribute.as_uint(l_ports);
 					}
-
-					l_Attribute = l_ChildNode.attribute(L"ButtonUpdateCallback");
-
-                    if (!l_Attribute.empty()) {
-
-						auto l_value = l_Attribute.as_llong();
-
-                        if (l_value != 0) {
-                            try {
-
-                                ptrButtonUpdateCallback = (void *)l_value;
-
-                            } catch (...) {
-                            }
-                        }
-                    }
 
                     l_Attribute = l_ChildNode.attribute(L"VibrationCallback");
 

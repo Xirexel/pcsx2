@@ -170,12 +170,6 @@ public:
             return 0;
         }
 
-		if ((state.Gamepad.wButtons & XINPUT_GAMEPAD_START) &&
-            (state.Gamepad.wButtons & ~XINPUT_GAMEPAD_START)) {
-            if (ptrButtonUpdateCallback != nullptr)
-                ((ButtonUpdateCallback)ptrButtonUpdateCallback)(state.Gamepad.wButtons);
-		}
-
 
         SCP_EXTN pressure;
         if (!pXInputGetExtended || (ERROR_SUCCESS != pXInputGetExtended(index, &pressure))) {

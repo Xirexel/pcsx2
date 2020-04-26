@@ -254,14 +254,15 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Omega Red\bin\$(Configuration)\$(TargetName)$(TargetExt)</OutputFile>
       <LargeAddressAware>true</LargeAddressAware>
       <BaseAddress>
       </BaseAddress>
       <AdditionalOptions>/ignore:4049 /ignore:4217 %(AdditionalOptions)</AdditionalOptions>
       <ModuleDefinitionFile>PPSSPPWindows.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <AdditionalLibraryDirectories>$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>../Windows/git-version-gen.cmd</Command>
@@ -395,8 +396,9 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>Winmm.lib;Ws2_32.lib;opengl32.lib;dsound.lib;glu32.lib;comctl32.lib;d3d9.lib;dxguid.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <OutputFile>$(SolutionDir)Omega Red\bin\$(Configuration)\$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -1029,7 +1031,7 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\..\packages\FFmpeg.Nightly.20190621.0.0\build\native\FFmpeg.Nightly.targets" Condition="Exists('..\..\packages\FFmpeg.Nightly.20190621.0.0\build\native\FFmpeg.Nightly.targets')" />
+    <Import Project="..\..\packages\FFmpeg.Nightly.20200220.0.0\build\native\FFmpeg.Nightly.targets" Condition="Exists('..\..\packages\FFmpeg.Nightly.20200220.0.0\build\native\FFmpeg.Nightly.targets')" />
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
@@ -1040,6 +1042,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\FFmpeg.Nightly.20190621.0.0\build\native\FFmpeg.Nightly.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\FFmpeg.Nightly.20190621.0.0\build\native\FFmpeg.Nightly.targets'))" />
+    <Error Condition="!Exists('..\..\packages\FFmpeg.Nightly.20200220.0.0\build\native\FFmpeg.Nightly.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\FFmpeg.Nightly.20200220.0.0\build\native\FFmpeg.Nightly.targets'))" />
   </Target>
 </Project>

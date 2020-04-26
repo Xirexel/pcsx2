@@ -3,9 +3,8 @@
 #include <DirectXMath.h>
 #include "./VertexShader.h"
 #include "./PixelShader.h"
+#include "./PixelShaderSharpen.h"
 #include "./PixelShaderNoneTextured.h"
-#include "GPUPng.h"
-#include "crc.h"
 
 
 #pragma comment(lib, "d3d11.lib")
@@ -56,6 +55,7 @@ GPUDevice11::GPUDevice11()
     m_mipmap = 1;
     m_upscale_multiplier = 1;
     m_IsTextured = FALSE;
+    m_fxaa = FALSE;
 }
 
 GPUDevice11::~GPUDevice11()
@@ -75,7 +75,6 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
 
 
     D3D11_BUFFER_DESC bd;
-    D3D11_SAMPLER_DESC sd;
     D3D11_RASTERIZER_DESC rd;
     D3D11_BLEND_DESC bsd;
 
@@ -234,6 +233,17 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
     if (FAILED(hr))
         return false;
 
+	
+
+    // Simple pixel shader
+    Size = ARRAYSIZE(g_PS_sharpen);
+
+    hr = m_dev->CreatePixelShader(g_PS_sharpen, Size, nullptr, &m_SimplePixelShader_sharpen);
+
+    if (FAILED(hr))
+        return false;
+	
+
 
 
     // Simple pixel shader
@@ -244,10 +254,11 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
     if (FAILED(hr))
         return false;
 
-
+	m_SimplePixelShader_textured = m_SimplePixelShader;
 
     // Set up sampler
-    D3D11_SAMPLER_DESC SampDesc;
+    CComPtrCustom<ID3D11SamplerState> l_SamplerState;
+    D3D11_SAMPLER_DESC SampDesc;	   
     RtlZeroMemory(&SampDesc, sizeof(SampDesc));
     SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     SampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -257,10 +268,36 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
     SampDesc.MinLOD = 0;
     SampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-    hr = m_dev->CreateSamplerState(&SampDesc, &m_SamplerState);
+    hr = m_dev->CreateSamplerState(&SampDesc, &l_SamplerState);
 
     if (FAILED(hr))
         return false;
+
+    m_ctx->PSSetSamplers(0, 1, &l_SamplerState);
+
+    l_SamplerState.Release();
+
+
+
+
+    RtlZeroMemory(&SampDesc, sizeof(SampDesc));
+    SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+    SampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    SampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    SampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    SampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    SampDesc.MinLOD = 0;
+    SampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    hr = m_dev->CreateSamplerState(&SampDesc, &l_SamplerState);
+
+    if (FAILED(hr))
+        return false;
+
+    m_ctx->PSSetSamplers(1, 1, &l_SamplerState);
+
+	l_SamplerState.Release();
+
 
 
     memset(&rd, 0, sizeof(rd));
@@ -310,9 +347,8 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
 
 
     m_ctx->VSSetShader(m_VertexShader, nullptr, 0);
-    m_ctx->PSSetShader(m_SimplePixelShader, nullptr, 0);
+    m_ctx->PSSetShader(m_SimplePixelShader_textured, nullptr, 0);
 
-    m_ctx->PSSetSamplers(0, 1, &m_SamplerState);
 
 
 
@@ -415,7 +451,7 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
                         &m_alpha_fun_buffer);
 
     m_ctx->PSSetConstantBuffers(0, 1, &m_alpha_fun_buffer);
-
+	
     return true;
 }
 
@@ -612,7 +648,7 @@ void GPUDevice11::draw(DWORD aDrawMode, void *aPtrVertexes, BOOL aIsTextured)
         if (aIsTextured == FALSE)
             m_ctx->PSSetShader(m_SimplePixelShader_none_textured, nullptr, 0);
         else
-            m_ctx->PSSetShader(m_SimplePixelShader, nullptr, 0);
+            m_ctx->PSSetShader(m_SimplePixelShader_textured, nullptr, 0);
     }
 
 
@@ -934,59 +970,6 @@ void GPUDevice11::updateTexture(IUnknown *aPtrGPUUnkTexture, INT32 aXoffset, INT
     if (aType == GL_UNSIGNED_SHORT_5_5_5_1_EXT)
         l_source_pixel_bytes = 2;
 	
-	if (m_TexturePackMode != TexturePackMode::NONE) {
-
-        DWORD l_forward_crc = 0;
-
-        crc32compute((BYTE *)aPtrPixels, aHeight * aWidth * l_source_pixel_bytes, TRUE, &l_forward_crc);
-
-        DWORD l_backward_crc = 0;
-
-        crc32compute((BYTE *)aPtrPixels, aHeight * aWidth * l_source_pixel_bytes, FALSE, &l_backward_crc);
-
-        l_ID = ((UINT64)l_forward_crc << 32) | l_backward_crc;
-	}
-
-
-    if (m_TexturePackMode == TexturePackMode::LOAD && g_currentClutId != 0) {
-
-        auto l_find = m_textures.find(l_ID);
-
-        if (l_find != m_textures.end()) {
-
-            CComPtrCustom<ID3D11Texture2D> l_SrcGPUTexture;
-
-            LOG_INVOKE_QUERY_INTERFACE(l_find->second, &l_SrcGPUTexture);
-
-            LOG_CHECK_PTR_MEMORY(l_SrcGPUTexture);
-
-            D3D11_BOX l_D3D11_BOX;
-
-            l_D3D11_BOX.left = aXoffset;
-
-            l_D3D11_BOX.right = aXoffset + aWidth;
-
-            l_D3D11_BOX.top = aYoffset;
-
-            l_D3D11_BOX.bottom = aYoffset + aHeight;
-
-            l_D3D11_BOX.front = 0;
-
-            l_D3D11_BOX.back = 1;
-
-
-            m_ctx->CopySubresourceRegion(l_GPUTexture,
-                                         0,
-                                         aXoffset, aYoffset,
-                                         0,
-                                         l_SrcGPUTexture,
-                                         0,
-                                         &l_D3D11_BOX);
-        }
-
-        return;
-    }
-
 
     D3D11_TEXTURE2D_DESC l_Desc;
 
@@ -1022,60 +1005,6 @@ void GPUDevice11::updateTexture(IUnknown *aPtrGPUUnkTexture, INT32 aXoffset, INT
         aPtrPixels,
         l_sourceRowPitch,
         0);
-
-    if (m_TexturePackMode == TexturePackMode::SAVE && g_currentClutId != 0) {
-
-
-        GPUPng::Format l_format = GPUPng::RGBA_PNG;
-
-
-        if (l_source_pixel_bytes == 3)
-            l_format = GPUPng::RGB_PNG;
-        if (l_source_pixel_bytes == 2)
-            l_format = GPUPng::R16I_PNG;
-
-        wchar_t l_stringID[256];
-
-        _ui64tow_s(l_ID, l_stringID, 256, 16);
-
-		
-
-        std::wstring l_path = m_TexturePacksPath + L"\\" + l_stringID + L".png";
-
-			   
-
-        D3D11_TEXTURE2D_DESC l_Desc;
-
-        l_GPUTexture->GetDesc(&l_Desc);
-
-
-        auto l_RowPitch = l_source_pixel_bytes * l_Desc.Width;
-
-
-        std::unique_ptr<uint8[]> l_data(new uint8[l_RowPitch * l_Desc.Height]);
-
-        ZeroMemory(l_data.get(), l_RowPitch * l_Desc.Height);
-
-        auto l_ptrdata = l_data.get();
-
-        uint8 *l_sourcePixels = (uint8 *)aPtrPixels;
-
-
-        l_ptrdata += (aYoffset * l_RowPitch + aXoffset * l_source_pixel_bytes);
-
-        for (size_t h = 0; h < aHeight; h++) {
-
-            memcpy(l_ptrdata, l_sourcePixels, l_sourceRowPitch);
-
-            l_sourcePixels += l_sourceRowPitch;
-
-            l_ptrdata += l_RowPitch;
-        }
-
-
-
-        GPUPng::Save(GPUPng::RGBA_PNG, l_path, l_data.get(), l_Desc.Width, l_Desc.Height, l_RowPitch, 9, true);
-    }
 }
 
 void GPUDevice11::copyTexSubImage2D(IUnknown *aPtrUnkTexture, INT32 aXoffset, INT32 aYoffset, INT32 aX, INT32 aY, INT32 aWidth, INT32 aHeight)
@@ -1190,27 +1119,6 @@ void GPUDevice11::setAlphaFunc(UINT32 aFunc, FLOAT aValue)
         &l_ALPHA_FUNC_BUFFER,
         l_sourceRowPitch,
         0);
-
-
-
-    //D3D11_MAPPED_SUBRESOURCE l_mappedResource;
-    //ZeroMemory(&l_mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-
-    //	// Lock the fog constant buffer so it can be written to.
-    //m_ctx->Map(m_alpha_fun_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &l_mappedResource);
-
-    //// Get a pointer to the data in the constant buffer.
-    //auto l_ptr_data = (ALPHA_FUNC_BUFFER*)l_mappedResource.pData;
-
-    //if (l_ptr_data != nullptr)
-    //{
-    //	// Copy the fog information into the fog constant buffer.
-    //	l_ptr_data->mFunc = aFunc;
-    //	l_ptr_data->mValue = aValue;
-    //}
-
-    //// Unlock the constant buffer.
-    //m_ctx->Unmap(m_alpha_fun_buffer, 0);
 }
 
 void GPUDevice11::setDepthFunc(UINT32 aFunc)
@@ -1278,60 +1186,22 @@ void GPUDevice11::setScissor(INT32 aX, INT32 aY, INT32 aWidth, INT32 aHeight)
     m_ctx->RSSetScissorRects(1, &l_Scissor);
 }
 
-void GPUDevice11::setRawTexture(void *a_PtrMemory, const char *a_StringIDs)
+void GPUDevice11::setFXAA(BOOL a_value)
 {
-    //std::string l_StringIDs(a_StringIDs);
+    if (m_fxaa != a_value)
+	{
+		if (a_value == FALSE)
+		{
+            m_SimplePixelShader_textured = m_SimplePixelShader;
+		}
+		else {
+            m_SimplePixelShader_textured = m_SimplePixelShader_sharpen;
+		}
 
+		m_IsTextured = FALSE;
+	}
 
-    //uint32 l_width = 0;
-    //uint32 l_height = 0;
-    //int l_bitDepth = 0;
-    //int l_colorType = 0;
-
-    //auto l_image = GPUPng::Load((uint8 *)a_PtrMemory,
-    //                            l_width,
-    //                            l_height,
-    //                            l_bitDepth,
-    //                            l_colorType);
-
-    //CComPtrCustom<IUnknown> l_GPUTexture;
-
-    //createTexture(
-    //    l_colorType == 2 ? 3 : l_colorType == 6 ? 4 : 0,
-    //    l_width,
-    //    l_height,
-    //    0,
-    //    GL_BGRA_EXT,
-    //    0,
-    //    l_image.get(),
-    //    &l_GPUTexture,
-    //    nullptr);
-
-    //std::vector<int> l_IDs;
-
-    //do {
-    //    auto l_find = l_StringIDs.find('|');
-
-    //    if (l_find == std::string::npos) {
-
-    //        unsigned int x = std::stoul(l_StringIDs, nullptr, 16);
-
-    //        l_IDs.push_back(x);
-
-    //        break;
-    //    }
-
-    //    std::string l_value(l_StringIDs.substr(0, l_find));
-
-    //    unsigned int x = std::stoul(l_value, nullptr, 16);
-
-    //    l_IDs.push_back(x);
-
-    //    l_StringIDs = l_StringIDs.substr(l_find + 1, l_StringIDs.size());
-
-    //} while (true);
-
-    //for (auto &l_item : l_IDs) {
-    //    m_textures[l_item] = l_GPUTexture;
-    //}
+	m_fxaa = a_value;
 }
+
+void GPUDevice11::setRawTexture(void *a_PtrMemory, const char *a_StringIDs){}

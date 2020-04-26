@@ -299,7 +299,14 @@ namespace Omega_Red.ViewModels
         {
             get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
         }
+
+        public Visibility VisibilityVideoRecordingState
+        {
+            get { return App.OffVideoRecording ? Visibility.Collapsed : Visibility.Visible; }
+        }
+
         
+
         public bool IsFXAA
         {
             get

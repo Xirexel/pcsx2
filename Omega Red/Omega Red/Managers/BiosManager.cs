@@ -504,6 +504,10 @@ namespace Omega_Red.Managers
             return true;
         }
 
+        public void registerItem(object a_Item)
+        {
+        }
+
         public System.ComponentModel.ICollectionView Collection
         {
             get { return mCustomerView; }

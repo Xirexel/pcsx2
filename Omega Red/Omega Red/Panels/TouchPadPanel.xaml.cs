@@ -14,6 +14,7 @@
 
 using Omega_Red.Managers;
 using Omega_Red.Tools;
+using Omega_Red.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,11 +37,66 @@ namespace Omega_Red.Panels
     /// <summary>
     /// Interaction logic for PadPanel.xaml
     /// </summary>
-    public partial class TouchPadPanel : UserControl
+    public partial class TouchPadPanel : UserControl, IPadControl
     {
+        public struct XY_Axises
+        {
+            public short m_x_axis;
+
+            public short m_y_axis;
+        }
+
+        public static event Action<uint, uint> VibrationEvent;
+
+        private static Util.XInputNative.XINPUT_STATE m_state = new Util.XInputNative.XINPUT_STATE();
+
+
+        private void setKey(UInt16 a_Key)
+        {
+            m_state.Gamepad.wButtons |= a_Key;
+        }
+
+        static private void setLeftStickAxises(XY_Axises a_Axises)
+        {
+            m_state.Gamepad.sThumbLX = a_Axises.m_x_axis;
+
+            m_state.Gamepad.sThumbLY = a_Axises.m_y_axis;
+        }
+
+        static private void setLeftAnalogTrigger(byte a_value)
+        {
+            m_state.Gamepad.bLeftTrigger = a_value;
+        }
+
+        static private void setRightAnalogTrigger(byte a_value)
+        {
+            m_state.Gamepad.bRightTrigger = a_value;
+        }
+
+        static private void setRightStickAxises(XY_Axises a_Axises)
+        {
+            m_state.Gamepad.sThumbRX = a_Axises.m_x_axis;
+
+            m_state.Gamepad.sThumbRY = a_Axises.m_y_axis;
+        }
+
+        private void removeKey(UInt16 a_Key)
+        {
+            m_state.Gamepad.wButtons &= (ushort)(~a_Key);
+        }
+
         public TouchPadPanel()
         {
             InitializeComponent();
+
+            Models.PadControlInfo l_TouchPadControlInfo = new Models.TouchPadControlInfo()
+            {
+                PadControl = this
+            };
+
+            PadControlManager.Instance.setTouchPadControl(l_TouchPadControlInfo);
+
+            PadInput.Instance.PadControl = this;
 
             PadControlManager.Instance.ShowTouchPadPanelEvent += Instance_ShowTouchPadPanelEvent;
 
@@ -177,52 +233,52 @@ namespace Omega_Red.Panels
 
                 UInt16 l_key = UInt16.Parse((e.OriginalSource as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
-                PadInput.Instance.removeKey(l_key);
+                removeKey(l_key);
             }
         }
 
 
 
 
-        public PadInput.XY_Axises LeftStickAxises
+        public XY_Axises LeftStickAxises
         {
-            get { return (PadInput.XY_Axises)GetValue(LeftStickAxisesProperty); }
+            get { return (XY_Axises)GetValue(LeftStickAxisesProperty); }
             set { SetValue(LeftStickAxisesProperty, value); }
         }
 
         // Using a DependencyProperty as the backing store for LeftStickAxises.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty LeftStickAxisesProperty =
-            DependencyProperty.Register("LeftStickAxises", typeof(PadInput.XY_Axises), typeof(TouchPadPanel),
-            new PropertyMetadata(new PadInput.XY_Axises() { m_x_axis = 0, m_y_axis = 0 }, new PropertyChangedCallback(OnLeftStickAxisesChanged)));
+            DependencyProperty.Register("LeftStickAxises", typeof(XY_Axises), typeof(TouchPadPanel),
+            new PropertyMetadata(new XY_Axises() { m_x_axis = 0, m_y_axis = 0 }, new PropertyChangedCallback(OnLeftStickAxisesChanged)));
 
         private static void OnLeftStickAxisesChanged(DependencyObject d,
            DependencyPropertyChangedEventArgs e)
         {
-            var l_XY_Axises = (PadInput.XY_Axises)e.NewValue;
+            var l_XY_Axises = (XY_Axises)e.NewValue;
 
-            PadInput.Instance.setLeftStickAxises(l_XY_Axises);
+            setLeftStickAxises(l_XY_Axises);
         }
 
 
 
 
-        public PadInput.XY_Axises RightStickAxises
+        public XY_Axises RightStickAxises
         {
-            get { return (PadInput.XY_Axises)GetValue(RightStickAxisesProperty); }
+            get { return (XY_Axises)GetValue(RightStickAxisesProperty); }
             set { SetValue(RightStickAxisesProperty, value); }
         }
 
         // Using a DependencyProperty as the backing store for RightStickAxises.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty RightStickAxisesProperty =
-            DependencyProperty.Register("RightStickAxises", typeof(PadInput.XY_Axises), typeof(TouchPadPanel),
-            new PropertyMetadata(new PadInput.XY_Axises() { m_x_axis = 0, m_y_axis = 0 }, new PropertyChangedCallback(OnRightStickAxisesChanged)));
+            DependencyProperty.Register("RightStickAxises", typeof(XY_Axises), typeof(TouchPadPanel),
+            new PropertyMetadata(new XY_Axises() { m_x_axis = 0, m_y_axis = 0 }, new PropertyChangedCallback(OnRightStickAxisesChanged)));
 
         private static void OnRightStickAxisesChanged(DependencyObject d,
            DependencyPropertyChangedEventArgs e)
         {
-            var l_XY_Axises = (PadInput.XY_Axises)e.NewValue;
+            var l_XY_Axises = (XY_Axises)e.NewValue;
 
-            PadInput.Instance.setRightStickAxises(l_XY_Axises);
+            setRightStickAxises(l_XY_Axises);
         }
 
         private void Button_MouseDown(object sender, MouseButtonEventArgs e)
@@ -233,7 +289,7 @@ namespace Omega_Red.Panels
 
                 UInt16 l_key = UInt16.Parse((sender as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
-                PadInput.Instance.setKey(l_key);
+                setKey(l_key);
             }
         }
 
@@ -245,7 +301,7 @@ namespace Omega_Red.Panels
 
                 UInt16 l_key = UInt16.Parse((sender as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
-                PadInput.Instance.setKey(l_key);
+                setKey(l_key);
             }
         }
 
@@ -257,7 +313,7 @@ namespace Omega_Red.Panels
 
                 UInt16 l_key = UInt16.Parse((sender as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
-                PadInput.Instance.removeKey(l_key);
+                removeKey(l_key);
             }
         }
 
@@ -285,7 +341,7 @@ namespace Omega_Red.Panels
 
             Console.WriteLine(l_value);
 
-            PadInput.Instance.setLeftAnalogTrigger(l_value);
+            setLeftAnalogTrigger(l_value);
         }
 
 
@@ -307,7 +363,7 @@ namespace Omega_Red.Panels
         {
             var l_value = (byte)e.NewValue;
 
-            PadInput.Instance.setRightAnalogTrigger(l_value);
+            setRightAnalogTrigger(l_value);
         }
 
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
@@ -536,6 +592,23 @@ namespace Omega_Red.Panels
             mTouchMark = null;
 
             mTouchCtr = null;
+        }
+
+        public XInputNative.XINPUT_STATE getState()
+        {
+            return m_state;
+        }
+
+        public void setVibration(uint a_vibrationCombo)
+        {
+            if (!Properties.Settings.Default.IsVisualVibrationEnabled)
+                return;
+
+            uint l_LeftMotorSpeed = a_vibrationCombo & 0xFFFF;
+            uint l_RightMotorSpeed = (a_vibrationCombo >> 16) & 0xFFFF;
+
+            if (VibrationEvent != null)
+                VibrationEvent(l_LeftMotorSpeed, l_RightMotorSpeed);
         }
     }
 }

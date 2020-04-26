@@ -41,7 +41,10 @@ public:
 	void setTexturePacksMode(UINT32 a_TexturePackMode);
     void setTexturePacksPath(const std::wstring &a_RefTexturePackPath);
 
+    void setFXAA(BOOL a_value);
+
 protected:
-	int m_vsync;
+    int m_vsync;
+    BOOL m_fxaa;
 };
 

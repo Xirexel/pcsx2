@@ -19,7 +19,7 @@ namespace Omega_Red.Util
             IntPtr a_DirectX11DeviceNative,
             IntPtr a_parent, 
             IntPtr a_CaptureHandler,
-            IntPtr a_TouchPadHandler,
+            [MarshalAs(UnmanagedType.FunctionPtr)] Tools.PadInput.GetTouchPadCallback a_getTouchPadCallback,
             [MarshalAs(UnmanagedType.FunctionPtr)] Capture.SetDataCallback a_setAudioDataCallback,
             [MarshalAs(UnmanagedType.LPWStr)]String szStickDirectory);
         
@@ -90,6 +90,12 @@ namespace Omega_Red.Util
 
             try
             {
+                if (App.OffPPSSPP)
+                {
+                    m_IsInitialized = true;
+
+                    return;
+                }
 
                 var l_ModuleBeforeTitle = App.Current.Resources["ModuleBeforeTitle"];
 
@@ -103,8 +109,7 @@ namespace Omega_Red.Util
                 do
                 {
 
-                    
-                    m_LibLoader = LibLoader.create("PPSSPP");
+                    m_LibLoader = LibLoader.create("PPSSPP.dll", true);
 
                     if (m_LibLoader == null)
                         break;
@@ -152,13 +157,16 @@ namespace Omega_Red.Util
             }
         }
 
-        public void launch(string szCmdLine, IntPtr a_DirectX11DeviceNative, IntPtr a_VideoPanelHandler, IntPtr a_CaptureHandler, IntPtr a_TouchPadHandler, Capture.SetDataCallback a_setAudioDataCallback, string szStickDirectory)
+        public void launch(string szCmdLine, IntPtr a_DirectX11DeviceNative, IntPtr a_VideoPanelHandler, IntPtr a_CaptureHandler, Tools.PadInput.GetTouchPadCallback a_getTouchPadCallback, Capture.SetDataCallback a_setAudioDataCallback, string szStickDirectory)
         {
+            if (App.OffPPSSPP)
+                return;
+
             if (!m_IsInitialized)
                 return;
 
             if (m_PPSSPPFunctions.Launch != null)
-                m_PPSSPPFunctions.Launch(szCmdLine, a_DirectX11DeviceNative, a_VideoPanelHandler, a_CaptureHandler, a_TouchPadHandler, a_setAudioDataCallback, szStickDirectory);
+                m_PPSSPPFunctions.Launch(szCmdLine, a_DirectX11DeviceNative, a_VideoPanelHandler, a_CaptureHandler, a_getTouchPadCallback, a_setAudioDataCallback, szStickDirectory);
         }
 
         public void getGameInfo(string a_filename, out string a_title, out string a_id)
@@ -166,6 +174,9 @@ namespace Omega_Red.Util
             a_title = "";
 
             a_id = "";
+
+            if (App.OffPPSSPP)
+                return;
 
             if (!m_IsInitialized)
                 return;
@@ -194,6 +205,9 @@ namespace Omega_Red.Util
 
         public void load(string a_filename)
         {
+            if (App.OffPPSSPP)
+                return;
+
             if (!m_IsInitialized)
                 return;
 
@@ -203,6 +217,9 @@ namespace Omega_Red.Util
 
         public void pause()
         {
+            if (App.OffPPSSPP)
+                return;
+
             if (!m_IsInitialized)
                 return;
 
@@ -212,6 +229,9 @@ namespace Omega_Red.Util
         
         public void resume()
         {
+            if (App.OffPPSSPP)
+                return;
+
             if (!m_IsInitialized)
                 return;
 
@@ -221,6 +241,9 @@ namespace Omega_Red.Util
 
         public void save(string a_filename)
         {
+            if (App.OffPPSSPP)
+                return;
+
             if (!m_IsInitialized)
                 return;
 
@@ -230,6 +253,9 @@ namespace Omega_Red.Util
 
         public void setAudioVolume(float a_level)
         {
+            if (App.OffPPSSPP)
+                return;
+
             if (!m_IsInitialized)
                 return;
 
@@ -248,6 +274,9 @@ namespace Omega_Red.Util
 
         public void shutdown()
         {
+            if (App.OffPPSSPP)
+                return;
+
             if (!m_IsInitialized)
                 return;
 

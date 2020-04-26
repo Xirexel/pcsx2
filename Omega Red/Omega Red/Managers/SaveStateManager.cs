@@ -31,6 +31,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Threading;
 using Omega_Red.SocialNetworks.Google;
+using System.Xml.Serialization;
 
 namespace Omega_Red.Managers
 {
@@ -59,10 +60,20 @@ namespace Omega_Red.Managers
 
         private CollectionViewSource mAutoSaveCollectionViewSource = new CollectionViewSource();
 
+        private ICollectionView mQuickSaveCustomerView = null;
+
+        private CollectionViewSource mQuickSaveCollectionViewSource = new CollectionViewSource();
+
         private bool m_GoogleDriveAccess = false;
 
         private string m_file_signature = "";
 
+        private Thread m_loadThread = null;
+        
+        public event Action RefreshEvent;
+
+
+        
 
 
         private readonly ObservableCollection<SaveStateInfo> _saveStateInfoCollection = new ObservableCollection<SaveStateInfo>();
@@ -84,17 +95,23 @@ namespace Omega_Red.Managers
                 m_GoogleDriveAccess = obj;
 
                 m_file_signature = "";
+                
+                if (PCSX2Controller.Instance.IsoInfo != null)
+                {
+                    var l_disk_serial = PCSX2Controller.Instance.IsoInfo.DiscSerial;
 
-                if(PCSX2Controller.Instance.IsoInfo != null)
-                    load(PCSX2Controller.Instance.IsoInfo.DiscSerial,
-                        PCSX2Controller.Instance.BiosInfo != null ?
-                        PCSX2Controller.Instance.BiosInfo.GameType == PCSX2Controller.Instance.IsoInfo.GameType ? "_" + PCSX2Controller.Instance.BiosInfo.CheckSum.ToString("X8") : ""
-                        : "");
+                    var l_bios_check_sum =
+                    PCSX2Controller.Instance.BiosInfo != null ?
+                    PCSX2Controller.Instance.BiosInfo.GameType == PCSX2Controller.Instance.IsoInfo.GameType ? "_" + PCSX2Controller.Instance.BiosInfo.CheckSum.ToString("X8") : ""
+                    : "";
+
+                    load(l_disk_serial, l_bios_check_sum);
+                }
             };
 
             if (string.IsNullOrEmpty(Settings.Default.SlotFolder))
                 Settings.Default.SlotFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\" + App.m_MainFolderName + @"\sstates\";
-
+            
             mCustomerView = CollectionViewSource.GetDefaultView(_saveStateInfoCollection);
 
             mCustomerView.SortDescriptions.Add(
@@ -109,8 +126,17 @@ namespace Omega_Red.Managers
             mAutoSaveCustomerView = mAutoSaveCollectionViewSource.View;
 
             mAutoSaveCustomerView.Filter = new Predicate<object>(x => ((SaveStateInfo)x).IsAutosave);
+
+
+            mQuickSaveCollectionViewSource.Source = _saveStateInfoCollection;
+
+            mQuickSaveCustomerView = mQuickSaveCollectionViewSource.View;
+
+            mQuickSaveCustomerView.Filter = new Predicate<object>(x => ((SaveStateInfo)x).IsQuicksave);
+
+            mQuickSaveCustomerView.SortDescriptions.Add(new SortDescription("DateTime", ListSortDirection.Descending));
         }
-        
+
         public void init()
         {
             if (string.IsNullOrEmpty(Settings.Default.SlotFolder))
@@ -131,28 +157,51 @@ namespace Omega_Red.Managers
                 File.Delete(file);
             }
         }
-        
+
         private void load(string a_disk_serial, string a_bios_check_sum)
         {
+            lock (this)
+            {
+                string l_file_signature = a_disk_serial + a_bios_check_sum;
+
+                if (m_file_signature == l_file_signature)
+                    return;
+
+                m_file_signature = l_file_signature;
+
+                //load_inner_current(a_disk_serial, a_bios_check_sum);
+
+
+
+                ThreadStart l_loadThreadStart = new ThreadStart(() =>
+                {
+                    load_inner(a_disk_serial, a_bios_check_sum);
+                });
+
+                if (m_loadThread != null)
+                    m_loadThread.Abort();
+
+                m_loadThread = new Thread(l_loadThreadStart);
+
+                m_loadThread.Start();
+            }
+        }
+
+        private void load_inner_current(string a_disk_serial, string a_bios_check_sum)
+        {
             string l_file_signature = a_disk_serial + a_bios_check_sum;
-
-            if (m_file_signature == l_file_signature)
-                return;
-
-
-            m_file_signature = l_file_signature;
 
             _saveStateInfoCollection.Clear();
 
             m_ListSlotIndexes.Clear();
 
-            for (int i = 0; i < 106; i++)
+            for (int i = 0; i < 126; i++)
             {
                 m_ListSlotIndexes.Add(i);
             }
 
             if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
-            {              
+            {
                 string[] files = System.IO.Directory.GetFiles(Settings.Default.SlotFolder, "*.p2s");
 
                 foreach (string s in files)
@@ -185,7 +234,7 @@ namespace Omega_Red.Managers
                             {
                                 try
                                 {
-                                    addSaveStateInfo(SStates.Instance.readData(s, l_value));
+                                    addSaveStateInfo(SStates.Instance.readData(s, l_value), _saveStateInfoCollection);
 
                                     m_ListSlotIndexes.Remove(l_value);
                                 }
@@ -197,7 +246,7 @@ namespace Omega_Red.Managers
                     }
                 }
             }
-            
+
             for (int i = 0; i < 1; i++)
             {
                 int l_index = i + 100;
@@ -212,11 +261,11 @@ namespace Omega_Red.Managers
 
                 };
 
-                if(File.Exists(lautoSaveState.FilePath))
+                if (File.Exists(lautoSaveState.FilePath))
                 {
                     try
                     {
-                        addSaveStateInfo(SStates.Instance.readData(lautoSaveState.FilePath, l_index, lautoSaveState.IsAutosave));
+                        addSaveStateInfo(SStates.Instance.readData(lautoSaveState.FilePath, l_index, lautoSaveState.IsAutosave), _saveStateInfoCollection);
 
                         m_ListSlotIndexes.Remove(l_index);
                     }
@@ -230,9 +279,11 @@ namespace Omega_Red.Managers
 
             List<SaveStateInfo> l_quickSaves = new List<SaveStateInfo>();
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 25; i++)
             {
                 int l_index = i + 101;
+
+                var l_GameSessionDuration = new TimeSpan(0);
 
                 var lquickSaveState = new SaveStateInfo()
                 {
@@ -240,8 +291,11 @@ namespace Omega_Red.Managers
                     FilePath = Settings.Default.SlotFolder +
                         l_file_signature + ".quick." +
                         l_index.ToString() + ".p2s",
-                    Index = l_index
-
+                    Index = l_index,
+                    DateTime = DateTime.Now,
+                    Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")),
+                    Duration = l_GameSessionDuration.ToString(@"dd\.hh\:mm\:ss"),
+                    DurationNative = l_GameSessionDuration
                 };
 
                 if (File.Exists(lquickSaveState.FilePath))
@@ -250,7 +304,7 @@ namespace Omega_Red.Managers
                     {
                         lquickSaveState = SStates.Instance.readData(lquickSaveState.FilePath, l_index, lquickSaveState.IsAutosave, lquickSaveState.IsQuicksave);
 
-                        addSaveStateInfo(lquickSaveState);
+                        addSaveStateInfo(lquickSaveState, _saveStateInfoCollection);
 
                         m_ListSlotIndexes.Remove(l_index);
                     }
@@ -264,10 +318,163 @@ namespace Omega_Red.Managers
 
             m_quickSaves = l_quickSaves.OrderBy(o => o.DateTime).ToList();
 
-            fetchCloudState(l_file_signature);
+            fetchCloudState(l_file_signature, _saveStateInfoCollection);
         }
 
-        private void fetchCloudState(string a_disk_serial)
+        private void load_inner(string a_disk_serial, string a_bios_check_sum)
+        {
+            string l_file_signature = a_disk_serial + a_bios_check_sum;
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                _saveStateInfoCollection.Clear();
+            });
+
+            m_ListSlotIndexes.Clear();
+
+            for (int i = 0; i < 126; i++)
+            {
+                m_ListSlotIndexes.Add(i);
+            }
+
+            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
+            {
+                string[] files = System.IO.Directory.GetFiles(Settings.Default.SlotFolder, "*.p2s");
+
+                foreach (string s in files)
+                {
+                    // Create the FileInfo object only when needed to ensure
+                    // the information is as current as possible.
+                    System.IO.FileInfo fi = null;
+                    try
+                    {
+                        fi = new System.IO.FileInfo(s);
+                    }
+                    catch (System.IO.FileNotFoundException e)
+                    {
+                        // To inform the user and continue is
+                        // sufficient for this demonstration.
+                        // Your application may require different behavior.
+                        Console.WriteLine(e.Message);
+                        continue;
+                    }
+
+                    if (fi.Name.Contains(l_file_signature))
+                    {
+                        var l_splits = fi.Name.Split(new char[] { '.' });
+
+                        if (l_splits != null && l_splits.Length == 3)
+                        {
+                            int l_value = 0;
+
+                            if (int.TryParse(l_splits[1], out l_value))
+                            {
+                                try
+                                {
+                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                    {
+                                        addSaveStateInfo(SStates.Instance.readData(s, l_value), _saveStateInfoCollection);
+                                    });
+
+                                    m_ListSlotIndexes.Remove(l_value);
+                                }
+                                catch (Exception)
+                                {
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < 1; i++)
+            {
+                int l_index = i + 100;
+
+                var lautoSaveState = new SaveStateInfo()
+                {
+                    IsAutosave = true,
+                    FilePath = Settings.Default.SlotFolder +
+                        l_file_signature + ".auto." +
+                        l_index.ToString() + ".p2s",
+                    Index = l_index
+
+                };
+
+                if (File.Exists(lautoSaveState.FilePath))
+                {
+                    try
+                    {
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                        {
+                            addSaveStateInfo(SStates.Instance.readData(lautoSaveState.FilePath, l_index, lautoSaveState.IsAutosave), _saveStateInfoCollection);
+                        });
+
+                        m_ListSlotIndexes.Remove(l_index);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                m_autoSave = lautoSaveState;
+            }
+
+            List<SaveStateInfo> l_quickSaves = new List<SaveStateInfo>();
+
+            for (int i = 0; i < 25; i++)
+            {
+                int l_index = i + 101;
+
+                var l_GameSessionDuration = new TimeSpan(0);
+
+                var lquickSaveState = new SaveStateInfo()
+                {
+                    IsQuicksave = true,
+                    FilePath = Settings.Default.SlotFolder +
+                        l_file_signature + ".quick." +
+                        l_index.ToString() + ".p2s",
+                    Index = l_index,
+                    DateTime = DateTime.Now,
+                    Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")),
+                    Duration = l_GameSessionDuration.ToString(@"dd\.hh\:mm\:ss"),
+                    DurationNative = l_GameSessionDuration
+                };
+
+                if (File.Exists(lquickSaveState.FilePath))
+                {
+                    try
+                    {
+                        lquickSaveState = SStates.Instance.readData(lquickSaveState.FilePath, l_index, lquickSaveState.IsAutosave, lquickSaveState.IsQuicksave);
+
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                        {
+                            addSaveStateInfo(lquickSaveState, _saveStateInfoCollection);
+                        });
+
+                        m_ListSlotIndexes.Remove(l_index);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                l_quickSaves.Add(lquickSaveState);
+            }
+
+            m_quickSaves = l_quickSaves.OrderBy(o => o.DateTime).ToList();
+
+            fetchCloudStateDispatcher(l_file_signature, _saveStateInfoCollection);
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                mCustomerView.Refresh();
+
+                if (RefreshEvent != null)
+                    RefreshEvent();
+            });
+        }
+        private void fetchCloudStateDispatcher(string a_disk_serial, ObservableCollection<SaveStateInfo> a_saveStateInfoCollection)
         {
             if (m_GoogleDriveAccess)
             {
@@ -277,7 +484,10 @@ namespace Omega_Red.Managers
                 {
                     if (m_ListSlotIndexes.Contains(item.Index))
                     {
-                        addSaveStateInfo(item);
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                        {
+                            addSaveStateInfo(item, a_saveStateInfoCollection);
+                        });
 
                         m_ListSlotIndexes.Remove(item.Index);
                     }
@@ -285,7 +495,47 @@ namespace Omega_Red.Managers
                     {
                         try
                         {
-                            var lsaveState = _saveStateInfoCollection.ToList().First(saveState => saveState.Index == item.Index);
+                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                            {
+                                var lsaveState = a_saveStateInfoCollection.ToList().FirstOrDefault(saveState => saveState.Index == item.Index);
+
+                                if (lsaveState != null)
+                                {
+                                    lsaveState.IsCloudsave = true;
+
+                                    lsaveState.CloudSaveDate = item.Date;
+
+                                    lsaveState.CloudSaveDuration = item.Duration;
+                                }
+                            });
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+                }
+            }
+        }
+
+        private void fetchCloudState(string a_disk_serial, ObservableCollection<SaveStateInfo> a_saveStateInfoCollection)
+        {
+            if (m_GoogleDriveAccess)
+            {
+                var l_SaveStateList = DriveManager.Instance.getSaveStateList(a_disk_serial);
+
+                foreach (var item in l_SaveStateList)
+                {
+                    if (m_ListSlotIndexes.Contains(item.Index))
+                    {
+                        addSaveStateInfo(item, a_saveStateInfoCollection);
+
+                        m_ListSlotIndexes.Remove(item.Index);
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var lsaveState = a_saveStateInfoCollection.ToList().FirstOrDefault(saveState => saveState.Index == item.Index);
 
                             if (lsaveState != null)
                             {
@@ -307,10 +557,19 @@ namespace Omega_Red.Managers
         void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
         {
             if (a_Status != PCSX2Controller.StatusEnum.NoneInitilized)
-                load(PCSX2Controller.Instance.IsoInfo.DiscSerial,
-                    PCSX2Controller.Instance.BiosInfo != null?
-                    PCSX2Controller.Instance.BiosInfo.GameType == PCSX2Controller.Instance.IsoInfo.GameType? "_" + PCSX2Controller.Instance.BiosInfo.CheckSum.ToString("X8") : ""
-                    : "");
+            {
+                if (PCSX2Controller.Instance.IsoInfo != null)
+                {
+                    var l_disk_serial = PCSX2Controller.Instance.IsoInfo.DiscSerial;
+
+                    var l_bios_check_sum =
+                    PCSX2Controller.Instance.BiosInfo != null ?
+                    PCSX2Controller.Instance.BiosInfo.GameType == PCSX2Controller.Instance.IsoInfo.GameType ? "_" + PCSX2Controller.Instance.BiosInfo.CheckSum.ToString("X8") : ""
+                    : "";
+
+                    load(l_disk_serial, l_bios_check_sum);
+                }
+            }
         }
 
         private SaveStateInfo createSaveStateInfo()
@@ -352,7 +611,7 @@ namespace Omega_Red.Managers
             addSaveStateInfo(createSaveStateInfo());
         }
         
-        private void addSaveStateInfo(SaveStateInfo a_SaveStateInfo)
+        private void addSaveStateInfo(SaveStateInfo a_SaveStateInfo, ObservableCollection<SaveStateInfo> a_saveStateInfoCollection = null)
         {
             if (PCSX2Controller.Instance.BiosInfo == null || PCSX2Controller.Instance.BiosInfo.CheckSum != a_SaveStateInfo.CheckSum)
                 if (1 != a_SaveStateInfo.CheckSum && 2 != a_SaveStateInfo.CheckSum)
@@ -368,9 +627,19 @@ namespace Omega_Red.Managers
             else
                 a_SaveStateInfo.Type = SaveStateType.PCSX2;
 
-            if (!_saveStateInfoCollection.Contains(a_SaveStateInfo, new Compare()))
+            if(a_saveStateInfoCollection == null)
             {
-                _saveStateInfoCollection.Add(a_SaveStateInfo);
+                if (!_saveStateInfoCollection.Contains(a_SaveStateInfo, new Compare()))
+                {
+                    _saveStateInfoCollection.Add(a_SaveStateInfo);
+                }
+            }
+            else
+            {
+                if (!a_saveStateInfoCollection.Contains(a_SaveStateInfo, new Compare()))
+                {
+                    a_saveStateInfoCollection.Add(a_SaveStateInfo);
+                }
             }
         }
 
@@ -404,7 +673,7 @@ namespace Omega_Red.Managers
 
                 if (a_SaveStateInfo.IsCloudsave)
                 {
-                    fetchCloudState(m_file_signature);
+                    fetchCloudState(m_file_signature, _saveStateInfoCollection);
                 }
             }
 
@@ -651,12 +920,39 @@ namespace Omega_Red.Managers
             }
         }
 
-        private void updateSave(SaveStateInfo a_saveState)
+        private void updateAutoSave()
         {
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
             {
-                var lstateSave = SStates.Instance.readData(a_saveState.FilePath, a_saveState.Index, a_saveState.IsAutosave, a_saveState.IsQuicksave);
+                var lstateSave = SStates.Instance.readData(m_autoSave.FilePath, m_autoSave.Index, m_autoSave.IsAutosave);
 
+                var lcurrentstateSave = _saveStateInfoCollection.FirstOrDefault(stateSave => stateSave.Index == m_autoSave.Index);
+
+                _saveStateInfoCollection.Remove(lcurrentstateSave);
+
+                if (lcurrentstateSave != null)
+                    lstateSave.IsCloudsave = lcurrentstateSave.IsCloudsave;
+
+                if (lcurrentstateSave != null && lcurrentstateSave.IsCloudOnlysave)
+                    lstateSave.IsCloudsave = true;
+
+                if (lcurrentstateSave != null)
+                {
+                    lstateSave.CloudSaveDate = lcurrentstateSave.CloudSaveDate;
+
+                    lstateSave.CloudSaveDuration = lcurrentstateSave.CloudSaveDuration;
+                }
+
+                addSaveStateInfo(lstateSave);
+            });
+        }
+
+        private void updateSave(SaveStateInfo a_saveState)
+        {
+            var lstateSave = SStates.Instance.readData(a_saveState.FilePath, a_saveState.Index, a_saveState.IsAutosave, a_saveState.IsQuicksave);
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
                 var lcurrentstateSave = _saveStateInfoCollection.FirstOrDefault(stateSave => stateSave.Index == a_saveState.Index);
 
                 _saveStateInfoCollection.Remove(lcurrentstateSave);
@@ -667,39 +963,68 @@ namespace Omega_Red.Managers
                 if (lcurrentstateSave != null && lcurrentstateSave.IsCloudOnlysave)
                     lstateSave.IsCloudsave = true;
 
+                if (lcurrentstateSave != null)
+                {
+                    lstateSave.CloudSaveDate = lcurrentstateSave.CloudSaveDate;
+
+                    lstateSave.CloudSaveDuration = lcurrentstateSave.CloudSaveDuration;
+                }
+
                 addSaveStateInfo(lstateSave);
             });
         }
-
-        private int lquickLoadLast = 0;
-
-        private DateTime mlastQuickLoadTime = DateTime.Now;
-
-        public SaveStateInfo quickLoad()
+        
+        public async void persistItemAsync(object a_Item, SaveStateInfo a_SaveStateInfo, Action a_callbackAction)
         {
-            SaveStateInfo lresult = null;
+            if (a_Item == null)
+                return;
+
+            var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+            if (l_Grid == null)
+                return;
             
-            if (m_quickSaves.Count > 0)
+            if (a_SaveStateInfo != null)
             {
-                var lDiff = DateTime.Now.Subtract(mlastQuickLoadTime);
+                string lDescription = "Date=" + a_SaveStateInfo.Date;
 
-                if(lDiff.Seconds > 30)
-                {
-                    lquickLoadLast = 0;
-                }
-                else
-                {
-                    ++lquickLoadLast;
+                lDescription += "|" + "Duration=" + a_SaveStateInfo.Duration;
 
-                    lquickLoadLast = lquickLoadLast % m_quickSaves.Count;
-                }
+                lDescription += "|" + "CheckSum=" + a_SaveStateInfo.CheckSum.ToString();
 
-                lresult = m_quickSaves[lquickLoadLast];
+                var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
 
-                mlastQuickLoadTime = DateTime.Now;
+                if (lProgressBannerGrid != null)
+                    DriveManager.Instance.startUploadingSState(a_SaveStateInfo.FilePath, lProgressBannerGrid, lDescription,
+                        (a_state) => {
+
+                            if (a_state)
+                            {
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                {
+                                    l_Grid.DataContext = null;
+
+                                    a_SaveStateInfo.IsCloudsave = true;
+
+                                    a_SaveStateInfo.IsCloudOnlysave = false;
+
+                                    a_SaveStateInfo.CloudSaveDate = a_SaveStateInfo.Date;
+
+                                    a_SaveStateInfo.CloudSaveDuration = a_SaveStateInfo.Duration;
+
+                                    mCustomerView.Refresh();
+                                });
+                            }
+                        });
+
+                if (a_callbackAction != null)
+                    a_callbackAction();
             }
-
-            return lresult;
+            else
+            {
+                if (a_callbackAction != null)
+                    a_callbackAction();
+            }
         }
 
         public void autoSave(string aDate, double aDurationInSeconds)
@@ -781,26 +1106,6 @@ namespace Omega_Red.Managers
                 updateAutoSave();
             }
         }
-
-        private void updateAutoSave()
-        {
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-            {
-                var lstateSave = SStates.Instance.readData(m_autoSave.FilePath, m_autoSave.Index, m_autoSave.IsAutosave);
-
-                var lcurrentstateSave = _saveStateInfoCollection.FirstOrDefault(stateSave => stateSave.Index == m_autoSave.Index);
-
-                _saveStateInfoCollection.Remove(lcurrentstateSave);
-
-                if (lcurrentstateSave != null)
-                    lstateSave.IsCloudsave = lcurrentstateSave.IsCloudsave;
-
-                if (lcurrentstateSave != null && lcurrentstateSave.IsCloudOnlysave)
-                    lstateSave.IsCloudsave = true;
-
-                addSaveStateInfo(lstateSave);
-            });
-        }
                      
         public async void removeItem(object a_Item)
         {
@@ -824,9 +1129,15 @@ namespace Omega_Red.Managers
 
         public void createItem(){}
 
-        public async void persistItemAsync(object a_Item)
+        public void persistItemAsync(object a_Item)
         {
+            if (a_Item == null)
+                return;
+
             var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+            if (l_Grid == null)
+                return;
 
             var l_SaveStateInfo = l_Grid.DataContext as SaveStateInfo;
 
@@ -836,29 +1147,80 @@ namespace Omega_Red.Managers
 
                 lDescription += "|" + "Duration=" + l_SaveStateInfo.Duration;
 
-                lDescription += "|" + "CheckSum=" + l_SaveStateInfo.CheckSum.ToString();                
+                lDescription += "|" + "CheckSum=" + l_SaveStateInfo.CheckSum.ToString();
 
                 var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
 
                 if (lProgressBannerGrid != null)
-                    await DriveManager.Instance.startUploadingSStateAsync(l_SaveStateInfo.FilePath, lProgressBannerGrid, lDescription);
+                    DriveManager.Instance.startUploadingSState(
+                        l_SaveStateInfo.FilePath,
+                        lProgressBannerGrid, 
+                        lDescription,
+                        (a_state)=> {
 
-                l_Grid.DataContext = null;
+                            if(a_state)
+                            {
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                {
+                                    l_Grid.DataContext = null;
 
-                l_SaveStateInfo.IsCloudsave = true;
+                                    l_SaveStateInfo.IsCloudsave = true;
 
-                l_SaveStateInfo.IsCloudOnlysave = false;
+                                    l_SaveStateInfo.IsCloudOnlysave = false;
 
-                l_SaveStateInfo.CloudSaveDate = l_SaveStateInfo.Date;
+                                    l_SaveStateInfo.CloudSaveDate = l_SaveStateInfo.Date;
 
-                l_SaveStateInfo.CloudSaveDuration = l_SaveStateInfo.Duration;
-                
-                await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                {
-                    mCustomerView.Refresh();
-                });
+                                    l_SaveStateInfo.CloudSaveDuration = l_SaveStateInfo.Duration;
+
+                                    mCustomerView.Refresh();
+                                });
+                            }
+                        });
             }
         }
+
+
+        //public async void persistItemAsync(object a_Item)
+        //{
+        //    if (a_Item == null)
+        //        return;
+
+        //    var l_Grid = a_Item as System.Windows.Controls.Grid;
+
+        //    if (l_Grid == null)
+        //        return;
+
+        //    var l_SaveStateInfo = l_Grid.DataContext as SaveStateInfo;
+
+        //    if (l_SaveStateInfo != null)
+        //    {
+        //        string lDescription = "Date=" + l_SaveStateInfo.Date;
+
+        //        lDescription += "|" + "Duration=" + l_SaveStateInfo.Duration;
+
+        //        lDescription += "|" + "CheckSum=" + l_SaveStateInfo.CheckSum.ToString();                
+
+        //        var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
+
+        //        if (lProgressBannerGrid != null)
+        //            await DriveManager.Instance.startUploadingSStateAsync(l_SaveStateInfo.FilePath, lProgressBannerGrid, lDescription);
+
+        //        l_Grid.DataContext = null;
+
+        //        l_SaveStateInfo.IsCloudsave = true;
+
+        //        l_SaveStateInfo.IsCloudOnlysave = false;
+
+        //        l_SaveStateInfo.CloudSaveDate = l_SaveStateInfo.Date;
+
+        //        l_SaveStateInfo.CloudSaveDuration = l_SaveStateInfo.Duration;
+
+        //        await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+        //        {
+        //            mCustomerView.Refresh();
+        //        });
+        //    }
+        //}
 
         public async void loadItemAsync(object a_Item)
         {
@@ -927,6 +1289,10 @@ namespace Omega_Red.Managers
             return false;
         }
 
+        public void registerItem(object a_Item)
+        {
+        }
+
         public ICollectionView Collection
         {
             get { return mCustomerView; }
@@ -935,6 +1301,11 @@ namespace Omega_Red.Managers
         public ICollectionView AutoSaveCollection
         {
             get { return mAutoSaveCustomerView; }
-        }        
+        }
+
+        public ICollectionView QuickSaveCollection
+        {
+            get { return mQuickSaveCustomerView; }
+        }
     }
 }

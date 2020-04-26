@@ -94,9 +94,9 @@
                     VerticalAlignment="Stretch" Grid.Row="2" Grid.RowSpan="1" Margin="100,5,80,5">
 
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition/>
-                                        <ColumnDefinition/>
-                                        <ColumnDefinition/>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
                                         <RowDefinition/>
@@ -104,27 +104,58 @@
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
 
-                                    <Rectangle Grid.Column="1" Grid.Row="1" Width="80" Height="80"/>
+                                    <!--<Ellipse Margin="-8" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}" Grid.ColumnSpan="3" Grid.RowSpan="3"/>-->
 
-                                    <Button Tag="0001" Margin="0, 0, 0, -30" HorizontalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown"
+                                   
+                                    <Button Tag="000F" Style="{DynamicResource PadButtonStyle}" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="1" Grid.Row="1" Width="38" Height="38"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown">
+                                        <Ellipse Width="25" Height="25" Stroke="{DynamicResource PadBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}"/>
+                                    </Button>
+
+                                    <Button Tag="0001" Margin="0,0,4,0" HorizontalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown"
                                 Grid.Column="1" Style="{DynamicResource D_PadButtonStyle}" />
 
-                                    <Button Tag="0004" Margin="0, 0, -30, 0" HorizontalAlignment="Center" VerticalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" 
+                                    <Button Tag="0005" Margin="-3,3,0,0" HorizontalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown"
+                                    Style="{DynamicResource D_PadCornerButtonStyle}" />
+
+                                    
+
+                                    <Button Tag="0004" Margin="0,4,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" 
                                 Grid.Column="0" Grid.Row="1" Style="{DynamicResource D_PadButtonStyle}">
                                         <Button.LayoutTransform>
                                             <RotateTransform Angle="270"/>
                                         </Button.LayoutTransform>
                                     </Button>
 
-                                    <Button Tag="0002" Margin="0, -30, 0, 0" HorizontalAlignment="Center" VerticalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" 
+                                    <Button Tag="0002" Margin="2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" 
                                 Grid.Column="1" Grid.Row="2" Style="{DynamicResource D_PadButtonStyle}">
                                         <Button.LayoutTransform>
                                             <RotateTransform Angle="180"/>
                                         </Button.LayoutTransform>
                                     </Button>
 
-                                    <Button Tag="0008" Margin="-30, 0, 0, 0" HorizontalAlignment="Center" VerticalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" 
+                                    <Button Tag="0006" Margin="1,0,0,1" HorizontalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown"
+                                Grid.Row="2" Style="{DynamicResource D_PadCornerButtonStyle}" >
+                                        <Button.LayoutTransform>
+                                            <RotateTransform Angle="270"/>
+                                        </Button.LayoutTransform>
+                                    </Button>
+
+                                    <Button Tag="0008" Margin="-1,-3,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown" 
                                 Grid.Row="1" Grid.Column="2" Style="{DynamicResource D_PadButtonStyle}">
+                                        <Button.LayoutTransform>
+                                            <RotateTransform Angle="90"/>
+                                        </Button.LayoutTransform>
+                                    </Button>
+
+                                    <Button Tag="000A" Margin="0,0,-3,2" HorizontalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown"
+                                Grid.Row="2" Grid.Column="2" Style="{DynamicResource D_PadCornerButtonStyle}" >
+                                        <Button.LayoutTransform>
+                                            <RotateTransform Angle="180"/>
+                                        </Button.LayoutTransform>
+                                    </Button>
+
+                                    <Button Tag="0009" Margin="0,0,-1,2" HorizontalAlignment="Center"  PreviewTouchUp="Button_PreviewTouchUp" PreviewTouchDown="Button_PreviewTouchDown" PreviewMouseDown="Button_MouseDown"
+                                      Grid.Column="2" Style="{DynamicResource D_PadCornerButtonStyle}" >
                                         <Button.LayoutTransform>
                                             <RotateTransform Angle="90"/>
                                         </Button.LayoutTransform>

@@ -13,7 +13,7 @@
 *.bsc
 *.aps
 *.exe
-*.wav
+!*.wav
 
 *.trace
 *.dump

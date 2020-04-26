@@ -86,9 +86,9 @@ void AudioRenderer::execute(const wchar_t *a_command, wchar_t **a_result)
                     }
 
                 } else if (std::wstring(l_ChildNode.name()) == L"Close") {
-                    SPUclose();
+                    //SPUclose();
                 } else if (std::wstring(l_ChildNode.name()) == L"Shutdown") {
-                    SPUshutdown();
+                    //SPUshutdown();
 
                     g_setAudioData = nullptr;
                 } else if (std::wstring(l_ChildNode.name()) == L"Volume") {

@@ -36,6 +36,12 @@
     <ClInclude Include="crc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SharpenShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

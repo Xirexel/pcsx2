@@ -6,55 +6,32 @@
 // Copyright (c) Microsoft Corporation. All rights reserved
 //----------------------------------------------------------------------
 
-/* AlphaFunction */
-#define GL_NEVER                          0x0200
-#define GL_LESS                           0x0201
-#define GL_EQUAL                          0x0202
-#define GL_LEQUAL                         0x0203
-#define GL_GREATER                        0x0204
-#define GL_NOTEQUAL                       0x0205
-#define GL_GEQUAL                         0x0206
-#define GL_ALWAYS                         0x0207
-
-Texture2D tx : register( t0 );
-SamplerState samLinear : register(s0);
-
-struct PS_INPUT
-{
-    float4 Pos : SV_POSITION;
-    float2 Tex : TEXCOORD;
-    float4 Color : COLOR;
-};
-
-cbuffer ALPHA_FUNC_BUFFER : register(b0)
-{
-    uint mFunc;
-    float mValue;
-};
+#include "CommonShader.h"
 
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
 float4 PS(PS_INPUT input) : SV_Target
-{
-    float4 color = tx.Sample(samLinear, input.Tex) * input.Color;
+{    
+    float3 color = tx.Sample(samplerLinear, input.Tex).rgb * input.Color.rgb;
+        
+    float alpha = tx.Sample(samplerPoint, input.Tex).a * input.Color.a;
         
     if (mFunc == GL_GREATER)
     {
-        if (color.a <= mValue * 0.4)
+        if (alpha <= mValue)
             discard;
     }
     else if (mFunc == GL_EQUAL)
     {
-        if (color.a != mValue)
+        if (alpha != mValue)
             discard;
     }
     else if (mFunc == GL_NOTEQUAL)
     {
-        if (color.a == mValue)
+        if (alpha == mValue)
             discard;
     }
     
-    return float4(color.rgb * 2.0, color.a);
-    //return color * 2.0;
+    return float4(color.rgb * 2.0, alpha);
 }

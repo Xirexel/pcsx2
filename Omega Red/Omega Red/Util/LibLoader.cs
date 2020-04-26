@@ -34,7 +34,7 @@ namespace Omega_Red.Util
 
         public void release()
         {
-            if (m_handle != IntPtr.Zero && m_TempFile != null)
+            if (m_handle != IntPtr.Zero)
             {
                 if (Release != null)
                     Release();
@@ -42,28 +42,41 @@ namespace Omega_Red.Util
                 Win32NativeMethods.FreeLibrary(m_handle);
 
                 m_handle = IntPtr.Zero;
-
-                m_TempFile.Dispose();
             }
+
+            if (m_TempFile != null)
+                m_TempFile.Dispose();
 
             m_TempFile = null;
         }
 
-        public static LibLoader create(string a_module_name)
+        public static LibLoader create(string a_module_name, bool external = false)
         {
             LibLoader l_LibLoader = new LibLoader();
 
             do
             {
+                TempFile l_TempFile = null;
 
-                var l_TempFile = TempFile.createInstance(a_module_name);
+                string l_path = "";
 
-                if (l_TempFile == null)
-                    break;
+                if (!external)
+                {
+                    l_TempFile = TempFile.createInstance(a_module_name);
 
-                var l_handle = Win32NativeMethods.LoadLibrary(l_TempFile.Path);
+                    if (l_TempFile == null)
+                        break;
 
-                if (l_handle == null)
+                    l_path = l_TempFile.Path;
+                }
+                else
+                {
+                    l_path = a_module_name;
+                }
+                
+                var l_handle = Win32NativeMethods.LoadLibrary(l_path);
+
+                if (l_handle == IntPtr.Zero)
                     break;
 
                 l_LibLoader.m_handle = l_handle;
@@ -77,7 +90,7 @@ namespace Omega_Red.Util
 
         ~LibLoader()
         {
-            if (m_handle != IntPtr.Zero && m_TempFile != null)
+            if (m_handle != IntPtr.Zero)
             {
                 if (Release != null)
                     Release();
@@ -85,9 +98,10 @@ namespace Omega_Red.Util
                 Win32NativeMethods.FreeLibrary(m_handle);
 
                 m_handle = IntPtr.Zero;
-
-                m_TempFile.Dispose();
             }
+
+            if (m_TempFile != null)
+                m_TempFile.Dispose();
         }
 
         public IntPtr getFunc(string a_func)

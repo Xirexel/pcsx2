@@ -459,25 +459,25 @@ namespace Omega_Red.Managers
 
         public async void persistItemAsync(object a_Item)
         {
-            var l_Grid = a_Item as System.Windows.Controls.Grid;
+            //var l_Grid = a_Item as System.Windows.Controls.Grid;
 
-            var l_IsoInfo = l_Grid.DataContext as IsoInfo;
+            //var l_IsoInfo = l_Grid.DataContext as IsoInfo;
 
-            if (l_IsoInfo != null)
-            {
-                string lDescription = "DiscSerial=" + l_IsoInfo.DiscSerial;
+            //if (l_IsoInfo != null)
+            //{
+            //    string lDescription = "DiscSerial=" + l_IsoInfo.DiscSerial;
 
-                var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
+            //    var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;
 
-                if (lProgressBannerGrid != null)
-                    await DriveManager.Instance.startUploadingDiscAsync(l_IsoInfo.FilePath, lProgressBannerGrid, lDescription);
+            //    if (lProgressBannerGrid != null)
+            //        await DriveManager.Instance.startUploadingDiscAsync(l_IsoInfo.FilePath, lProgressBannerGrid, lDescription);
 
-                l_Grid.DataContext = null;
+            //    l_Grid.DataContext = null;
 
-                l_IsoInfo.IsCloudsave = true;
+            //    l_IsoInfo.IsCloudsave = true;
 
-                l_Grid.DataContext = l_IsoInfo;
-            }
+            //    l_Grid.DataContext = l_IsoInfo;
+            //}
         }
 
         public async void loadItemAsync(object a_Item)
@@ -579,6 +579,9 @@ namespace Omega_Red.Managers
             return false;
         }
 
+        public void registerItem(object a_Item)
+        {
+        }
 
         public System.ComponentModel.ICollectionView Collection
         {

@@ -39,7 +39,7 @@
       <Value Profile="(Default)">English</Value>
     </Setting>
     <Setting Name="ColourSchema" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Blue</Value>
+      <Value Profile="(Default)">Black</Value>
     </Setting>
     <Setting Name="MediaOutputType" Type="System.String" Scope="User">
       <Value Profile="(Default)">Capture</Value>

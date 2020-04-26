@@ -80,7 +80,7 @@ static std::string gpuDriverVersion;
 extern WindowsAudioBackend *winAudioBackend;
 
 
-void *g_TouchPadHandler;
+GetTouchPadCallback g_getTouchPad;
 
 SetDataCallback g_setAudioData = nullptr;
 
@@ -128,14 +128,11 @@ static std::wstring s_boot_file;
 
 std::vector<std::wstring> GetWideCmdLine()
 {
-    wchar_t **wargv;
-    int wargc = -1;
-    wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
-
-    std::vector<std::wstring> wideArgs(wargv, wargv + wargc);
-    LocalFree(wargv);
+    std::vector<std::wstring> wideArgs;
 
 	if (!s_boot_file.empty()) {
+
+        wideArgs.push_back(L"Empty_Stub");
 
 		std::wstring l_boot_file = s_boot_file;
 
@@ -156,9 +153,9 @@ std::vector<std::wstring> GetWideCmdLine()
     return wideArgs;
 }
 
-extern "C" int __stdcall Launch(LPWSTR szCmdLine, IUnknown *a_PtrUnkDirectX11Device, HWND a_VideoPanelHandler, HWND a_CaptureHandler, void *a_TouchPadHandler, SetDataCallback a_setAudioData, LPWSTR szStickDirectory)
+extern "C" int __stdcall Launch(LPWSTR szCmdLine, IUnknown *a_PtrUnkDirectX11Device, HWND a_VideoPanelHandler, HWND a_CaptureHandler, GetTouchPadCallback a_getTouchPad, SetDataCallback a_setAudioData, LPWSTR szStickDirectory)
 {
-    g_TouchPadHandler = a_TouchPadHandler;
+    g_getTouchPad = a_getTouchPad;
 
     s_boot_file = szCmdLine;
 

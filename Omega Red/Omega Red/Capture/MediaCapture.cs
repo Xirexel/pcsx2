@@ -102,25 +102,8 @@ namespace Omega_Red.Capture
             try
             {
                 var l_ExecutingAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-
-                AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args)=>
-                {
-                    using (var lCaptureManagerToCSharpProxyStream = l_ExecutingAssembly.GetManifestResourceStream("Omega_Red.Modules.x86.CaptureManagerToCSharpProxy.dll"))
-                    {
-                        if (lCaptureManagerToCSharpProxyStream == null)
-                            return null;
-
-                        byte[] lCaptureManagerToCSharpProxybuffer = new byte[(int)lCaptureManagerToCSharpProxyStream.Length];
-
-                        lCaptureManagerToCSharpProxyStream.Read(lCaptureManagerToCSharpProxybuffer, 0, lCaptureManagerToCSharpProxybuffer.Length);
-                        
-                        var lCaptureManagerToCSharpProxyAssembly = Assembly.Load(lCaptureManagerToCSharpProxybuffer);
-
-                        return lCaptureManagerToCSharpProxyAssembly;
-                    }
-                };
-
-                using (var lStream = l_ExecutingAssembly.GetManifestResourceStream("Omega_Red.Modules.x86.MediaCapture.dll"))
+                
+                using (var lStream = l_ExecutingAssembly.GetManifestResourceStream("Omega_Red.Modules.AnyCPU.MediaCapture.dll"))
                 {
                     if (lStream == null)
                         return;
@@ -220,6 +203,8 @@ namespace Omega_Red.Capture
 
             do
             {
+                if (App.OffVideoRecording)
+                    break;
 
                 m_TempFileName = System.IO.Path.GetTempFileName();
 
@@ -259,7 +244,9 @@ namespace Omega_Red.Capture
 
             do
             {
-                
+                if (App.OffVideoRecording)
+                    break;
+
                 if (string.IsNullOrEmpty(m_TempFileName))
                     break;
 
@@ -302,6 +289,8 @@ namespace Omega_Red.Capture
 
             do
             {
+                if (App.OffVideoRecording)
+                    break;
                 
                 if (m_CaptureObj == null)
                     break;
@@ -322,6 +311,11 @@ namespace Omega_Red.Capture
                                 
                 var l_AudioBitRate = getAudioBitRates();
 
+                if (l_VideoBitRateList == null || l_VideoBitRateList.Count == 0)
+                    break;
+
+                if (l_AudioBitRate == null)
+                    break;
 
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                 {
@@ -449,6 +443,9 @@ namespace Omega_Red.Capture
 
             do
             {
+                if (App.OffVideoRecording)
+                    break;
+
 
                 if (m_CaptureObj == null)
                     break;
@@ -467,6 +464,8 @@ namespace Omega_Red.Capture
         {
             do
             {
+                if (App.OffVideoRecording)
+                    break;
 
                 if (m_CaptureObj == null)
                     break;
@@ -483,6 +482,8 @@ namespace Omega_Red.Capture
         {
             do
             {
+                if (App.OffVideoRecording)
+                    break;
 
                 if (m_CaptureObj == null)
                     break;
@@ -501,6 +502,8 @@ namespace Omega_Red.Capture
 
             do
             {
+                if (App.OffVideoRecording)
+                    break;
 
                 if (m_CaptureObj == null)
                     break;
@@ -521,6 +524,8 @@ namespace Omega_Red.Capture
 
             do
             {
+                if (App.OffVideoRecording)
+                    break;
 
                 if (m_CaptureObj == null)
                     break;
@@ -539,6 +544,8 @@ namespace Omega_Red.Capture
         {
             do
             {
+                if (App.OffVideoRecording)
+                    break;
 
                 if (m_CaptureObj == null)
                     break;
@@ -556,6 +563,8 @@ namespace Omega_Red.Capture
         {
             do
             {
+                if (App.OffVideoRecording)
+                    break;
 
                 if (m_CaptureObj == null)
                     break;
@@ -575,6 +584,9 @@ namespace Omega_Red.Capture
 
             do
             {
+                if (App.OffVideoRecording)
+                    break;
+
                 if (m_CaptureObj == null)
                     break;
 
@@ -594,6 +606,9 @@ namespace Omega_Red.Capture
 
             do
             {
+                if (App.OffVideoRecording)
+                    break;
+
                 if (m_CaptureObj == null)
                     break;
 

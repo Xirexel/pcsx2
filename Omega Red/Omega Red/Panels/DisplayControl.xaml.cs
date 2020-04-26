@@ -24,7 +24,7 @@ namespace Omega_Red.Panels
         {
             InitializeComponent();
 
-            Managers.PadControlManager.Instance.VibrationEvent += Instance_VibrationEvent;
+            TouchPadPanel.VibrationEvent += Instance_VibrationEvent;
 
             Tools.PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
         }

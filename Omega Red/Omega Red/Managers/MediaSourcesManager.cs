@@ -83,62 +83,68 @@ namespace Omega_Red.Managers
             _mediaSourceInfoCollection.Clear();
 
             MediaRecorderManager.Instance.getCollectionOfSources((aXMLsources)=> {
-                
-                XmlDocument doc = new XmlDocument();
-
-                doc.LoadXml(aXMLsources.Replace("MFVideoFormat_", "").Replace("MFAudioFormat_", ""));
-
-                if (doc.DocumentElement != null)
+                               
+                if (!string.IsNullOrWhiteSpace(aXMLsources))
                 {
 
-                    var lsources = doc.DocumentElement.SelectNodes("//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_HW_SOURCE']/SingleValue[@Value='Hardware device']]");
+                    XmlDocument doc = new XmlDocument();
 
-                    if (lsources != null)
+                    doc.LoadXml(aXMLsources.Replace("MFVideoFormat_", "").Replace("MFAudioFormat_", ""));
+
+                    if (doc.DocumentElement != null)
                     {
-                        foreach (var litem in lsources)
+
+                        var lsources = doc.DocumentElement.SelectNodes("//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_HW_SOURCE']/SingleValue[@Value='Hardware device']]");
+
+                        if (lsources != null)
                         {
-                            var lSourceNode = litem as XmlNode;
-
-                            if (lSourceNode != null)
+                            foreach (var litem in lsources)
                             {
-                                var lAttr = lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME']/SingleValue/@Value");
+                                var lSourceNode = litem as XmlNode;
 
-                                if (lAttr != null)
+                                if (lSourceNode != null)
                                 {
-                                    var lMediaTypes = lSourceNode.SelectSingleNode("PresentationDescriptor/StreamDescriptor/MediaTypes");
+                                    var lAttr = lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME']/SingleValue/@Value");
 
-                                    addSource(lAttr.Value, MediaSourceType.Audio, lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_SYMBOLIC_LINK']/SingleValue/@Value").Value, lMediaTypes, false);
+                                    if (lAttr != null)
+                                    {
+                                        var lMediaTypes = lSourceNode.SelectSingleNode("PresentationDescriptor/StreamDescriptor/MediaTypes");
+
+                                        addSource(lAttr.Value, MediaSourceType.Audio, lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_SYMBOLIC_LINK']/SingleValue/@Value").Value, lMediaTypes, false);
+                                    }
+                                }
+                            }
+                        }
+
+                        lsources = doc.DocumentElement.SelectNodes("//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_MEDIA_TYPE']/Value.ValueParts/ValuePart[@Value='MFMediaType_Video'] and Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_HW_SOURCE']/SingleValue[@Value='Hardware device']]");
+
+                        if (lsources != null)
+                        {
+                            foreach (var litem in lsources)
+                            {
+                                var lSourceNode = litem as XmlNode;
+
+                                if (lSourceNode != null)
+                                {
+                                    var lAttr = lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME']/SingleValue/@Value");
+
+                                    if (lAttr != null)
+                                    {
+                                        var lMediaTypes = lSourceNode.SelectSingleNode("PresentationDescriptor/StreamDescriptor/MediaTypes");
+
+                                        addSource(lAttr.Value, MediaSourceType.Video, lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK']/SingleValue/@Value").Value, lMediaTypes, false);
+                                    }
                                 }
                             }
                         }
                     }
-
-                    lsources = doc.DocumentElement.SelectNodes("//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_MEDIA_TYPE']/Value.ValueParts/ValuePart[@Value='MFMediaType_Video'] and Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_HW_SOURCE']/SingleValue[@Value='Hardware device']]");
-
-                    if (lsources != null)
-                    {
-                        foreach (var litem in lsources)
-                        {
-                            var lSourceNode = litem as XmlNode;
-
-                            if (lSourceNode != null)
-                            {
-                                var lAttr = lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME']/SingleValue/@Value");
-
-                                if (lAttr != null)
-                                {
-                                    var lMediaTypes = lSourceNode.SelectSingleNode("PresentationDescriptor/StreamDescriptor/MediaTypes");
-
-                                    addSource(lAttr.Value, MediaSourceType.Video, lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK']/SingleValue/@Value").Value, lMediaTypes, false);
-                                }
-                            }
-                        }
-                    }
+                    
+                    load();
                 }
 
-                load();
+                Thread.Sleep(200);
 
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
                 {
                     if (method != null)
                         method();
@@ -256,6 +262,10 @@ namespace Omega_Red.Managers
         public bool accessLoadItem(object a_Item)
         {
             return false;
+        }
+
+        public void registerItem(object a_Item)
+        {
         }
 
         public void createItem()

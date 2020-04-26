@@ -28,6 +28,7 @@ void CALLBACK SPUplayCDDAchannel(short *, int);
 
 void *g_WindowHandle = NULL;
 
+void unblock();
 
 long CALLBACK Proxy_SPUopen(HWND a_hwnd)
 {
@@ -35,6 +36,8 @@ long CALLBACK Proxy_SPUopen(HWND a_hwnd)
         return 0;
 
 	SPUinit();
+
+	unblock();
 
     return SPUopen(g_WindowHandle);
 }
@@ -45,6 +48,7 @@ long CALLBACK Proxy_SPUshutdown(void){}
 
 long CALLBACK Proxy_SPUclose(void)
 {
+	SPUclose();
     SPUshutdown();
     //return SPUclose();
 }

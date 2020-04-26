@@ -4,6 +4,8 @@
 #include "Window/GSWndDX.h"
 #include "Renderers/DX11/GPURendererDX11.h"
 #include "Renderers/DX11/GPUDevice11.h"
+#include "GPUPng.h"
+#include "crc.h"
 
 #include <cstdint>
 #include <algorithm>
@@ -20,12 +22,22 @@ static void* s_sharedhandle = nullptr;
 static void *s_capturehandle = nullptr;
 static void *s_directXDeviceNative = nullptr;
 
+extern "C" BOOL bUseFrameLimit;
+static std::wstring s_TexturePacksPath;
+static UINT32 s_TexturePackMode = 0;
+
+enum TexturePackMode {
+    NONE = 0,
+    LOAD = NONE + 1,
+    SAVE = LOAD + 1
+};
+
 
 CallbackDelegate s_CallbackDelegate = NULL;
 
 VideoRenderer::VideoRenderer():
-	m_TexturePackMode(0),
 	m_TexturePacksPath(L"")
+	,m_is_fxaa(FALSE)
 {
 }
 
@@ -121,7 +133,27 @@ void VideoRenderer::execute(const wchar_t *a_command, wchar_t **a_result)
                 } else if (std::wstring(l_ChildNode.name()) == L"Shutdown") {
 
                 } else if (std::wstring(l_ChildNode.name()) == L"IsFXAA") {
+
+                    auto l_Attribute = l_ChildNode.attribute(L"Value");
+
+                    m_is_fxaa = l_Attribute.as_uint(0);
+
+                    if (!l_Attribute.empty()) {
+                        if (m_VideoRenderer) {
+                            m_VideoRenderer->setFXAA(m_is_fxaa);
+                        }
+                    }
 					
+                } else if (std::wstring(l_ChildNode.name()) == L"IsFrameLimit") {
+
+                    auto l_Attribute = l_ChildNode.attribute(L"Value");
+
+                    if (!l_Attribute.empty()) {
+						
+                        bUseFrameLimit = l_Attribute.as_uint(0);
+                    }
+					
+
                 } else if (std::wstring(l_ChildNode.name()) == L"TexturePackMode") {
 
                     auto l_Attribute = l_ChildNode.attribute(L"Value");
@@ -153,23 +185,22 @@ int VideoRenderer::init(void *sharedhandle, void *capturehandle, void *directXDe
 
 void VideoRenderer::setTexturePacksMode(UINT32 a_TexturePackMode)
 {
-    //m_TexturePackMode = a_TexturePackMode;
-
-	//if (m_TexturePackMode == 0)
-        iHiResTextures = 1;
-    //else
-    //    iHiResTextures = 0;
+    s_TexturePackMode = a_TexturePackMode;
+	
+    iHiResTextures = 1;
 
 	if (m_VideoRenderer)
-        m_VideoRenderer->setTexturePacksMode(m_TexturePackMode);
+            m_VideoRenderer->setTexturePacksMode(s_TexturePackMode);
 }
 
 void VideoRenderer::setTexturePacksPath(const std::wstring &a_RefTexturePacksPath)
 {
     m_TexturePacksPath = a_RefTexturePacksPath;
+	
+    s_TexturePacksPath = m_TexturePacksPath + (s_TexturePackMode == 2 ? L"\\Dump" : L"") + L"\\" + m_DiscSerial + L"\\";
 		
     if (m_VideoRenderer)
-        m_VideoRenderer->setTexturePacksPath(m_TexturePacksPath + (m_TexturePackMode == 2 ? L"\\Dump" : L"") + L"\\" + m_DiscSerial + L"\\");
+        m_VideoRenderer->setTexturePacksPath(s_TexturePacksPath);
 }
 
 void VideoRenderer::setTexturePackCallbackHandler(int a_TexturePackCallbackHandler)
@@ -201,11 +232,7 @@ int VideoRenderer::open()
     std::unique_ptr<GPUDevice> dev;
 
     std::shared_ptr<GSWnd> window = std::make_shared<GSWndDX>();
-
-    //window->Create(L"DirectX11 window", 800, 600);
-
-    //window->Show();
-
+	
     dev = std::make_unique<GPUDevice11>();
 
     m_VideoRenderer = std::make_unique<GPURendererDX11>();
@@ -220,9 +247,11 @@ int VideoRenderer::open()
 
     s_gpu = m_VideoRenderer.get();
 
-	setTexturePacksMode(m_TexturePackMode);
+	setTexturePacksMode(s_TexturePackMode);
 
 	setTexturePacksPath(m_TexturePacksPath);
+
+    m_VideoRenderer->setFXAA(m_is_fxaa);	
  
     return 0;
 }
@@ -230,6 +259,67 @@ int VideoRenderer::open()
 void VideoRenderer::close()
 {
     m_VideoRenderer.reset();
+}
+
+extern "C" void saveTexture(INT32 aXoffset, INT32 aYoffset, INT32 aWidth, INT32 aHeight, DWORD aFormat, DWORD aType, const void *aPtrPixels)
+{
+    if (s_TexturePackMode != TexturePackMode::SAVE)
+        return;
+
+
+    int iTSize = 256;
+
+    UINT32 l_source_pixel_bytes = 4;
+
+    if ((aFormat == GL_RGB) || aFormat == GL_BGR_EXT)
+        l_source_pixel_bytes = 3;
+
+    if (aType == GL_UNSIGNED_SHORT_5_5_5_1_EXT)
+        l_source_pixel_bytes = 2;
+
+    GPUPng::Format l_format = GPUPng::RGBA_PNG;
+
+
+    if (l_source_pixel_bytes == 3)
+        l_format = GPUPng::RGB_PNG;
+    if (l_source_pixel_bytes == 2)
+        l_format = GPUPng::R16I_PNG;
+
+    wchar_t l_stringID[256];
+
+    _ui64tow_s(g_currentClutId, l_stringID, 256, 16);
+
+
+
+    std::wstring l_path = s_TexturePacksPath + l_stringID + L".png";
+
+	
+	
+	INT32 l_sourceRowPitch = l_source_pixel_bytes * aWidth;
+
+    auto l_RowPitch = l_source_pixel_bytes * iTSize;
+
+
+    std::unique_ptr<uint8[]> l_data(new uint8[l_RowPitch * iTSize]);
+
+    ZeroMemory(l_data.get(), l_RowPitch * iTSize);
+
+    auto l_ptrdata = l_data.get();
+
+    uint8 *l_sourcePixels = (uint8 *)aPtrPixels;
+	
+    l_ptrdata += (aYoffset * l_RowPitch + aXoffset * l_source_pixel_bytes);
+
+    for (size_t h = 0; h < aHeight; h++) {
+
+        memcpy(l_ptrdata, l_sourcePixels, l_sourceRowPitch);
+
+        l_sourcePixels += l_sourceRowPitch;
+
+        l_ptrdata += l_RowPitch;
+    }
+	   
+    GPUPng::Save(GPUPng::RGBA_PNG, l_path, l_data.get(), iTSize, iTSize, l_RowPitch, 9, true);
 }
 
 extern "C" void executeExecute(const wchar_t *a_command, wchar_t **a_result)

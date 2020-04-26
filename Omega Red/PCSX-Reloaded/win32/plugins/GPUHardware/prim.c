@@ -1719,7 +1719,7 @@ BOOL CheckAgainstFrontScreen(short imageX0,short imageY0,short imageX1,short ima
  else
    xrUploadArea.y1 = imageY1;
 
- if ((xrUploadArea.x0 != xrUploadArea.x1) && (xrUploadArea.y0 != xrUploadArea.y1))
+ if ((xrUploadArea.x0 != xrUploadArea.x1))
       return TRUE; 
  else return FALSE;
 }

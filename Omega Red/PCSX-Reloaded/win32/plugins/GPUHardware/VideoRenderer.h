@@ -21,6 +21,8 @@ private:
 
 	UINT32 m_TexturePackMode;
 
+    BOOL m_is_fxaa;
+
     std::unique_ptr<GPURenderer> m_VideoRenderer;
 	
 	std::wstring m_TexturePacksPath;

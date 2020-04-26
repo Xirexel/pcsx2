@@ -84,8 +84,8 @@ namespace Omega_Red.Tools
 
         void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
         {
-            if (a_Status != PCSX2Controller.StatusEnum.NoneInitilized && PCSX2Controller.Instance.IsoInfo != null)
-                load(PCSX2Controller.Instance.IsoInfo.DiscSerial);
+            //if (a_Status != PCSX2Controller.StatusEnum.NoneInitilized && PCSX2Controller.Instance.IsoInfo != null)
+            //    load(PCSX2Controller.Instance.IsoInfo.DiscSerial);
         }
 
         private void load(string a_disk_serial)

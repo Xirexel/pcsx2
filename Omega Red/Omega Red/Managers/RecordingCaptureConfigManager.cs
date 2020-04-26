@@ -60,6 +60,10 @@ namespace Omega_Red.Managers
         {
         }
 
+        public void registerItem(object a_Item)
+        {
+        }
+
     }
 }
 

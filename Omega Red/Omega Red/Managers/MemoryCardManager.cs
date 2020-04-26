@@ -710,21 +710,29 @@ namespace Omega_Red.Managers
                     l_disk_serial = "MemoryCard.shared";
 
                 if (lProgressBannerGrid != null)
-                    await DriveManager.Instance.startUploadingMemoryCardAsync(l_disk_serial, l_TempFileName, lProgressBannerGrid, lDescription);
+                    DriveManager.Instance.startUploadingMemoryCard(
+                        l_disk_serial, 
+                        l_TempFileName, 
+                        lProgressBannerGrid, 
+                        lDescription,
+                        (a_state)=> {
+                            if(a_state)
+                            {
+                                try
+                                {
+                                    File.Delete(l_TempFileName);
+                                }
+                                catch (Exception)
+                                {
+                                }
 
-                try
-                {
-                    File.Delete(l_TempFileName);
-                }
-                catch (Exception)
-                {
-                }
+                                l_Grid.DataContext = null;
 
-                l_Grid.DataContext = null;
+                                l_MemoryCardInfo.IsCloudsave = true;
 
-                l_MemoryCardInfo.IsCloudsave = true;
-
-                l_Grid.DataContext = l_MemoryCardInfo;
+                                l_Grid.DataContext = l_MemoryCardInfo;
+                            }
+                        });
             }
         }
 
@@ -797,6 +805,10 @@ namespace Omega_Red.Managers
             }
 
             return false;
+        }
+        
+        public void registerItem(object a_Item)
+        {
         }
 
         public ICollectionView Collection
