@@ -27,7 +27,8 @@ InstallDir "$PROGRAMFILES\PCSX2 ${APP_VERSION}"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 
-; RequestExecutionLevel is admin for the full install, so we need to avoid transferring the elevated rights to the child process.
+; RequestExecutionLevel is admin for the full install, so we need to avoid transferring the elevated rights to PCSX2
+; if the user chooses to run from the installer upon completion.
 !define MUI_FINISHPAGE_RUN "$WINDIR\explorer.exe"
 !define MUI_FINISHPAGE_RUN_PARAMETERS "$INSTDIR\pcsx2.exe"
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW ModifyRunCheckbox
@@ -70,6 +71,7 @@ Section ""
   WriteRegDWORD HKLM "${INSTDIR_REG_KEY}"  "NoModify" 1
   WriteRegDWORD HKLM "${INSTDIR_REG_KEY}"  "NoRepair" 1
   WriteUninstaller "${UNINST_EXE}"
+  RMDir /r "$TEMP\PCSX2_installer_temp"
 SectionEnd
 
 Section "" SID_PCSX2
