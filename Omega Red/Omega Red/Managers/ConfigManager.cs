@@ -97,12 +97,38 @@ namespace Omega_Red.Managers
             }
         }
 
+        enum SkipFrameMode
+        {
+            None = 1,
+            One = 2,
+            Two = 3
+        }
+
+        class SkipFrameModeInfo
+        {
+            public SkipFrameMode Value { get; set; }
+
+            public override string ToString()
+            {
+                switch (Value)
+                {
+                    case SkipFrameMode.None:
+                        return App.Current.Resources["SkipFrameModeNoneTitle"] as String;
+                    case SkipFrameMode.One:
+                        return App.Current.Resources["SkipFrameModeOneTitle"] as String;
+                    case SkipFrameMode.Two:
+                        return App.Current.Resources["SkipFrameModeTwoTitle"] as String;
+                    default:
+                        return "";
+                }
+            }
+        }
+
 
         private ICollectionView mDisplayModeView = null;
 
         private readonly ObservableCollection<DisplayModeInfo> _displayModeCollection = new ObservableCollection<DisplayModeInfo>();
-
-
+       
 
 
         private ICollectionView mControlModeView = null;
@@ -111,7 +137,13 @@ namespace Omega_Red.Managers
 
 
 
-                       
+        private ICollectionView mSkipFrameModeView = null;
+
+        private readonly ObservableCollection<SkipFrameModeInfo> _skipFrameModeCollection = new ObservableCollection<SkipFrameModeInfo>();
+
+
+
+
 
 
 
@@ -167,6 +199,10 @@ namespace Omega_Red.Managers
 
         public event Action<Object> SwitchCaptureConfigEvent;
 
+        public event Action<int> DisplayFrameEvent;
+
+        public event Action<string> FrameRateEvent;
+
         private ConfigManager()
         {
             System.Reflection.Assembly l_assembly = Assembly.GetExecutingAssembly();
@@ -194,6 +230,18 @@ namespace Omega_Red.Managers
                 _displayModeCollection.Add(new DisplayModeInfo() { Value = DisplayMode.Full });
 
                 mDisplayModeView = CollectionViewSource.GetDefaultView(_displayModeCollection);
+
+
+
+
+                _skipFrameModeCollection.Add(new SkipFrameModeInfo() { Value = SkipFrameMode.None });
+
+                _skipFrameModeCollection.Add(new SkipFrameModeInfo() { Value = SkipFrameMode.One });
+
+                _skipFrameModeCollection.Add(new SkipFrameModeInfo() { Value = SkipFrameMode.Two });
+
+                mSkipFrameModeView = CollectionViewSource.GetDefaultView(_skipFrameModeCollection);
+
 
 
 
@@ -264,6 +312,8 @@ namespace Omega_Red.Managers
 
                 mDisplayModeView.CurrentChanged += mDisplayModeView_CurrentChanged;
 
+                mSkipFrameModeView.CurrentChanged += mSkipFrameModeView_CurrentChanged;
+
                 mControlModeView.CurrentChanged += mControlModeView_CurrentChanged;
                 
                 mLanguageModeView.CurrentChanged += mLanguageModeView_CurrentChanged;
@@ -288,6 +338,24 @@ namespace Omega_Red.Managers
                 reset();
             });
 
+        }
+
+        private void mSkipFrameModeView_CurrentChanged(object sender, EventArgs e)
+        {
+            if (mSkipFrameModeView.CurrentItem == null)
+                return;
+
+            var l_SkipFrameModeInfo = (SkipFrameModeInfo)mSkipFrameModeView.CurrentItem;
+
+            if (SwitchDisplayModeEvent == null)
+                return;
+
+            var l_displayFrame = (int)l_SkipFrameModeInfo.Value;
+
+            if (DisplayFrameEvent != null)
+                DisplayFrameEvent(l_displayFrame);
+
+            Settings.Default.SkipFrameMode = l_displayFrame;
         }
 
         private void mTexturePackModeView_CurrentChanged(object sender, EventArgs e)
@@ -332,7 +400,16 @@ namespace Omega_Red.Managers
                 mDisplayModeView.MoveCurrentToPosition(-1);
 
                 mDisplayModeView.MoveCurrentToPosition((int)l_DisplayMode);
+
                 
+                SkipFrameMode l_SkipFrameMode = (SkipFrameMode)Enum.ToObject(typeof(SkipFrameMode), Settings.Default.SkipFrameMode);
+                
+                mSkipFrameModeView.MoveCurrentToPosition(-1);
+
+                mSkipFrameModeView.MoveCurrentToPosition(((int)l_SkipFrameMode) - 1);
+
+
+
 
 
                 ControlMode l_ControlMode = ControlMode.Button;
@@ -610,11 +687,22 @@ namespace Omega_Red.Managers
             Settings.Default.DisplayMode = l_DisplayMode.Value.ToString();
         }
         
+        public void setFrameRate(string a_frameRate)
+        {
+            if (FrameRateEvent != null)
+                FrameRateEvent(a_frameRate);
+        }
+
         public ICollectionView DisplayModeCollection
         {
             get { return mDisplayModeView; }
         }
-        
+
+        public ICollectionView SkipFrameModeCollection
+        {
+            get { return mSkipFrameModeView; }
+        }
+
 
         public ICollectionView ControlModeCollection
         {

@@ -442,5 +442,29 @@ namespace Omega_Red.Properties {
                 this["TexturePackMode"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public int SkipFrameMode {
+            get {
+                return ((int)(this["SkipFrameMode"]));
+            }
+            set {
+                this["SkipFrameMode"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool ShowFrameRate {
+            get {
+                return ((bool)(this["ShowFrameRate"]));
+            }
+            set {
+                this["ShowFrameRate"] = value;
+            }
+        }
     }
 }

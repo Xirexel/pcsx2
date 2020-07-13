@@ -22,11 +22,17 @@ using System.Threading.Tasks;
 using Omega_Red.Properties;
 using System.IO.Compression;
 using Omega_Red.Managers;
+using SevenZipExtractor;
+using System.Windows;
+using System.Windows.Threading;
+using System.Threading;
 
 namespace Omega_Red.Tools
 {
     class BiosControl
     {
+        static public event Action<string> ShowErrorEvent;
+
         private const int m_biosSize = 512 * 1024;
 
         private const int m_nvmSize = 1024;
@@ -631,7 +637,16 @@ namespace Omega_Red.Tools
 
             return l_result;
         }
-        
+
+        static private void showErrorEvent(string a_message)
+        {
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
+            {
+                if (ShowErrorEvent != null)
+                    ShowErrorEvent(a_message);
+            });
+        }
+
         // Loads the configured bios rom file into PS2 memory.  PS2 memory must be allocated prior to
         // this method being called.
         //
@@ -670,29 +685,37 @@ namespace Omega_Red.Tools
                         if (!File.Exists(l_splitsFilePath[0]))
                             break;
 
-                        using (FileStream zipToOpen = new FileStream(l_splitsFilePath[0], FileMode.Open))
+                        try
                         {
-                            using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
+                            using (ArchiveFile archive = new ArchiveFile(l_splitsFilePath[0]))
                             {
-                                var l_entry = archive.GetEntry(l_splitsFilePath[1]);
+                                var l_entry = archive.Entries.FirstOrDefault(p => p.FileName == l_splitsFilePath[1]);
 
                                 if (l_entry != null)
                                 {
-                                    using (BinaryReader reader = new BinaryReader(l_entry.Open()))
+                                    using (MemoryStream l_memoryStream = new MemoryStream())
                                     {
                                         try
                                         {
-                                            byte[] l_memory = reader.ReadBytes(a_SecondArg);
+                                            l_entry.Extract(l_memoryStream);
+
+                                            l_memoryStream.Position = 0;
+
+                                            byte[] l_memory = l_memoryStream.ToArray();
 
                                             Marshal.Copy(l_memory, 0, a_FirstArg, Math.Min(a_SecondArg, l_memory.Length));
                                         }
-                                        catch (Exception)
+                                        catch (Exception exc)
                                         {
+                                            showErrorEvent(exc.Message);
                                         }
                                     }
                                 }
                             }
-
+                        }
+                        catch (Exception exc)
+                        {
+                            showErrorEvent(exc.Message);
                         }
                     }
                     else

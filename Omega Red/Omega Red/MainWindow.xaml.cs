@@ -66,6 +66,10 @@ namespace Omega_Red
 
             MediaRecorderManager.Instance.ShowInfoEvent += Instance_ShowInfoEvent;
 
+            BiosManager.Instance.ShowErrorEvent += Instance_ShowErrorEvent;
+
+            BiosControl.ShowErrorEvent += Instance_ShowErrorEvent;
+
 #if DEBUG
 
             WindowState = System.Windows.WindowState.Normal;
@@ -78,9 +82,15 @@ namespace Omega_Red
         {
             mTaskbarIcon.ShowBalloonTip(Title, a_message, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Warning);
         }
+
         private void Instance_ShowInfoEvent(string a_message)
         {
             mTaskbarIcon.ShowBalloonTip(Title, a_message, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
+        }
+
+        private void Instance_ShowErrorEvent(string a_message)
+        {
+            mTaskbarIcon.ShowBalloonTip(Title, a_message, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Error);
         }
 
         void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)

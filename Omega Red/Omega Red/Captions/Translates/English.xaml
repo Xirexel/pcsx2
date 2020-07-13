@@ -107,4 +107,11 @@
     <sys:String x:Key="TexturePackModeSaveTitle">Save textures</sys:String>
     <sys:String x:Key="LowBatteryTitle">has low battery!!!</sys:String>
     <sys:String x:Key="EmptyBatteryTitle">has empty battery!!!</sys:String>
+    <sys:String x:Key="SkipFrameModeTitle">Skip frame mode:</sys:String>
+    <sys:String x:Key="SkipFrameModeNoneTitle">Skip none frames</sys:String>
+    <sys:String x:Key="SkipFrameModeOneTitle">Skip one frame</sys:String>
+    <sys:String x:Key="SkipFrameModeTwoTitle">Skip two frames</sys:String>
+    <sys:String x:Key="ShowFrameRateTitle">Show frames per second</sys:String>
+    <sys:String x:Key="RefreshScreenTitle">Refresh screen:</sys:String>
+    <sys:String x:Key="FPSTitle">FPS</sys:String> 
 </ResourceDictionary>

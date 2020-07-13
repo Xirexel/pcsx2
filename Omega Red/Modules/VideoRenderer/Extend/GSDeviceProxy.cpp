@@ -50,6 +50,13 @@ GSDeviceProxy::GSDeviceProxy()
     m_mipmap = theApp.GetConfigI("mipmap");
     m_upscale_multiplier = theApp.GetConfigI("upscale_multiplier");
 
+    const BiFiltering nearest_filter = static_cast<BiFiltering>(theApp.GetConfigI("filter"));
+    const int aniso_level = theApp.GetConfigI("MaxAnisotropy");
+    if ((nearest_filter != BiFiltering::Nearest && !theApp.GetConfigB("paltex") && aniso_level))
+        m_aniso_filter = aniso_level;
+    else
+        m_aniso_filter = 0;
+
 
 
     m_is_wired = FALSE;

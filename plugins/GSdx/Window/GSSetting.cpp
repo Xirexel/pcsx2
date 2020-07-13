@@ -37,6 +37,11 @@ const char* dialog_message(int ID, bool* updateText) {
 				" Rendering is smoother but it could generate a few glitches. If upscaling is enabled, this setting is recommended over 'Bilinear Forced'\n\n"
 				"Bilinear Forced:\nAlways enable interpolation. Rendering is smoother but it could generate some glitches.\n\n"
 				"Bilinear PS2:\nUse same mode as the PS2. It is the more accurate option.";
+		case IDC_HALF_SCREEN_TS:
+			return "Control the half-screen fix detection on texture shuffling.\n\n"
+				"Automatic:\nUses an algorithm to automatically enable or disable the detection.\n\n"
+				"Force-Disabled:\nDisables the detection. Will cause visual bugs in many games. It helps Xenosaga games.\n\n"
+				"Force-Enabled:\nAlways enables the detection. Use it when a game has half-screen issues.";
 		case IDC_TRI_FILTER:
 			return "Control the texture tri-filtering of the emulation.\n\n"
 				"None:\nNo extra trilinear filtering.\n\n"
@@ -53,7 +58,7 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Full:\nFor an optimal experience with Direct3D.\n\n"
 				"Aggressive:\nUse more aggressive CRC hacks.\n"
 				"Removes effects in some games which make the image appear sharper/clearer.\n"
-				"Affected games: AC4, BleachBB, Bully, DBZBT 2 & 3, DeathByDegrees, Evangelion, FF games, FightingBeautyWulong, GOW 1 & 2, Kunoichi, IkkiTousen, Okami, Oneechanbara2, OnimushaDoD, RDRevolver, Simple2000Vol114, SoTC, SMT3, SMTDDS 1 & 2, SteambotChronicles, Tekken5, Ultraman, Yakuza 1 & 2.\n";
+				"Affected games: AC4, BleachBB, Bully, DBZBT 2 & 3, DeathByDegrees, Evangelion, FF games, FightingBeautyWulong, GOW 1 & 2, Kunoichi, IkkiTousen, Okami, Oneechanbara2, OnimushaDoD, RDRevolver, Simple2000Vol114, SoTC, SMT3, SMTDDS 1 & 2, SteambotChronicles, Tekken5, Ultraman, XenosagaE3, Yakuza 1 & 2.\n";
 		case IDC_SKIPDRAWHACK:
 		case IDC_SKIPDRAWHACKEDIT:
 		case IDC_SKIPDRAWOFFSET:
@@ -164,8 +169,8 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Automatic detection is recommended.\n\n"
 				"Note: This option is only supported by GPUs which support at least Direct3D 10.";
 		case IDC_IMAGE_LOAD_STORE:
-			return "Allows advanced atomic operations to speed up Accurate Date.\n"
-				"Only disable this if using Accurate Date causes (GPU driver) issues.\n\n"
+			return "Allows advanced atomic operations to speed up DATE Accuracy.\n"
+				"Only disable this if using DATE Accuracy causes (GPU driver) issues.\n\n"
 				"Note: This option is only supported by GPUs which support at least Direct3D 11.";
 		case IDC_SPARSE_TEXTURE:
 			return "Allows to reduce VRAM usage on the GPU.\n\n"

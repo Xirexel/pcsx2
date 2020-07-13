@@ -41,6 +41,8 @@ namespace Omega_Red.ViewModels
             ConfigManager.Instance.SwitchCaptureConfigEvent += Instance_SwitchCaptureConfigEvent;            
 
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+
+            ConfigManager.Instance.FrameRateEvent += (a_framerate) => { FrameRate = a_framerate; };
         }
 
         private void Instance_SwitchCaptureConfigEvent(object obj)
@@ -88,6 +90,11 @@ namespace Omega_Red.ViewModels
         public ICollectionView DisplayModeCollection
         {
             get { return ConfigManager.Instance.DisplayModeCollection; }
+        }
+               
+        public ICollectionView SkipFrameModeCollection
+        {
+            get { return ConfigManager.Instance.SkipFrameModeCollection; }
         }
 
         public ICollectionView ControlModeCollection
@@ -372,6 +379,36 @@ namespace Omega_Red.ViewModels
                 mVisibilityTexturePackMode = value;
 
                 RaisePropertyChangedEvent("VisibilityTexturePackMode");
+            }
+        }
+               
+        public bool ShowFrameRate
+        {
+            get
+            {
+                return Settings.Default.ShowFrameRate;
+            }
+            set
+            {
+                Settings.Default.ShowFrameRate = value;
+
+                RaisePropertyChangedEvent("ShowFrameRate");
+            }
+        }
+
+        private string mFrameRate = "";
+
+        public string FrameRate
+        {
+            get
+            {
+                return mFrameRate;
+            }
+            set
+            {
+                mFrameRate = value;
+
+                RaisePropertyChangedEvent("FrameRate");
             }
         }
     }

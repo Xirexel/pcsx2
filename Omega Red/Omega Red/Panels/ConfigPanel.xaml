@@ -58,6 +58,20 @@
             </Border>
             <Border>
                 <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
+                    <TextBlock Text="{DynamicResource SkipFrameModeTitle}" TextAlignment="Center"  Margin="5"/>
+                    <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding SkipFrameModeCollection}" Margin="5,0,5,5"/>
+                </StackPanel>
+            </Border>
+            <Border>
+                <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
+                    <CheckBox Margin="5" IsChecked="{Binding ShowFrameRate}" VerticalContentAlignment="Center">
+                        <TextBlock Text="{DynamicResource ShowFrameRateTitle}" TextAlignment="Center"  Margin="5"/>
+                    </CheckBox>
+                </StackPanel>
+            </Border>
+            
+            <Border>
+                <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
                     <TextBlock Text="{DynamicResource ControlModeTitle}" TextAlignment="Center"  Margin="5"/>
                     <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ControlModeCollection}" Margin="5,0,5,5"/>
                 </StackPanel>

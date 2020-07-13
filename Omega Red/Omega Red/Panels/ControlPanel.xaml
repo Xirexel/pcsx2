@@ -90,7 +90,12 @@
                     <viewModels:BiosInfoViewModel/>
                 </Expander.DataContext>
                 <Expander.Header>
-                    <StackPanel Orientation="Horizontal">
+                    <Grid HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto"/>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="auto"/>
+                        </Grid.ColumnDefinitions>
                         <TextBlock
                         TextAlignment="Left"
                         Text="{DynamicResource BIOSTitle}" 
@@ -99,13 +104,22 @@
                         Foreground="{DynamicResource MainForegroundBrush}"
                         />
                         <TextBlock
+                        Grid.Column="1"
+                        TextAlignment="Left"
+                        Text="{Binding CurrentContainerFile}" 
+                        FontSize="{DynamicResource TitleFontSize}" 
+                        FontWeight="{DynamicResource TitleFontWeight}"
+                        Foreground="{DynamicResource MainForegroundBrush}"
+                        />
+                        <TextBlock
+                        Grid.Column="2"
                         TextAlignment="Left"
                         Text="{Binding CurrentBiosZone}" 
                         FontSize="{DynamicResource TitleFontSize}" 
                         FontWeight="{DynamicResource TitleFontWeight}"
                         Foreground="{DynamicResource MainForegroundBrush}"
                         />
-                    </StackPanel>
+                    </Grid>
                 </Expander.Header>
                 <Expander.Content>
                     <views:ListPanel/>

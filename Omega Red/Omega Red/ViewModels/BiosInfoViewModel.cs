@@ -74,11 +74,20 @@ namespace Omega_Red.ViewModels
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
             {
                 CurrentBiosZone = "";
-
+                
                 if (PCSX2Controller.Instance.BiosInfo == null)
                     return;
 
-                CurrentBiosZone = ": " + PCSX2Controller.Instance.BiosInfo.Zone + " " + PCSX2Controller.Instance.BiosInfo.Version;
+                string l_prefix = ": ";
+
+                if (!string.IsNullOrWhiteSpace(PCSX2Controller.Instance.BiosInfo.ContainerFile.ToString()))
+                {
+                    CurrentContainerFile = l_prefix + PCSX2Controller.Instance.BiosInfo.ContainerFile.ToString();
+
+                    l_prefix = " - ";
+                }
+
+                CurrentBiosZone = l_prefix + PCSX2Controller.Instance.BiosInfo.Zone + " " + PCSX2Controller.Instance.BiosInfo.Version;
             });
         }  
 
@@ -123,6 +132,19 @@ namespace Omega_Red.ViewModels
             }
         }
 
+        private string mCurrentContainerFile = "";
+
+        public string CurrentContainerFile
+        {
+            get { return mCurrentContainerFile; }
+            set
+            {
+                mCurrentContainerFile = value;
+
+                RaisePropertyChangedEvent("CurrentContainerFile");
+            }
+        }
+
         private string mCurrentBiosZone = "";
 
         public string CurrentBiosZone
@@ -134,7 +156,7 @@ namespace Omega_Red.ViewModels
 
                 RaisePropertyChangedEvent("CurrentBiosZone");
             }
-        }
+        }        
     }
 }
 

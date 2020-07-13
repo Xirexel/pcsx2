@@ -107,4 +107,12 @@
     <sys:String x:Key="TexturePackModeSaveTitle">Сохранение текстур</sys:String>
     <sys:String x:Key="LowBatteryTitle">малый заряд батареи!!!</sys:String>
     <sys:String x:Key="EmptyBatteryTitle">батарея разряжена!!!</sys:String>
+    <sys:String x:Key="SkipFrameModeTitle">Режим пропуска кадров:</sys:String>
+    <sys:String x:Key="SkipFrameModeNoneTitle">Без пропуска кадров</sys:String>
+    <sys:String x:Key="SkipFrameModeOneTitle">Пропуск одного кадра</sys:String>
+    <sys:String x:Key="SkipFrameModeTwoTitle">Пропуск двух кадров</sys:String>
+    <sys:String x:Key="ShowFrameRateTitle">Показать число кадров в секунду</sys:String>
+    <sys:String x:Key="RefreshScreenTitle">Обновление экрана:</sys:String>
+    <sys:String x:Key="FPSTitle">к/с</sys:String>
+    
 </ResourceDictionary>
