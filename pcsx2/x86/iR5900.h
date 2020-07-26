@@ -23,8 +23,8 @@
 #include "R5900_Profiler.h"
 
 extern u32 maxrecmem;
-extern u32 pc;			         // recompiler pc (also used by the SuperVU! .. why? (air))
-extern int g_branch;	         // set for branch (also used by the SuperVU! .. why? (air))
+extern u32 pc;			         // recompiler pc 
+extern int g_branch;	         // set for branch
 extern u32 target;		         // branch target
 extern u32 s_nBlockCycles;		// cycles of current block recompiling
 
@@ -61,6 +61,7 @@ extern u32 s_nBlockCycles;		// cycles of current block recompiling
 // Used to clear recompiled code blocks during memory/dma write operations.
 u32 recClearMem(u32 pc);
 u32 REC_CLEARM( u32 mem );
+extern bool g_recompilingDelaySlot;
 
 // used when processing branches
 void SaveBranchState();
