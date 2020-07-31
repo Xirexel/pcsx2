@@ -10,6 +10,7 @@
 #include <mutex>
 #include <thread>
 
+#include "base/display.h"
 #include "Common/Vulkan/VulkanContext.h"
 #include "math/dataconv.h"
 #include "math/math_util.h"
@@ -84,6 +85,10 @@ enum class VKRRunType {
 	SYNC,
 };
 
+enum {
+	MAX_TIMESTAMP_QUERIES = 128,
+};
+
 class VulkanRenderManager {
 public:
 	VulkanRenderManager(VulkanContext *vulkan);
@@ -92,7 +97,7 @@ public:
 	void ThreadFunc();
 
 	// Makes sure that the GPU has caught up enough that we can start writing buffers of this frame again.
-	void BeginFrame();
+	void BeginFrame(bool enableProfiling);
 	// Can run on a different thread!
 	void Finish();
 	void Run(int frame);
@@ -100,13 +105,32 @@ public:
 	// Zaps queued up commands. Use if you know there's a risk you've queued up stuff that has already been deleted. Can happen during in-game shutdown.
 	void Wipe();
 
-	void BindFramebufferAsRenderTarget(VKRFramebuffer *fb, VKRRenderPassAction color, VKRRenderPassAction depth, VKRRenderPassAction stencil, uint32_t clearColor, float clearDepth, uint8_t clearStencil);
-	VkImageView BindFramebufferAsTexture(VKRFramebuffer *fb, int binding, int aspectBit, int attachment);
-	bool CopyFramebufferToMemorySync(VKRFramebuffer *src, int aspectBits, int x, int y, int w, int h, Draw::DataFormat destFormat, uint8_t *pixels, int pixelStride);
-	void CopyImageToMemorySync(VkImage image, int mipLevel, int x, int y, int w, int h, Draw::DataFormat destFormat, uint8_t *pixels, int pixelStride);
+	// This starts a new step containing a render pass.
+	//
+	// After a "CopyFramebuffer" or the other functions that start "steps", you need to call this beforce
+	// making any new render state changes or draw calls.
+	//
+	// The following dynamic state needs to be reset by the caller after calling this (and will thus not safely carry over from
+	// the previous one):
+	//   * Viewport/Scissor
+	//   * Stencil parameters
+	//   * Blend color
+	//
+	// (Most other state is directly decided by your choice of pipeline and descriptor set, so not handled here).
+	//
+	// It can be useful to use GetCurrentStepId() to figure out when you need to send all this state again, if you're
+	// not keeping track of your calls to this function on your own.
+	void BindFramebufferAsRenderTarget(VKRFramebuffer *fb, VKRRenderPassAction color, VKRRenderPassAction depth, VKRRenderPassAction stencil, uint32_t clearColor, float clearDepth, uint8_t clearStencil, const char *tag);
 
-	void CopyFramebuffer(VKRFramebuffer *src, VkRect2D srcRect, VKRFramebuffer *dst, VkOffset2D dstPos, int aspectMask);
-	void BlitFramebuffer(VKRFramebuffer *src, VkRect2D srcRect, VKRFramebuffer *dst, VkRect2D dstRect, int aspectMask, VkFilter filter);
+	// Returns an ImageView corresponding to a framebuffer. Is called BindFramebufferAsTexture to maintain a similar interface
+	// as the other backends, even though there's no actual binding happening here.
+	VkImageView BindFramebufferAsTexture(VKRFramebuffer *fb, int binding, int aspectBit, int attachment);
+
+	bool CopyFramebufferToMemorySync(VKRFramebuffer *src, int aspectBits, int x, int y, int w, int h, Draw::DataFormat destFormat, uint8_t *pixels, int pixelStride, const char *tag);
+	void CopyImageToMemorySync(VkImage image, int mipLevel, int x, int y, int w, int h, Draw::DataFormat destFormat, uint8_t *pixels, int pixelStride, const char *tag);
+
+	void CopyFramebuffer(VKRFramebuffer *src, VkRect2D srcRect, VKRFramebuffer *dst, VkOffset2D dstPos, int aspectMask, const char *tag);
+	void BlitFramebuffer(VKRFramebuffer *src, VkRect2D srcRect, VKRFramebuffer *dst, VkRect2D dstRect, int aspectMask, VkFilter filter, const char *tag);
 
 	void BindPipeline(VkPipeline pipeline) {
 		_dbg_assert_(G3D, curRenderStep_ && curRenderStep_->stepType == VKRStepType::RENDER);
@@ -119,6 +143,7 @@ public:
 	void SetViewport(const VkViewport &vp) {
 		_dbg_assert_(G3D, curRenderStep_ && curRenderStep_->stepType == VKRStepType::RENDER);
 		_dbg_assert_(G3D, (int)vp.width >= 0);
+		_dbg_assert_(G3D, (int)vp.height >= 0);
 		VkRenderData data{ VKRRenderCommand::VIEWPORT };
 		data.viewport.vp.x = vp.x;
 		data.viewport.vp.y = vp.y;
@@ -126,9 +151,11 @@ public:
 		data.viewport.vp.height = vp.height;
 		// We can't allow values outside this range unless we use VK_EXT_depth_range_unrestricted.
 		// Sometimes state mapping produces 65536/65535 which is slightly outside.
-		data.viewport.vp.maxDepth = clamp_value(vp.maxDepth, 0.0f, 1.0f);
+		// TODO: This should be fixed at the source.
 		data.viewport.vp.minDepth = clamp_value(vp.minDepth, 0.0f, 1.0f);
+		data.viewport.vp.maxDepth = clamp_value(vp.maxDepth, 0.0f, 1.0f);
 		curRenderStep_->commands.push_back(data);
+		curStepHasViewport_ = true;
 	}
 
 	void SetScissor(const VkRect2D &rc) {
@@ -138,6 +165,7 @@ public:
 		VkRenderData data{ VKRRenderCommand::SCISSOR };
 		data.scissor.scissor = rc;
 		curRenderStep_->commands.push_back(data);
+		curStepHasScissor_ = true;
 	}
 
 	void SetStencilParams(uint8_t writeMask, uint8_t compareMask, uint8_t refValue) {
@@ -149,10 +177,10 @@ public:
 		curRenderStep_->commands.push_back(data);
 	}
 
-	void SetBlendFactor(float color[4]) {
+	void SetBlendFactor(uint32_t color) {
 		_dbg_assert_(G3D, curRenderStep_ && curRenderStep_->stepType == VKRStepType::RENDER);
 		VkRenderData data{ VKRRenderCommand::BLEND };
-		CopyFloat4(data.blendColor.color, color);
+		data.blendColor.color = color;
 		curRenderStep_->commands.push_back(data);
 	}
 
@@ -170,10 +198,11 @@ public:
 
 	void Clear(uint32_t clearColor, float clearZ, int clearStencil, int clearMask);
 
-	void Draw(VkPipelineLayout layout, VkDescriptorSet descSet, int numUboOffsets, const uint32_t *uboOffsets, VkBuffer vbuffer, int voffset, int count) {
-		_dbg_assert_(G3D, curRenderStep_ && curRenderStep_->stepType == VKRStepType::RENDER);
+	void Draw(VkPipelineLayout layout, VkDescriptorSet descSet, int numUboOffsets, const uint32_t *uboOffsets, VkBuffer vbuffer, int voffset, int count, int offset = 0) {
+		_dbg_assert_(G3D, curRenderStep_ && curRenderStep_->stepType == VKRStepType::RENDER && curStepHasViewport_ && curStepHasScissor_);
 		VkRenderData data{ VKRRenderCommand::DRAW };
 		data.draw.count = count;
+		data.draw.offset = offset;
 		data.draw.pipelineLayout = layout;
 		data.draw.ds = descSet;
 		data.draw.vbuffer = vbuffer;
@@ -187,7 +216,7 @@ public:
 	}
 
 	void DrawIndexed(VkPipelineLayout layout, VkDescriptorSet descSet, int numUboOffsets, const uint32_t *uboOffsets, VkBuffer vbuffer, int voffset, VkBuffer ibuffer, int ioffset, int count, int numInstances, VkIndexType indexType) {
-		_dbg_assert_(G3D, curRenderStep_ && curRenderStep_->stepType == VKRStepType::RENDER);
+		_dbg_assert_(G3D, curRenderStep_ && curRenderStep_->stepType == VKRStepType::RENDER && curStepHasViewport_ && curStepHasScissor_);
 		VkRenderData data{ VKRRenderCommand::DRAW_INDEXED };
 		data.drawIndexed.count = count;
 		data.drawIndexed.instances = numInstances;
@@ -222,6 +251,12 @@ public:
 		}
 	}
 
+	// Gets a frame-unique ID of the current step being recorded. Can be used to figure out
+	// when the current step has changed, which means the caller will need to re-record its state.
+	int GetCurrentStepId() const {
+		return renderStepOffset_ + (int)steps_.size();
+	}
+
 	void CreateBackbuffers();
 	void DestroyBackbuffers();
 
@@ -233,6 +268,10 @@ public:
 		splitSubmit_ = split;
 	}
 
+	void SetInflightFrames(int f) {
+		newInflightFrames_ = f < 1 || f > VulkanContext::MAX_INFLIGHT_FRAMES ? VulkanContext::MAX_INFLIGHT_FRAMES : f;
+	}
+
 	VulkanContext *GetVulkanContext() {
 		return vulkan_;
 	}
@@ -240,6 +279,15 @@ public:
 	// Be careful with this. Only meant to be used for fetching render passes for shader cache initialization.
 	VulkanQueueRunner *GetQueueRunner() {
 		return &queueRunner_;
+	}
+
+	std::string GetGpuProfileString() const {
+		return frameData_[vulkan_->GetCurFrame()].profile.profileSummary;
+	}
+
+	bool NeedsSwapchainRecreate() const {
+		// Accepting a few of these makes shutdown simpler.
+		return outOfDateFrames_ > VulkanContext::MAX_INFLIGHT_FRAMES;
 	}
 
 private:
@@ -284,14 +332,27 @@ private:
 		// Swapchain.
 		bool hasBegun = false;
 		uint32_t curSwapchainImage = -1;
+
+		// Profiling.
+		QueueProfileContext profile;
+		bool profilingEnabled_;
 	};
+
 	FrameData frameData_[VulkanContext::MAX_INFLIGHT_FRAMES];
+	int newInflightFrames_ = -1;
+	int inflightFramesAtStart_ = 0;
+
+	int outOfDateFrames_ = 0;
 
 	// Submission time state
 	int curWidth_ = -1;
 	int curHeight_ = -1;
 	bool insideFrame_ = false;
+	// This is the offset within this frame, in case of a mid-frame sync.
+	int renderStepOffset_ = 0;
 	VKRStep *curRenderStep_ = nullptr;
+	bool curStepHasViewport_ = false;
+	bool curStepHasScissor_ = false;
 	std::vector<VKRStep *> steps_;
 	bool splitSubmit_ = false;
 

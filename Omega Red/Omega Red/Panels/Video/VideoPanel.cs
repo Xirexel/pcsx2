@@ -178,39 +178,25 @@ namespace Omega_Red.Panels
         
         public VideoPanel()
         {
-            VideoWidth = WIDTH;
-
-            VideoHeight = HEIGHT;
-
             SymbolicLink = "";
 
             Managers.ConfigManager.Instance.DisplayFrameEvent += (a_displayFrame) => { m_displayFrame = a_displayFrame; };
+                       
+            var image = new System.Windows.Controls.Image();
+            image.Stretch = System.Windows.Media.Stretch.Uniform;
 
-            var lTuple = D3D9Image.createD3D9Image(VideoWidth, VideoHeight);
+            Grid l_grid = new Grid();
+            l_grid.Children.Add(image);
 
-            if (lTuple != null)
-            {
-                this.imageSource = lTuple.Item1;
+            m_frameRateCalcTimer = new Timer((state) => {
 
-                this.sharedHandle = lTuple.Item2;
-            }
+                m_lock.EnterReadLock();
 
-            if (this.imageSource != null)
-            {
-                var image = new System.Windows.Controls.Image();
-                image.Stretch = System.Windows.Media.Stretch.Uniform;
-                image.Source = this.imageSource;
-                                
-                Grid l_grid = new Grid();
-                l_grid.Children.Add(image);
-                
-                m_frameRateCalcTimer = new Timer((state) => {
+                try
+                {
+                    var tempFrameCount = m_frameCount;
 
-                    m_lock.EnterReadLock();
-                    try
-                    {
-                        var tempFrameCount = m_frameCount;
-
+                    if(Application.Current != null)
                         Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, (ThreadStart)delegate ()
                         {
                             if (Settings.Default.ShowFrameRate)
@@ -219,24 +205,46 @@ namespace Omega_Red.Panels
                                 Managers.ConfigManager.Instance.setFrameRate("");
                         });
 
-                        m_frameCount = 0;
-                    }
-                    finally
-                    {
-                        m_lock.ExitReadLock();
-                    }
+                    m_frameCount = 0;
+                }
+                finally
+                {
+                    m_lock.ExitReadLock();
+                }
 
-                }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+            }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
 
-                this.AddChild(l_grid);
-                
+            this.AddChild(l_grid);
 
-                // To greatly reduce flickering we're only going to AddDirtyRect
-                // when WPF is rendering.
-                System.Windows.Media.CompositionTarget.Rendering += this.CompositionTargetRendering;
-            }
+
+            // To greatly reduce flickering we're only going to AddDirtyRect
+            // when WPF is rendering.
+            System.Windows.Media.CompositionTarget.Rendering += this.CompositionTargetRendering;
+
+            
+            Managers.ConfigManager.Instance.ResolutionEvent += (a_resolution) => {
+
+                VideoWidth = (a_resolution * 16)/9;
+
+                VideoHeight = a_resolution;
+
+                var lTuple = D3D9Image.createD3D9Image(VideoWidth, VideoHeight);
+
+                if (lTuple != null)
+                {
+                    this.imageSource = lTuple.Item1;
+
+                    this.sharedHandle = lTuple.Item2;
+                }
+
+                image.Source = this.imageSource;
+            };
+
+            App.Current.Exit += (sender, e)=>{
+                m_frameRateCalcTimer.Dispose();
+            };
         }
-
+        
         public VideoPanel(uint aWidth, uint aHeight, string a_SymbolicLink)
         {
             VideoWidth = aWidth;
@@ -284,32 +292,35 @@ namespace Omega_Red.Panels
             {
                 var l_bitmap = l_D3D9Image.getBackBuffer();
 
-                JpegBitmapEncoder l_encoder = new JpegBitmapEncoder();
-
-                l_encoder.QualityLevel = 75;
-
-                Array lPixels = Array.CreateInstance(typeof(Byte), l_bitmap.PixelWidth * 4 * l_bitmap.PixelHeight);
-
-                l_bitmap.CopyPixels(lPixels, l_bitmap.PixelWidth * 4, 0);
-
-                l_bitmap = BitmapSource.Create(
-                    l_bitmap.PixelWidth,
-                    l_bitmap.PixelHeight,
-                    l_bitmap.DpiX,
-                    l_bitmap.DpiY,
-                    PixelFormats.Bgr32,
-                    null,
-                    lPixels,
-                    l_bitmap.PixelWidth * 4
-                    );
-
-                l_encoder.Frames.Add(BitmapFrame.Create(l_bitmap));
-
-                using (var outputStream = new MemoryStream())
+                if(l_bitmap != null)
                 {
-                    l_encoder.Save(outputStream);
+                    JpegBitmapEncoder l_encoder = new JpegBitmapEncoder();
 
-                    l_result = outputStream.ToArray();
+                    l_encoder.QualityLevel = 75;
+
+                    Array lPixels = Array.CreateInstance(typeof(Byte), l_bitmap.PixelWidth * 4 * l_bitmap.PixelHeight);
+
+                    l_bitmap.CopyPixels(lPixels, l_bitmap.PixelWidth * 4, 0);
+
+                    l_bitmap = BitmapSource.Create(
+                        l_bitmap.PixelWidth,
+                        l_bitmap.PixelHeight,
+                        l_bitmap.DpiX,
+                        l_bitmap.DpiY,
+                        PixelFormats.Bgr32,
+                        null,
+                        lPixels,
+                        l_bitmap.PixelWidth * 4
+                        );
+
+                    l_encoder.Frames.Add(BitmapFrame.Create(l_bitmap));
+
+                    using (var outputStream = new MemoryStream())
+                    {
+                        l_encoder.Save(outputStream);
+
+                        l_result = outputStream.ToArray();
+                    }
                 }
             }
 

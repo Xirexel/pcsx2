@@ -1,8 +1,8 @@
 #include "UI/OnScreenDisplay.h"
-#include "UI/ui_atlas.h"
 
 #include "base/colorutil.h"
 #include "base/timeutil.h"
+#include "gfx/texture_atlas.h"
 #include "gfx_es2/draw_buffer.h"
 
 #include "ui/ui_context.h"
@@ -75,7 +75,7 @@ void OnScreenMessages::Show(const std::string &text, float duration_s, uint32_t 
 	msg.endTime = now + duration_s;
 	msg.icon = icon;
 	msg.id = id;
-	messages_.insert(messages_.begin(), msg);
+	//messages_.insert(messages_.begin(), msg);
 }
 
 void OnScreenMessages::ShowOnOff(const std::string &message, bool b, float duration_s, uint32_t color, int icon) {

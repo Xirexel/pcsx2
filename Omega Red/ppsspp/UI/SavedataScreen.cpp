@@ -31,7 +31,6 @@
 #include "UI/SavedataScreen.h"
 #include "UI/MainScreen.h"
 #include "UI/GameInfoCache.h"
-#include "UI/ui_atlas.h"
 #include "UI/PauseScreen.h"
 
 #include "Common/FileUtil.h"
@@ -80,13 +79,13 @@ public:
 		LinearLayout *toprow = new LinearLayout(ORIENT_HORIZONTAL, new LayoutParams(FILL_PARENT, WRAP_CONTENT));
 		content->Add(toprow);
 
-		I18NCategory *sa = GetI18NCategory("Savedata");
+		auto sa = GetI18NCategory("Savedata");
 		if (ginfo->fileType == IdentifiedFileType::PSP_SAVEDATA_DIRECTORY) {
 			std::string savedata_detail = ginfo->paramSFO.GetValueString("SAVEDATA_DETAIL");
 			std::string savedata_title = ginfo->paramSFO.GetValueString("SAVEDATA_TITLE");
 
 			if (ginfo->icon.texture) {
-				toprow->Add(new TextureView(ginfo->icon.texture->GetTexture(), IS_FIXED, new LinearLayoutParams(Margins(10, 5))));
+				toprow->Add(new GameIconView(savePath_, 2.0f, new LinearLayoutParams(Margins(10, 5))));
 			}
 			LinearLayout *topright = new LinearLayout(ORIENT_VERTICAL, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1.0f));
 			topright->SetSpacing(1.0f);
@@ -108,7 +107,7 @@ public:
 			content->Add(new TextView(GetFileDateAsString(savePath_), 0, true, new LinearLayoutParams(Margins(10, 5))))->SetTextColor(textStyle.fgColor);
 		}
 
-		I18NCategory *di = GetI18NCategory("Dialog");
+		auto di = GetI18NCategory("Dialog");
 		LinearLayout *buttons = new LinearLayout(ORIENT_HORIZONTAL);
 		buttons->Add(new Button(di->T("Back"), new LinearLayoutParams(1.0)))->OnClick.Handle<UIScreen>(this, &UIScreen::OnBack);
 		buttons->Add(new Button(di->T("Delete"), new LinearLayoutParams(1.0)))->OnClick.Handle(this, &SavedataPopupScreen::OnDeleteButtonClick);
@@ -394,8 +393,8 @@ void SavedataBrowser::Refresh() {
 	Clear();
 
 	Add(new Spacer(1.0f));
-	I18NCategory *mm = GetI18NCategory("MainMenu");
-	I18NCategory *sa = GetI18NCategory("Savedata");
+	auto mm = GetI18NCategory("MainMenu");
+	auto sa = GetI18NCategory("Savedata");
 
 	SortedLinearLayout *gl = new SortedLinearLayout(UI::ORIENT_VERTICAL, new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT));
 	gl->SetSpacing(4.0f);
@@ -458,8 +457,8 @@ SavedataScreen::~SavedataScreen() {
 
 void SavedataScreen::CreateViews() {
 	using namespace UI;
-	I18NCategory *sa = GetI18NCategory("Savedata");
-	I18NCategory *di = GetI18NCategory("Dialog");
+	auto sa = GetI18NCategory("Savedata");
+	auto di = GetI18NCategory("Dialog");
 	std::string savedata_dir = GetSysDirectory(DIRECTORY_SAVEDATA);
 	std::string savestate_dir = GetSysDirectory(DIRECTORY_SAVESTATE);
 

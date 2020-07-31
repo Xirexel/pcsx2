@@ -43,17 +43,16 @@
 
 namespace DX9 {
 
-const D3DPRIMITIVETYPE glprim[8] = {
+static const D3DPRIMITIVETYPE d3d_prim[8] = {
 	D3DPT_POINTLIST,
 	D3DPT_LINELIST,
 	D3DPT_LINESTRIP,
 	D3DPT_TRIANGLELIST,
 	D3DPT_TRIANGLESTRIP,
 	D3DPT_TRIANGLEFAN,
-	D3DPT_TRIANGLELIST,	 // With OpenGL ES we have to expand sprites into triangles, tripling the data instead of doubling. sigh. OpenGL ES, Y U NO SUPPORT GL_QUADS?
+	D3DPT_TRIANGLELIST,
 };
 
-// hrydgard's quick guesses - TODO verify
 static const int D3DPRIMITIVEVERTEXCOUNT[8][2] = {
 	{0, 0}, // invalid
 	{1, 0}, // 1 = D3DPT_POINTLIST,
@@ -84,7 +83,7 @@ static const D3DVERTEXELEMENT9 TransformedVertexElements[] = {
 	D3DDECL_END()
 };
 
-DrawEngineDX9::DrawEngineDX9(Draw::DrawContext *draw) : vai_(256), vertexDeclMap_(64) {
+DrawEngineDX9::DrawEngineDX9(Draw::DrawContext *draw) : draw_(draw), vai_(256), vertexDeclMap_(64) {
 	device_ = (LPDIRECT3DDEVICE9)draw->GetNativeObject(Draw::NativeObject::DEVICE);
 	decOptions_.expandAllWeightsToFloat = true;
 	decOptions_.expand8BitNormalsToFloat = true;
@@ -300,18 +299,31 @@ static uint32_t SwapRB(uint32_t c) {
 	return (c & 0xFF00FF00) | ((c >> 16) & 0xFF) | ((c << 16) & 0xFF0000);
 }
 
+void DrawEngineDX9::BeginFrame() {
+	DecimateTrackedVertexArrays();
+
+	lastRenderStepId_ = -1;
+}
+
 // The inline wrapper in the header checks for numDrawCalls == 0
 void DrawEngineDX9::DoFlush() {
 	gpuStats.numFlushes++;
 	gpuStats.numTrackedVertexArrays = (int)vai_.size();
 
+	// In D3D, we're synchronous and state carries over so all we reset here on a new step is the viewport/scissor.
+	int curRenderStepId = draw_->GetCurrentStepId();
+	if (lastRenderStepId_ != curRenderStepId) {
+		// Dirty everything that has dynamic state that will need re-recording.
+		gstate_c.Dirty(DIRTY_VIEWPORTSCISSOR_STATE);
+		lastRenderStepId_ = curRenderStepId;
+	}
+
 	// This is not done on every drawcall, we should collect vertex data
 	// until critical state changes. That's when we draw (flush).
-
 	GEPrimitiveType prim = prevPrim_;
 	ApplyDrawState(prim);
 
-	VSShader *vshader = shaderManager_->ApplyShader(prim, lastVType_);
+	VSShader *vshader = shaderManager_->ApplyShader(CanUseHardwareTransform(prim), useHWTessellation_, lastVType_);
 
 	if (vshader->UseHWTransform()) {
 		LPDIRECT3DVERTEXBUFFER9 vb_ = NULL;
@@ -492,16 +504,16 @@ rotateVBO:
 		}
 
 		ApplyDrawStateLate();
-		vshader = shaderManager_->ApplyShader(prim, lastVType_);
+		vshader = shaderManager_->ApplyShader(CanUseHardwareTransform(prim), useHWTessellation_, lastVType_);
 		IDirect3DVertexDeclaration9 *pHardwareVertexDecl = SetupDecFmtForDraw(vshader, dec_->GetDecVtxFmt(), dec_->VertexType());
 
 		if (pHardwareVertexDecl) {
 			device_->SetVertexDeclaration(pHardwareVertexDecl);
 			if (vb_ == NULL) {
 				if (useElements) {
-					device_->DrawIndexedPrimitiveUP(glprim[prim], 0, maxIndex + 1, D3DPrimCount(glprim[prim], vertexCount), decIndex, D3DFMT_INDEX16, decoded, dec_->GetDecVtxFmt().stride);
+					device_->DrawIndexedPrimitiveUP(d3d_prim[prim], 0, maxIndex + 1, D3DPrimCount(d3d_prim[prim], vertexCount), decIndex, D3DFMT_INDEX16, decoded, dec_->GetDecVtxFmt().stride);
 				} else {
-					device_->DrawPrimitiveUP(glprim[prim], D3DPrimCount(glprim[prim], vertexCount), decoded, dec_->GetDecVtxFmt().stride);
+					device_->DrawPrimitiveUP(d3d_prim[prim], D3DPrimCount(d3d_prim[prim], vertexCount), decoded, dec_->GetDecVtxFmt().stride);
 				}
 			} else {
 				device_->SetStreamSource(0, vb_, 0, dec_->GetDecVtxFmt().stride);
@@ -509,9 +521,9 @@ rotateVBO:
 				if (useElements) {
 					device_->SetIndices(ib_);
 
-					device_->DrawIndexedPrimitive(glprim[prim], 0, 0, maxIndex + 1, 0, D3DPrimCount(glprim[prim], vertexCount));
+					device_->DrawIndexedPrimitive(d3d_prim[prim], 0, 0, maxIndex + 1, 0, D3DPrimCount(d3d_prim[prim], vertexCount));
 				} else {
-					device_->DrawPrimitive(glprim[prim], 0, D3DPrimCount(glprim[prim], vertexCount));
+					device_->DrawPrimitive(d3d_prim[prim], 0, D3DPrimCount(d3d_prim[prim], vertexCount));
 				}
 			}
 		}
@@ -531,10 +543,7 @@ rotateVBO:
 			prim = GE_PRIM_TRIANGLES;
 		VERBOSE_LOG(G3D, "Flush prim %i SW! %i verts in one go", prim, indexGen.VertexCount());
 
-		int numTrans = 0;
-		bool drawIndexed = false;
 		u16 *inds = decIndex;
-		TransformedVertex *drawBuffer = NULL;
 		SoftwareTransformResult result{};
 		SoftwareTransformParams params{};
 		params.decoded = decoded;
@@ -547,13 +556,15 @@ rotateVBO:
 		params.provokeFlatFirst = true;
 
 		int maxIndex = indexGen.MaxIndex();
-		SoftwareTransform(
-			prim, indexGen.VertexCount(),
-			dec_->VertexType(), inds, GE_VTYPE_IDX_16BIT, dec_->GetDecVtxFmt(),
-			maxIndex, drawBuffer, numTrans, drawIndexed, &params, &result);
+		SoftwareTransform swTransform(params);
+		swTransform.Decode(prim, dec_->VertexType(), dec_->GetDecVtxFmt(), maxIndex, &result);
+		if (result.action == SW_NOT_READY) {
+			swTransform.DetectOffsetTexture(maxIndex);
+			swTransform.BuildDrawingParams(prim, indexGen.VertexCount(), dec_->VertexType(), inds, maxIndex, &result);
+		}
 
 		ApplyDrawStateLate();
-		vshader = shaderManager_->ApplyShader(prim, lastVType_);
+		vshader = shaderManager_->ApplyShader(false, false, lastVType_);
 
 		if (result.action == SW_DRAW_PRIMITIVES) {
 			if (result.setStencil) {
@@ -567,10 +578,10 @@ rotateVBO:
 			const int vertexSize = sizeof(transformed[0]);
 
 			device_->SetVertexDeclaration(transformedVertexDecl_);
-			if (drawIndexed) {
-				device_->DrawIndexedPrimitiveUP(glprim[prim], 0, maxIndex, D3DPrimCount(glprim[prim], numTrans), inds, D3DFMT_INDEX16, drawBuffer, sizeof(TransformedVertex));
+			if (result.drawIndexed) {
+				device_->DrawIndexedPrimitiveUP(d3d_prim[prim], 0, maxIndex, D3DPrimCount(d3d_prim[prim], result.drawNumTrans), inds, D3DFMT_INDEX16, result.drawBuffer, sizeof(TransformedVertex));
 			} else {
-				device_->DrawPrimitiveUP(glprim[prim], D3DPrimCount(glprim[prim], numTrans), drawBuffer, sizeof(TransformedVertex));
+				device_->DrawPrimitiveUP(d3d_prim[prim], D3DPrimCount(d3d_prim[prim], result.drawNumTrans), result.drawBuffer, sizeof(TransformedVertex));
 			}
 		} else if (result.action == SW_CLEAR) {
 			u32 clearColor = result.color;

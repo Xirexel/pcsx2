@@ -40,6 +40,7 @@
 #include "sceJpeg.h"
 #include "sceKernel.h"
 #include "sceKernelEventFlag.h"
+#include "sceKernelHeap.h"
 #include "sceKernelMemory.h"
 #include "sceKernelInterrupt.h"
 #include "sceKernelModule.h"
@@ -69,6 +70,7 @@
 #include "sceUsbAcc.h"
 #include "sceUsbCam.h"
 #include "sceUsbGps.h"
+#include "sceUsbMic.h"
 #include "sceUtility.h"
 #include "sceVaudio.h"
 #include "sceMt19937.h"
@@ -88,13 +90,14 @@
 //sound
 //zlibdec
 const HLEFunction FakeSysCalls[] = {
-	{NID_THREADRETURN, __KernelReturnFromThread, "__KernelReturnFromThread"},
-	{NID_CALLBACKRETURN, __KernelReturnFromMipsCall, "__KernelReturnFromMipsCall"},
-	{NID_INTERRUPTRETURN, __KernelReturnFromInterrupt, "__KernelReturnFromInterrupt"},
-	{NID_EXTENDRETURN, __KernelReturnFromExtendStack, "__KernelReturnFromExtendStack"},
-	{NID_MODULERETURN, __KernelReturnFromModuleFunc, "__KernelReturnFromModuleFunc"},
-	{NID_IDLE, __KernelIdle, "_sceKernelIdle"},
-	{NID_GPUREPLAY, __KernelGPUReplay, "__KernelGPUReplay"},
+	{NID_THREADRETURN, __KernelReturnFromThread, "__KernelReturnFromThread", 'x', ""},
+	{NID_CALLBACKRETURN, __KernelReturnFromMipsCall, "__KernelReturnFromMipsCall", 'x', ""},
+	{NID_INTERRUPTRETURN, __KernelReturnFromInterrupt, "__KernelReturnFromInterrupt", 'x', ""},
+	{NID_EXTENDRETURN, __KernelReturnFromExtendStack, "__KernelReturnFromExtendStack", 'x', ""},
+	{NID_MODULERETURN, __KernelReturnFromModuleFunc, "__KernelReturnFromModuleFunc", 'x', ""},
+	{NID_IDLE, __KernelIdle, "_sceKernelIdle", 'x', ""},
+	{NID_GPUREPLAY, __KernelGPUReplay, "__KernelGPUReplay", 'x', ""},
+	{NID_HLECALLRETURN, HLEReturnFromMipsCall, "HLEReturnFromMipsCall", 'x', ""},
 };
 
 const HLEFunction UtilsForUser[] = 
@@ -298,7 +301,8 @@ void RegisterAllModules() {
 	Register_sceNetIfhandle();
 	Register_KUBridge();
 	Register_sceUsbAcc();
-
+	Register_sceUsbMic();
+	Register_sceOpenPSID_driver();
 	// add new modules here.
 }
 

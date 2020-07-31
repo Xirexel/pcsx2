@@ -75,15 +75,6 @@ int LoadZIMPtr(const uint8_t *zim, size_t datasize, int *width, int *height, int
 		case ZIM_RGB565:
 			image_data_size[i] = width[i] * height[i] * 2;
 			break;
-		case ZIM_ETC1:
-			{
-				int data_width = width[i];
-				int data_height = height[i];
-				if (data_width < 4) data_width = 4;
-				if (data_height < 4) data_height = 4;
-				image_data_size[i] = data_width * data_height / 2;
-				break;
-			}
 		default:
 			ELOG("Invalid ZIM format %i", *flags & ZIM_FORMAT_MASK);
 			return 0;
@@ -91,8 +82,7 @@ int LoadZIMPtr(const uint8_t *zim, size_t datasize, int *width, int *height, int
 		total_data_size += image_data_size[i];
 	}
 
-	if (total_data_size == 0)
-	{
+	if (total_data_size == 0) {
 		ELOG("Invalid ZIM data size 0");
 		return 0;
 	}
@@ -104,12 +94,15 @@ int LoadZIMPtr(const uint8_t *zim, size_t datasize, int *width, int *height, int
 
 	if (*flags & ZIM_ZLIB_COMPRESSED) {
 		long outlen = (long)total_data_size;
-		if (Z_OK != ezuncompress(*image, &outlen, (unsigned char *)(zim + 16), (long)datasize - 16)) {
+		int retcode = ezuncompress(*image, &outlen, (unsigned char *)(zim + 16), (long)datasize - 16);
+		if (Z_OK != retcode) {
+			ELOG("ZIM zlib format decompression failed: %d", retcode);
 			free(*image);
 			*image = 0;
 			return 0;
 		}
 		if (outlen != total_data_size) {
+			// Shouldn't happen if return value was Z_OK.
 			ELOG("Wrong size data in ZIM: %i vs %i", (int)outlen, (int)total_data_size);
 		}
 	} else {
@@ -125,11 +118,13 @@ int LoadZIM(const char *filename, int *width, int *height, int *format, uint8_t 
 	size_t size;
 	uint8_t *buffer = VFSReadFile(filename, &size);
 	if (!buffer) {
+		ELOG("Couldn't read data for '%s'", buffer);
 		return 0;
 	}
+
 	int retval = LoadZIMPtr(buffer, (int)size, width, height, format, image);
 	if (!retval) {
-		ELOG("Not a valid ZIM file: %s", filename);
+		ELOG("Not a valid ZIM file: %s (size: %d bytes)", filename, (int)size);
 	}
 	delete [] buffer;
 	return retval;

@@ -232,6 +232,10 @@ public:
 	void Map();
 	void Unmap();
 
+	bool IsReady() const {
+		return writePtr_ != nullptr;
+	}
+
 	// When using the returned memory, make sure to bind the returned vkbuf.
 	// This will later allow for handling overflow correctly.
 	size_t Allocate(size_t numBytes, GLRBuffer **vkbuf) {
@@ -497,13 +501,30 @@ public:
 		pushbuffer->End();
 	}
 
-	void BindFramebufferAsRenderTarget(GLRFramebuffer *fb, GLRRenderPassAction color, GLRRenderPassAction depth, GLRRenderPassAction stencil, uint32_t clearColor, float clearDepth, uint8_t clearStencil);
-	void BindFramebufferAsTexture(GLRFramebuffer *fb, int binding, int aspectBit, int attachment);
-	bool CopyFramebufferToMemorySync(GLRFramebuffer *src, int aspectBits, int x, int y, int w, int h, Draw::DataFormat destFormat, uint8_t *pixels, int pixelStride);
-	void CopyImageToMemorySync(GLRTexture *texture, int mipLevel, int x, int y, int w, int h, Draw::DataFormat destFormat, uint8_t *pixels, int pixelStride);
+	// This starts a new step (like a "render pass" in Vulkan).
+	//
+	// After a "CopyFramebuffer" or the other functions that start "steps", you need to call this beforce
+	// making any new render state changes or draw calls.
+	//
+	// The following state needs to be reset by the caller after calling this (and will thus not safely carry over from
+	// the previous one):
+	//   * Viewport/Scissor
+	//   * Depth/stencil
+	//   * Blend
+	//   * Raster state like primitive, culling, etc.
+	//
+	// It can be useful to use GetCurrentStepId() to figure out when you need to send all this state again, if you're
+	// not keeping track of your calls to this function on your own.
+	void BindFramebufferAsRenderTarget(GLRFramebuffer *fb, GLRRenderPassAction color, GLRRenderPassAction depth, GLRRenderPassAction stencil, uint32_t clearColor, float clearDepth, uint8_t clearStencil, const char *tag);
 
-	void CopyFramebuffer(GLRFramebuffer *src, GLRect2D srcRect, GLRFramebuffer *dst, GLOffset2D dstPos, int aspectMask);
-	void BlitFramebuffer(GLRFramebuffer *src, GLRect2D srcRect, GLRFramebuffer *dst, GLRect2D dstRect, int aspectMask, bool filter);
+	// Binds a framebuffer as a texture, for the following draws.
+	void BindFramebufferAsTexture(GLRFramebuffer *fb, int binding, int aspectBit, int attachment);
+
+	bool CopyFramebufferToMemorySync(GLRFramebuffer *src, int aspectBits, int x, int y, int w, int h, Draw::DataFormat destFormat, uint8_t *pixels, int pixelStride, const char *tag);
+	void CopyImageToMemorySync(GLRTexture *texture, int mipLevel, int x, int y, int w, int h, Draw::DataFormat destFormat, uint8_t *pixels, int pixelStride, const char *tag);
+
+	void CopyFramebuffer(GLRFramebuffer *src, GLRect2D srcRect, GLRFramebuffer *dst, GLOffset2D dstPos, int aspectMask, const char *tag);
+	void BlitFramebuffer(GLRFramebuffer *src, GLRect2D srcRect, GLRFramebuffer *dst, GLRect2D dstRect, int aspectMask, bool filter, const char *tag);
 
 	// Takes ownership of data if deleteData = true.
 	void BufferSubdata(GLRBuffer *buffer, size_t offset, size_t size, uint8_t *data, bool deleteData = true) {
@@ -521,13 +542,11 @@ public:
 	}
 
 	// Takes ownership over the data pointer and delete[]-s it.
-	void TextureImage(GLRTexture *texture, int level, int width, int height, GLenum internalFormat, GLenum format, GLenum type, uint8_t *data, GLRAllocType allocType = GLRAllocType::NEW, bool linearFilter = false) {
+	void TextureImage(GLRTexture *texture, int level, int width, int height, Draw::DataFormat format, uint8_t *data, GLRAllocType allocType = GLRAllocType::NEW, bool linearFilter = false) {
 		GLRInitStep step{ GLRInitStepType::TEXTURE_IMAGE };
 		step.texture_image.texture = texture;
 		step.texture_image.data = data;
-		step.texture_image.internalFormat = internalFormat;
 		step.texture_image.format = format;
-		step.texture_image.type = type;
 		step.texture_image.level = level;
 		step.texture_image.width = width;
 		step.texture_image.height = height;
@@ -536,13 +555,12 @@ public:
 		initSteps_.push_back(step);
 	}
 
-	void TextureSubImage(GLRTexture *texture, int level, int x, int y, int width, int height, GLenum format, GLenum type, uint8_t *data, GLRAllocType allocType = GLRAllocType::NEW) {
+	void TextureSubImage(GLRTexture *texture, int level, int x, int y, int width, int height, Draw::DataFormat format, uint8_t *data, GLRAllocType allocType = GLRAllocType::NEW) {
 		_dbg_assert_(G3D, curRenderStep_ && curRenderStep_->stepType == GLRStepType::RENDER);
 		GLRRenderData _data{ GLRRenderCommand::TEXTURE_SUBIMAGE };
 		_data.texture_subimage.texture = texture;
 		_data.texture_subimage.data = data;
 		_data.texture_subimage.format = format;
-		_data.texture_subimage.type = type;
 		_data.texture_subimage.level = level;
 		_data.texture_subimage.x = x;
 		_data.texture_subimage.y = y;
@@ -811,7 +829,7 @@ public:
 		curRenderStep_->commands.push_back(data);
 	}
 
-	// If scissorW == 0, no scissor is applied.
+	// If scissorW == 0, no scissor is applied (the whole render target is cleared).
 	void Clear(uint32_t clearColor, float clearZ, int clearStencil, int clearMask, int colorMask, int scissorX, int scissorY, int scissorW, int scissorH) {
 		_dbg_assert_(G3D, curRenderStep_ && curRenderStep_->stepType == GLRStepType::RENDER);
 		if (!clearMask)
@@ -860,6 +878,10 @@ public:
 	}
 
 	enum { MAX_INFLIGHT_FRAMES = 3 };
+
+	void SetInflightFrames(int f) {
+		newInflightFrames_ = f < 1 || f > MAX_INFLIGHT_FRAMES ? MAX_INFLIGHT_FRAMES : f;
+	}
 
 	int GetCurFrame() const {
 		return curFrame_;
@@ -915,6 +937,12 @@ public:
 		skipGLCalls_ = true;
 	}
 
+	// Gets a frame-unique ID of the current step being recorded. Can be used to figure out
+	// when the current step has changed, which means the caller will need to re-record its state.
+	int GetCurrentStepId() const {
+		return renderStepOffset_ + (int)steps_.size();
+	}
+
 private:
 	void BeginSubmitFrame(int frame);
 	void EndSubmitFrame(int frame);
@@ -961,6 +989,8 @@ private:
 
 	// Submission time state
 	bool insideFrame_ = false;
+	// This is the offset within this frame, in case of a mid-frame sync.
+	int renderStepOffset_ = 0;
 	GLRStep *curRenderStep_ = nullptr;
 	std::vector<GLRStep *> steps_;
 	std::vector<GLRInitStep> initSteps_;
@@ -986,6 +1016,9 @@ private:
 	std::function<void()> swapFunction_;
 	std::function<void(int)> swapIntervalFunction_;
 	GLBufferStrategy bufferStrategy_ = GLBufferStrategy::SUBDATA;
+
+	int inflightFrames_ = MAX_INFLIGHT_FRAMES;
+	int newInflightFrames_ = -1;
 
 	int swapInterval_ = 0;
 	bool swapIntervalChanged_ = true;

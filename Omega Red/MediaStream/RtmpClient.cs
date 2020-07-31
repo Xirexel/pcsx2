@@ -28,12 +28,14 @@ namespace MediaStream
 
         private int m_handler = -1;
 
+        public int Handler { get { return m_handler; }}
+
         private RtmpClient() { }
 
         ~RtmpClient()
         {
             if (m_handler != -1)
-                Disconnect(m_handler);
+                disconnect();
         }
 
         public static RtmpClient createInstance(string a_streamsXml, string a_url, Action<bool> a_isConnected)
@@ -62,11 +64,18 @@ namespace MediaStream
 
         public void disconnect()
         {
-            Disconnect(m_handler);
+            var l_handler = m_handler;
+
+            m_handler = -1;
+
+            Disconnect(l_handler);
         }
 
         public void sendVideoData(int sampleTime, IntPtr buf, int size, uint sampleflags, int streamIdx)
         {
+            if (m_handler == -1)
+                return;
+
             Write(m_handler, sampleTime, buf, size, sampleflags, streamIdx, 1);
 
             if (sampleflags == CleanPoint)
@@ -75,12 +84,18 @@ namespace MediaStream
 
         public void sendAudioData(int sampleTime, IntPtr buf, int size, uint sampleflags, int streamIdx)
         {
+            if (m_handler == -1)
+                return;
+
             Write(m_handler, sampleTime, buf, size, sampleflags, streamIdx, 0);
         }
 
         private void checkConnection()
         {
-            if(ConnectedFunc != null)
+            if (m_handler == -1)
+                return;
+
+            if (ConnectedFunc != null)
             {
                 if(m_handler != -1 && m_isConnected != null)
                     m_isConnected(ConnectedFunc(m_handler));

@@ -57,6 +57,8 @@
 #include "Core/HLE/sceKernelModule.h"
 #include "Core/HLE/sceKernelMemory.h"
 
+static std::thread loadingThread;
+
 static void UseLargeMem(int memsize) {
 	if (memsize != 1) {
 		// Nothing requested.
@@ -81,7 +83,7 @@ void InitMemoryForGameISO(FileLoader *fileLoader) {
 
 	IFileSystem *fileSystem = nullptr;
 	IFileSystem *blockSystem = nullptr;
-	bool actualIso = false;
+
 	if (fileLoader->IsDirectory()) {
 		fileSystem = new VirtualDiscFileSystem(&pspFileSystem, fileLoader->Path());
 		blockSystem = fileSystem;
@@ -142,6 +144,35 @@ void InitMemoryForGameISO(FileLoader *fileLoader) {
 	}
 }
 
+bool ReInitMemoryForGameISO(FileLoader *fileLoader) {
+	if (!fileLoader->Exists()) {
+		return false;
+	}
+
+	IFileSystem *fileSystem = nullptr;
+	IFileSystem *blockSystem = nullptr;
+
+	if (fileLoader->IsDirectory()) {
+		fileSystem = new VirtualDiscFileSystem(&pspFileSystem, fileLoader->Path());
+		blockSystem = fileSystem;
+	} else {
+		auto bd = constructBlockDevice(fileLoader);
+		if (!bd)
+			return false;
+
+		ISOFileSystem *iso = new ISOFileSystem(&pspFileSystem, bd);
+		fileSystem = iso;
+		blockSystem = new ISOBlockSystem(iso);
+	}
+
+	pspFileSystem.Remount("umd0:", blockSystem);
+	pspFileSystem.Remount("umd1:", blockSystem);
+	pspFileSystem.Remount("umd:", blockSystem);
+	pspFileSystem.Remount("disc0:", fileSystem);
+
+	return true;
+}
+
 void InitMemoryForGamePBP(FileLoader *fileLoader) {
 	if (!fileLoader->Exists()) {
 		return;
@@ -172,7 +203,7 @@ static const char *altBootNames[] = {
 	"disc0:/PSP_GAME/SYSDIR/EBOOT.LLD",
 	//"disc0:/PSP_GAME/SYSDIR/OLD_EBOOT.BIN", //Utawareru Mono Chinese version
 	"disc0:/PSP_GAME/SYSDIR/EBOOT.123",
-	"disc0:/PSP_GAME/SYSDIR/EBOOT_LRC_CH.BIN",
+	//"disc0:/PSP_GAME/SYSDIR/EBOOT_LRC_CH.BIN", // Hatsune Miku Project Diva Extend chinese version
 	"disc0:/PSP_GAME/SYSDIR/BOOT0.OLD",
 	"disc0:/PSP_GAME/SYSDIR/BOOT1.OLD",
 	"disc0:/PSP_GAME/SYSDIR/BINOT.BIN",
@@ -181,7 +212,7 @@ static const char *altBootNames[] = {
 	"disc0:/PSP_GAME/SYSDIR/EBOOT.LEI",
 	"disc0:/PSP_GAME/SYSDIR/EBOOT.DNR",
 	"disc0:/PSP_GAME/SYSDIR/DBZ2.BIN",
-	"disc0:/PSP_GAME/SYSDIR/ss.RAW",
+	//"disc0:/PSP_GAME/SYSDIR/ss.RAW",//Code Geass: Lost Colors chinese version
 };
 
 bool Load_PSP_ISO(FileLoader *fileLoader, std::string *error_string) {
@@ -218,8 +249,8 @@ bool Load_PSP_ISO(FileLoader *fileLoader, std::string *error_string) {
 	}
 
 	bool hasEncrypted = false;
-	u32 fd;
-	if ((fd = pspFileSystem.OpenFile(bootpath, FILEACCESS_READ)) != 0)
+	int fd;
+	if ((fd = pspFileSystem.OpenFile(bootpath, FILEACCESS_READ)) >= 0)
 	{
 		u8 head[4];
 		pspFileSystem.ReadFile(fd, head, 4);
@@ -252,11 +283,15 @@ bool Load_PSP_ISO(FileLoader *fileLoader, std::string *error_string) {
 	}
 
 	//in case we didn't go through EmuScreen::boot
-	g_Config.loadGameConfig(id);
+	g_Config.loadGameConfig(id, g_paramSFO.GetValueString("TITLE"));
 	host->SendUIMessage("config_loaded", "");
 	INFO_LOG(LOADER,"Loading %s...", bootpath.c_str());
 
-	std::thread th([bootpath] {
+	PSPLoaders_Shutdown();
+	// Note: this thread reads the game binary, loads caches, and links HLE while UI spins.
+	// To do something deterministically when the game starts, disabling this thread won't be enough.
+	// Instead: Use Core_ListenLifecycle() or watch coreState.
+	loadingThread = std::thread([bootpath] {
 		setCurrentThreadName("ExecLoader");
 		PSP_LoadingLock guard;
 		if (coreState != CORE_POWERUP)
@@ -273,16 +308,23 @@ bool Load_PSP_ISO(FileLoader *fileLoader, std::string *error_string) {
 			PSP_CoreParameter().fileToStart = "";
 		}
 	});
-	th.detach();
 	return true;
 }
 
 static std::string NormalizePath(const std::string &path) {
 #ifdef _WIN32
-	wchar_t buf[512] = {0};
 	std::wstring wpath = ConvertUTF8ToWString(path);
-	if (GetFullPathName(wpath.c_str(), (int)ARRAY_SIZE(buf) - 1, buf, NULL) == 0)
-		return "";
+	std::wstring buf;
+	buf.resize(512);
+	size_t sz = GetFullPathName(wpath.c_str(), (DWORD)buf.size(), &buf[0], nullptr);
+	if (sz != 0 && sz < buf.size()) {
+		buf.resize(sz);
+	} else if (sz > buf.size()) {
+		buf.resize(sz);
+		sz = GetFullPathName(wpath.c_str(), (DWORD)buf.size(), &buf[0], nullptr);
+		// This should truncate off the null terminator.
+		buf.resize(sz);
+	}
 	return ConvertWStringToUTF8(buf);
 #else
 	char buf[PATH_MAX + 1];
@@ -379,7 +421,9 @@ bool Load_PSP_ELF_PBP(FileLoader *fileLoader, std::string *error_string) {
 	}
 	// End of temporary code
 
-	std::thread th([finalName] {
+	PSPLoaders_Shutdown();
+	// Note: See Load_PSP_ISO for notes about this thread.
+	loadingThread = std::thread([finalName] {
 		setCurrentThreadName("ExecLoader");
 		PSP_LoadingLock guard;
 		if (coreState != CORE_POWERUP)
@@ -394,7 +438,6 @@ bool Load_PSP_ELF_PBP(FileLoader *fileLoader, std::string *error_string) {
 			PSP_CoreParameter().fileToStart = "";
 		}
 	});
-	th.detach();
 	return true;
 }
 
@@ -402,7 +445,9 @@ bool Load_PSP_GE_Dump(FileLoader *fileLoader, std::string *error_string) {
 	BlobFileSystem *umd = new BlobFileSystem(&pspFileSystem, fileLoader, "data.ppdmp");
 	pspFileSystem.Mount("disc0:", umd);
 
-	std::thread th([] {
+	PSPLoaders_Shutdown();
+	// Note: See Load_PSP_ISO for notes about this thread.
+	loadingThread = std::thread([] {
 		setCurrentThreadName("ExecLoader");
 		PSP_LoadingLock guard;
 		if (coreState != CORE_POWERUP)
@@ -417,6 +462,10 @@ bool Load_PSP_GE_Dump(FileLoader *fileLoader, std::string *error_string) {
 			PSP_CoreParameter().fileToStart = "";
 		}
 	});
-	th.detach();
 	return true;
+}
+
+void PSPLoaders_Shutdown() {
+	if (loadingThread.joinable())
+		loadingThread.join();
 }

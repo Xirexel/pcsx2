@@ -242,8 +242,25 @@ PCSX2_EXPORT void STDAPICALLTYPE setPAD(PCSX2Lib::API::PAD_API *a_API)
 
 PCSX2_EXPORT void STDAPICALLTYPE setGS(PCSX2Lib::API::GS_API *a_API)
 {
-    if (a_API == nullptr)
-        return;
+    if (a_API == nullptr) {
+
+        GScallbackopen = nullptr;
+        GSvsync = nullptr;
+        GSgifTransfer = nullptr;
+        GSirqCallback = nullptr;
+        GSsetBaseMem = nullptr;
+        GSsetGameCRC = nullptr;
+        GSsetFrameSkip = nullptr;
+        GSsetVsync = nullptr;
+        GSreset = nullptr;
+        GSinitReadFIFO = nullptr;
+        GSreadFIFO = nullptr;
+        GSinitReadFIFO2 = nullptr;
+        GSreadFIFO2 = nullptr;
+        GSgifSoftReset = nullptr;
+    
+		return;
+	}
 
 
     GScallbackopen = a_API->GScallbackopen;
@@ -1233,6 +1250,13 @@ PCSX2_EXPORT bool STDAPICALLTYPE MTGS_IsSelfFunc()
 PCSX2_EXPORT void STDAPICALLTYPE MTGS_SuspendFunc()
 {
     GetMTGS().Suspend();
+}
+
+extern void MTGS_ResetQuick();
+
+PCSX2_EXPORT void STDAPICALLTYPE MTGS_ResetFunc()
+{
+    MTGS_ResetQuick();
 }
 
 PCSX2_EXPORT void STDAPICALLTYPE MTGS_CancelFunc()

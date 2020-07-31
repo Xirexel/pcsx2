@@ -197,12 +197,14 @@ namespace Omega_Red.Capture
             get { return mFileExtention; }
         }
 
-        public bool start()
+        public bool start(ref string a_resultMessage)
         {
             bool l_result = false;
 
             do
             {
+                a_resultMessage = "VideoFileRecordingFailedTitle";
+
                 if (App.OffVideoRecording)
                     break;
 
@@ -218,7 +220,7 @@ namespace Omega_Red.Capture
                     break;
 
                 mFileExtention = m_Start.Invoke(m_CaptureObj, new object[] {
-                    CaptureTargetTexture.Instance.CaptureNative.ToString(),
+                    TargetTexture.Instance.TargetNative.ToString(),
                     AudioCaptureTarget.Instance.RegisterAction,
                     m_TempFileName,
                     Omega_Red.Properties.Settings.Default.CompressionQuality}) as string;
@@ -231,7 +233,9 @@ namespace Omega_Red.Capture
                 if(m_fileSizeMb > 0)
                 {
                     startCheckSizeTimer();
-                }                
+                }
+
+                a_resultMessage = "VideoFileRecordingStartedTitle";
 
             } while (false);
 

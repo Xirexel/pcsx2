@@ -11,8 +11,8 @@
 #include "GPU/Common/FramebufferCommon.h"
 #include "GPU/Common/GPUStateUtils.h"
 #include "GPU/Math3D.h"
-#include "Core/Reporting.h"
-#include "Core/Config.h"
+
+using namespace Lin;
 
 static void ConvertProjMatrixToVulkan(Matrix4x4 &in) {
 	const Vec3 trans(0, 0, gstate_c.vpZOffset * 0.5f + 0.5f);
@@ -89,7 +89,7 @@ void CalcCullRange(float minValues[4], float maxValues[4], bool flipViewport, bo
 	maxValues[3] = NAN;
 }
 
-void BaseUpdateUniforms(UB_VS_FS_Base *ub, uint64_t dirtyUniforms, bool flipViewport) {
+void BaseUpdateUniforms(UB_VS_FS_Base *ub, uint64_t dirtyUniforms, bool flipViewport, bool useBufferedRendering) {
 	if (dirtyUniforms & DIRTY_TEXENV) {
 		Uint8x3ToFloat4(ub->texEnvColor, gstate.texenvcolor);
 	}
@@ -147,10 +147,9 @@ void BaseUpdateUniforms(UB_VS_FS_Base *ub, uint64_t dirtyUniforms, bool flipView
 			ConvertProjMatrixToVulkan(flippedMatrix);
 		}
 
-		if (g_Config.iRenderingMode == FB_NON_BUFFERED_MODE && g_display_rotation != DisplayRotation::ROTATE_0) {
+		if (!useBufferedRendering && g_display_rotation != DisplayRotation::ROTATE_0) {
 			flippedMatrix = flippedMatrix * g_display_rot_matrix;
 		}
-
 		CopyMatrix4x4(ub->proj, flippedMatrix.getReadPtr());
 	}
 
@@ -161,7 +160,7 @@ void BaseUpdateUniforms(UB_VS_FS_Base *ub, uint64_t dirtyUniforms, bool flipView
 		} else {
 			proj_through.setOrthoVulkan(0.0f, gstate_c.curRTWidth, 0, gstate_c.curRTHeight, 0, 1);
 		}
-		if (g_Config.iRenderingMode == FB_NON_BUFFERED_MODE && g_display_rotation != DisplayRotation::ROTATE_0) {
+		if (!useBufferedRendering && g_display_rotation != DisplayRotation::ROTATE_0) {
 			proj_through = proj_through * g_display_rot_matrix;
 		}
 		CopyMatrix4x4(ub->proj_through, proj_through.getReadPtr());

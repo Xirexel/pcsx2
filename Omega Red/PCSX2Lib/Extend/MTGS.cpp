@@ -75,6 +75,11 @@ SysMtgsThread::SysMtgsThread() :
 	// All other state vars are initialized by OnStart().
 }
 
+void MTGS_ResetQuick()
+{
+    GetMTGS().Suspend();
+}
+
 void SysMtgsThread::OnStart()
 {
 	m_PluginOpened		= false;

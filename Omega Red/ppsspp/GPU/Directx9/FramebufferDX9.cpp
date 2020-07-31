@@ -19,7 +19,6 @@
 #include "ext/native/thin3d/thin3d.h"
 
 #include "Common/ColorConv.h"
-#include "Core/Host.h"
 #include "Core/MemMap.h"
 #include "Core/Config.h"
 #include "Core/ConfigValues.h"
@@ -31,6 +30,8 @@
 
 #include "gfx/d3d9_state.h"
 #include "GPU/Common/FramebufferCommon.h"
+#include "GPU/Common/PresentationCommon.h"
+#include "GPU/Common/ShaderTranslation.h"
 #include "GPU/Common/TextureDecoder.h"
 #include "GPU/Directx9/FramebufferDX9.h"
 #include "GPU/Directx9/ShaderManagerDX9.h"
@@ -112,9 +113,16 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 		nullTex_->LockRect(0, &rect, nullptr, D3DLOCK_DISCARD);
 		memset(rect.pBits, 0, 4);
 		nullTex_->UnlockRect(0);
+
+		ShaderTranslationInit();
+
+		presentation_->SetLanguage(HLSL_DX9);
+		preferredPixelsFormat_ = Draw::DataFormat::B8G8R8A8_UNORM;
 	}
 
 	FramebufferManagerDX9::~FramebufferManagerDX9() {
+		ShaderTranslationShutdown();
+
 		if (pFramebufferVertexShader) {
 			pFramebufferVertexShader->Release();
 			pFramebufferVertexShader = nullptr;
@@ -124,13 +132,9 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 			pFramebufferPixelShader = nullptr;
 		}
 		pFramebufferVertexDecl->Release();
-		if (drawPixelsTex_) {
-			drawPixelsTex_->Release();
-		}
 		for (auto &it : offscreenSurfaces_) {
 			it.second.surface->Release();
 		}
-		delete [] convBuf;
 		if (stencilUploadPS_) {
 			stencilUploadPS_->Release();
 		}
@@ -154,94 +158,6 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 	void FramebufferManagerDX9::SetDrawEngine(DrawEngineDX9 *td) {
 		drawEngineD3D9_ = td;
 		drawEngine_ = td;
-	}
-
-	void FramebufferManagerDX9::MakePixelTexture(const u8 *srcPixels, GEBufferFormat srcPixelFormat, int srcStride, int width, int height, float &u1, float &v1) {
-		u8 *convBuf = NULL;
-		D3DLOCKED_RECT rect;
-
-		// TODO: Check / use D3DCAPS2_DYNAMICTEXTURES?
-		if (drawPixelsTex_ && (drawPixelsTexW_ != width || drawPixelsTexH_ != height)) {
-			drawPixelsTex_->Release();
-			drawPixelsTex_ = nullptr;
-		}
-
-		if (!drawPixelsTex_) {
-			int usage = 0;
-			D3DPOOL pool = D3DPOOL_MANAGED;
-			if (deviceEx_) {
-				pool = D3DPOOL_DEFAULT;
-				usage = D3DUSAGE_DYNAMIC;
-			}
-			HRESULT hr = device_->CreateTexture(width, height, 1, usage, D3DFMT_A8R8G8B8, pool, &drawPixelsTex_, NULL);
-			if (FAILED(hr)) {
-				drawPixelsTex_ = nullptr;
-				ERROR_LOG(G3D, "Failed to create drawpixels texture");
-			}
-			drawPixelsTexW_ = width;
-			drawPixelsTexH_ = height;
-		}
-
-		if (!drawPixelsTex_) {
-			return;
-		}
-
-		drawPixelsTex_->LockRect(0, &rect, NULL, D3DLOCK_DISCARD);
-
-		convBuf = (u8*)rect.pBits;
-
-		// Final format is BGRA(directx)
-		if (srcPixelFormat != GE_FORMAT_8888 || srcStride != 512) {
-			for (int y = 0; y < height; y++) {
-				switch (srcPixelFormat) {
-				case GE_FORMAT_565:
-					{
-						const u16_le *src = (const u16_le *)srcPixels + srcStride * y;
-						u32 *dst = (u32 *)(convBuf + rect.Pitch * y);
-						ConvertRGB565ToBGRA8888(dst, src, width);
-					}
-					break;
-					// faster
-				case GE_FORMAT_5551:
-					{
-						const u16_le *src = (const u16_le *)srcPixels + srcStride * y;
-						u32 *dst = (u32 *)(convBuf + rect.Pitch * y);
-						ConvertRGBA5551ToBGRA8888(dst, src, width);
-					}
-					break;
-				case GE_FORMAT_4444:
-					{
-						const u16_le *src = (const u16_le *)srcPixels + srcStride * y;
-						u8 *dst = (u8 *)(convBuf + rect.Pitch * y);
-						ConvertRGBA4444ToBGRA8888((u32 *)dst, src, width);
-					}
-					break;
-
-				case GE_FORMAT_8888:
-					{
-						const u32_le *src = (const u32_le *)srcPixels + srcStride * y;
-						u32 *dst = (u32 *)(convBuf + rect.Pitch * y);
-						ConvertRGBA8888ToBGRA8888(dst, src, width);
-					}
-					break;
-				}
-			}
-		} else {
-			for (int y = 0; y < height; y++) {
-				const u32_le *src = (const u32_le *)srcPixels + srcStride * y;
-				u32 *dst = (u32 *)(convBuf + rect.Pitch * y);
-				ConvertRGBA8888ToBGRA8888(dst, src, width);
-			}
-		}
-
-		drawPixelsTex_->UnlockRect(0);
-		device_->SetTexture(0, drawPixelsTex_);
-		// D3DXSaveTextureToFile("game:\\cc.png", D3DXIFF_PNG, drawPixelsTex_, NULL);
-	}
-
-	void FramebufferManagerDX9::SetViewport2D(int x, int y, int w, int h) {
-		D3DVIEWPORT9 vp{ (DWORD)x, (DWORD)y, (DWORD)w, (DWORD)h, 0.0f, 1.0f };
-		device_->SetViewport(&vp);
 	}
 
 	void FramebufferManagerDX9::DrawActiveTexture(float x, float y, float w, float h, float destW, float destH, float u0, float v0, float u1, float v1, int uvRotation, int flags) {
@@ -312,10 +228,6 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 		device_->SetVertexShader(pFramebufferVertexShader);
 	}
 
-	void FramebufferManagerDX9::BindPostShader(const PostShaderUniforms &uniforms) {
-		Bind2DShader();
-	}
-
 	void FramebufferManagerDX9::ReformatFramebufferFrom(VirtualFramebuffer *vfb, GEBufferFormat old) {
 		if (!useBufferedRendering_ || !vfb->fbo) {
 			return;
@@ -331,7 +243,7 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 		// to exactly reproduce in 4444 and 8888 formats.
 
 		if (old == GE_FORMAT_565) {
-			draw_->BindFramebufferAsRenderTarget(vfb->fbo, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::CLEAR });
+			draw_->BindFramebufferAsRenderTarget(vfb->fbo, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::CLEAR }, "ReformatFramebuffer");
 
 			dxstate.scissorTest.disable();
 			dxstate.depthWrite.set(FALSE);
@@ -457,7 +369,7 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 				copyInfo.fbo = renderCopy;
 
 				CopyFramebufferForColorTexture(&copyInfo, framebuffer, flags);
-				RebindFramebuffer();
+				RebindFramebuffer("RebindFramebuffer - BindFramebufferAsColorTexture");
 				draw_->BindFramebufferAsTexture(renderCopy, stage, Draw::FB_COLOR_BIT, 0);
 			} else {
 				draw_->BindFramebufferAsTexture(framebuffer->fbo, stage, Draw::FB_COLOR_BIT, 0);
@@ -465,19 +377,6 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 		} else {
 			draw_->BindFramebufferAsTexture(framebuffer->fbo, stage, Draw::FB_COLOR_BIT, 0);
 		}
-	}
-
-	bool FramebufferManagerDX9::CreateDownloadTempBuffer(VirtualFramebuffer *nvfb) {
-		nvfb->colorDepth = Draw::FBO_8888;
-
-		nvfb->fbo = draw_->CreateFramebuffer({ nvfb->bufferWidth, nvfb->bufferHeight, 1, 1, true, (Draw::FBColorDepth)nvfb->colorDepth });
-		if (!(nvfb->fbo)) {
-			ERROR_LOG(FRAMEBUF, "Error creating FBO! %i x %i", nvfb->renderWidth, nvfb->renderHeight);
-			return false;
-		}
-
-		draw_->BindFramebufferAsRenderTarget(nvfb->fbo, { Draw::RPAction::CLEAR, Draw::RPAction::CLEAR, Draw::RPAction::CLEAR });
-		return true;
 	}
 
 	void FramebufferManagerDX9::UpdateDownloadTempBuffer(VirtualFramebuffer *nvfb) {
@@ -488,7 +387,7 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 		if (!dst->fbo || !src->fbo || !useBufferedRendering_) {
 			// This can happen if we recently switched from non-buffered.
 			if (useBufferedRendering_)
-				draw_->BindFramebufferAsRenderTarget(nullptr, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::KEEP });
+				draw_->BindFramebufferAsRenderTarget(nullptr, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::KEEP }, "BlitFramebuffer_Fail");
 			return;
 		}
 
@@ -521,7 +420,7 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 			bool result = draw_->BlitFramebuffer(
 				src->fbo, srcX1, srcY1, srcX2, srcY2,
 				tempFBO, dstX1, dstY1, dstX2, dstY2,
-				Draw::FB_COLOR_BIT, Draw::FB_BLIT_NEAREST);
+				Draw::FB_COLOR_BIT, Draw::FB_BLIT_NEAREST, "BlitFramebuffer");
 			if (result) {
 				srcFBO = tempFBO;
 			}
@@ -529,7 +428,7 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 		bool result = draw_->BlitFramebuffer(
 			srcFBO, srcX1, srcY1, srcX2, srcY2,
 			dst->fbo, dstX1, dstY1, dstX2, dstY2,
-			Draw::FB_COLOR_BIT, Draw::FB_BLIT_NEAREST);
+			Draw::FB_COLOR_BIT, Draw::FB_BLIT_NEAREST, "BlitFramebuffer");
 		if (!result) {
 			ERROR_LOG_REPORT(G3D, "fbo_blit_color failed in blit (%08x -> %08x)", src->fb_address, dst->fb_address);
 		}
@@ -685,38 +584,12 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 	}
 
 	void FramebufferManagerDX9::DestroyAllFBOs() {
-		currentRenderVfb_ = 0;
-		displayFramebuf_ = 0;
-		prevDisplayFramebuf_ = 0;
-		prevPrevDisplayFramebuf_ = 0;
-
-		for (size_t i = 0; i < vfbs_.size(); ++i) {
-			VirtualFramebuffer *vfb = vfbs_[i];
-			INFO_LOG(FRAMEBUF, "Destroying FBO for %08x : %i x %i x %i", vfb->fb_address, vfb->width, vfb->height, vfb->format);
-			DestroyFramebuf(vfb);
-		}
-		vfbs_.clear();
-
-		for (size_t i = 0; i < bvfbs_.size(); ++i) {
-			VirtualFramebuffer *vfb = bvfbs_[i];
-			DestroyFramebuf(vfb);
-		}
-		bvfbs_.clear();
+		FramebufferManagerCommon::DestroyAllFBOs();
 
 		for (auto &it : offscreenSurfaces_) {
 			it.second.surface->Release();
 		}
 		offscreenSurfaces_.clear();
-
-		SetNumExtraFBOs(0);
-	}
-
-	void FramebufferManagerDX9::Resized() {
-		FramebufferManagerCommon::Resized();
-
-		if (UpdateSize()) {
-			DestroyAllFBOs();
-		}
 	}
 
 	bool FramebufferManagerDX9::GetFramebuffer(u32 fb_address, int fb_stride, GEBufferFormat fb_format, GPUDebugBuffer &buffer, int maxRes) {
@@ -741,7 +614,7 @@ static const D3DVERTEXELEMENT9 g_FramebufferVertexElements[] = {
 				w = vfb->width * maxRes;
 				h = vfb->height * maxRes;
 				tempFBO = draw_->CreateFramebuffer({ w, h, 1, 1, false, Draw::FBO_8888 });
-				if (draw_->BlitFramebuffer(vfb->fbo, 0, 0, vfb->renderWidth, vfb->renderHeight, tempFBO, 0, 0, w, h, Draw::FB_COLOR_BIT, g_Config.iBufFilter == SCALE_LINEAR ? Draw::FB_BLIT_LINEAR : Draw::FB_BLIT_NEAREST)) {
+				if (draw_->BlitFramebuffer(vfb->fbo, 0, 0, vfb->renderWidth, vfb->renderHeight, tempFBO, 0, 0, w, h, Draw::FB_COLOR_BIT, g_Config.iBufFilter == SCALE_LINEAR ? Draw::FB_BLIT_LINEAR : Draw::FB_BLIT_NEAREST, "GetFramebuffer")) {
 					renderTarget = (LPDIRECT3DSURFACE9)draw_->GetFramebufferAPITexture(tempFBO, Draw::FB_COLOR_BIT | Draw::FB_SURFACE_BIT, 0);
 				}
 			}

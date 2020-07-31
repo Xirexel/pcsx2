@@ -317,7 +317,13 @@ int VideoRenderer::init(void *sharedhandle, void *capturehandle, void *directXDe
 		if (l_Device == NULL)
 		{
 			return -1;
-		}
+        }
+		
+        std::shared_ptr<GSWnd> l_wnd = std::make_shared<GSWndStub>();
+
+        if (!l_Device->Create(l_wnd, sharedhandle, capturehandle, directXDeviceNative)) {
+            return -1;
+        }
 
 		if (m_VideoRenderer == NULL)
 		{
@@ -340,7 +346,7 @@ int VideoRenderer::init(void *sharedhandle, void *capturehandle, void *directXDe
 
 		if (m_VideoRenderer->m_wnd == NULL)
 		{
-            m_VideoRenderer->m_wnd = std::make_shared<GSWndStub>();
+            m_VideoRenderer->m_wnd = l_wnd;
 		}
 	}
 	catch (std::exception& ex)

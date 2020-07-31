@@ -51,6 +51,8 @@ public:
 protected:
 	void CreateViews() override;
 	UI::EventReturn OnDevTools(UI::EventParams &params);
+	UI::EventReturn OnDisableCardboard(UI::EventParams &params);
+	UI::EventReturn OnChat(UI::EventParams &params);
 
 private:
 	void bootGame(const std::string &filename);
@@ -70,7 +72,7 @@ private:
 	void checkPowerDown();
 
 	UI::Event OnDevMenu;
-
+	UI::Event OnChatMenu;
 	bool bootPending_;
 	std::string gamePath_;
 
@@ -102,4 +104,8 @@ private:
 	UI::VisibilityTween *loadingViewVisible_ = nullptr;
 	UI::Spinner *loadingSpinner_ = nullptr;
 	UI::TextView *loadingTextView_ = nullptr;
+
+	UI::Button *cardboardDisableButton_ = nullptr;
+	bool autoRotatingAnalogCW_ = false;
+	bool autoRotatingAnalogCCW_ = false;
 };

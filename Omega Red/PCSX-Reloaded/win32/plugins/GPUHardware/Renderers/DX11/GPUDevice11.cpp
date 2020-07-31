@@ -16,6 +16,9 @@ extern "C" void OutputLog(const char *szFormat, ...);
 static const GUID VERTICAL_FLIP_IID =
     {0x85a27140, 0xac18, 0x4f27, {0xaa, 0xff, 0x77, 0x9f, 0xbf, 0x3e, 0x78, 0xe3}};
 
+extern "C" int iResX;
+extern "C" int iResY;
+
 
 typedef struct _VERTEX
 {
@@ -38,8 +41,6 @@ typedef struct _ALPHA_FUNC_BUFFER
 } ALPHA_FUNC_BUFFER;
 
 #define NUMVERTICES 4
-#define WIDTH 800.0f
-#define HEIGHT 600.0f
 
 VERTEX g_vertexes[NUMVERTICES];
 
@@ -163,6 +164,10 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
     m_Width = (float)m_Height * 4.0f / 3.0f;
 
     m_Xoffset = (l_Desc.Width - m_Width) >> 1;
+
+	iResX = m_Width;
+
+    iResY = m_Height; 
 
     l_Desc.Width = m_Width;
 

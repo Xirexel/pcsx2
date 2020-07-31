@@ -3,6 +3,8 @@
 
 #include "math/lin/vec3.h"
 
+namespace Lin {
+
 class Quaternion;
 
 class Matrix4x4 {
@@ -55,7 +57,11 @@ public:
 		empty();
 		xx=yy=zz=f; ww=1.0f;
 	}
-
+	static Matrix4x4 identity() {
+		Matrix4x4 id;
+		id.setIdentity();
+		return id;
+	}
 	void setIdentity() {
 		setScaling(1.0f);
 	}
@@ -157,6 +163,8 @@ public:
 		wz = wz * scale.z + ww * trans.z;
 	}
 };
+
+}  // namespace Lin
 
 #endif	// _MATH_LIN_MATRIX4X4_H
 

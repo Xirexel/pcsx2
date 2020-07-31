@@ -343,7 +343,7 @@ namespace Omega_Red.Tools
         private List<Module> m_Modules = new List<Module>()
         {
             new Module(ModuleType.AudioRenderer),
-            new Module(ModuleType.VideoRenderer),
+            //new Module(ModuleType.VideoRenderer),
             new Module(ModuleType.DEV9),
             new Module(ModuleType.MemoryCard),
             new Module(ModuleType.CDVD),
@@ -352,7 +352,11 @@ namespace Omega_Red.Tools
             new Module(ModuleType.FW)    
         };
 
-        
+
+        private Module m_GPU = null;
+
+        public Module GPU { get { return m_GPU; } }
+
         private PCSX2ModuleManager() { }
 
         private static PCSX2ModuleManager m_Instance = null;
@@ -429,6 +433,30 @@ namespace Omega_Red.Tools
             }
 
             m_Modules.Clear();
+        }
+
+        public void initGPU()
+        {
+            if (m_GPU == null)
+            {
+                m_GPU = new Module(ModuleType.VideoRenderer);
+
+                m_Modules.Add(m_GPU);
+            }
+        }
+
+        public void releaseGPU()
+        {
+            if (m_GPU != null)
+            {
+                m_Modules.Remove(m_GPU);
+
+                m_GPU.release();
+            }
+
+            m_GPU = null;
+
+            GC.Collect();
         }
     }
 }

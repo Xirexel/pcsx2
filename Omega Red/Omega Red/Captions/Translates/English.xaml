@@ -97,6 +97,10 @@
     <sys:String x:Key="VariableBitrateTitle">Variable bitrate</sys:String>
     <sys:String xml:space="preserve" x:Key="VideoFileRecordedInfoTitle"> recorded!!!</sys:String>
     <sys:String xml:space="preserve" x:Key="VideoFileRecordingFailedTitle">Recording is failed!!!</sys:String>
+    <sys:String x:Key="VideoFileRecordingStartedTitle">Recording is started!!!</sys:String>
+    <sys:String x:Key="VideoStreamingFailedTitle">Streaming is failed!!!</sys:String>
+    <sys:String x:Key="VideoStreamingStartedTitle">Streaming is started!!!</sys:String>
+    <sys:String x:Key="VideoStreamingIsClosedTitle">Streaming is closed!!!</sys:String>
     <sys:String xml:space="preserve" x:Key="MemoryCardInfoTitle">Memory card </sys:String>
     <sys:String x:Key="SharedTitle">shared</sys:String>
     <sys:String x:Key="VisualVibrationIsEnabledTitle">Visual vibration is enabled</sys:String>
@@ -113,5 +117,6 @@
     <sys:String x:Key="SkipFrameModeTwoTitle">Skip two frames</sys:String>
     <sys:String x:Key="ShowFrameRateTitle">Show frames per second</sys:String>
     <sys:String x:Key="RefreshScreenTitle">Refresh screen:</sys:String>
-    <sys:String x:Key="FPSTitle">FPS</sys:String> 
+    <sys:String x:Key="FPSTitle">FPS</sys:String>
+    <sys:String x:Key="ResolutionModeTitle">Rendering resolution:</sys:String>
 </ResourceDictionary>

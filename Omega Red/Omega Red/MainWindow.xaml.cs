@@ -52,6 +52,8 @@ namespace Omega_Red
 
             TexturePackControl.Instance.init();
 
+            Capture.TargetTexture.Instance.init();
+
             InitializeComponent();
 
             LockScreenManager.Instance.show();

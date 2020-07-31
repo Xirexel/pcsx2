@@ -466,5 +466,17 @@ namespace Omega_Red.Properties {
                 this["ShowFrameRate"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int ResolutionMode {
+            get {
+                return ((int)(this["ResolutionMode"]));
+            }
+            set {
+                this["ResolutionMode"] = value;
+            }
+        }
     }
 }

@@ -47,9 +47,6 @@ static const char *vulkan_glsl_preamble =
 // texcoord = 2
 // fog = 3
 
-
-
-
 #undef WRITE
 
 #define WRITE p+=sprintf
@@ -178,8 +175,7 @@ bool GenerateVulkanGLSLVertexShader(const VShaderID &id, char *buffer) {
 		if (!useHWTransform && doTextureTransform && !isModeThrough) {
 			WRITE(p, "layout (location = %d) in vec3 texcoord;\n", (int)PspAttributeLocation::TEXCOORD);
 			texcoordInVec3 = true;
-		}
-		else
+		} else
 			WRITE(p, "layout (location = %d) in vec2 texcoord;\n", (int)PspAttributeLocation::TEXCOORD);
 	}
 	if (hasColor) {
@@ -213,7 +209,6 @@ bool GenerateVulkanGLSLVertexShader(const VShaderID &id, char *buffer) {
 		WRITE(p, "  return vec4(v.x, v.y, z * v.w, v.w);\n");
 		WRITE(p, "}\n\n");
 	}
-	WRITE(p, "out gl_PerVertex { vec4 gl_Position; };\n");
 
 	if (doBezier || doSpline) {
 		WRITE(p, "struct TessData {\n");
@@ -469,7 +464,7 @@ bool GenerateVulkanGLSLVertexShader(const VShaderID &id, char *buffer) {
 			if (poweredDiffuse) {
 				// pow(0.0, 0.0) may be undefined, but the PSP seems to treat it as 1.0.
 				// Seen in Tales of the World: Radiant Mythology (#2424.)
-				WRITE(p, "  if (light.matspecular.a == 0.0) {\n");
+				WRITE(p, "  if (light.matspecular.a <= 0.0) {\n");
 				WRITE(p, "    dot%i = 1.0;\n", i);
 				WRITE(p, "  } else {\n");
 				WRITE(p, "    dot%i = pow(max(dot%i, 0.0), light.matspecular.a);\n", i, i);
@@ -490,7 +485,7 @@ bool GenerateVulkanGLSLVertexShader(const VShaderID &id, char *buffer) {
 			case GE_LIGHTTYPE_UNKNOWN:
 				WRITE(p, "  float angle%i = length(light.dir[%i]) == 0.0 ? 0.0 : dot(normalize(light.dir[%i]), toLight);\n", i, i, i);
 				WRITE(p, "  if (angle%i >= light.angle_spotCoef[%i].x) {\n", i, i);
-				WRITE(p, "    lightScale = clamp(1.0 / dot(light.att[%i], vec3(1.0, distance, distance*distance)), 0.0, 1.0) * (light.angle_spotCoef[%i].y == 0.0 ? 1.0 : pow(angle%i, light.angle_spotCoef[%i].y));\n", i, i, i, i);
+				WRITE(p, "    lightScale = clamp(1.0 / dot(light.att[%i], vec3(1.0, distance, distance*distance)), 0.0, 1.0) * (light.angle_spotCoef[%i].y <= 0.0 ? 1.0 : pow(angle%i, light.angle_spotCoef[%i].y));\n", i, i, i, i);
 				WRITE(p, "  } else {\n");
 				WRITE(p, "    lightScale = 0.0;\n");
 				WRITE(p, "  }\n");
@@ -504,7 +499,7 @@ bool GenerateVulkanGLSLVertexShader(const VShaderID &id, char *buffer) {
 			if (doSpecular) {
 				WRITE(p, "  if (dot%i >= 0.0) {\n", i);
 				WRITE(p, "    dot%i = dot(normalize(toLight + vec3(0.0, 0.0, 1.0)), worldnormal);\n", i);
-				WRITE(p, "    if (light.matspecular.a == 0.0) {\n");
+				WRITE(p, "    if (light.matspecular.a <= 0.0) {\n");
 				WRITE(p, "      dot%i = 1.0;\n", i);
 				WRITE(p, "    } else {\n");
 				WRITE(p, "      dot%i = pow(max(dot%i, 0.0), light.matspecular.a);\n", i, i);
@@ -634,12 +629,17 @@ bool GenerateVulkanGLSLVertexShader(const VShaderID &id, char *buffer) {
 		const char *outMin = "projPos.x < base.cullRangeMin.x || projPos.y < base.cullRangeMin.y || projPos.z < base.cullRangeMin.z";
 		const char *outMax = "projPos.x > base.cullRangeMax.x || projPos.y > base.cullRangeMax.y || projPos.z > base.cullRangeMax.z";
 		WRITE(p, "    if (%s || %s) {\n", outMin, outMax);
-		WRITE(p, "      outPos.w = base.cullRangeMax.w;\n");
+		WRITE(p, "      outPos.xyzw = vec4(base.cullRangeMax.w);\n");
 		WRITE(p, "    }\n");
 		WRITE(p, "  }\n");
 	}
 	WRITE(p, "  gl_Position = outPos;\n");
+	WRITE(p, "  gl_PointSize = 1.0;\n");
 
+	if (gstate_c.Supports(GPU_NEEDS_Z_EQUAL_W_HACK)) {
+		// See comment in GPU_Vulkan.cpp.
+		WRITE(p, "  if (gl_Position.z == gl_Position.w) gl_Position.z *= 0.999999;\n");
+	}
 	WRITE(p, "}\n");
 	return true;
 }

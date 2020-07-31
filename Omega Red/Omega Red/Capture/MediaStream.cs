@@ -292,12 +292,14 @@ namespace Omega_Red.Capture
             get { return mFileExtention; }
         }
 
-        public bool start()
+        public bool start(ref string a_resultMessage)
         {
             bool l_result = false;
 
             do
             {
+                a_resultMessage = "VideoStreamingFailedTitle";
+
                 if (App.OffVideoRecording)
                     break;
 
@@ -308,19 +310,24 @@ namespace Omega_Red.Capture
                     break;
                 
                 mFileExtention = m_Start.Invoke(m_StreamObj, new object[] {
-                    CaptureTargetTexture.Instance.CaptureNative.ToString(),
+                    TargetTexture.Instance.TargetNative.ToString(),
                     AudioCaptureTarget.Instance.RegisterAction,
                     m_isConnected
                 }) as string;
 
+                if (string.IsNullOrWhiteSpace(mFileExtention))
+                    break;
+
                 l_result = true;
+
+                a_resultMessage = "VideoStreamingStartedTitle";
 
             } while (false);
 
             return l_result;
         }
 
-        public bool stop()
+        public bool stop(bool a_is_explicitly = false)
         {
             bool l_result = false;
 
@@ -335,7 +342,7 @@ namespace Omega_Red.Capture
                 if (m_Stop == null)
                     break;
 
-                m_Stop.Invoke(m_StreamObj, null);
+                m_Stop.Invoke(m_StreamObj, new object[] {a_is_explicitly});
                    
                 l_result = true;
 

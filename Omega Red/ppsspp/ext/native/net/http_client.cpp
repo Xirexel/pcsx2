@@ -86,7 +86,6 @@ bool Connection::Connect(int maxTries, double timeout, bool *cancelConnect) {
 		int maxfd = 1;
 		FD_ZERO(&fds);
 		for (addrinfo *possible = resolved_; possible != nullptr; possible = possible->ai_next) {
-			// TODO: Could support ipv6 without huge difficulty...
 			if (possible->ai_family != AF_INET && possible->ai_family != AF_INET6)
 				continue;
 
@@ -174,6 +173,31 @@ Client::~Client() {
 	Disconnect();
 }
 
+// Ignores line folding (deprecated), but respects field combining.
+// Don't use for Set-Cookie, which is a special header per RFC 7230.
+bool GetHeaderValue(const std::vector<std::string> &responseHeaders, const std::string &header, std::string *value) {
+	std::string search = header + ":";
+	bool found = false;
+
+	value->clear();
+	for (const std::string &line : responseHeaders) {
+		auto stripped = StripSpaces(line);
+		if (startsWithNoCase(stripped, search)) {
+			size_t value_pos = search.length();
+			size_t after_white = stripped.find_first_not_of(" \t", value_pos);
+			if (after_white != stripped.npos)
+				value_pos = after_white;
+
+			if (!found)
+				*value = stripped.substr(value_pos);
+			else
+				*value += "," + stripped.substr(value_pos);
+			found = true;
+		}
+	}
+
+	return found;
+}
 
 void DeChunk(Buffer *inbuffer, Buffer *outbuffer, int contentLength, float *progress) {
 	int dechunkedBytes = 0;
@@ -205,13 +229,13 @@ int Client::GET(const char *resource, Buffer *output, std::vector<std::string> &
 	const char *otherHeaders =
 		"Accept: */*\r\n"
 		"Accept-Encoding: gzip\r\n";
-	int err = SendRequest("GET", resource, otherHeaders, progress);
+	int err = SendRequest("GET", resource, otherHeaders, progress, cancelled);
 	if (err < 0) {
 		return err;
 	}
 
 	Buffer readbuf;
-	int code = ReadResponseHeaders(&readbuf, responseHeaders, progress);
+	int code = ReadResponseHeaders(&readbuf, responseHeaders, progress, cancelled);
 	if (code < 0) {
 		return code;
 	}
@@ -259,11 +283,11 @@ int Client::POST(const char *resource, const std::string &data, Buffer *output, 
 	return POST(resource, data, "", output, progress);
 }
 
-int Client::SendRequest(const char *method, const char *resource, const char *otherHeaders, float *progress) {
-	return SendRequestWithData(method, resource, "", otherHeaders, progress);
+int Client::SendRequest(const char *method, const char *resource, const char *otherHeaders, float *progress, bool *cancelled) {
+	return SendRequestWithData(method, resource, "", otherHeaders, progress, cancelled);
 }
 
-int Client::SendRequestWithData(const char *method, const char *resource, const std::string &data, const char *otherHeaders, float *progress) {
+int Client::SendRequestWithData(const char *method, const char *resource, const std::string &data, const char *otherHeaders, float *progress, bool *cancelled) {
 	if (progress) {
 		*progress = 0.01f;
 	}
@@ -290,12 +314,24 @@ int Client::SendRequestWithData(const char *method, const char *resource, const 
 	return 0;
 }
 
-int Client::ReadResponseHeaders(Buffer *readbuf, std::vector<std::string> &responseHeaders, float *progress) {
+int Client::ReadResponseHeaders(Buffer *readbuf, std::vector<std::string> &responseHeaders, float *progress, bool *cancelled) {
 	// Snarf all the data we can into RAM. A little unsafe but hey.
-	if (dataTimeout_ >= 0.0 && !fd_util::WaitUntilReady(sock(), dataTimeout_, false)) {
-		ELOG("HTTP headers timed out");
-		return -1;
-	}
+	static constexpr float CANCEL_INTERVAL = 0.25f;
+	bool ready = false;
+	double leftTimeout = dataTimeout_;
+	while (!ready) {
+		if (cancelled && *cancelled)
+			return -1;
+		ready = fd_util::WaitUntilReady(sock(), CANCEL_INTERVAL, false);
+		if (!ready && leftTimeout >= 0.0) {
+			leftTimeout -= CANCEL_INTERVAL;
+			if (leftTimeout < 0) {
+				ELOG("HTTP headers timed out");
+				return -1;
+			}
+		}
+	};
+	// Let's hope all the headers are available in a single packet...
 	if (readbuf->Read(sock(), 4096) < 0) {
 		ELOG("Failed to read HTTP headers :(");
 		return -1;
@@ -359,6 +395,11 @@ int Client::ReadResponseEntity(Buffer *readbuf, const std::vector<std::string> &
 		}
 	}
 
+	if (contentLength < 0) {
+		// Just sanity checking...
+		contentLength = 0;
+	}
+
 	if (!contentLength && progress) {
 		// Content length is unknown.
 		// Set progress to 1% so it looks like something is happening...
@@ -367,7 +408,7 @@ int Client::ReadResponseEntity(Buffer *readbuf, const std::vector<std::string> &
 
 	if (!contentLength || !progress) {
 		// No way to know how far along we are. Let's just not update the progress counter.
-		if (!readbuf->ReadAll(sock(), contentLength))
+		if (!readbuf->ReadAllWithProgress(sock(), contentLength, nullptr, cancelled))
 			return -1;
 	} else {
 		// Let's read in chunks, updating progress between each.
@@ -403,16 +444,25 @@ int Client::ReadResponseEntity(Buffer *readbuf, const std::vector<std::string> &
 }
 
 Download::Download(const std::string &url, const std::string &outfile)
-	: progress_(0.0f), url_(url), outfile_(outfile), resultCode_(0), completed_(false), failed_(false), cancelled_(false), hidden_(false) {
+	: url_(url), outfile_(outfile) {
 }
 
 Download::~Download() {
-
+	if (!joined_) {
+		FLOG("Download destructed without join");
+	}
 }
 
-void Download::Start(std::shared_ptr<Download> self) {
-	std::thread th(std::bind(&Download::Do, this, self));
-	th.detach();
+void Download::Start() {
+	thread_ = std::thread(std::bind(&Download::Do, this));
+}
+
+void Download::Join() {
+	if (joined_) {
+		ELOG("Already joined thread!");
+	}
+	thread_.join();
+	joined_ = true;
 }
 
 void Download::SetFailed(int code) {
@@ -421,54 +471,85 @@ void Download::SetFailed(int code) {
 	completed_ = true;
 }
 
-void Download::Do(std::shared_ptr<Download> self) {
-	setCurrentThreadName("Downloader::Do");
-	// as long as this is in scope, we won't get destructed.
-	// yeah this is ugly, I need to think about how life time should be managed for these...
-	std::shared_ptr<Download> self_ = self;
-	resultCode_ = 0;
-
-	Url fileUrl(url_);
+int Download::PerformGET(const std::string &url) {
+	Url fileUrl(url);
 	if (!fileUrl.Valid()) {
-		SetFailed(-1);
-		return;
+		return -1;
 	}
 
 	http::Client client;
 	if (!client.Resolve(fileUrl.Host().c_str(), fileUrl.Port())) {
-		ELOG("Failed resolving %s", url_.c_str());
-		SetFailed(-1);
-		return;
+		ELOG("Failed resolving %s", url.c_str());
+		return -1;
 	}
 
 	if (cancelled_) {
-		SetFailed(-1);
-		return;
+		return -1;
 	}
 
-	if (!client.Connect()) {
-		ELOG("Failed connecting to server.");
-		SetFailed(-1);
-		return;
+	if (!client.Connect(2, 20.0, &cancelled_)) {
+		ELOG("Failed connecting to server or cancelled.");
+		return -1;
 	}
 
 	if (cancelled_) {
-		SetFailed(-1);
-		return;
+		return -1;
 	}
 
-	// TODO: Allow cancelling during a GET somehow...
-	int resultCode = client.GET(fileUrl.Resource().c_str(), &buffer_, &progress_, &cancelled_);
-	if (resultCode == 200) {
-		ILOG("Completed downloading %s to %s", url_.c_str(), outfile_.empty() ? "memory" : outfile_.c_str());
-		if (!outfile_.empty() && !buffer_.FlushToFile(outfile_.c_str())) {
-			ELOG("Failed writing download to %s", outfile_.c_str());
+	return client.GET(fileUrl.Resource().c_str(), &buffer_, responseHeaders_, &progress_, &cancelled_);
+}
+
+std::string Download::RedirectLocation(const std::string &baseUrl) {
+	std::string redirectUrl;
+	if (GetHeaderValue(responseHeaders_, "Location", &redirectUrl)) {
+		Url url(baseUrl);
+		url = url.Relative(redirectUrl);
+		redirectUrl = url.ToString();
+	}
+
+	return redirectUrl;
+}
+
+void Download::Do() {
+	setCurrentThreadName("Downloader::Do");
+	resultCode_ = 0;
+
+	std::string downloadURL = url_;
+	while (resultCode_ == 0) {
+		int resultCode = PerformGET(downloadURL);
+		if (resultCode == -1) {
+			SetFailed(resultCode);
+			return;
 		}
-	} else {
-		ELOG("Error downloading %s to %s: %i", url_.c_str(), outfile_.c_str(), resultCode);
+
+		if (resultCode == 301 || resultCode == 302 || resultCode == 303 || resultCode == 307 || resultCode == 308) {
+			std::string redirectURL = RedirectLocation(downloadURL);
+			if (redirectURL.empty()) {
+				ELOG("Could not find Location header for redirect");
+				resultCode_ = resultCode;
+			} else if (redirectURL == downloadURL || redirectURL == url_) {
+				// Simple loop detected, bail out.
+				resultCode_ = resultCode;
+			}
+
+			// Perform the next GET.
+			if (resultCode_ == 0)
+				ILOG("Download of %s redirected to %s", downloadURL.c_str(), redirectURL.c_str());
+			downloadURL = redirectURL;
+			continue;
+		}
+
+		if (resultCode == 200) {
+			ILOG("Completed downloading %s to %s", url_.c_str(), outfile_.empty() ? "memory" : outfile_.c_str());
+			if (!outfile_.empty() && !buffer_.FlushToFile(outfile_.c_str())) {
+				ELOG("Failed writing download to %s", outfile_.c_str());
+			}
+		} else {
+			ELOG("Error downloading %s to %s: %i", url_.c_str(), outfile_.c_str(), resultCode);
+		}
+		resultCode_ = resultCode;
 	}
 
-	resultCode_ = resultCode;
 	progress_ = 1.0f;
 
 	// Set this last to ensure no race conditions when checking Done. Users must always check
@@ -479,7 +560,7 @@ void Download::Do(std::shared_ptr<Download> self) {
 std::shared_ptr<Download> Downloader::StartDownload(const std::string &url, const std::string &outfile) {
 	std::shared_ptr<Download> dl(new Download(url, outfile));
 	downloads_.push_back(dl);
-	dl->Start(dl);
+	dl->Start();
 	return dl;
 }
 
@@ -490,7 +571,7 @@ std::shared_ptr<Download> Downloader::StartDownloadWithCallback(
 	std::shared_ptr<Download> dl(new Download(url, outfile));
 	dl->SetCallback(callback);
 	downloads_.push_back(dl);
-	dl->Start(dl);
+	dl->Start();
 	return dl;
 }
 
@@ -499,6 +580,7 @@ void Downloader::Update() {
 	for (size_t i = 0; i < downloads_.size(); i++) {
 		if (downloads_[i]->Progress() == 1.0f || downloads_[i]->Failed()) {
 			downloads_[i]->RunCallback();
+			downloads_[i]->Join();
 			downloads_.erase(downloads_.begin() + i);
 			goto restart;
 		}
@@ -518,6 +600,10 @@ void Downloader::CancelAll() {
 	for (size_t i = 0; i < downloads_.size(); i++) {
 		downloads_[i]->Cancel();
 	}
+	for (size_t i = 0; i < downloads_.size(); i++) {
+		downloads_[i]->Join();
+	}
+	downloads_.clear();
 }
 
 }	// http

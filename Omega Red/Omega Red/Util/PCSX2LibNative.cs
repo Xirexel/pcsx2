@@ -204,6 +204,8 @@ namespace Omega_Red.Util
 
             public FirstDelegate MTGS_ResumeFunc;
 
+            public FirstDelegate MTGS_ResetFunc;            
+
             public FirstDelegate MTGS_CancelFunc;   
                                     
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -479,7 +481,15 @@ namespace Omega_Red.Util
 
             if (m_PCSX2Init.resetCallbacksFunc != null)
                 m_PCSX2Init.resetCallbacksFunc();
-        }           
+        }
+        public void MTGS_ResetFunc()
+        {
+            if (!m_IsInitialized)
+                return;
+
+            if (m_PCSX2System.MTGS_ResetFunc != null)
+                m_PCSX2System.MTGS_ResetFunc();
+        }
         
         public void MTGS_CancelFunc()
         {
@@ -923,6 +933,13 @@ namespace Omega_Red.Util
                 default:
                  break;
 	        }
-        }        
+        }
+
+
+        public void clearModules()
+        {
+            if (m_PCSX2Modules.setGS != null)
+                m_PCSX2Modules.setGS(IntPtr.Zero);
+        }
     }
 }

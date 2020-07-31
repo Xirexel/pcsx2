@@ -120,6 +120,8 @@ namespace Omega_Red.Managers
 
         public event Action<string> ShowInfoEvent;
 
+        public bool State { get; private set; } = false;
+
         public string CaptureManagerVersion { get {
                 switch (MediaOutputType)
                 {
@@ -355,6 +357,13 @@ namespace Omega_Red.Managers
 
         public void StartStop(Object aState)
         {
+            StartStop(aState, false);
+        }
+
+        public void StartStop(Object aState, bool aIsBlocked)
+        {
+            AutoResetEvent lBlockEvent = new AutoResetEvent(false);
+            
             var t = new Thread(() =>
             {
                 ChangeLockEvent(true);
@@ -367,34 +376,62 @@ namespace Omega_Red.Managers
                     {
                         if ((bool)aState)
                         {
+                            string l_title = "";
+
+                            string l_resultMessage = "";
+
                             switch (MediaOutputType)
                             {
                                 case MediaOutputType.Capture:
-                                    l_result = MediaCapture.Instance.start();
+                                    l_result = MediaCapture.Instance.start(ref l_resultMessage);
+                                    l_title = "Recording";
                                     break;
                                 case MediaOutputType.Stream:
-                                    MediaStream.Instance.start();
+                                    l_result = MediaStream.Instance.start(ref l_resultMessage);
+                                    l_title = "Streaming";
                                     break;
                                 default:
                                     break;
                             }
+                            
+                            if (RecordingStateEvent != null)
+                                RecordingStateEvent(l_result);
 
-                            if(l_result)
-                                MediaSourcesManager.Instance.openSources();
-                            else
+                            State = l_result;
+
+                            if (l_result)
                             {
-                                if (RecordingStateEvent != null)
-                                    RecordingStateEvent(false);
-                                
                                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                                 {
-                                    string l_title = "Recording cannot be started!!!";
+                                    l_title += " is started!!!";
 
                                     try
                                     {
                                         var l_Title = new System.Windows.Controls.TextBlock();
 
-                                        l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, "VideoFileRecordingFailedTitle");
+                                        l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, l_resultMessage);
+
+                                        l_title = l_Title.Text;
+                                    }
+                                    finally
+                                    {
+                                        ShowInfo(l_title);
+                                    }
+                                });
+
+                                MediaSourcesManager.Instance.openSources();
+                            }
+                            else
+                            {                                
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                {
+                                    l_title += " cannot be started!!!";
+
+                                    try
+                                    {
+                                        var l_Title = new System.Windows.Controls.TextBlock();
+
+                                        l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, l_resultMessage);
 
                                         l_title = l_Title.Text;
                                     }
@@ -407,6 +444,7 @@ namespace Omega_Red.Managers
                         }
                         else
                         {
+                            State = false;
 
                             MediaSourcesManager.Instance.closeSources();
 
@@ -416,7 +454,27 @@ namespace Omega_Red.Managers
                                     MediaCapture.Instance.stop();
                                     break;
                                 case MediaOutputType.Stream:
-                                    MediaStream.Instance.stop();
+                                    var l_state = MediaStream.Instance.stop();
+                                    if(l_state)
+                                    {
+                                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                        {
+                                            var l_title = "Streaming is closed!!!";
+
+                                            try
+                                            {
+                                                var l_Title = new System.Windows.Controls.TextBlock();
+
+                                                l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, "VideoStreamingIsClosedTitle");
+
+                                                l_title = l_Title.Text;
+                                            }
+                                            finally
+                                            {
+                                                ShowInfo(l_title);
+                                            }
+                                        });
+                                    }
                                     break;
                                 default:
                                     break;
@@ -430,12 +488,17 @@ namespace Omega_Red.Managers
                 finally
                 {
                     ChangeLockEvent(false);
+
+                    lBlockEvent.Set();
                 }
             });
 
             t.SetApartmentState(ApartmentState.MTA);
             
             t.Start();
+
+            if(aIsBlocked)
+                lBlockEvent.WaitOne(TimeSpan.FromSeconds(20));
         }
                
         public void getCollectionOfSources(Action<string> method)

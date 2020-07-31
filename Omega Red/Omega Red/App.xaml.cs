@@ -123,6 +123,8 @@ namespace Omega_Red
 
             Capture.MediaCapture.Instance.stop();
 
+            Capture.MediaStream.Instance.stop(true);
+
             Capture.OffScreenStream.Instance.stopServer();
 
             PCSX2Controller.Instance.Stop(true);

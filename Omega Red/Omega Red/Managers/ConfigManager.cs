@@ -124,6 +124,18 @@ namespace Omega_Red.Managers
             }
         }
 
+        class ResolutionModeInfo
+        {
+            public uint Value { get; set; } = 0;
+
+            public override string ToString()
+            {
+                if (Value == 0)
+                    return "";
+
+                return Value.ToString() + "p";
+            }
+        }
 
         private ICollectionView mDisplayModeView = null;
 
@@ -143,6 +155,12 @@ namespace Omega_Red.Managers
 
 
 
+        private ICollectionView mResolutionModeView = null;
+
+        private readonly ObservableCollection<ResolutionModeInfo> _resolutionModeCollection = new ObservableCollection<ResolutionModeInfo>();
+
+
+        
 
 
 
@@ -203,6 +221,8 @@ namespace Omega_Red.Managers
 
         public event Action<string> FrameRateEvent;
 
+        public event Action<uint> ResolutionEvent;
+
         private ConfigManager()
         {
             System.Reflection.Assembly l_assembly = Assembly.GetExecutingAssembly();
@@ -241,6 +261,19 @@ namespace Omega_Red.Managers
                 _skipFrameModeCollection.Add(new SkipFrameModeInfo() { Value = SkipFrameMode.Two });
 
                 mSkipFrameModeView = CollectionViewSource.GetDefaultView(_skipFrameModeCollection);
+
+
+
+
+                _resolutionModeCollection.Add(new ResolutionModeInfo() { Value = 720 });
+
+                _resolutionModeCollection.Add(new ResolutionModeInfo() { Value = 1080 });
+
+                _resolutionModeCollection.Add(new ResolutionModeInfo() { Value = 1440 });
+
+                _resolutionModeCollection.Add(new ResolutionModeInfo() { Value = 2160 });
+
+                mResolutionModeView = CollectionViewSource.GetDefaultView(_resolutionModeCollection); 
 
 
 
@@ -314,6 +347,8 @@ namespace Omega_Red.Managers
 
                 mSkipFrameModeView.CurrentChanged += mSkipFrameModeView_CurrentChanged;
 
+                mResolutionModeView.CurrentChanged += mResolutionModeView_CurrentChanged;
+
                 mControlModeView.CurrentChanged += mControlModeView_CurrentChanged;
                 
                 mLanguageModeView.CurrentChanged += mLanguageModeView_CurrentChanged;
@@ -338,6 +373,19 @@ namespace Omega_Red.Managers
                 reset();
             });
 
+        }
+
+        private void mResolutionModeView_CurrentChanged(object sender, EventArgs e)
+        {
+            if (mResolutionModeView.CurrentItem == null)
+                return;
+
+            var l_ResolutionModeInfo = (ResolutionModeInfo)mResolutionModeView.CurrentItem;
+
+            if (ResolutionEvent != null)
+                ResolutionEvent(l_ResolutionModeInfo.Value);
+
+            Settings.Default.ResolutionMode = mResolutionModeView.CurrentPosition;
         }
 
         private void mSkipFrameModeView_CurrentChanged(object sender, EventArgs e)
@@ -410,6 +458,11 @@ namespace Omega_Red.Managers
 
 
 
+                mResolutionModeView.MoveCurrentToPosition(-1);
+
+                mResolutionModeView.MoveCurrentToPosition(Settings.Default.ResolutionMode);
+
+
 
 
                 ControlMode l_ControlMode = ControlMode.Button;
@@ -478,14 +531,14 @@ namespace Omega_Red.Managers
             if (string.IsNullOrEmpty(ltitle))
                 return;
 
-            if(ltitle == "Tessellated")
-            {
-                Tools.ModuleControl.Instance.setIsTessellated(true);
-            }
-            else
-            {
-                Tools.ModuleControl.Instance.setIsTessellated(false);
-            }
+            //if(ltitle == "Tessellated")
+            //{
+            //    Tools.ModuleControl.Instance.setIsTessellated(true);
+            //}
+            //else
+            //{
+            //    Tools.ModuleControl.Instance.setIsTessellated(false);
+            //}
 
             Settings.Default.RenderingSchema = ltitle;
         }
@@ -703,6 +756,10 @@ namespace Omega_Red.Managers
             get { return mSkipFrameModeView; }
         }
 
+        public ICollectionView ResolutionModeCollection
+        {
+            get { return mResolutionModeView; }
+        }                      
 
         public ICollectionView ControlModeCollection
         {

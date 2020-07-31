@@ -11,6 +11,11 @@
 #include "input/input_state.h"
 #include "input/keycodes.h"
 #include "XinputDevice.h"
+#include "Core/Core.h"
+#include "Core/HLE/sceCtrl.h"
+#include "Common/Timer.h"
+
+static int newVibrationTime = 0;
 
 // Utilities to dynamically load XInput. Adapted from SDL.
 
@@ -18,11 +23,9 @@
 
 typedef DWORD (WINAPI *XInputGetState_t) (DWORD dwUserIndex, XINPUT_STATE* pState);
 typedef DWORD (WINAPI *XInputSetState_t) (DWORD dwUserIndex, XINPUT_VIBRATION* pVibration);
-typedef DWORD (WINAPI *XInputGetCapabilities_t) (DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPABILITIES* pCapabilities);
 
 static XInputGetState_t PPSSPP_XInputGetState = NULL;
 static XInputSetState_t PPSSPP_XInputSetState = NULL;
-static XInputGetCapabilities_t PPSSPP_XInputGetCapabilities = NULL;
 static DWORD PPSSPP_XInputVersion = 0;
 static HMODULE s_pXInputDLL = 0;
 static int s_XInputDLLRefCount = 0;
@@ -42,6 +45,10 @@ static int LoadXInputDLL() {
 	if (!s_pXInputDLL) {
 		version = (1 << 16) | 3;
 		s_pXInputDLL = LoadLibrary( L"XInput1_3.dll" );  // 1.3 Ships with Vista and Win7, can be installed as a restributable component.
+		if (!s_pXInputDLL) {
+			version = (1 << 16) | 0;
+			s_pXInputDLL = LoadLibrary( L"XInput9_1_0.dll" );  // 1.0 ships with any Windows since WinXP
+		}
 	}
 	if (!s_pXInputDLL) {
 		return -1;
@@ -50,11 +57,28 @@ static int LoadXInputDLL() {
 	PPSSPP_XInputVersion = version;
 	s_XInputDLLRefCount = 1;
 
-	/* 100 is the ordinal for _XInputGetStateEx, which returns the same struct as XinputGetState, but with extra data in wButtons for the guide button, we think... */
-	PPSSPP_XInputGetState = (XInputGetState_t)GetProcAddress( (HMODULE)s_pXInputDLL, (LPCSTR)100 );
-	PPSSPP_XInputSetState = (XInputSetState_t)GetProcAddress( (HMODULE)s_pXInputDLL, "XInputSetState" );
-	PPSSPP_XInputGetCapabilities = (XInputGetCapabilities_t)GetProcAddress( (HMODULE)s_pXInputDLL, "XInputGetCapabilities" );
-	if ( !PPSSPP_XInputGetState || !PPSSPP_XInputSetState || !PPSSPP_XInputGetCapabilities ) {
+	/* 100 is the ordinal for _XInputGetStateEx, which returns the same struct as XinputGetState, but with extra data in wButtons for the guide button, we think...
+	   Let's try the name first, though - then fall back to ordinal, then to a non-Ex version (xinput9_1_0.dll doesn't have Ex) */
+	PPSSPP_XInputGetState = (XInputGetState_t)GetProcAddress( (HMODULE)s_pXInputDLL, "XInputGetStateEx" );
+	if ( !PPSSPP_XInputGetState ) {
+		PPSSPP_XInputGetState = (XInputGetState_t)GetProcAddress( (HMODULE)s_pXInputDLL, (LPCSTR)100 );
+		if ( !PPSSPP_XInputGetState ) {
+			PPSSPP_XInputGetState = (XInputGetState_t)GetProcAddress( (HMODULE)s_pXInputDLL, "XInputGetState" );
+		}
+	}
+
+	if ( !PPSSPP_XInputGetState ) {
+		UnloadXInputDLL();
+		return -1;
+	}
+
+	/* Let's try the name first, then fall back to a non-Ex version (xinput9_1_0.dll doesn't have Ex) */
+	PPSSPP_XInputSetState = (XInputSetState_t)GetProcAddress((HMODULE)s_pXInputDLL, "XInputSetStateEx");
+	if (!PPSSPP_XInputSetState) {
+		PPSSPP_XInputSetState = (XInputSetState_t)GetProcAddress((HMODULE)s_pXInputDLL, "XInputSetState");
+	}
+
+	if (!PPSSPP_XInputSetState) {
 		UnloadXInputDLL();
 		return -1;
 	}
@@ -76,7 +100,6 @@ static int LoadXInputDLL() { return 0; }
 static void UnloadXInputDLL() {}
 #define PPSSPP_XInputGetState XInputGetState
 #define PPSSPP_XInputSetState XInputSetState
-#define PPSSPP_XInputGetCapabilities XInputGetCapabilities
 #endif
 
 #ifndef XUSER_MAX_COUNT
@@ -227,11 +250,13 @@ int XinputDevice::UpdateState() {
 	for (int i = 0; i < XUSER_MAX_COUNT; i++) {
 		XINPUT_STATE state;
 		ZeroMemory(&state, sizeof(XINPUT_STATE));
+		XINPUT_VIBRATION vibration;
+		ZeroMemory(&vibration, sizeof(XINPUT_VIBRATION));
 		if (check_delay[i]-- > 0)
 			continue;
 		DWORD dwResult = PPSSPP_XInputGetState(i, &state);
 		if (dwResult == ERROR_SUCCESS) {
-			UpdatePad(i, state);
+			UpdatePad(i, state, vibration);
 			anySuccess = true;
 		} else {
 			check_delay[i] = 30;
@@ -243,13 +268,14 @@ int XinputDevice::UpdateState() {
 	return anySuccess ? UPDATESTATE_SKIP_PAD : 0;
 }
 
-void XinputDevice::UpdatePad(int pad, const XINPUT_STATE &state) {
+void XinputDevice::UpdatePad(int pad, const XINPUT_STATE &state, XINPUT_VIBRATION &vibration) {
 	static bool notified = false;
 	if (!notified) {
 		notified = true;
 		KeyMap::NotifyPadConnected("Xbox 360 Pad");
 	}
 	ApplyButtons(pad, state);
+	ApplyVibration(pad, vibration);
 
 	const float STICK_DEADZONE = g_Config.fXInputAnalogDeadzone;
 	const int STICK_INV_MODE = g_Config.iXInputAnalogInverseMode;
@@ -334,3 +360,34 @@ void XinputDevice::ApplyButtons(int pad, const XINPUT_STATE &state) {
 		}
 	}
 }
+
+
+void XinputDevice::ApplyVibration(int pad, XINPUT_VIBRATION &vibration) {
+	if (PSP_IsInited()) {
+		newVibrationTime = Common::Timer::GetTimeMs() >> 6;
+		// We have to run PPSSPP_XInputSetState at time intervals
+		// since it bugs otherwise with very high unthrottle speeds
+		// and freezes at constant vibration or no vibration at all.
+		if (abs(newVibrationTime - prevVibrationTime) >= 1) {
+			if (GetUIState() == UISTATE_INGAME) {
+				vibration.wLeftMotorSpeed = sceCtrlGetLeftVibration(); // use any value between 0-65535 here
+				vibration.wRightMotorSpeed = sceCtrlGetRightVibration(); // use any value between 0-65535 here
+			} else {
+				vibration.wLeftMotorSpeed = 0;
+				vibration.wRightMotorSpeed = 0;
+			}
+
+			if ((prevVibration[pad].wLeftMotorSpeed != vibration.wLeftMotorSpeed || prevVibration[pad].wRightMotorSpeed != vibration.wRightMotorSpeed)) {
+				PPSSPP_XInputSetState(pad, &vibration);
+				prevVibration[pad] = vibration;
+			}
+			prevVibrationTime = newVibrationTime;
+		}
+	} else {
+		DWORD dwResult = PPSSPP_XInputSetState(pad, &vibration);
+		if (dwResult != ERROR_SUCCESS) {
+			check_delay[pad] = 30;
+		}
+	}
+}
+

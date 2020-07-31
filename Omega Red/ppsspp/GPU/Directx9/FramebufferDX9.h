@@ -27,8 +27,6 @@
 
 #include "GPU/GPUCommon.h"
 #include "GPU/Common/FramebufferCommon.h"
-#include "Core/Config.h"
-#include "ext/native/thin3d/thin3d.h"
 
 namespace DX9 {
 
@@ -49,7 +47,6 @@ public:
 	void DestroyAllFBOs();
 
 	void EndFrame();
-	void Resized() override;
 	void DeviceLost();
 	void ReformatFramebufferFrom(VirtualFramebuffer *vfb, GEBufferFormat old) override;
 
@@ -57,7 +54,7 @@ public:
 
 	void BindFramebufferAsColorTexture(int stage, VirtualFramebuffer *framebuffer, int flags);
 
-	virtual bool NotifyStencilUpload(u32 addr, int size, bool skipZero = false) override;
+	virtual bool NotifyStencilUpload(u32 addr, int size, StencilUpload flags = StencilUpload::NEEDS_CLEAR) override;
 
 	bool GetFramebuffer(u32 fb_address, int fb_stride, GEBufferFormat format, GPUDebugBuffer &buffer, int maxRes);
 	bool GetDepthbuffer(u32 fb_address, int fb_stride, u32 z_address, int z_stride, GPUDebugBuffer &buffer) override;
@@ -69,18 +66,14 @@ public:
 
 protected:
 	void Bind2DShader() override;
-	void BindPostShader(const PostShaderUniforms &uniforms) override;
-	void SetViewport2D(int x, int y, int w, int h) override;
 	void DecimateFBOs() override;
 
 	// Used by ReadFramebufferToMemory and later framebuffer block copies
 	void BlitFramebuffer(VirtualFramebuffer *dst, int dstX, int dstY, VirtualFramebuffer *src, int srcX, int srcY, int w, int h, int bpp) override;
 
-	bool CreateDownloadTempBuffer(VirtualFramebuffer *nvfb) override;
 	void UpdateDownloadTempBuffer(VirtualFramebuffer *nvfb) override;
 
 private:
-	void MakePixelTexture(const u8 *srcPixels, GEBufferFormat srcPixelFormat, int srcStride, int width, int height, float &u1, float &v1) override;
 	void PackFramebufferSync_(VirtualFramebuffer *vfb, int x, int y, int w, int h) override;
 	void PackDepthbuffer(VirtualFramebuffer *vfb, int x, int y, int w, int h);
 	bool GetRenderTargetFramebuffer(LPDIRECT3DSURFACE9 renderTarget, LPDIRECT3DSURFACE9 offscreen, int w, int h, GPUDebugBuffer &buffer);
@@ -88,18 +81,10 @@ private:
 	LPDIRECT3DDEVICE9 device_;
 	LPDIRECT3DDEVICE9 deviceEx_;
 
-	// Used by DrawPixels
-	LPDIRECT3DTEXTURE9 drawPixelsTex_ = nullptr;
-	int drawPixelsTexW_;
-	int drawPixelsTexH_;
-
 	LPDIRECT3DVERTEXSHADER9 pFramebufferVertexShader = nullptr;
 	LPDIRECT3DPIXELSHADER9 pFramebufferPixelShader = nullptr;
 	LPDIRECT3DVERTEXDECLARATION9 pFramebufferVertexDecl = nullptr;
 
-	u8 *convBuf = nullptr;
-
-	int plainColorLoc_;
 	LPDIRECT3DPIXELSHADER9 stencilUploadPS_ = nullptr;
 	LPDIRECT3DVERTEXSHADER9 stencilUploadVS_ = nullptr;
 	bool stencilUploadFailed_ = false;

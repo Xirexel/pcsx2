@@ -132,10 +132,22 @@ void MainThreadFunc() {
 	bool performingRestart = NativeIsRestarting();
 	NativeInit(static_cast<int>(args.size()), &args[0], "1234", "1234", nullptr);
 
+	if (g_Config.iGPUBackend == (int)GPUBackend::OPENGL) {
+		if (!useEmuThread) {
+			// Okay, we must've switched to OpenGL.  Let's flip the emu thread on.
+			useEmuThread = true;
+			setCurrentThreadName("Render");
+		}
+	} else if (useEmuThread) {
+		// We must've failed over from OpenGL, flip the emu thread off.
+		useEmuThread = false;
+		setCurrentThreadName("Emu");
+	}
+
 	if (g_Config.sFailedGPUBackends.find("ALL") != std::string::npos) {
 		Reporting::ReportMessage("Graphics init error: %s", "ALL");
 
-		I18NCategory *err = GetI18NCategory("Error");
+		auto err = GetI18NCategory("Error");
 		const char *defaultErrorAll = "Failed initializing any graphics. Try upgrading your graphics drivers.";
 		const char *genericError = err->T("GenericAllGraphicsError", defaultErrorAll);
 		std::wstring title = ConvertUTF8ToWString(err->T("GenericGraphicsError", "Graphics Error"));
@@ -163,7 +175,7 @@ void MainThreadFunc() {
 			W32Util::ExitAndRestart();
 		}
 
-		I18NCategory *err = GetI18NCategory("Error");
+		auto err = GetI18NCategory("Error");
 		Reporting::ReportMessage("Graphics init error: %s", error_string.c_str());
 
 		const char *defaultErrorVulkan = "Failed initializing graphics. Try upgrading your graphics drivers.\n\nWould you like to try switching to OpenGL?\n\nError message:";

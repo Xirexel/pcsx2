@@ -263,20 +263,32 @@ namespace Omega_Red.Tools
 
         private void init()
         {
-            if (m_isinitilized)
-                return;
+            if (!m_isinitilized)
+            {
+                reset();
 
-            reset();
+                PCSX2LibNative.Instance.DetectCpuAndUserModeFunc();
 
-            PCSX2LibNative.Instance.DetectCpuAndUserModeFunc();
+                PCSX2LibNative.Instance.AllocateCoreStuffsFunc(PCSX2Controller.Instance.m_Pcsx2Config.serialize());
 
-            PCSX2LibNative.Instance.AllocateCoreStuffsFunc(PCSX2Controller.Instance.m_Pcsx2Config.serialize());
+                PCSX2LibNative.Instance.PCSX2_Hle_SetElfPathFunc("");
 
-            PCSX2LibNative.Instance.PCSX2_Hle_SetElfPathFunc("");
+                Bind();
 
-            Bind();
+                m_isinitilized = true;
+            }
+                       
+            PCSX2ModuleManager.Instance.initGPU();
 
-            m_isinitilized = true;
+            ModuleControl.Instance.initPCSX2(PCSX2ModuleManager.Instance.GPU);
+
+            PCSX2LibNative.Instance.setModule(PCSX2ModuleManager.Instance.GPU);
+
+            //ModuleControl.Instance.open(PCSX2ModuleManager.Instance.GPU);
+
+
+            if (!PCSX2LibNative.Instance.MTGS_IsSelfFunc())
+                PCSX2LibNative.Instance.MTGS_CancelFunc();
         }
 
         public void quickSave()
@@ -797,7 +809,7 @@ namespace Omega_Red.Tools
                 else if (m_IsoInfo.GameType == GameType.PS2)
                 {
                     init();
-
+                                       
                     var l_wideScreen = Omega_Red.Tools.Converters.WideScreenConverter.IsWideScreen(
                         m_IsoInfo.ElfCRC.ToString("x")) && !Settings.Default.DisableWideScreen;
 
@@ -811,6 +823,8 @@ namespace Omega_Red.Tools
                     }
 
                     MemoryCardManager.Instance.setMemoryCard();
+
+                    PCSX2LibNative.Instance.MTGS_ResumeFunc();
 
                     PCSX2LibNative.Instance.SysThreadBase_ResumeFunc();
                 }
@@ -833,6 +847,8 @@ namespace Omega_Red.Tools
                 else if (m_IsoInfo.GameType == GameType.PS2)
                 {
                     PCSX2LibNative.Instance.SysThreadBase_SuspendFunc();
+
+                    PCSX2LibNative.Instance.MTGS_SuspendFunc();
                 }
 
                 mGameSessionDuration += DateTime.Now - mCurrentDateTime;
@@ -856,6 +872,12 @@ namespace Omega_Red.Tools
                 else if (m_IsoInfo.GameType == GameType.PS2)
                 {
                     PCSX2LibNative.Instance.SysThreadBase_ResetFunc();
+
+                    PCSX2LibNative.Instance.MTGS_ResetFunc();
+
+                    PCSX2LibNative.Instance.clearModules();
+
+                    PCSX2ModuleManager.Instance.releaseGPU();
                 }
 
                 m_reloadSettings = true;

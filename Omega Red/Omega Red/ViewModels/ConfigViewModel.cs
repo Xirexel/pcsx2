@@ -43,6 +43,16 @@ namespace Omega_Red.ViewModels
             PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
 
             ConfigManager.Instance.FrameRateEvent += (a_framerate) => { FrameRate = a_framerate; };
+                        
+            MediaRecorderManager.Instance.RecordingStateEvent += (a_state) => {
+
+                Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, (System.Threading.ThreadStart)delegate ()
+                {
+                    checkIsStopped();
+
+                    IsCaptureStopped = !a_state;
+                });
+            };
         }
 
         private void Instance_SwitchCaptureConfigEvent(object obj)
@@ -64,6 +74,20 @@ namespace Omega_Red.ViewModels
             if (obj == PCSX2Controller.StatusEnum.Stopped ||
                 obj == PCSX2Controller.StatusEnum.Initilized)
                 VisibilityTexturePackMode = Visibility.Visible;
+
+            checkIsStopped();
+        }
+
+        private void checkIsStopped()
+        {
+
+            IsStopped = false;
+
+            if ((PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Stopped ||
+                PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Initilized) 
+                &&
+                !MediaRecorderManager.Instance.State)
+                IsStopped = true;
         }
 
         void Instance_SwitchTopmostEvent(bool obj)
@@ -95,6 +119,11 @@ namespace Omega_Red.ViewModels
         public ICollectionView SkipFrameModeCollection
         {
             get { return ConfigManager.Instance.SkipFrameModeCollection; }
+        }
+
+        public ICollectionView ResolutionModeCollection
+        {
+            get { return ConfigManager.Instance.ResolutionModeCollection; }
         }
 
         public ICollectionView ControlModeCollection
@@ -318,7 +347,7 @@ namespace Omega_Red.ViewModels
         {
             get
             {
-                ModuleControl.Instance.setIsFXAA(Settings.Default.IsFXAA);
+                //ModuleControl.Instance.setIsFXAA(Settings.Default.IsFXAA);
 
                 return Settings.Default.IsFXAA;
             }
@@ -381,7 +410,40 @@ namespace Omega_Red.ViewModels
                 RaisePropertyChangedEvent("VisibilityTexturePackMode");
             }
         }
-               
+
+
+        private bool mIsStopped = false;
+
+        public bool IsStopped
+        {
+            get
+            {
+                return mIsStopped;
+            }
+            set
+            {
+                mIsStopped = value;
+
+                RaisePropertyChangedEvent("IsStopped");
+            }
+        }
+
+        private bool mIsCaptureStopped = true;
+
+        public bool IsCaptureStopped
+        {
+            get
+            {
+                return mIsCaptureStopped;
+            }
+            set
+            {
+                mIsCaptureStopped = value;
+
+                RaisePropertyChangedEvent("IsCaptureStopped");
+            }
+        }
+
         public bool ShowFrameRate
         {
             get

@@ -73,7 +73,6 @@ GPU_D3D11::GPU_D3D11(GraphicsContext *gfxCtx, Draw::DrawContext *draw)
 	device_ = (ID3D11Device *)draw->GetNativeObject(Draw::NativeObject::DEVICE);
 	context_ = (ID3D11DeviceContext *)draw->GetNativeObject(Draw::NativeObject::CONTEXT);
 	D3D_FEATURE_LEVEL featureLevel = (D3D_FEATURE_LEVEL)draw->GetNativeObject(Draw::NativeObject::FEATURE_LEVEL);
-	lastVsync_ = g_Config.bVSync ? 1 : 0;
 
 	stockD3D11.Create(device_);
 
@@ -133,12 +132,10 @@ void GPU_D3D11::CheckGPUFeatures() {
 	features |= GPU_SUPPORTS_BLEND_MINMAX;
 	features |= GPU_PREFER_CPU_DOWNLOAD;
 
-	// Accurate depth is required on AMD/nVidia (for reverse Z) so we ignore the compat flag to disable it on those. See #9545
-	auto vendor = draw_->GetDeviceCaps().vendor;
-
-	if (!PSP_CoreParameter().compat.flags().DisableAccurateDepth || vendor == Draw::GPUVendor::VENDOR_AMD || vendor == Draw::GPUVendor::VENDOR_NVIDIA) {
-		features |= GPU_SUPPORTS_ACCURATE_DEPTH;  // Breaks text in PaRappa for some reason.
-	}
+	// Accurate depth is required because the Direct3D API does not support inverse Z.
+	// So we cannot incorrectly use the viewport transform as the depth range on Direct3D.
+	// TODO: Breaks text in PaRappa for some reason?
+	features |= GPU_SUPPORTS_ACCURATE_DEPTH;
 
 #ifndef _M_ARM
 	// TODO: Do proper feature detection
@@ -212,8 +209,7 @@ void GPU_D3D11::DeviceRestore() {
 }
 
 void GPU_D3D11::InitClear() {
-	bool useNonBufferedRendering = g_Config.iRenderingMode == FB_NON_BUFFERED_MODE;
-	if (useNonBufferedRendering) {
+	if (!framebufferManager_->UseBufferedRendering()) {
 		// device_->Clear(0, NULL, D3DCLEAR_STENCIL | D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.f, 0);
 	}
 }
@@ -263,13 +259,13 @@ void GPU_D3D11::SetDisplayFramebuffer(u32 framebuf, u32 stride, GEBufferFormat f
 	framebufferManagerD3D11_->SetDisplayFramebuffer(framebuf, stride, format);
 }
 
-void GPU_D3D11::CopyDisplayToOutput() {
+void GPU_D3D11::CopyDisplayToOutput(bool reallyDirty) {
 	float blendColor[4]{};
 	context_->OMSetBlendState(stockD3D11.blendStateDisabledWithColorMask[0xF], blendColor, 0xFFFFFFFF);
 
 	drawEngine_.Flush();
 
-	framebufferManagerD3D11_->CopyDisplayToOutput();
+	framebufferManagerD3D11_->CopyDisplayToOutput(reallyDirty);
 	framebufferManagerD3D11_->EndFrame();
 
 	// shaderManager_->EndFrame();
@@ -363,11 +359,12 @@ void GPU_D3D11::DoState(PointerWrap &p) {
 	// TODO: Some of these things may not be necessary.
 	// None of these are necessary when saving.
 	if (p.mode == p.MODE_READ && !PSP_CoreParameter().frozen) {
-		textureCacheD3D11_->Clear(true);
+		textureCache_->Clear(true);
+		depalShaderCache_->Clear();
 		drawEngine_.ClearTrackedVertexArrays();
 
 		gstate_c.Dirty(DIRTY_TEXTURE_IMAGE);
-		framebufferManagerD3D11_->DestroyAllFBOs();
+		framebufferManager_->DestroyAllFBOs();
 	}
 }
 

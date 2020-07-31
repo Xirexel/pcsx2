@@ -69,7 +69,12 @@
                     </CheckBox>
                 </StackPanel>
             </Border>
-            
+            <Border>
+                <StackPanel Margin="5" Visibility="{Binding VisibilityState}" IsEnabled="{Binding IsStopped}">
+                    <TextBlock Text="{DynamicResource ResolutionModeTitle}" TextAlignment="Center"  Margin="5"/>
+                    <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ResolutionModeCollection}" Margin="5,0,5,5"/>
+                </StackPanel>
+            </Border>
             <Border>
                 <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
                     <TextBlock Text="{DynamicResource ControlModeTitle}" TextAlignment="Center"  Margin="5"/>
@@ -77,7 +82,7 @@
                 </StackPanel>
             </Border>
             <Border Visibility="{Binding VisibilityVideoRecordingState}">
-                <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
+                <StackPanel Margin="5" Visibility="{Binding VisibilityState}" IsEnabled="{Binding IsCaptureStopped}">
                     <TextBlock Text="{DynamicResource CaptureModeTitle}" TextAlignment="Center"  Margin="5"/>
                     <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding MediaOutputTypeCollection}" Margin="5,0,5,5"/>
                     <ContentPresenter Content="{Binding CaptureConfig}" Margin="5,0,5,5"/>

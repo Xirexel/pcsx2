@@ -23,6 +23,9 @@
 #include <ShlObj.h>
 #include <string>
 #include <codecvt>
+#if !PPSSPP_PLATFORM(UWP)
+#include "Windows/W32Util/ShellUtil.h"
+#endif
 #endif
 
 #include <thread>
@@ -35,13 +38,12 @@
 #include "thread/threadutil.h"
 #include "util/text/utf8.h"
 
+#include "Common/GraphicsContext.h"
 #include "Core/MemMap.h"
 #include "Core/HDRemaster.h"
-
 #include "Core/MIPS/MIPS.h"
 #include "Core/MIPS/MIPSAnalyst.h"
-
-#include "Debugger/SymbolMap.h"
+#include "Core/Debugger/SymbolMap.h"
 #include "Core/Host.h"
 #include "Core/System.h"
 #include "Core/HLE/HLE.h"
@@ -218,6 +220,12 @@ void CPU_Init() {
 		// ERROR_LOG(LOADER, "PBP directory resolution failed.");
 		InitMemoryForGamePBP(loadedFile);
 		break;
+	case IdentifiedFileType::PSP_ELF:
+		if (Memory::g_PSPModel != PSP_MODEL_FAT) {
+			INFO_LOG(LOADER, "ELF, using full PSP-2000 memory access");
+			Memory::g_MemorySize = Memory::RAM_DOUBLE_SIZE;
+		}
+		break;
 	default:
 		break;
 	}
@@ -269,6 +277,7 @@ PSP_LoadingLock::~PSP_LoadingLock() {
 void CPU_Shutdown() {
 	// Since we load on a background thread, wait for startup to complete.
 	PSP_LoadingLock lock;
+	PSPLoaders_Shutdown();
 
 	if (g_Config.bAutoSaveSymbolMap) {
 		host->SaveSymbolMap();
@@ -349,6 +358,11 @@ bool PSP_InitStart(const CoreParameter &coreParam, std::string *error_string) {
 
 	CPU_Init();
 
+	// Compat flags get loaded in CPU_Init (which is a bit of a misnomer) so we check for SW renderer here.
+	if (g_Config.bSoftwareRendering || PSP_CoreParameter().compat.flags().ForceSoftwareRenderer) {
+		coreParameter.gpuCore = GPUCORE_SOFTWARE;
+	}
+
 	*error_string = coreParameter.errorString;
 	bool success = coreParameter.fileToStart != "";
 	if (!success) {
@@ -371,7 +385,8 @@ bool PSP_InitUpdate(std::string *error_string) {
 	*error_string = coreParameter.errorString;
 	if (success && gpu == nullptr) {
 		PSP_SetLoading("Starting graphics...");
-		success = GPU_Init(coreParameter.graphicsContext, coreParameter.thin3d);
+		Draw::DrawContext *draw = coreParameter.graphicsContext ? coreParameter.graphicsContext->GetDrawContext() : nullptr;
+		success = GPU_Init(coreParameter.graphicsContext, draw);
 		if (!success) {
 			*error_string = "Unable to initialize rendering engine.";
 		}
@@ -554,14 +569,14 @@ void InitSysDirectories() {
 	// We set g_Config.memStickDirectory outside.
 
 #else
-	wchar_t myDocumentsPath[MAX_PATH];
-	const HRESULT result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, myDocumentsPath);
-	const std::string myDocsPath = ConvertWStringToUTF8(myDocumentsPath) + "/PPSSPP/";
+	// Caller sets this to the Documents folder.
+	const std::string rootMyDocsPath = g_Config.internalDataDirectory;
+	const std::string myDocsPath = rootMyDocsPath + "/PPSSPP/";
 	const std::string installedFile = path + "installed.txt";
 	const bool installed = File::Exists(installedFile);
 
 	// If installed.txt exists(and we can determine the Documents directory)
-	if (installed && (result == S_OK))	{
+	if (installed && rootMyDocsPath.size() > 0) {
 #if defined(_WIN32) && defined(__MINGW32__)
 		std::ifstream inputFile(installedFile);
 #else
@@ -600,7 +615,7 @@ void InitSysDirectories() {
 		INFO_LOG(COMMON, "Memstick directory not present, creating at '%s'", g_Config.memStickDirectory.c_str());
 	}
 
-	const std::string testFile = g_Config.memStickDirectory + "/_writable_test.$$$";
+	const std::string testFile = g_Config.memStickDirectory + "_writable_test.$$$";
 
 	// If any directory is read-only, fall back to the Documents directory.
 	// We're screwed anyway if we can't write to Documents, or can't detect it.

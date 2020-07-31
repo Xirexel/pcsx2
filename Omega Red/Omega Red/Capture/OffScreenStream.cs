@@ -119,7 +119,7 @@ namespace Omega_Red.Capture
                     break;
 
                 mFileExtention = m_Start.Invoke(m_StreamObj, new object[] {
-                    CaptureTargetTexture.Instance.CaptureNative.ToString(),
+                    TargetTexture.Instance.TargetNative.ToString(),
                     Omega_Red.Tools.ModuleControl.getAudioCaptureProcessor(),
                     "",
                     Omega_Red.Properties.Settings.Default.CompressionQuality}) as string;

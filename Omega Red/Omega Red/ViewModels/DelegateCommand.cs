@@ -69,6 +69,8 @@ namespace Omega_Red.ViewModels
         private Action<object> m_callback_action;
 
         private CheckStateDelegate m_CheckStateDelegate;
+        private Action<object, bool> startStop;
+        private Func<bool> p;
 
         public DelegateCommand(Action<T> action, CheckStateDelegate a_CheckStateDelegate = null, Action<object> a_callback_action = null)
         {
@@ -78,7 +80,7 @@ namespace Omega_Red.ViewModels
 
             m_callback_action = a_callback_action;
         }
-
+        
         public void Execute(object parameter)
         {
             _action(parameter as T);

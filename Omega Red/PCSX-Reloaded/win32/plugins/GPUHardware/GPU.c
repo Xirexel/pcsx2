@@ -257,7 +257,9 @@ EXPORT_C_(int32) GPUshutdown()
 }
 
 EXPORT_C_(int32) CALLBACK GPUopen(HWND hwndGPU)
-{		
+{
+    GPU_Stub_open(hwndGPU);
+
 	ReadConfig();                                       // -> read config from registry
 
 	SetFrameRateConfig();                               // -> setup frame rate stuff
@@ -282,7 +284,6 @@ EXPORT_C_(int32) CALLBACK GPUopen(HWND hwndGPU)
 	// with some emus, we could do the OGL init right here... oh my
 	// if(bIsFirstFrame) GLinitialize();
 
-	GPU_Stub_open(hwndGPU);
 	return 0;
 }
 
@@ -1167,7 +1168,7 @@ void ReadConfig(void)                                  // read all config vals
 
 	// pre-init all relevant globals
 
-	iResX = 800; iResY = 600;
+	//iResX = 800; iResY = 600;
 	iColDepth = 32;
 	bWindowMode = FALSE;
 	bFullVRam = FALSE;
@@ -1213,9 +1214,9 @@ void ReadConfig(void)                                  // read all config vals
 
 //	if (RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Vision Thing\\PSEmu Pro\\GPU\\PeteTNT", 0, KEY_ALL_ACCESS, &myKey) == ERROR_SUCCESS)
 	{ 
-			iResX = 960; 
-			iResY = 720; 
-			iWinSize = MAKELONG(960, 720); 
+			//iResX = 960; 
+			//iResY = 720; 
+			iWinSize = MAKELONG(iResX, iResY); 
 			iFilterType = 6; 
 			bDrawDither = FALSE; 
 			bUseLines = FALSE; 

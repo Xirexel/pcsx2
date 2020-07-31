@@ -175,6 +175,7 @@ static const HardHashTableEntry hardcodedHashes[] = {
 	{ 0x3024e961d1811dea, 396, "fmod", },
 	{ 0x3050bfd0e729dfbf, 220, "atvoffroadfuryblazintrails_download_frame", }, // ATV Offroad Fury Blazin' Trails (US)
 	{ 0x30c9c4f420573eb6, 540, "expf", },
+	{ 0x311779b4db21dbf3, 124, "motorstorm_pixel_read" }, // Motorstorm Arctic Edge (US)
 	{ 0x317afeb882ff324a, 212, "memcpy", }, // Mimana (US)
 	{ 0x31ea2e192f5095a1, 52, "vector_add_t", },
 	{ 0x31f523ef18898e0e, 420, "logf", },
@@ -1021,6 +1022,8 @@ skip:
 	bool ScanForFunctions(u32 startAddr, u32 endAddr, bool insertSymbols) {
 		std::lock_guard<std::recursive_mutex> guard(functions_lock);
 
+		FunctionsVector new_functions;
+
 		AnalyzedFunction currentFunction = {startAddr};
 
 		u32 furthestBranch = 0;
@@ -1141,7 +1144,7 @@ skip:
 					}
 				}
 
-				functions.push_back(currentFunction);
+				new_functions.push_back(currentFunction);
 
 				furthestBranch = 0;
 				addr += 4;
@@ -1156,10 +1159,10 @@ skip:
 
 		if (addr <= endAddr) {
 			currentFunction.end = addr + 4;
-			functions.push_back(currentFunction);
+			new_functions.push_back(currentFunction);
 		}
 
-		for (auto iter = functions.begin(); iter != functions.end(); iter++) {
+		for (auto iter = new_functions.begin(); iter != new_functions.end(); iter++) {
 			iter->size = iter->end - iter->start + 4;
 			if (insertSymbols && !iter->foundInSymbolMap) {
 				char temp[256];
@@ -1167,6 +1170,8 @@ skip:
 			}
 		}
 
+		// Concatenate the new functions to the end of the old ones.
+		functions.insert(functions.end(), new_functions.begin(), new_functions.end());
 		return insertSymbols;
 	}
 

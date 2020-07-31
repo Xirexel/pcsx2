@@ -46,7 +46,7 @@ namespace Omega_Red.Tools
                     a_filepath,
                     Direct3D11Device.Instance.Native,
                     m_VideoPanelHandler, 
-                    Capture.CaptureTargetTexture.Instance.CaptureHandler,
+                    Capture.TargetTexture.Instance.TargetHandler,
                     Tools.PadInput.Instance.TouchPadCallback,
                     Capture.AudioCaptureTarget.Instance.DataCallback,
                     szStickDirectory);

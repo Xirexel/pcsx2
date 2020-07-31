@@ -764,10 +764,10 @@ typedef struct {
 #pragma pack(pop)
 #endif
 
-class AfterMatchingMipsCall : public Action {
+class AfterMatchingMipsCall : public PSPAction {
 public:
 	AfterMatchingMipsCall() {}
-	static Action *Create() { return new AfterMatchingMipsCall(); }
+	static PSPAction *Create() { return new AfterMatchingMipsCall(); }
 	void DoState(PointerWrap &p) override {
 		auto s = p.Section("AfterMatchingMipsCall", 1, 2);
 		if (!s)
@@ -778,11 +778,10 @@ public:
 	}
 	void run(MipsCall &call) override;
 	void SetContextID(u32 ContextID, u32 eventId);
-	void SetContext(SceNetAdhocMatchingContext *Context, u32 eventId) { context = Context; EventID = eventId; }
 
 private:
-	u32 EventID;
-	SceNetAdhocMatchingContext *context;
+	u32 EventID = 0;
+	SceNetAdhocMatchingContext *context = nullptr;
 };
 
 extern int actionAfterMatchingMipsCall;
@@ -846,6 +845,16 @@ SceNetAdhocMatchingMemberInternal* addMember(SceNetAdhocMatchingContext * contex
  * @param packet Friend Information
  */
 void addFriend(SceNetAdhocctlConnectPacketS2C * packet);
+
+/**
+* Send chat or get that
+* @param std::string ChatString 
+*/
+void sendChat(std::string chatString);
+std::vector<std::string> getChatLog();
+extern bool chatScreenVisible;
+extern bool updateChatScreen;
+extern int newChat;
 
 /*
  * Find a Peer/Friend by MAC address

@@ -96,7 +96,11 @@
     <sys:String x:Key="S_700_MbTitle">700 Мб</sys:String>
     <sys:String x:Key="VariableBitrateTitle">Переменный битрейт</sys:String>
     <sys:String xml:space="preserve" x:Key="VideoFileRecordedInfoTitle"> записан!!!</sys:String>
-    <sys:String xml:space="preserve" x:Key="VideoFileRecordingFailedTitle">Запись невозможна!!!</sys:String>
+    <sys:String x:Key="VideoFileRecordingFailedTitle">Запись невозможна!!!</sys:String>
+    <sys:String x:Key="VideoFileRecordingStartedTitle">Запись начата!!!</sys:String>
+    <sys:String x:Key="VideoStreamingFailedTitle">Стриминг невозможен!!!</sys:String>
+    <sys:String x:Key="VideoStreamingStartedTitle">Стриминг начат!!!</sys:String>
+    <sys:String x:Key="VideoStreamingIsClosedTitle">Стриминг закончен!!!</sys:String>
     <sys:String xml:space="preserve" x:Key="MemoryCardInfoTitle">Карта памяти </sys:String>
     <sys:String x:Key="SharedTitle">общая</sys:String>
     <sys:String x:Key="VisualVibrationIsEnabledTitle">Визуальная вибрация включена</sys:String>
@@ -114,5 +118,6 @@
     <sys:String x:Key="ShowFrameRateTitle">Показать число кадров в секунду</sys:String>
     <sys:String x:Key="RefreshScreenTitle">Обновление экрана:</sys:String>
     <sys:String x:Key="FPSTitle">к/с</sys:String>
+    <sys:String x:Key="ResolutionModeTitle">Pазрешениe изображения:</sys:String>
     
 </ResourceDictionary>

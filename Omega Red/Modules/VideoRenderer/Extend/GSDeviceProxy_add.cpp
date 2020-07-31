@@ -649,7 +649,14 @@ bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle
         return -1;
     }
 
+	if (l_Desc.Height > 720) {
 
+        auto l_upscale_multiplier = ceilf(((float)l_Desc.Height) / 720.0f) * 2.0f;
+
+        m_upscale_multiplier = (int)l_upscale_multiplier;
+
+        theApp.SetConfig("upscale_multiplier", m_upscale_multiplier);
+	}
 
     D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS options;
 

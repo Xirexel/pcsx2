@@ -262,7 +262,7 @@ namespace MediaCapture
             } while (false);
         }
         
-        private List<Tuple<uint, uint, string>> checkEncoder(string a_SymbolicLink, Guid a_CLSIDEncoder, string a_ConstantBitRateMode = "{8F6FF1B6-534E-49C0-B2A8-16D534EAF135}")
+        private List<Tuple<uint, uint, string>> checkEncoder(string a_SymbolicLink, Guid a_CLSIDEncoder, string a_ConstantBitRateMode = "")
         {
             List<Tuple<uint, uint, string>> l_result = new List<Tuple<uint, uint, string>>();
 
@@ -632,7 +632,7 @@ namespace MediaCapture
         {
             do
             {
-#if EXTEND_CM
+
                 if (!m_VideoMixerNodes.ContainsKey(a_SymbolicLink))
                     break;
 
@@ -640,8 +640,7 @@ namespace MediaCapture
 
                 if (lVideoMixerControl != null)
                     lVideoMixerControl.setPosition(m_VideoMixerNodes[a_SymbolicLink], aLeft, aRight, aTop, aBottom);
-#endif
-
+                
             } while (false);
         }
 
@@ -649,7 +648,7 @@ namespace MediaCapture
         {
             do
             {
-#if EXTEND_CM
+
                 if (!m_VideoMixerNodes.ContainsKey(a_SymbolicLink))
                     break;
 
@@ -657,7 +656,7 @@ namespace MediaCapture
 
                 if (lVideoMixerControl != null)
                     lVideoMixerControl.setOpacity(m_VideoMixerNodes[a_SymbolicLink], a_value);
-#endif
+
             } while (false);
         }
 
@@ -665,7 +664,7 @@ namespace MediaCapture
         {
             do
             {
-#if EXTEND_CM
+
                 if (!m_AudioMixerNodes.ContainsKey(a_SymbolicLink))
                     break;
 
@@ -673,7 +672,7 @@ namespace MediaCapture
 
                 if (lAudioMixerControl != null)
                     lAudioMixerControl.setRelativeVolume(m_AudioMixerNodes[a_SymbolicLink], a_value);
-#endif
+
             } while (false);
         }
 
@@ -960,7 +959,7 @@ namespace MediaCapture
                         break;
 
                     l_encoderNode = m_VideoSwitcherNode;
-#if EXTEND_CM
+
                     if(m_VideoMixerInputMaxCount > 1)
                     {
                         IMixerNodeFactory lMixerNodeFactory = null;
@@ -984,7 +983,7 @@ namespace MediaCapture
                             m_VideoTopologyInputMixerNodes.Add(lVideoTopologyInputMixerNodes[i]);
                         }
                     }
-#endif
+
                     object l_VideoSourceNode = null;
 
                     if (!l_ISourceControl.createSourceNodeFromExternalSourceWithDownStreamConnection(
@@ -1034,7 +1033,7 @@ namespace MediaCapture
                             break;
 
                         l_encoderNode = m_AudioSwitcherNode;
-#if EXTEND_CM
+
                         if(m_AudioMixerInputMaxCount > 1)
                         {
                             IMixerNodeFactory lMixerNodeFactory = null;
@@ -1058,7 +1057,7 @@ namespace MediaCapture
                                 m_AudioTopologyInputMixerNodes.Add(lAudioTopologyInputMixerNodes[i]);
                             }
                         }
-#endif
+
                         object l_AudioSourceNode = null;
 
                         if (!l_ISourceControl.createSourceNodeFromExternalSourceWithDownStreamConnection(

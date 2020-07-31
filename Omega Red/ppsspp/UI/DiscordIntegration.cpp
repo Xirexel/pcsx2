@@ -1,3 +1,4 @@
+
 #include <ctime>
 #include <cassert>
 
@@ -39,7 +40,9 @@ static void handleDiscordError(int errCode, const char *message) {
 #endif
 
 Discord::~Discord() {
-	assert(!initialized_);
+	if (initialized_) {
+		ERROR_LOG(SYSTEM, "Discord destructor running though g_Discord.Shutdown() has not been called.");
+	}
 }
 
 bool Discord::IsEnabled() const {
@@ -61,11 +64,12 @@ void Discord::Init() {
 }
 
 void Discord::Shutdown() {
-	assert(initialized_);
+	if (initialized_) {
 #ifdef ENABLE_DISCORD
-	Discord_Shutdown();
+		Discord_Shutdown();
 #endif
-	initialized_ = false;
+		initialized_ = false;
+	}
 }
 
 void Discord::Update() {
@@ -97,7 +101,7 @@ void Discord::SetPresenceGame(const char *gameTitle) {
 	}
 
 #ifdef ENABLE_DISCORD
-	I18NCategory *sc = GetI18NCategory("Screen");
+	auto sc = GetI18NCategory("Screen");
 
 	DiscordRichPresence discordPresence{};
 	discordPresence.state = gameTitle;
@@ -123,7 +127,7 @@ void Discord::SetPresenceMenu() {
 	}
 
 #ifdef ENABLE_DISCORD
-	I18NCategory *sc = GetI18NCategory("Screen");
+	auto sc = GetI18NCategory("Screen");
 
 	DiscordRichPresence discordPresence{};
 	discordPresence.state = sc->T("In menu");
