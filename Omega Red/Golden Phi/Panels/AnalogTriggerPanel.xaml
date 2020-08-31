@@ -1,0 +1,78 @@
+﻿<UserControl x:Class="Golden_Phi.Panels.AnalogTriggerPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300"
+             Opacity="0.5"
+             Width="120"
+             Height="120"
+                PreviewMouseDown="Ellipse_MouseCheck"
+                     PreviewMouseUp="Ellipse_MouseCheck"
+                     PreviewMouseMove="Ellipse_MouseMove"
+             PreviewTouchDown="UserControl_PreviewTouchDown"
+             PreviewTouchMove="UserControl_PreviewTouchMove"
+             PreviewTouchUp="UserControl_PreviewTouchUp">
+    <Grid>
+        <Path Stroke="{DynamicResource StandardBorderBrush}" StrokeThickness="{DynamicResource PadBorderThickness}">
+            <Path.Data>
+                <PathGeometry>
+                    <PathGeometry.Figures>
+                        <PathFigureCollection>
+                            <PathFigure StartPoint="30,90">
+                                <PathFigure.Segments>
+                                    <PathSegmentCollection>
+                                        <ArcSegment Size="70,80" RotationAngle="45" IsLargeArc="False" SweepDirection="Clockwise" Point="90,20" />
+                                    </PathSegmentCollection>
+                                </PathFigure.Segments>
+                            </PathFigure>
+                        </PathFigureCollection>
+                    </PathGeometry.Figures>
+                </PathGeometry>
+            </Path.Data>
+        </Path>
+        <Canvas Height="{Binding Height}" Width="{Binding Height}" >
+            <Canvas.Resources>
+                <Storyboard x:Key="SwitchPressedButtonBrushStoryboard">
+                    <ObjectAnimationUsingKeyFrames
+                                       Storyboard.TargetName="mBackEllipse"
+                                       Storyboard.TargetProperty="Fill">
+
+                        <DiscreteObjectKeyFrame KeyTime="0:0:0"
+                                    Value="{DynamicResource PressedButtonBrush}" />
+                    </ObjectAnimationUsingKeyFrames>
+                </Storyboard>
+                <Storyboard x:Key="SwitchUnpressedButtonBrushStoryboard">
+                    <ObjectAnimationUsingKeyFrames
+                                       Storyboard.TargetName="mBackEllipse"
+                                       Storyboard.TargetProperty="Fill">
+
+                        <DiscreteObjectKeyFrame KeyTime="0:0:0"
+                                    Value="{DynamicResource UnpressedButtonBrush}" />
+                    </ObjectAnimationUsingKeyFrames>
+                </Storyboard>
+            </Canvas.Resources>
+            <Grid x:Name="mTouchEllipse" Height="70" Width="70" Canvas.Left="0" Canvas.Top="50">
+                <Ellipse x:Name="mBackEllipse"
+                     Stroke="{DynamicResource StandardBorderBrush}" 
+                     Fill="{DynamicResource UnpressedButtonBrush}"
+                     StrokeThickness="{DynamicResource PadBorderThickness}">
+                </Ellipse>
+                <TextBlock Foreground="{DynamicResource PadBorderBrush}" FontWeight="{DynamicResource StandardFontWeight}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="30" 
+                           Text="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=Title}"/>
+                <Grid.Triggers>
+                    <EventTrigger RoutedEvent="UIElement.MouseDown">
+                        <BeginStoryboard Storyboard="{StaticResource SwitchPressedButtonBrushStoryboard}" />
+                    </EventTrigger>
+                    <EventTrigger RoutedEvent="UIElement.TouchDown">
+                        <BeginStoryboard Storyboard="{StaticResource SwitchPressedButtonBrushStoryboard}" />
+                    </EventTrigger>
+                    <EventTrigger RoutedEvent="UIElement.MouseUp">
+                        <BeginStoryboard Storyboard="{StaticResource SwitchUnpressedButtonBrushStoryboard}" />
+                    </EventTrigger>
+                </Grid.Triggers>
+            </Grid>
+        </Canvas>
+    </Grid>
+</UserControl>

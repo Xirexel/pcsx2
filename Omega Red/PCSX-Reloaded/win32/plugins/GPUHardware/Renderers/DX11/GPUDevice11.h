@@ -58,7 +58,7 @@ private:
 	CComPtrCustom<ID3D11DeviceContext> m_ctx;
     CComPtr<ID3D11Texture2D> m_SharedTexture;
     CComPtr<ID3D11Texture2D> m_RenderTargetTexture;
-    CComPtr<ID3D11Texture2D> m_CaptureTexture;
+    //CComPtr<ID3D11Texture2D> m_CaptureTexture;
 	CComPtrCustom<ID3D11InputLayout> m_InputLayout;
 	CComPtrCustom<ID3D11RasterizerState> m_RasterizerState;
 	CComPtrCustom<ID3D11VertexShader> m_VertexShader;

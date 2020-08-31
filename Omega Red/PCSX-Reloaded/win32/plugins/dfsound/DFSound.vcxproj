@@ -85,7 +85,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>dsound.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Golden Phi\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\DFSound.def</ModuleDefinitionFile>
       <ProgramDatabaseFile>.\Release/DFSound.pdb</ProgramDatabaseFile>
@@ -132,7 +132,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>dsound.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Golden Phi\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\DFSound.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>

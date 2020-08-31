@@ -90,13 +90,6 @@ namespace Omega_Red.Util
 
             try
             {
-                if (App.OffPPSSPP)
-                {
-                    m_IsInitialized = true;
-
-                    return;
-                }
-
                 var l_ModuleBeforeTitle = App.Current.Resources["ModuleBeforeTitle"];
 
                 var l_ModuleAfterTitle = App.Current.Resources["ModuleAfterTitle"];
@@ -159,9 +152,6 @@ namespace Omega_Red.Util
 
         public void launch(string szCmdLine, IntPtr a_DirectX11DeviceNative, IntPtr a_VideoPanelHandler, IntPtr a_CaptureHandler, Tools.PadInput.GetTouchPadCallback a_getTouchPadCallback, Capture.SetDataCallback a_setAudioDataCallback, string szStickDirectory)
         {
-            if (App.OffPPSSPP)
-                return;
-
             if (!m_IsInitialized)
                 return;
 
@@ -174,10 +164,7 @@ namespace Omega_Red.Util
             a_title = "";
 
             a_id = "";
-
-            if (App.OffPPSSPP)
-                return;
-
+            
             if (!m_IsInitialized)
                 return;
 
@@ -205,9 +192,6 @@ namespace Omega_Red.Util
 
         public void load(string a_filename)
         {
-            if (App.OffPPSSPP)
-                return;
-
             if (!m_IsInitialized)
                 return;
 
@@ -217,9 +201,6 @@ namespace Omega_Red.Util
 
         public void pause()
         {
-            if (App.OffPPSSPP)
-                return;
-
             if (!m_IsInitialized)
                 return;
 
@@ -229,9 +210,6 @@ namespace Omega_Red.Util
         
         public void resume()
         {
-            if (App.OffPPSSPP)
-                return;
-
             if (!m_IsInitialized)
                 return;
 
@@ -241,9 +219,6 @@ namespace Omega_Red.Util
 
         public void save(string a_filename)
         {
-            if (App.OffPPSSPP)
-                return;
-
             if (!m_IsInitialized)
                 return;
 
@@ -253,9 +228,6 @@ namespace Omega_Red.Util
 
         public void setAudioVolume(float a_level)
         {
-            if (App.OffPPSSPP)
-                return;
-
             if (!m_IsInitialized)
                 return;
 
@@ -274,9 +246,6 @@ namespace Omega_Red.Util
 
         public void shutdown()
         {
-            if (App.OffPPSSPP)
-                return;
-
             if (!m_IsInitialized)
                 return;
 

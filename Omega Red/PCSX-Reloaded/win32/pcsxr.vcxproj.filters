@@ -375,11 +375,6 @@
     <None Include="PCSXR.def" />
   </ItemGroup>
   <ItemGroup>
-    <Manifest Include="gui\pcsxr.exe.manifest">
-      <Filter>gui</Filter>
-    </Manifest>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="pcsxr.rc" />
   </ItemGroup>
 </Project>

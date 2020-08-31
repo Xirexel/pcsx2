@@ -1,0 +1,124 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+
+    <Color x:Key="MainBackgroundColor" A="255" R="255" G="223" B="0"/>
+
+    <SolidColorBrush x:Key="MainBackgroundBrush" Color="Black" />
+
+    <SolidColorBrush x:Key="ScrollBarBackgroundBrush" Color="#A0505050" />
+
+    <SolidColorBrush x:Key="SliderBackgroundBrush" Color="#A0505050" />
+
+    <SolidColorBrush x:Key="LockBackgroundBrush" Color="#9F9F9F" Opacity="0.85"/>
+
+    <SolidColorBrush x:Key="MainForegroundBrush" Color="#FFFFFF" />
+    <Color x:Key="DropShadowColor"  A="50" R="0" G="0" B="0"/>
+    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#00ffffff" />
+    <SolidColorBrush x:Key="StandardBorderBrush" Color="#F0FFFF00" />
+
+
+    <SolidColorBrush x:Key="UnselectBackgroundBrush" Color="#A0303030" />
+    <SolidColorBrush x:Key="SelectBackgroundBrush" Color="#FFB0B000" />
+    <SolidColorBrush x:Key="UnselectBorderBrush" Color="#00000000" />
+    <SolidColorBrush x:Key="SelectBorderBrush" Color="#F0FFFF00" />
+
+
+    <LinearGradientBrush  x:Key="UnpressedForegroundBrush" StartPoint="0,1" EndPoint="0,0">
+        <GradientStop Color="#FF333300" Offset="0.0" />
+        <GradientStop Color="{DynamicResource MainBackgroundColor}" Offset="{DynamicResource Revers Golden Ratio}" />
+        <GradientStop Color="#FFA3A300" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush  x:Key="PressedForegroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FF333300" Offset="0.0" />
+        <GradientStop Color="{DynamicResource MainBackgroundColor}" Offset="{DynamicResource Revers Golden Ratio}" />
+        <GradientStop Color="#FFA3A300" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush  x:Key="UnpressedBackgroundBrush" StartPoint="0,1" EndPoint="0,0">
+        <GradientStop Color="#FF333300" Offset="0.0" />
+        <GradientStop Color="{DynamicResource MainBackgroundColor}" Offset="{DynamicResource Revers Golden Ratio}" />
+        <GradientStop Color="#FFA3A300" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush  x:Key="PressedBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FF333300" Offset="0.0" />
+        <GradientStop Color="{DynamicResource MainBackgroundColor}" Offset="{DynamicResource Revers Golden Ratio}" />
+        <GradientStop Color="#FFA3A300" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="OverBorderBrush" Color="#A0FFFF00" />
+    
+    <LinearGradientBrush  x:Key="SettinsBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#9F000000" Offset="0.0" />
+        <GradientStop Color="#9F000000" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush
+    x:Key="HeaderBackgroundBrush"
+    StartPoint="0,0"
+    EndPoint="0,1">
+        <GradientStop Color="#1F9F9F00" Offset="0"/>
+        <GradientStop Color="#AF9F9F00" Offset="0.1"/>
+        <GradientStop Color="#CF9F9F00" Offset="{DynamicResource Revers Golden Ratio}"/>
+        <GradientStop Color="#AF9F9F00" Offset="0.9"/>
+        <GradientStop Color="#1F9F9F00" Offset="1"/>
+    </LinearGradientBrush>
+
+
+    <LinearGradientBrush
+    x:Key="SmoothBackgroundBrush"
+    StartPoint="0,0"
+    EndPoint="0,1">
+        <GradientStop Color="#109F9F9F" Offset="0"/>
+        <GradientStop Color="#AF9F9F9F" Offset="0.25"/>
+        <GradientStop Color="#CF9F9F9F" Offset="0.5"/>
+        <GradientStop Color="#AF9F9F9F" Offset="0.75"/>
+        <GradientStop Color="#109F9F9F" Offset="1"/>
+    </LinearGradientBrush>
+
+
+    <LinearGradientBrush
+    x:Key="InteractBackgroundBrush"
+    StartPoint="0,0"
+    EndPoint="0,1">
+        <GradientStop Color="#D09F9F9F" Offset="0"/>
+        <GradientStop Color="#DF9F9F9F" Offset="0.25"/>
+        <GradientStop Color="#DF9F9F9F" Offset="0.5"/>
+        <GradientStop Color="#DF9F9F9F" Offset="0.75"/>
+        <GradientStop Color="#D09F9F9F" Offset="1"/>
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="PadBorderBrush" Color="{DynamicResource MainBackgroundColor}" />
+
+    <RadialGradientBrush x:Key="UnpressedButtonBrush" GradientOrigin="0.5,0.5" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="#000000" Offset="0.3" />
+            <GradientStop Color="#7F7F7F" Offset="1" />
+        </RadialGradientBrush.GradientStops>
+    </RadialGradientBrush>
+
+    <RadialGradientBrush x:Key="PressedButtonBrush" GradientOrigin="0.5,0.5" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="#7F7F7F" Offset="0.3" />
+            <GradientStop Color="#7F7F7F" Offset="1" />
+        </RadialGradientBrush.GradientStops>
+    </RadialGradientBrush>
+
+    <RadialGradientBrush x:Key="UnpressedD_PadButtonBrush" GradientOrigin="0.5,0.25" Center="0.5,0.35" RadiusX="0.75" RadiusY="0.75">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="#000000" Offset="0.3" />
+            <GradientStop Color="#7F7F7F" Offset="1" />
+        </RadialGradientBrush.GradientStops>
+    </RadialGradientBrush>
+
+    <RadialGradientBrush x:Key="PressedD_PadButtonBrush" GradientOrigin="0.5,0.35" Center="0.5,0.4" RadiusX="0.75" RadiusY="0.75">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="#7F7F7F" Offset="0.2" />
+            <GradientStop Color="#7F7F7F" Offset="1" />
+        </RadialGradientBrush.GradientStops>
+    </RadialGradientBrush>
+
+
+</ResourceDictionary>

@@ -225,8 +225,7 @@ void VideoRenderer::setDiscSerial(const std::wstring &a_RefDiscSerial)
 
 int VideoRenderer::open()
 {
-    if (s_sharedhandle == nullptr ||
-        s_capturehandle == nullptr)
+    if (s_sharedhandle == nullptr)
         return -1;
 
     std::unique_ptr<GPUDevice> dev;

@@ -686,24 +686,11 @@ namespace Omega_Red.Managers
             {
                 case ControlMode.Button:
                     {
-                        var l_PanelWidth = App.Current.MainWindow.Resources["mControlWidthOffset"] as Omega_Red.Tools.Converters.WidthConverter;
-
-                        if (l_PanelWidth != null)
-                            l_PanelWidth.Offset = 0.0;
-
                         SwitchControlModeEvent(true);
                     }
                     break;
                 case ControlMode.Touch:
                     {
-
-                        var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
-
-                        var l_PanelWidth = App.Current.MainWindow.Resources["mControlWidthOffset"] as Omega_Red.Tools.Converters.WidthConverter;
-
-                        if (l_PanelWidth != null)
-                            l_PanelWidth.Offset = -l_TouchDragBtnWidth;
-
                         SwitchControlModeEvent(false);
                     }
                     break;

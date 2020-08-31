@@ -1,0 +1,42 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <sys:String x:Key="MainName">Золотой φ PS1/PS2/PSP эмулятор</sys:String>
+    <sys:String x:Key="GraphicTitle">Графика</sys:String>
+    <sys:String x:Key="ShowFrameRateTitle">Показать число кадров в секунду</sys:String>
+    <sys:String x:Key="SkipFrameModeTitle">Режим пропуска кадров:</sys:String>
+    <sys:String x:Key="SkipFrameModeNoneTitle">Без пропуска кадров</sys:String>
+    <sys:String x:Key="SkipFrameModeOneTitle">Пропуск одного кадра</sys:String>
+    <sys:String x:Key="SkipFrameModeTwoTitle">Пропуск двух кадров</sys:String>
+    <sys:String x:Key="VisualVibrationIsEnabledTitle">Визуальная вибрация включена</sys:String>
+    <sys:String x:Key="PadTitle">Игровой контроллер</sys:String>
+    <sys:String x:Key="PadControlTypeTitle">Тип управления:</sys:String>
+    <sys:String x:Key="CannotStartGame">Невозможно запустить STUB диск!!!</sys:String>
+    <sys:String xml:space="preserve" x:Key="VersionTitle">Версия: </sys:String>
+    <sys:String xml:space="preserve" x:Key="DurationTitle">Длительность: </sys:String>
+    <sys:String xml:space="preserve" x:Key="LastDateTitle">Дата последней записи: </sys:String>
+    <sys:String xml:space="preserve" x:Key="DateTitle">Дата: </sys:String>
+    <sys:String xml:space="preserve" x:Key="ZoneTitle">Регион: </sys:String>
+    <sys:String xml:space="preserve" x:Key="TypeTitle">Платформа: </sys:String>
+    <sys:String x:Key="RefreshScreenTitle">Обновление экрана:</sys:String>
+    <sys:String x:Key="FPSTitle">к/с</sys:String>
+    <sys:String x:Key="ResolutionModeTitle">Pазрешениe изображения:</sys:String>
+    <sys:String x:Key="TouchPadScaleTitle">Масштаб сенсорного контроллера:</sys:String>
+    <sys:String x:Key="TouchPadTitle">Сенсорный контроллер</sys:String>
+    <sys:String x:Key="GamePadTitle">Игровой контроллер</sys:String>
+    <sys:String x:Key="DisplayModeTitle">Режим отображения:</sys:String>
+    <sys:String x:Key="DisplayModeWindowTitle">Оконный</sys:String>
+    <sys:String x:Key="DisplayModeFullTitle">Полноэкранный</sys:String>
+    <sys:String x:Key="AutosaveTitle">Автосохранение</sys:String>
+    <sys:String x:Key="QuicksaveTitle">Быстрое сохранение</sys:String>
+    <sys:String x:Key="YesTitle">Выполнить</sys:String>
+    <sys:String x:Key="NoTitle">Отменить</sys:String>
+    <sys:String x:Key="IsoChooseTitle">Выбор образа игры</sys:String>
+    <sys:String x:Key="BiosChooseTitle">Выбор Bios</sys:String>
+
+
+
+
+
+</ResourceDictionary>

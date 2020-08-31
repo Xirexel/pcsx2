@@ -141,8 +141,8 @@ namespace Omega_Red.Managers
                     
                     load();
                 }
-
-                Thread.Sleep(200);
+                
+                System.Threading.Thread.Sleep(5000);
 
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
                 {

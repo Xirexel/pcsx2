@@ -66,33 +66,7 @@ void AudioRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Open")
 				{
-
-					void* l_WindowHandle = nullptr;
-
-					auto l_Attribute = l_ChildNode.attribute(L"WindowHandle");
-
-					if (!l_Attribute.empty())
-					{
-						auto l_value = l_Attribute.as_llong();
-
-						if (l_value != 0)
-						{
-							try
-							{
-
-								l_WindowHandle = (void*)l_value;
-
-							}
-							catch (...)
-							{
-
-							}
-
-						}
-					}
-
-					if (l_WindowHandle != nullptr)
-						SPU2open(l_WindowHandle);					
+					SPU2open(nullptr);					
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Close")
 				{

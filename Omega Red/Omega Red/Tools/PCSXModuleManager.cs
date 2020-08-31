@@ -171,7 +171,8 @@ namespace Omega_Red.Tools
 
                 LockScreenManager.Instance.displayMessage(
                     l_ModuleBeforeTitle
-                    + Enum.GetName(m_ModuleType.GetType(), m_ModuleType) + " "
+                    + Enum.GetName(m_ModuleType.GetType(), m_ModuleType) 
+                    + " "
                     + (m_initilized ? App.Current.Resources["ModuleIsLoadedTitle"] : App.Current.Resources["ModuleIsNotLoadedTitle"]));
             }
 

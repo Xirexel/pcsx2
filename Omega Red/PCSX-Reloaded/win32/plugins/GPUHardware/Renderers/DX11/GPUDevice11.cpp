@@ -180,15 +180,15 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
 
     l_Resource.Release();
 
-    hr = m_dev->OpenSharedResource(capturehandle, IID_PPV_ARGS(&l_Resource));
+    //hr = m_dev->OpenSharedResource(capturehandle, IID_PPV_ARGS(&l_Resource));
 
-    if (FAILED(hr))
-        return false;
+    //if (FAILED(hr))
+    //    return false;
 
-    hr = l_Resource->QueryInterface(IID_PPV_ARGS(&m_CaptureTexture));
+    //hr = l_Resource->QueryInterface(IID_PPV_ARGS(&m_CaptureTexture));
 
-    if (FAILED(hr))
-        return false;
+    //if (FAILED(hr))
+    //    return false;
 
 
     CComPtrCustom<ID3D11RenderTargetView> l_RTV;
@@ -201,9 +201,9 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
 
     l_RTV.Release();
 
-    m_dev->CreateRenderTargetView(m_CaptureTexture, nullptr, &l_RTV);
+    //m_dev->CreateRenderTargetView(m_CaptureTexture, nullptr, &l_RTV);
 
-    m_ctx->ClearRenderTargetView(l_RTV, l_clearColor);
+    //m_ctx->ClearRenderTargetView(l_RTV, l_clearColor);
 
 
 
@@ -474,13 +474,13 @@ void GPUDevice11::Flip()
                                  0,
                                  nullptr);
 
-    m_ctx->CopySubresourceRegion(m_CaptureTexture,
-                                 0,
-                                 m_Xoffset, 0,
-                                 0,
-                                 m_RenderTargetTexture,
-                                 0,
-                                 nullptr);
+    //m_ctx->CopySubresourceRegion(m_CaptureTexture,
+    //                             0,
+    //                             m_Xoffset, 0,
+    //                             0,
+    //                             m_RenderTargetTexture,
+    //                             0,
+    //                             nullptr);
 }
 
 void GPUDevice11::ClearTargets()

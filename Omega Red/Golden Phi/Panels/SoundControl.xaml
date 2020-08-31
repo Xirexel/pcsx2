@@ -1,0 +1,57 @@
+﻿<UserControl x:Class="Golden_Phi.Panels.SoundControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Golden_Phi.Panels"
+             Width="200" 
+             Height="54">
+    <Grid HorizontalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Slider Orientation="Horizontal" TouchDown="Slider_TouchDown" x:Name="m_volumeSlider" Minimum="0" VerticalAlignment="Center" Grid.Column="1" Maximum="100" Value="{Binding SoundLevel, Mode=TwoWay}" Margin="0,5" />
+        <CheckBox x:Name="m_MuteBtn" Checked="CheckBox_Checked" IsChecked="{Binding IsMuted, Mode=TwoWay}" Unchecked="CheckBox_Unchecked" Margin="4" Grid.Column="0" Width="45" Height="45">
+            <CheckBox.Style>
+                <Style TargetType="{x:Type CheckBox}">
+                    <Setter Property="Background" Value="{DynamicResource UnpressedButtonBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource MainBackgroundBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource StandardBorderBrush}"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="CheckBox">
+                                <Grid>
+                                    <Ellipse Fill="{TemplateBinding Background}" 
+                                 Stroke="{TemplateBinding BorderBrush}" 
+                                 StrokeThickness="{DynamicResource ButtonBorderThickness}"
+                                 />
+                                    <Viewbox>
+                                        <ContentPresenter x:Name="mContent" Margin="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Margin}" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"  />
+                                    </Viewbox>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="Button.IsPressed" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource PressedButtonBrush}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </CheckBox.Style>
+            <Grid Margin="0,10,0,10">
+                <Path Grid.Row="0" Fill="{DynamicResource MainForegroundBrush}" StrokeThickness="1" Data="M 0,20 L 10,20 L 10,44 L 0,44 Z" />
+                <Path Grid.Row="0" Fill="{DynamicResource MainForegroundBrush}" StrokeThickness="1" Data="M 10,20 L 20,0 L 20,64 L 10,44 Z" />
+                <Path Grid.Row="0" x:Name="l_highSoundMarker" Visibility="Hidden" Stroke="{DynamicResource MainForegroundBrush}" StrokeThickness="4" Data="M 40,54 A 10,1 90 0 0 40,10" />
+                <Path Grid.Row="0" x:Name="l_mediumSoundMarker" Visibility="Hidden" Stroke="{DynamicResource MainForegroundBrush}" StrokeThickness="4" Data="M 32.5,50 A 10,1 90 0 0 32.5,14" />
+                <Path Grid.Row="0" x:Name="l_lowSoundMarker" Visibility="Hidden" Stroke="{DynamicResource MainForegroundBrush}" StrokeThickness="4" Data="M 25,44 A 10,1 90 0 0 25,20" />
+                <Path Grid.Row="0" x:Name="l_MutedSoundMarker" Visibility="Hidden" Stroke="{DynamicResource MainForegroundBrush}" StrokeThickness="4" Data="M 25,20 L 44,44 M 44,20 L 25,44" />
+            </Grid>
+        </CheckBox>
+    </Grid>
+</UserControl>

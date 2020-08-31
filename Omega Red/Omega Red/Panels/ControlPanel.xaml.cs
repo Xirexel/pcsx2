@@ -212,15 +212,15 @@ namespace Omega_Red.Panels
 
             var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
 
-            if(obj)
-            {
-                var l_PanelWidth = (double)App.Current.Resources["PanelWidth"];
+            //if(obj)
+            //{
+            //    var l_PanelWidth = (double)App.Current.Resources["PanelWidth"];
 
-                this.Width = l_PanelWidth;
+            //    this.Width = l_PanelWidth;
 
-                Canvas.SetLeft(l_ParentElement, -l_PanelWidth);
-            }
-            else
+            //    Canvas.SetLeft(l_ParentElement, -l_PanelWidth);
+            //}
+            //else
             {
                 Binding l_Binding = new Binding("ActualWidth");
 
@@ -328,11 +328,11 @@ namespace Omega_Red.Panels
 
         public Visibility VisibilityState
         {
-            get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
+            get { return Visibility.Visible; }
         }
         public Visibility VisibilityStateIP
         {
-            get { return App.m_AppType == App.AppType.OffScreen ? Visibility.Visible : Visibility.Collapsed; }
+            get { return Visibility.Collapsed; }
         }
 
         private static IPAddress[] GetIPAddresses()

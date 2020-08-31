@@ -88,7 +88,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;comctl32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Golden Phi\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\Debug/pcsxr.pdb</ProgramDatabaseFile>
@@ -135,7 +135,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;comctl32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Golden Phi\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>

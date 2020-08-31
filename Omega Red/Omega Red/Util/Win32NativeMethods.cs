@@ -43,6 +43,10 @@ namespace Omega_Red
     struct Win32NativeMethods
     {
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+        public static extern IntPtr SetDllDirectory(
+            [MarshalAs(UnmanagedType.LPWStr)] string lpPathName);
+        
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         public static extern IntPtr LoadLibrary(
             [MarshalAs(UnmanagedType.LPWStr)] string lpFileName);
 

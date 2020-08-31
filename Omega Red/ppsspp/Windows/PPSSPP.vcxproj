@@ -255,7 +255,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <OutputFile>$(SolutionDir)Omega Red\bin\$(Configuration)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Golden Phi\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
       <LargeAddressAware>true</LargeAddressAware>
       <BaseAddress>
       </BaseAddress>
@@ -400,7 +400,7 @@
     <Link>
       <AdditionalDependencies>mf.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;shlwapi.lib;Winmm.lib;Ws2_32.lib;dsound.lib;comctl32.lib;d3d9.lib;dxguid.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../ffmpeg/Windows/x86/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <OutputFile>$(SolutionDir)Omega Red\bin\$(Configuration)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Golden Phi\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>

@@ -115,18 +115,18 @@ namespace Omega_Red
 
             mButtonControl = obj;
 
-            if(obj)
-            {
+            var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
 
+            if (obj)
+            {
                 if (l_LeftWidthConverter != null)
-                    l_LeftWidthConverter.Offset = 0.0;
+                    l_LeftWidthConverter.Offset = -l_TouchDragBtnWidth - 2.5;
 
                 if (l_RightWidthConverter != null)
                     l_RightWidthConverter.Offset = 0.0;
             }
             else
             {
-                var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
 
                 if (l_LeftWidthConverter != null)
                     l_LeftWidthConverter.Offset = -l_TouchDragBtnWidth - 10;
@@ -291,6 +291,8 @@ namespace Omega_Red
             l_UncheckedEvent.Source = mControlChkBtn;
 
             mControlChkBtn.RaiseEvent(l_UncheckedEvent);
+
+            mControlChkBtn.IsChecked = false;
         }
 
         private void Storyboard_Completed(object sender, EventArgs e)
@@ -298,6 +300,16 @@ namespace Omega_Red
             if (!mButtonControl)
             {
                 rebindControlPanel();
+            }
+            else
+            {
+                var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
+
+                Binding binding = new Binding();
+                binding.Source = mControlGrid;
+                binding.Path = new PropertyPath(FrameworkElement.ActualWidthProperty);
+                binding.Converter = new WidthConverter() { Offset = l_TouchDragBtnWidth - 2.0, Scale = -1.0 };
+                mControlGrid.SetBinding(Canvas.LeftProperty, binding);
             }
         }
 
@@ -314,6 +326,8 @@ namespace Omega_Red
             l_UncheckedEvent.Source = mControlChkBtn;
 
             mMediaChkBtn.RaiseEvent(l_UncheckedEvent);
+
+            mMediaChkBtn.IsChecked = false;
         }
 
         private void Storyboard_Completed_1(object sender, EventArgs e)

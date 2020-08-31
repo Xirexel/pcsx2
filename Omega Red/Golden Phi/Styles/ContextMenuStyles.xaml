@@ -1,0 +1,155 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:viewModels="clr-namespace:Golden_Phi.ViewModels">
+
+    <Style x:Key="SelectBIOSContextMenu" TargetType="{x:Type ContextMenu}">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Grid.IsSharedSizeScope" Value="true" />
+        <Setter Property="HasDropShadow" Value="True" />
+        <Setter Property="BorderBrush" Value="{DynamicResource StandardBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="{DynamicResource DropShadowColor}"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ContextMenu}">
+                    <UserControl >
+                        <UserControl.DataContext>
+                            <viewModels:BiosInfoViewModel/>
+                        </UserControl.DataContext>
+                        <Grid Width="1100" Height="600">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="9*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <Rectangle Opacity="0.5" Fill="{DynamicResource LockBackgroundBrush}"/>
+                            <ListView BorderThickness="0"
+                  VerticalAlignment="Stretch"
+                  Style="{DynamicResource TileInfoListView}" />
+                            <Button VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="30" Style="{DynamicResource AddBtn}"/>
+                        </Grid>
+                    </UserControl>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <ContextMenu Style="{StaticResource SelectBIOSContextMenu}" x:Key="SelectBIOSMenu"/>
+
+    <Style x:Key="UserContextMenu" TargetType="{x:Type ContextMenu}">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Grid.IsSharedSizeScope" Value="true" />
+        <Setter Property="HasDropShadow" Value="True" />
+        <Setter Property="BorderBrush" Value="{DynamicResource StandardBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="{DynamicResource DropShadowColor}"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ContextMenu}">
+                    <UserControl >
+                        <UserControl.DataContext>
+                            <viewModels:ControlViewModel/>
+                        </UserControl.DataContext>
+                        <Grid Width="200" Height="400">
+                            <Rectangle Opacity="0.5" Fill="{DynamicResource LockBackgroundBrush}"/>
+                            <Grid VerticalAlignment="Bottom" Margin="10">
+                                <Button Style="{DynamicResource SelectBtn}" Command="{Binding ExitCommand}">
+                                    <Path Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Data="M22 12L18 8V11H10V13H18V16M20 18A10 10 0 1 1 20 6H17.27A8 8 0 1 0 17.27 18Z" />
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </UserControl>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    
+    <Style x:Key="SStatesContextMenu" TargetType="{x:Type ContextMenu}">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Grid.IsSharedSizeScope" Value="true" />
+        <Setter Property="HasDropShadow" Value="True" />
+        <Setter Property="BorderBrush" Value="{DynamicResource StandardBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="{DynamicResource DropShadowColor}"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ContextMenu}">
+                    <UserControl >
+                        <UserControl.DataContext>
+                            <viewModels:SaveStateInfoViewModel/>
+                        </UserControl.DataContext>
+                        <Grid Width="1100" Height="600">
+                            <Rectangle Opacity="0.5" Fill="{DynamicResource LockBackgroundBrush}"/>
+                            <ListView BorderThickness="0"
+                  VerticalAlignment="Stretch"
+                  Style="{DynamicResource TileInfoListView}" />
+                            <Button VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="30" Style="{DynamicResource AddBtn}"/>
+                        </Grid>
+                    </UserControl>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <ContextMenu Style="{StaticResource SStatesContextMenu}" x:Key="SStatesMenu"/>
+
+    <Style TargetType="{x:Type ContextMenu}">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Grid.IsSharedSizeScope" Value="true" />
+        <Setter Property="HasDropShadow" Value="True" />
+        <Setter Property="Background" Value="{DynamicResource MainBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StandardBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="{DynamicResource DropShadowColor}"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ContextMenu}">
+                    <Border Background="Transparent" Padding="10">
+                        <Border Background="{TemplateBinding Background}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{DynamicResource StandardBorderThickness}"
+                                CornerRadius="{DynamicResource StandardCornerRadius}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Button Style="{DynamicResource BaseBtn}" Width="90" Height="90" Command="{Binding ConfirmCommand}">
+                                    <TextBlock Margin="8" FontSize="20" FontWeight="Bold" Text="{DynamicResource YesTitle}" 
+                                           Foreground="{TemplateBinding Foreground}"/>
+                                </Button>
+                                <Button Style="{DynamicResource BaseBtn}" Width="90" Height="90" Command="{Binding CancelCommand}" Grid.Column="1">
+                                    <TextBlock Margin="8" FontSize="20" FontWeight="Bold" Text="{DynamicResource NoTitle}" 
+                                           Foreground="{TemplateBinding Foreground}"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <ContextMenu x:Key="ConfirmMenu"/>
+    
+</ResourceDictionary>

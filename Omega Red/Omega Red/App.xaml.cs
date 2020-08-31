@@ -30,20 +30,8 @@ namespace Omega_Red
     /// </summary>
     public partial class App : Application
     {
-        public enum AppType
-        {
-            Screen,
-            OffScreen
-        }
-
         public static bool m_is_exit = false;
-
-        public static AppType m_AppType = AppType.Screen;
-
-        public static bool OffVideoRecording { get; set; }
-
-        public static bool OffPPSSPP { get; set; }
-
+        
         public const string m_MainFolderName = "OmegaRed";
 
         private static string m_MainStoreDirectoryPath = "";
@@ -66,10 +54,13 @@ namespace Omega_Red
 
         public App()
         {
-            OffVideoRecording = false;
+            string l_arch = "x86";
 
-            OffPPSSPP = false;
+            if (IntPtr.Size == 8)
+                l_arch = "x64";
 
+            Win32NativeMethods.SetDllDirectory(@".\" + l_arch);
+            
             if (File.Exists(MainStoreDirectoryPath + @"\Config.xml"))
             {
                 if (File.Exists(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath))
@@ -90,24 +81,6 @@ namespace Omega_Red
 
                 using (Process p = Process.GetCurrentProcess())
                     p.PriorityClass = ProcessPriorityClass.RealTime;
-
-                for (int i = 0; i != e.Args.Length; ++i)
-                {
-                    if (e.Args[i] == "/OffScreen")
-                    {
-                        m_AppType = AppType.OffScreen;
-
-                        this.StartupUri = new Uri("pack://application:,,,/Omega Red;component/OffScreenWindow.xaml");
-                    }
-                    else if (e.Args[i] == "/OffVideoRecording")
-                    {
-                        OffVideoRecording = true;
-                    }
-                    else if (e.Args[i] == "/OffPPSSPP")
-                    {
-                        OffPPSSPP = true;
-                    }
-                }
             };
 
             InitializeComponent();

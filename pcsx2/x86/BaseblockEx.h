@@ -224,7 +224,8 @@ public:
 	__fi void Reset()
 	{
 		blocks.clear();
-		links.clear();
+        if (links.size() > 0)
+			links.clear();
 	}
 };
 

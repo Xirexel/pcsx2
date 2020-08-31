@@ -1,0 +1,10 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="ConfigView.xaml" />
+        <ResourceDictionary Source="IsoView.xaml" />
+        <ResourceDictionary Source="BiosView.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+    
+</ResourceDictionary>

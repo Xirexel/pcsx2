@@ -1,0 +1,413 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{91A8F03B-1486-493C-A97E-7266CA01CD07}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Golden_Phi</RootNamespace>
+    <AssemblyName>Golden Phi</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Assests\Images\Golden_Phi.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Golden_Phi.Program</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="SevenZipExtractor, Version=1.0.15.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SevenZipExtractor.1.0.15\lib\net45\SevenZipExtractor.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Windows" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xaml">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Compile Include="Emul\Emul.cs" />
+    <Compile Include="Emul\GameType.cs" />
+    <Compile Include="Emul\IEmul.cs" />
+    <Compile Include="Emul\PCSX2Emul.cs" />
+    <Compile Include="Emul\PCSXEmul.cs" />
+    <Compile Include="Emul\PPSSPPEmul.cs" />
+    <Compile Include="Managers\BiosManager.cs" />
+    <Compile Include="Managers\ConfigManager.cs" />
+    <Compile Include="Managers\IManager.cs" />
+    <Compile Include="Managers\IsoManager.cs" />
+    <Compile Include="Managers\LockScreenManager.cs" />
+    <Compile Include="Managers\PadControlManager.cs" />
+    <Compile Include="Managers\SaveStateManager.cs" />
+    <Compile Include="Models\BiosInfo.cs" />
+    <Compile Include="Models\IsoInfo.cs" />
+    <Compile Include="Models\PadControlInfo.cs" />
+    <Compile Include="Models\SaveStateInfo.cs" />
+    <Compile Include="Panels\AnalogStickPanel.xaml.cs">
+      <DependentUpon>AnalogStickPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\AnalogTriggerPanel.xaml.cs">
+      <DependentUpon>AnalogTriggerPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\ControlPanel.xaml.cs">
+      <DependentUpon>ControlPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\DisplayControl.xaml.cs">
+      <DependentUpon>DisplayControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\LockScreenPanel.xaml.cs">
+      <DependentUpon>LockScreenPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\SoundControl.xaml.cs">
+      <DependentUpon>SoundControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\TouchPadConfigPanel.xaml.cs">
+      <DependentUpon>TouchPadConfigPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\TouchPadPanel.xaml.cs">
+      <DependentUpon>TouchPadPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\Video\Interop\ComInterface.cs" />
+    <Compile Include="Panels\Video\Interop\Direct3D9Ex.cs" />
+    <Compile Include="Panels\Video\Interop\Direct3DDevice9Ex.cs" />
+    <Compile Include="Panels\Video\Interop\Direct3DSurface9.cs" />
+    <Compile Include="Panels\Video\Interop\Direct3DTexture9.cs" />
+    <Compile Include="Panels\Video\Interop\NativeMethods.cs" />
+    <Compile Include="Panels\Video\Interop\NativeStructs.cs" />
+    <Compile Include="Panels\Video\VideoPanel.cs" />
+    <Compile Include="Panels\XInputPadControlInfoPanel.xaml.cs">
+      <DependentUpon>XInputPadControlInfoPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Tools\BiosControl.cs" />
+    <Compile Include="Tools\Converters\ScaledTouchPadConverter.cs" />
+    <Compile Include="Tools\Converters\WidthConverter.cs" />
+    <Compile Include="Tools\DelegateCommand.cs" />
+    <Compile Include="Tools\DropDownButton.cs" />
+    <Compile Include="Tools\GameIndex.cs" />
+    <Compile Include="Tools\ItemsPanelTemplateManager.cs" />
+    <Compile Include="Tools\ObservableObject.cs" />
+    <Compile Include="Tools\PadInput.cs" />
+    <Compile Include="Tools\Savestate\IBaseSavestateEntry.cs" />
+    <Compile Include="Tools\Savestate\ILoadStateBase.cs" />
+    <Compile Include="Tools\Savestate\ISaveStateBase.cs" />
+    <Compile Include="Tools\Savestate\MemLoadingState.cs" />
+    <Compile Include="Tools\Savestate\MemSavingState.cs" />
+    <Compile Include="Tools\Savestate\SavestateEntries.cs" />
+    <Compile Include="Tools\Savestate\SStates.cs" />
+    <Compile Include="Tools\XInputPadControl.cs" />
+    <Compile Include="Utilities\LibLoader.cs" />
+    <Compile Include="Utilities\SelectorDoubleClickCommandBehavior.cs" />
+    <Compile Include="Utilities\Win32NativeMethods.cs" />
+    <Compile Include="Utilities\XInputNative.cs" />
+    <Compile Include="ViewModels\BaseViewModel.cs" />
+    <Compile Include="ViewModels\BiosInfoViewModel.cs" />
+    <Compile Include="ViewModels\ConfigViewModel.cs" />
+    <Compile Include="ViewModels\ControlViewModel.cs" />
+    <Compile Include="ViewModels\EmulViewModel.cs" />
+    <Compile Include="ViewModels\IsoInfoViewModel.cs" />
+    <Compile Include="ViewModels\RecentIsoInfoViewModel.cs" />
+    <Compile Include="ViewModels\ItemDataTemplateSelector.cs" />
+    <Compile Include="ViewModels\LockScreenViewModel.cs" />
+    <Compile Include="ViewModels\PadControlViewModel.cs" />
+    <Compile Include="ViewModels\SaveStateInfoViewModel.cs" />
+    <Compile Include="WpfAnimatedGif\AnimationCache.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifApplicationExtension.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifBlock.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifBlockKind.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifColor.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifCommentExtension.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifDecoderException.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifExtension.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifFile.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifFrame.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifGraphicControlExtension.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifHeader.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifHelpers.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifImageData.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifImageDescriptor.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifLogicalScreenDescriptor.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifPlainTextExtension.cs" />
+    <Compile Include="WpfAnimatedGif\Decoding\GifTrailer.cs" />
+    <Compile Include="WpfAnimatedGif\ImageAnimationController.cs" />
+    <Compile Include="WpfAnimatedGif\ImageBehavior.cs" />
+    <Page Include="Captions\Default.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ColourSchemes\Default.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Page Include="Panels\AnalogStickPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\AnalogTriggerPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\ControlPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\DisplayControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\LockScreenPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\SoundControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\TouchPadConfigPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\TouchPadPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\XInputPadControlInfoPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\ButtonStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\CheckBoxStyles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\ComboBoxStyles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\ContextMenuStyles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\ListViewStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\PathStyles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\ScrollViewerStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\SliderStyles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\Styles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\TabControlStyles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\ToggleButtonStyles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\UserControlStyles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Values\Default.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\BiosView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ConfigView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\IsoView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Views.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="NotifyIconWpf\BalloonIcon.cs" />
+    <Compile Include="NotifyIconWpf\Interop\BalloonFlags.cs" />
+    <Compile Include="NotifyIconWpf\Interop\IconDataMembers.cs" />
+    <Compile Include="NotifyIconWpf\Interop\IconState.cs" />
+    <Compile Include="NotifyIconWpf\Interop\MouseEvent.cs" />
+    <Compile Include="NotifyIconWpf\Interop\NotifyCommand.cs" />
+    <Compile Include="NotifyIconWpf\Interop\NotifyIconData.cs" />
+    <Compile Include="NotifyIconWpf\Interop\NotifyIconVersion.cs" />
+    <Compile Include="NotifyIconWpf\Interop\Point.cs" />
+    <Compile Include="NotifyIconWpf\Interop\TrayInfo.cs" />
+    <Compile Include="NotifyIconWpf\Interop\WinApi.cs" />
+    <Compile Include="NotifyIconWpf\Interop\WindowClass.cs" />
+    <Compile Include="NotifyIconWpf\Interop\WindowMessageSink.cs" />
+    <Compile Include="NotifyIconWpf\PopupActivationMode.cs" />
+    <Compile Include="NotifyIconWpf\RoutedEventHelper.cs" />
+    <Compile Include="NotifyIconWpf\TaskbarIcon.cs" />
+    <Compile Include="NotifyIconWpf\TaskbarIcon.Declarations.cs" />
+    <Compile Include="NotifyIconWpf\Util.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Assests\cheats_ws.zip" />
+    <EmbeddedResource Include="Assests\GameIndex.dbf" />
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\Golden_Phi.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\Golden_Phi.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\China.png" />
+    <Resource Include="Assests\Images\Europe.png" />
+    <Resource Include="Assests\Images\Free.png" />
+    <Resource Include="Assests\Images\HK.png" />
+    <Resource Include="Assests\Images\Japan.png" />
+    <Resource Include="Assests\Images\T10K.png" />
+    <Resource Include="Assests\Images\Test.png" />
+    <Resource Include="Assests\Images\USA.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\PS2Logo.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\PSPLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\AnyCPU\PCSX2Emul.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\None.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Images\LoadState.png" />
+    <Resource Include="Assests\Images\SaveState.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\AnyCPU\PPSSPPEmul.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\AnyCPU\PCSXEmul.dll" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\SevenZipExtractor.1.0.15\build\SevenZipExtractor.targets" Condition="Exists('..\packages\SevenZipExtractor.1.0.15\build\SevenZipExtractor.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\SevenZipExtractor.1.0.15\build\SevenZipExtractor.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SevenZipExtractor.1.0.15\build\SevenZipExtractor.targets'))" />
+  </Target>
+  <PropertyGroup>
+    <PreBuildEvent>copy "$(SolutionDir)..\bin\GameIndex.dbf" "$(ProjectDir)\Assests\GameIndex.dbf"
+copy "$(SolutionDir)..\bin\cheats_ws.zip" "$(ProjectDir)\Assests\cheats_ws.zip"</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>"$(DevEnvDir)..\..\VC\Tools\MSVC\14.16.27023\bin\Hostx64\x86\editbin.exe" /STACK:4000000 "$(TargetPath)"
+ping 127.0.0.1 -n 6
+"$(DevEnvDir)..\..\VC\Tools\MSVC\14.16.27023\bin\Hostx64\x86\editbin.exe" /LARGEADDRESSAWARE "$(TargetPath)"
+ping 127.0.0.1 -n 6
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avcodec-58.dll" "$(TargetDir)x86\avcodec-58.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avformat-58.dll" "$(TargetDir)x86\avformat-58.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avutil-56.dll" "$(TargetDir)x86\avutil-56.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\swresample-3.dll" "$(TargetDir)x86\swresample-3.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\swscale-5.dll" "$(TargetDir)x86\swscale-5.dll"</PostBuildEvent>
+  </PropertyGroup>
+</Project>

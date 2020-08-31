@@ -1,0 +1,17 @@
+﻿<Application x:Class="Golden_Phi.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Golden_Phi"
+             Exit="Application_Exit">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary x:Name="mCaptions" Source="Captions/Default.xaml"/>
+                <ResourceDictionary x:Name="mValues" Source="Values/Default.xaml"/>
+                <ResourceDictionary x:Name="mColourSchemes" Source="ColourSchemes/Default.xaml"/>
+                <ResourceDictionary x:Name="mStyles" Source="Styles/Styles.xaml"/>
+                <ResourceDictionary x:Name="mViews" Source="Views/Views.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

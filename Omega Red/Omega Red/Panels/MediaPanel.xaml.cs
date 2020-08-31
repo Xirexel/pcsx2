@@ -53,27 +53,28 @@ namespace Omega_Red.Panels
 
             var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
 
+            Binding l_Binding = new Binding("ActualWidth");
+
+            l_Binding.Source = App.Current.MainWindow;
+
+            l_Binding.Mode = BindingMode.OneWay;
+
+            l_Binding.Converter = new Omega_Red.Tools.Converters.WidthConverter() { Offset = -16 - l_TouchDragBtnWidth, Scale = 1.0 };
+
+            SetBinding(UserControl.WidthProperty, l_Binding);
+
+            Canvas.SetRight(l_ParentElement, -App.Current.MainWindow.ActualWidth);
+
             if (obj)
             {
-                var l_PanelWidth = (double)App.Current.Resources["PanelWidth"];
-
-                this.Width = l_PanelWidth;
-
-                Canvas.SetRight(l_ParentElement, -l_PanelWidth);
+                Binding binding = new Binding();
+                binding.Source = l_ParentElement;
+                binding.Path = new PropertyPath(FrameworkElement.ActualWidthProperty);
+                binding.Converter = new Omega_Red.Tools.Converters.WidthConverter() { Offset = 30.0, Scale = -1.0 };
+                l_ParentElement.SetBinding(Canvas.RightProperty, binding);
             }
             else
             {
-                Binding l_Binding = new Binding("ActualWidth");
-
-                l_Binding.Source = App.Current.MainWindow;
-
-                l_Binding.Mode = BindingMode.OneWay;
-
-                l_Binding.Converter = new Omega_Red.Tools.Converters.WidthConverter() { Offset = -16 - l_TouchDragBtnWidth, Scale = 1.0 };
-
-                SetBinding(UserControl.WidthProperty, l_Binding);
-
-                Canvas.SetRight(l_ParentElement, -App.Current.MainWindow.ActualWidth);
 
                 Binding binding = new Binding();
                 binding.Source = l_ParentElement;

@@ -60,7 +60,7 @@ namespace Omega_Red.ViewModels
 
         public Visibility VisibilityState
         {
-            get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
+            get { return Visibility.Visible; }
         }
 
         private bool m_IsEnabled = false;

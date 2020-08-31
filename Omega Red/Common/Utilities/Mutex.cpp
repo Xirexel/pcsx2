@@ -184,7 +184,8 @@ bool Threading::Mutex::AcquireWithoutYield(const wxTimeSpan &timeout)
 
 void Threading::Mutex::Release()
 {
-    pthread_mutex_unlock(&m_mutex);
+    if (m_mutex != nullptr)
+		pthread_mutex_unlock(&m_mutex);
 }
 
 bool Threading::Mutex::TryAcquire()

@@ -333,12 +333,12 @@ namespace Omega_Red.ViewModels
 
         public Visibility VisibilityState
         {
-            get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
+            get { return Visibility.Visible; }
         }
 
         public Visibility VisibilityVideoRecordingState
         {
-            get { return App.OffVideoRecording ? Visibility.Collapsed : Visibility.Visible; }
+            get { return Visibility.Visible; }
         }
 
         

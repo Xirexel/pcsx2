@@ -112,7 +112,7 @@ namespace Omega_Red.ViewModels
                
         public Visibility VisibilityVideoRecordingState
         {
-            get { return App.OffVideoRecording ? Visibility.Collapsed : Visibility.Visible; }
+            get { return Visibility.Visible; }
         }
 
         protected override Managers.IManager Manager

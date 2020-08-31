@@ -299,10 +299,7 @@ namespace Omega_Red.Capture
             do
             {
                 a_resultMessage = "VideoStreamingFailedTitle";
-
-                if (App.OffVideoRecording)
-                    break;
-
+                
                 if (m_StreamObj == null)
                     break;
 
@@ -333,9 +330,6 @@ namespace Omega_Red.Capture
 
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -386,9 +380,6 @@ namespace Omega_Red.Capture
 
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -501,9 +492,6 @@ namespace Omega_Red.Capture
 
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -521,9 +509,6 @@ namespace Omega_Red.Capture
         {
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -539,9 +524,6 @@ namespace Omega_Red.Capture
         {
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -559,9 +541,6 @@ namespace Omega_Red.Capture
 
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -581,9 +560,6 @@ namespace Omega_Red.Capture
 
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -602,9 +578,6 @@ namespace Omega_Red.Capture
 
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -621,9 +594,6 @@ namespace Omega_Red.Capture
 
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -640,9 +610,6 @@ namespace Omega_Red.Capture
 
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -659,9 +626,6 @@ namespace Omega_Red.Capture
 
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -679,9 +643,6 @@ namespace Omega_Red.Capture
 
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -698,9 +659,6 @@ namespace Omega_Red.Capture
         {
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 
@@ -716,9 +674,6 @@ namespace Omega_Red.Capture
         {
             do
             {
-                if (App.OffVideoRecording)
-                    break;
-
                 if (m_StreamObj == null)
                     break;
 

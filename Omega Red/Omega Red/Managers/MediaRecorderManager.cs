@@ -263,17 +263,23 @@ namespace Omega_Red.Managers
 
         private async void addVideo(MediaRecorderInfo a_MediaRecorderInfo)
         {
-            var l_mediaData = await getThumbnail(a_MediaRecorderInfo.FilePath);
-
-            a_MediaRecorderInfo.SmallImageSource = l_mediaData.Item1;
-
-            a_MediaRecorderInfo.Duration = l_mediaData.Item2;
-
-            await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            try
             {
-                if (a_MediaRecorderInfo.SmallImageSource != null)
-                    _mediaRecorderInfoCollection.Add(a_MediaRecorderInfo);
-            });
+                var l_mediaData = await getThumbnail(a_MediaRecorderInfo.FilePath);
+
+                a_MediaRecorderInfo.SmallImageSource = l_mediaData.Item1;
+
+                a_MediaRecorderInfo.Duration = l_mediaData.Item2;
+
+                await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    if (a_MediaRecorderInfo.SmallImageSource != null)
+                        _mediaRecorderInfoCollection.Add(a_MediaRecorderInfo);
+                });
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private double GetRandomNumber(double minimum, double maximum)

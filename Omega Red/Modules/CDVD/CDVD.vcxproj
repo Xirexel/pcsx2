@@ -63,7 +63,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Golden Phi\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
       <ModuleDefinitionFile>CDVD.def</ModuleDefinitionFile>
       <AdditionalDependencies>Winmm.lib;Comctl32.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -87,7 +87,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>CDVD.def</ModuleDefinitionFile>
-      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Golden Phi\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalDependencies>Winmm.lib;Comctl32.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

@@ -834,12 +834,7 @@ namespace Omega_Red.Tools
         {
             foreach (var l_Module in PCSX2ModuleManager.Instance.Modules)
                 open(l_Module);
-
-            if (App.m_AppType != App.AppType.Screen)
-            {
-                setSoundLevel(0.0);
-            }
-            
+                        
             PCSX2LibNative.Instance.openPlugin_SPU2Func();
 
             PCSX2LibNative.Instance.openPlugin_DEV9Func();

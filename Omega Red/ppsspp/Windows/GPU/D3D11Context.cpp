@@ -241,6 +241,8 @@ bool D3D11Context::Init(HINSTANCE hInst, HWND wnd, std::string *error_message)
     return true;
 }
 
+#pragma comment(lib, "D3D11.lib")
+
 bool D3D11Context::Init(HINSTANCE hInst, IUnknown *a_PtrUnkDirectX11Device, HWND wnd, HWND captureTarget, std::string *error_message)
 {
 	hWnd_ = wnd;
@@ -263,7 +265,24 @@ bool D3D11Context::Init(HINSTANCE hInst, IUnknown *a_PtrUnkDirectX11Device, HWND
 
 		} else {
 
+			DWORD flags = D3D11_CREATE_DEVICE_SINGLETHREADED;
 
+			flags |= D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+
+			D3D_FEATURE_LEVEL level;
+
+			const D3D_FEATURE_LEVEL levels[] =
+				{
+					D3D_FEATURE_LEVEL_11_0,
+					D3D_FEATURE_LEVEL_10_1,
+					D3D_FEATURE_LEVEL_10_0,
+				};
+#define countof(a) (sizeof(a) / sizeof(a[0]))
+
+			D3D_DRIVER_TYPE driver_type = D3D_DRIVER_TYPE_HARDWARE;
+
+			hr = D3D11CreateDevice(NULL, driver_type, NULL, flags, levels, countof(levels), D3D11_SDK_VERSION, &device_, &level, &context_);
 
 		}
 

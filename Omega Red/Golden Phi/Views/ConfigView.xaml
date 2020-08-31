@@ -1,0 +1,86 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:p="clr-namespace:Golden_Phi.Properties"
+                    xmlns:viewModels="clr-namespace:Golden_Phi.ViewModels">
+
+    <x:Array x:Key="ConfigItemArray" Type="sys:Object">
+        <TextBlock Text="{DynamicResource GraphicTitle}">
+            <TextBlock.DataContext>
+                <StackPanel>
+                    <Border>
+                        <CheckBox Margin="5" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=ShowFrameRate, Mode=TwoWay}" VerticalContentAlignment="Center">
+                            <TextBlock Text="{DynamicResource ShowFrameRateTitle}" Foreground="White" TextWrapping="Wrap" TextAlignment="Center" Margin="5"/>
+                        </CheckBox>
+                    </Border>
+                    <Border>
+                        <StackPanel Margin="5">
+                            <TextBlock Text="{DynamicResource SkipFrameModeTitle}" TextAlignment="Center"  Margin="5"/>
+                            <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding SkipFrameModeCollection}" Margin="5,0,5,5"/>
+                        </StackPanel>
+                    </Border>
+                    <Border>
+                        <StackPanel IsEnabled="{Binding IsStopped}">
+                            <TextBlock Text="{DynamicResource ResolutionModeTitle}" TextAlignment="Center"  Margin="5"/>
+                            <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ResolutionModeCollection}" Margin="5,0,5,5"/>
+                        </StackPanel>
+                    </Border>
+                    <Border>
+                        <StackPanel Margin="5">
+                            <TextBlock Text="{DynamicResource DisplayModeTitle}" TextAlignment="Center"  Margin="5"/>
+                            <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding DisplayModeCollection}" Margin="5,0,5,5"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </TextBlock.DataContext>
+        </TextBlock>
+        <TextBlock Text="{DynamicResource PadTitle}">
+            <TextBlock.DataContext>
+                <Border>
+                    <StackPanel>
+                        <StackPanel.DataContext>
+                            <viewModels:PadControlViewModel/>
+                        </StackPanel.DataContext>
+                        <TextBlock Text="{DynamicResource PadControlTypeTitle}" TextAlignment="Center" Margin="5"/>
+                        <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding PadControlCollection}" Margin="5,0,5,0"/>
+                        <ContentPresenter Content="{Binding PadConfigPanel}"/>
+                    </StackPanel>
+                </Border>
+            </TextBlock.DataContext>
+        </TextBlock>
+    </x:Array>
+
+    <Grid x:Key="ConfigView">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.382*"/>
+            <ColumnDefinition Width="0.618*"/>
+        </Grid.ColumnDefinitions>
+        <ListView Margin="10" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+        <Viewbox Grid.Column="1" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+            <Grid Margin="0,10" Width="400">
+                <Grid.Style>
+                    <Style>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentItemDataContext}" Value="{x:Null}">
+                                <Setter Property="UIElement.Visibility" Value="Hidden" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                        <Setter Property="Control.FontSize" Value="12"/>
+                        <Setter Property="Control.FontWeight" Value="Bold"/>
+                        <Setter Property="Control.Foreground" Value="White"/>
+                    </Style>
+                </Grid.Style>
+                <Viewbox>
+                    <Path VerticalAlignment="Center" HorizontalAlignment="Center" 
+                                  Fill="{DynamicResource UnselectBackgroundBrush}"
+                                  StrokeThickness="1"
+                                  Stroke="Transparent"
+                                  Style="{DynamicResource ControlFillPath}"/>
+                </Viewbox>
+
+                <ContentPresenter Content="{Binding CurrentItemDataContext}" Margin="0,10"/>
+            </Grid>
+        </Viewbox>
+    </Grid>
+
+</ResourceDictionary>

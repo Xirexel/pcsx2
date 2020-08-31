@@ -209,9 +209,6 @@
     <Compile Include="NotifyIconWpf\TaskbarIcon.cs" />
     <Compile Include="NotifyIconWpf\TaskbarIcon.Declarations.cs" />
     <Compile Include="NotifyIconWpf\Util.cs" />
-    <Compile Include="OffScreenWindow.xaml.cs">
-      <DependentUpon>OffScreenWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Panels\SoundControl.xaml.cs">
       <DependentUpon>SoundControl.xaml</DependentUpon>
     </Compile>
@@ -284,7 +281,6 @@
     <Compile Include="Util\BitField.cs" />
     <Compile Include="Util\LibLoader.cs" />
     <Compile Include="Util\PCSX2LibNative.cs" />
-    <Compile Include="Util\TempFile.cs" />
     <Compile Include="Util\Win32NativeMethods.cs" />
     <Compile Include="ViewModels\BiosInfoViewModel.cs" />
     <Compile Include="ViewModels\ConfigViewModel.cs" />
@@ -375,10 +371,6 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="OffScreenWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Panels\AnalogTriggerPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -556,9 +548,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\FW.dll" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Assests\Images\Test.png" />
   </ItemGroup>
   <ItemGroup>
@@ -584,15 +573,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assests\Images\T10K.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\CDVD.dll" />
-    <EmbeddedResource Include="Modules\x86\DEV9.dll" />
-    <EmbeddedResource Include="Modules\x86\MemoryCard.dll" />
-    <EmbeddedResource Include="Modules\x86\Pad.dll" />
-    <EmbeddedResource Include="Modules\x86\PCSX2Lib.dll" />
-    <EmbeddedResource Include="Modules\x86\USB.dll" />
-    <EmbeddedResource Include="Modules\x86\VideoRenderer.dll" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assests\Images\None.png" />
@@ -640,27 +620,6 @@
     <Resource Include="Assests\Images\Mic.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\RTMP.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\AudioRenderer.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\pcsxr.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\DFXVideo.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\DFSound.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\bladesio1.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\GPUHardware.dll" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Assests\Images\GamePadQSInfo.png" />
   </ItemGroup>
   <ItemGroup />
@@ -679,11 +638,11 @@
 ping 127.0.0.1 -n 6
 "$(DevEnvDir)..\..\VC\Tools\MSVC\14.16.27023\bin\Hostx64\x86\editbin.exe" /LARGEADDRESSAWARE "$(TargetPath)"
 ping 127.0.0.1 -n 6
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avcodec-58.dll" "$(TargetDir)avcodec-58.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avformat-58.dll" "$(TargetDir)avformat-58.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avutil-56.dll" "$(TargetDir)avutil-56.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\swresample-3.dll" "$(TargetDir)swresample-3.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\swscale-5.dll" "$(TargetDir)swscale-5.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avcodec-58.dll" "$(TargetDir)x86\avcodec-58.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avformat-58.dll" "$(TargetDir)x86\avformat-58.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avutil-56.dll" "$(TargetDir)x86\avutil-56.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\swresample-3.dll" "$(TargetDir)x86\swresample-3.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\swscale-5.dll" "$(TargetDir)x86\swscale-5.dll" 
 </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>

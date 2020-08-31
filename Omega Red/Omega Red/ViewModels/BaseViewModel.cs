@@ -98,7 +98,7 @@ namespace Omega_Red.ViewModels
                 l_ContextMenu.IsOpen = true;            
             
             },()=> {
-                return App.m_AppType == App.AppType.Screen;
+                return true;
             }); }
         }
 
@@ -133,7 +133,7 @@ namespace Omega_Red.ViewModels
                     l_ContextMenu.IsOpen = true;
 
                 }, () => {
-                    return App.m_AppType == App.AppType.Screen;
+                    return true;
                 }, (a_item) => {
                     Manager.registerItem(a_item);
                 });
