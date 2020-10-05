@@ -36,6 +36,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Omega_Red.Properties;
+using Omega_Red.Emulators;
 
 namespace Omega_Red
 {
@@ -60,7 +61,7 @@ namespace Omega_Red
 
             ConfigManager.Instance.SwitchControlModeEvent += Instance_SwitchControlModeEvent;
 
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
 
             MediaRecorderManager.Instance.ShowWarningEvent += Instance_ShowWarningEvent;
 
@@ -95,9 +96,9 @@ namespace Omega_Red
             mTaskbarIcon.ShowBalloonTip(Title, a_message, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Error);
         }
 
-        void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
-            if (!mButtonControl && a_Status == PCSX2Controller.StatusEnum.Started)
+            if (!mButtonControl && a_Status == Emul.StatusEnum.Started)
             {
                 mMediaCloseBtn_Click(null, null);
 
@@ -115,18 +116,18 @@ namespace Omega_Red
 
             mButtonControl = obj;
 
-            if(obj)
-            {
+            var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
 
+            if (obj)
+            {
                 if (l_LeftWidthConverter != null)
-                    l_LeftWidthConverter.Offset = 0.0;
+                    l_LeftWidthConverter.Offset = -l_TouchDragBtnWidth - 2.5;
 
                 if (l_RightWidthConverter != null)
                     l_RightWidthConverter.Offset = 0.0;
             }
             else
             {
-                var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
 
                 if (l_LeftWidthConverter != null)
                     l_LeftWidthConverter.Offset = -l_TouchDragBtnWidth - 10;
@@ -153,58 +154,14 @@ namespace Omega_Red
 
                     break;
                 }
-
-                if (!PCSX2ModuleManager.Instance.isInit)
-                {
-                    l_warning = "PCSX2 modules are not nitialized!!!";
-
-                    break;
-                }
-
-                if (!PCSXModuleManager.Instance.isInit)
-                {
-                    l_warning = "PCSX modules are not nitialized!!!";
-
-                    break;
-                }
-
-                if (!PCSX2LibNative.Instance.isInit)
-                {
-                    l_warning = "PCSX2 library is not nitialized!!!";
-
-                    break;
-                }
-
-                if (!PPSSPPNative.Instance.isInit)
-                {
-                    l_warning = "PPSSPP library is not nitialized!!!";
-
-                    break;
-                }
-
-                if (!PCSXNative.Instance.isInit)
-                {
-                    l_warning = "PCSX library is not nitialized!!!";
-
-                    break;
-                }
-
-                foreach (var l_Module in PCSXModuleManager.Instance.Modules)
-                {
-                    PCSXNative.Instance.setModule(l_Module);
-                }
-                
+                                                
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                 {
 
                     if (m_PadPanel.Content != null && m_PadPanel.Content is DisplayControl)
                     {
-                        ModuleControl.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
-
-                        PPSSPPControl.Instance.setVideoPanelHandler(((m_PadPanel.Content as DisplayControl).VideoPanel).SharedHandle);
-
-                        Tools.Savestate.SStates.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
-
+                        Emulators.Emul.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
+                        
                         ScreenshotsManager.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
 
                         MediaSourcesManager.Instance.DisplayControl = m_PadPanel.Content as DisplayControl;
@@ -212,20 +169,16 @@ namespace Omega_Red
 
                     var wih = new System.Windows.Interop.WindowInteropHelper(App.Current.MainWindow);
 
-                    ModuleControl.Instance.setWindowHandler(wih.Handle);
+                    App.CurrentWindowHandler = wih.Handle;
 
                     MediaSourcesManager.Instance.load(()=>
                     {
                         SocialNetworks.Google.GoogleAccountManager.Instance.sendEvent();
 
-                        PCSX2Controller.Instance.updateInitilize();
+                        Emul.Instance.updateInitilize();
 
                         LockScreenManager.Instance.hide();
                     });
-
-                    ModuleControl.Instance.initPCSX();
-
-                    ModuleControl.Instance.initPCSX2();
 
                     IsoManager.Instance.load();
                 });
@@ -291,6 +244,8 @@ namespace Omega_Red
             l_UncheckedEvent.Source = mControlChkBtn;
 
             mControlChkBtn.RaiseEvent(l_UncheckedEvent);
+
+            mControlChkBtn.IsChecked = false;
         }
 
         private void Storyboard_Completed(object sender, EventArgs e)
@@ -298,6 +253,16 @@ namespace Omega_Red
             if (!mButtonControl)
             {
                 rebindControlPanel();
+            }
+            else
+            {
+                var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
+
+                Binding binding = new Binding();
+                binding.Source = mControlGrid;
+                binding.Path = new PropertyPath(FrameworkElement.ActualWidthProperty);
+                binding.Converter = new WidthConverter() { Offset = l_TouchDragBtnWidth - 2.0, Scale = -1.0 };
+                mControlGrid.SetBinding(Canvas.LeftProperty, binding);
             }
         }
 
@@ -314,6 +279,8 @@ namespace Omega_Red
             l_UncheckedEvent.Source = mControlChkBtn;
 
             mMediaChkBtn.RaiseEvent(l_UncheckedEvent);
+
+            mMediaChkBtn.IsChecked = false;
         }
 
         private void Storyboard_Completed_1(object sender, EventArgs e)

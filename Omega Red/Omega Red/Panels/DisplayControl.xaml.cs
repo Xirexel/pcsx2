@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Omega_Red.Emulators;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,10 +27,10 @@ namespace Omega_Red.Panels
 
             TouchPadPanel.VibrationEvent += Instance_VibrationEvent;
 
-            Tools.PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
         }
 
-        private void Instance_ChangeStatusEvent(Tools.PCSX2Controller.StatusEnum obj)
+        private void Instance_ChangeStatusEvent(Emul.StatusEnum obj)
         {
             System.Windows.Application.Current.Dispatcher.BeginInvoke(
             System.Windows.Threading.DispatcherPriority.Background,

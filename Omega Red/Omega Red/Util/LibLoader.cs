@@ -27,27 +27,26 @@ namespace Omega_Red.Util
         private LibLoader() { }
 
         public bool isLoaded { get { return m_handle.ToInt64() != 0; } }
-
-        private TempFile m_TempFile = null;
-
+        
         public Action Release = null;
 
         public void release()
         {
-            if (m_handle != IntPtr.Zero)
+            try
             {
-                if (Release != null)
-                    Release();
+                if (m_handle != IntPtr.Zero)
+                {
+                    if (Release != null)
+                        Release();
 
-                Win32NativeMethods.FreeLibrary(m_handle);
+                    Win32NativeMethods.FreeLibrary(m_handle);
 
-                m_handle = IntPtr.Zero;
+                    m_handle = IntPtr.Zero;
+                }
             }
-
-            if (m_TempFile != null)
-                m_TempFile.Dispose();
-
-            m_TempFile = null;
+            catch (Exception)
+            {
+            }
         }
 
         public static LibLoader create(string a_module_name, bool external = false)
@@ -56,18 +55,11 @@ namespace Omega_Red.Util
 
             do
             {
-                TempFile l_TempFile = null;
-
                 string l_path = "";
 
                 if (!external)
                 {
-                    l_TempFile = TempFile.createInstance(a_module_name);
-
-                    if (l_TempFile == null)
-                        break;
-
-                    l_path = l_TempFile.Path;
+                    l_path = a_module_name + ".dll";
                 }
                 else
                 {
@@ -80,8 +72,6 @@ namespace Omega_Red.Util
                     break;
 
                 l_LibLoader.m_handle = l_handle;
-
-                l_LibLoader.m_TempFile = l_TempFile;
                                 
             } while (false);
 
@@ -99,9 +89,6 @@ namespace Omega_Red.Util
 
                 m_handle = IntPtr.Zero;
             }
-
-            if (m_TempFile != null)
-                m_TempFile.Dispose();
         }
 
         public IntPtr getFunc(string a_func)

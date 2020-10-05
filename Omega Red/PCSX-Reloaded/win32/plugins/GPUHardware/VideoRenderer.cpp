@@ -225,8 +225,7 @@ void VideoRenderer::setDiscSerial(const std::wstring &a_RefDiscSerial)
 
 int VideoRenderer::open()
 {
-    if (s_sharedhandle == nullptr ||
-        s_capturehandle == nullptr)
+    if (s_sharedhandle == nullptr)
         return -1;
 
     std::unique_ptr<GPUDevice> dev;
@@ -285,14 +284,6 @@ extern "C" void saveTexture(INT32 aXoffset, INT32 aYoffset, INT32 aWidth, INT32 
     if (l_source_pixel_bytes == 2)
         l_format = GPUPng::R16I_PNG;
 
-    wchar_t l_stringID[256];
-
-    _ui64tow_s(g_currentClutId, l_stringID, 256, 16);
-
-
-
-    std::wstring l_path = s_TexturePacksPath + l_stringID + L".png";
-
 	
 	
 	INT32 l_sourceRowPitch = l_source_pixel_bytes * aWidth;
@@ -318,6 +309,16 @@ extern "C" void saveTexture(INT32 aXoffset, INT32 aYoffset, INT32 aWidth, INT32 
 
         l_ptrdata += l_RowPitch;
     }
+
+	DWORD l_crc;
+	
+	crc32compute(l_data.get(), l_RowPitch * iTSize, TRUE, &l_crc);
+
+    wchar_t l_stringID[256];
+
+    _ui64tow_s(l_crc, l_stringID, 256, 16);
+
+    std::wstring l_path = std::wstring(L"C:\\Users\\evgen\\Documents\\Images\\") + l_stringID + L".png";
 	   
     GPUPng::Save(GPUPng::RGBA_PNG, l_path, l_data.get(), iTSize, iTSize, l_RowPitch, 9, true);
 }

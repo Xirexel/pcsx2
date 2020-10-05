@@ -201,9 +201,9 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
 
     l_RTV.Release();
 
-    m_dev->CreateRenderTargetView(m_CaptureTexture, nullptr, &l_RTV);
+    //m_dev->CreateRenderTargetView(m_CaptureTexture, nullptr, &l_RTV);
 
-    m_ctx->ClearRenderTargetView(l_RTV, l_clearColor);
+    //m_ctx->ClearRenderTargetView(l_RTV, l_clearColor);
 
 
 
@@ -710,8 +710,7 @@ void GPUDevice11::draw(DWORD aDrawMode, void *aPtrVertexes, BOOL aIsTextured)
             l_PtrVERTEX[1].TexCoord = l_temp_TexCoord;
         }
     }
-
-
+	   
     INT32 l_sourceRowPitch = l_vertextCount * sizeof(VERTEX);
 
     m_ctx->UpdateSubresource(
@@ -826,7 +825,7 @@ void GPUDevice11::setBlendFunc(DWORD aSfactor, DWORD aDfactor)
 
 void GPUDevice11::setBlendEquation(DWORD aOPcode)
 {
-    if (aOPcode == FUNC_REVERSESUBTRACT_EXT) {
+    if (aOPcode == FUNC_REVERSE_SUBTRACT_EXT) {
         m_color_blend_op = D3D11_BLEND_OP::D3D11_BLEND_OP_REV_SUBTRACT;
 
         m_alpha_blend_op = D3D11_BLEND_OP::D3D11_BLEND_OP_REV_SUBTRACT;
@@ -916,16 +915,16 @@ void GPUDevice11::createTexture(
 
     CComPtrCustom<ID3D11Texture2D> l_Texture;
 
-    D3D11_SUBRESOURCE_DATA l_subresourceResource;
-    ZeroMemory(&l_subresourceResource, sizeof(D3D11_SUBRESOURCE_DATA));
-
-    l_subresourceResource.pSysMem = aPtrPixels;
-    l_subresourceResource.SysMemPitch = aWidth * l_source_pixel_bytes;
-
-    if (aPtrPtrUnkShaderResourceView != nullptr) {
+    if (aPtrPixels == nullptr) {
         LOG_INVOKE(m_dev->CreateTexture2D(&l_Desc, nullptr, &l_Texture));
-
     } else {
+
+        D3D11_SUBRESOURCE_DATA l_subresourceResource;
+        ZeroMemory(&l_subresourceResource, sizeof(D3D11_SUBRESOURCE_DATA));
+
+        l_subresourceResource.pSysMem = aPtrPixels;
+        l_subresourceResource.SysMemPitch = aWidth * l_source_pixel_bytes;
+
         LOG_INVOKE(m_dev->CreateTexture2D(&l_Desc, &l_subresourceResource, &l_Texture));
     }
 

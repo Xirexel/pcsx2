@@ -1,4 +1,5 @@
-﻿using Omega_Red.Managers;
+﻿using Omega_Red.Emulators;
+using Omega_Red.Managers;
 using Omega_Red.Models;
 using Omega_Red.Tools;
 using System;
@@ -110,7 +111,7 @@ namespace Omega_Red.ViewModels
                                     {
                                         Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, (System.Threading.ThreadStart)delegate ()
                                         {
-                                            PCSX2Controller.Instance.loadState((SaveStateInfo)Collection.CurrentItem);
+                                            Emul.Instance.loadState((SaveStateInfo)Collection.CurrentItem);
 
                                             VisibilityState = Visibility.Collapsed;
                                         });
@@ -230,9 +231,9 @@ namespace Omega_Red.ViewModels
                 Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, (System.Threading.ThreadStart)delegate ()
                 {
                     VisibilityState = Visibility.Collapsed;
-                    
-                    if(PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Paused)
-                        PCSX2Controller.Instance.PlayPause();
+
+                    if (Emul.Instance.Status == Emul.StatusEnum.Paused)
+                        Emul.Instance.play();
 
                     m_CommandEnum = CommandEnum.None;
 

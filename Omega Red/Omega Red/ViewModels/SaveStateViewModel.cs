@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Models;
 using Omega_Red.Properties;
@@ -41,7 +42,7 @@ namespace Omega_Red.ViewModels
     {
         public SaveStateInfoViewModel()
         {
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
             GoogleAccountManager.Instance.mEnableStateEvent += Instance_mEnableStateEvent;
         }
@@ -60,18 +61,18 @@ namespace Omega_Red.ViewModels
 
         public Visibility VisibilityState
         {
-            get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
+            get { return Visibility.Visible; }
         }
 
         private bool m_IsEnabled = false;
 
-        private PCSX2Controller.StatusEnum m_Status = PCSX2Controller.StatusEnum.NoneInitilized;
+        private Emul.StatusEnum m_Status = Emul.StatusEnum.NoneInitilized;
         
-        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
             m_Status = a_Status;
 
-            IsEnabled = a_Status != PCSX2Controller.StatusEnum.NoneInitilized;
+            IsEnabled = a_Status != Emul.StatusEnum.NoneInitilized;
 
             CommandManager.InvalidateRequerySuggested();
         }  
@@ -94,23 +95,23 @@ namespace Omega_Red.ViewModels
                 return new DelegateCommand(SaveStateManager.Instance.addSaveStateInfo,
                     () =>
                     {
-                        return m_Status == PCSX2Controller.StatusEnum.Started ||
-                            m_Status == PCSX2Controller.StatusEnum.Paused;
+                        return m_Status == Emul.StatusEnum.Started ||
+                            m_Status == Emul.StatusEnum.Paused;
                     });
             }
         }
 
         public ICommand LoadCommand
         {
-            get { return new DelegateCommand<SaveStateInfo>(PCSX2Controller.Instance.loadState); }
+            get { return new DelegateCommand<SaveStateInfo>(Emul.Instance.loadState); }
         }
 
         public ICommand SaveCommand
         {
-            get { return new DelegateCommand<SaveStateInfo>(PCSX2Controller.Instance.saveState, 
+            get { return new DelegateCommand<SaveStateInfo>(SaveStateManager.Instance.save, 
                 () => {
-                return m_Status == PCSX2Controller.StatusEnum.Started ||
-                    m_Status == PCSX2Controller.StatusEnum.Paused;
+                return m_Status == Emul.StatusEnum.Started ||
+                    m_Status == Emul.StatusEnum.Paused;
             }); }
         }
 
@@ -118,9 +119,9 @@ namespace Omega_Red.ViewModels
         {
             get
             {
-                return new DelegateCommand(PCSX2Controller.Instance.quickSave,
+                return new DelegateCommand(SaveStateManager.Instance.quickSave,
               () => {
-                  return m_Status == PCSX2Controller.StatusEnum.Started;
+                  return Emul.Instance.Status == Emul.StatusEnum.Started;
               });
             }
         }

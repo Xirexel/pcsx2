@@ -635,15 +635,18 @@ bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle
 
     l_Resource.Release();
 
-    hr = m_dev->OpenSharedResource(capturehandle, IID_PPV_ARGS(&l_Resource));
+	if (capturehandle != nullptr) {
 
-    if (FAILED(hr))
-        return false;
+        hr = m_dev->OpenSharedResource(capturehandle, IID_PPV_ARGS(&l_Resource));
 
-    hr = l_Resource->QueryInterface(IID_PPV_ARGS(&m_CaptureTexture));
+        if (FAILED(hr))
+            return false;
 
-    if (FAILED(hr))
-        return false;
+        hr = l_Resource->QueryInterface(IID_PPV_ARGS(&m_CaptureTexture));
+
+        if (FAILED(hr))
+            return false;
+	}
 
     if (!wnd->Create("GS", l_Desc.Width, l_Desc.Height)) {
         return -1;

@@ -1,4 +1,5 @@
-﻿using Omega_Red.Properties;
+﻿using Omega_Red.Emulators;
+using Omega_Red.Properties;
 using Omega_Red.Tools;
 using Omega_Red.Util;
 using System;
@@ -30,23 +31,12 @@ namespace Omega_Red
     /// </summary>
     public partial class App : Application
     {
-        public enum AppType
-        {
-            Screen,
-            OffScreen
-        }
-
         public static bool m_is_exit = false;
-
-        public static AppType m_AppType = AppType.Screen;
-
-        public static bool OffVideoRecording { get; set; }
-
-        public static bool OffPPSSPP { get; set; }
-
+        
         public const string m_MainFolderName = "OmegaRed";
 
         private static string m_MainStoreDirectoryPath = "";
+        public static IntPtr CurrentWindowHandler { get; set; }
 
         public static string MainStoreDirectoryPath { get {
 
@@ -66,10 +56,13 @@ namespace Omega_Red
 
         public App()
         {
-            OffVideoRecording = false;
+            string l_arch = "x86";
 
-            OffPPSSPP = false;
+            if (IntPtr.Size == 8)
+                l_arch = "x64";
 
+            Win32NativeMethods.SetDllDirectory(@".\" + l_arch);
+            
             if (File.Exists(MainStoreDirectoryPath + @"\Config.xml"))
             {
                 if (File.Exists(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath))
@@ -90,24 +83,6 @@ namespace Omega_Red
 
                 using (Process p = Process.GetCurrentProcess())
                     p.PriorityClass = ProcessPriorityClass.RealTime;
-
-                for (int i = 0; i != e.Args.Length; ++i)
-                {
-                    if (e.Args[i] == "/OffScreen")
-                    {
-                        m_AppType = AppType.OffScreen;
-
-                        this.StartupUri = new Uri("pack://application:,,,/Omega Red;component/OffScreenWindow.xaml");
-                    }
-                    else if (e.Args[i] == "/OffVideoRecording")
-                    {
-                        OffVideoRecording = true;
-                    }
-                    else if (e.Args[i] == "/OffPPSSPP")
-                    {
-                        OffPPSSPP = true;
-                    }
-                }
             };
 
             InitializeComponent();
@@ -116,7 +91,13 @@ namespace Omega_Red
         private void Application_Exit(object sender, ExitEventArgs e)
         {
             Managers.PadControlManager.Instance.stopTimer();
-            
+
+            Emul.Instance.stop(false);
+
+            Managers.IsoManager.Instance.save();
+
+            Omega_Red.Properties.Settings.Default.Save();
+
             saveCopy();
 
             m_is_exit = true;
@@ -124,36 +105,6 @@ namespace Omega_Red
             Capture.MediaCapture.Instance.stop();
 
             Capture.MediaStream.Instance.stop(true);
-
-            Capture.OffScreenStream.Instance.stopServer();
-
-            PCSX2Controller.Instance.Stop(true);
-            
-            Thread.Sleep(1500);
-
-            PCSX2LibNative.Instance.SysThreadBase_CancelFunc();
-
-            Thread.Sleep(1500);
-
-            PCSX2LibNative.Instance.MTVU_CancelFunc();
-
-            PCSX2LibNative.Instance.MTGS_CancelFunc();
-
-            ModuleControl.Instance.shutdownPCSX2();
-
-            ModuleControl.Instance.shutdownPCSX();
-
-            PCSX2LibNative.Instance.resetCallbacksFunc();
-
-            PCSX2ModuleManager.Instance.release();
-
-            Thread.Sleep(1500);
-
-            PCSX2LibNative.Instance.release();
-
-            PPSSPPNative.Instance.release();
-
-            PCSXNative.Instance.release();
         }
 
         public static void saveCopy()

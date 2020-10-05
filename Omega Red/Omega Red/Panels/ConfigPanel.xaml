@@ -65,7 +65,7 @@
             <Border>
                 <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
                     <CheckBox Margin="5" IsChecked="{Binding ShowFrameRate}" VerticalContentAlignment="Center">
-                        <TextBlock Text="{DynamicResource ShowFrameRateTitle}" TextAlignment="Center"  Margin="5"/>
+                        <TextBlock Text="{DynamicResource ShowFrameRateTitle}" TextWrapping="Wrap" TextAlignment="Center" Margin="5"/>
                     </CheckBox>
                 </StackPanel>
             </Border>

@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Tools;
 using System;
 using System.Collections.Generic;
@@ -30,17 +31,17 @@ namespace Omega_Red.ViewModels
     {
         public MediaRecorderInfoViewModel()
         {
-            PCSX2Controller.Instance.ChangeStatusEvent += (PCSX2Controller.StatusEnum obj) => {
+            Emul.Instance.ChangeStatusEvent += (Emul.StatusEnum obj) => {
 
                 switch (obj)
                 {
-                    case PCSX2Controller.StatusEnum.Stopped:
+                    case Emul.StatusEnum.Stopped:
                         //IsCheckedStatus = false;
                         break;
-                    case PCSX2Controller.StatusEnum.Paused:
-                    case PCSX2Controller.StatusEnum.NoneInitilized:
-                    case PCSX2Controller.StatusEnum.Initilized:
-                    case PCSX2Controller.StatusEnum.Started:
+                    case Emul.StatusEnum.Paused:
+                    case Emul.StatusEnum.NoneInitilized:
+                    case Emul.StatusEnum.Initilized:
+                    case Emul.StatusEnum.Started:
                     default:
                         break;
                 }
@@ -112,7 +113,7 @@ namespace Omega_Red.ViewModels
                
         public Visibility VisibilityVideoRecordingState
         {
-            get { return App.OffVideoRecording ? Visibility.Collapsed : Visibility.Visible; }
+            get { return Visibility.Visible; }
         }
 
         protected override Managers.IManager Manager

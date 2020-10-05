@@ -1,4 +1,5 @@
-﻿using Omega_Red.Tools;
+﻿using Omega_Red.Emulators;
+using Omega_Red.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +47,7 @@ namespace Omega_Red.Managers
                 {
                     if(!m_button_is_pressed)
                     {
-                        PCSX2Controller.Instance.quickSave();
+                        SaveStateManager.Instance.quickSave();
 
                         l_result = true;
 
@@ -58,7 +59,7 @@ namespace Omega_Red.Managers
                 {
                     if (!m_button_is_pressed)
                     {
-                        if (PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Started)
+                        if (Emul.Instance.Status == Emul.StatusEnum.Started)
                         {
                             if (ChangeControlEvent != null)
                             {
@@ -66,7 +67,7 @@ namespace Omega_Red.Managers
                                 {
                                     ChangeControlEvent(ControlEnum.QuickSavePanel, aPadControl);
 
-                                    PCSX2Controller.Instance.PlayPause();
+                                    Emul.Instance.pause();
                                 });
                             }
 

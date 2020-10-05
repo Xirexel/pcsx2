@@ -495,13 +495,13 @@ static void WinMainCleanup()
     }
 }
 
-extern "C" int __stdcall Launch(LPWSTR szCmdLine, IUnknown *a_PtrUnkDirectX11Device, HWND a_VideoPanelHandler, HWND a_CaptureHandler, GetTouchPadCallback a_getTouchPad, SetDataCallback a_setAudioData, LPWSTR szStickDirectory)
+extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND a_CaptureHandler, GetTouchPadCallback a_getTouchPad, SetDataCallback a_setAudioData, LPWSTR szStickDirectory)
 {
     g_getTouchPad = a_getTouchPad;
 
     s_boot_file = szCmdLine;
 
-    MainWindow::SetUnkDirectX11Device(a_PtrUnkDirectX11Device);
+    MainWindow::SetUnkDirectX11Device(nullptr);
 
     MainWindow::SetDisplayHWND(a_VideoPanelHandler);
 

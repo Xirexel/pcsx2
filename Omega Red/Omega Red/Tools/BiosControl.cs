@@ -26,6 +26,7 @@ using SevenZipExtractor;
 using System.Windows;
 using System.Windows.Threading;
 using System.Threading;
+using Omega_Red.Emulators;
 
 namespace Omega_Red.Tools
 {
@@ -33,15 +34,15 @@ namespace Omega_Red.Tools
     {
         static public event Action<string> ShowErrorEvent;
 
-        private const int m_biosSize = 512 * 1024;
+        public const int m_biosSize = 512 * 1024;
 
-        private const int m_nvmSize = 1024;
+        public const int m_nvmSize = 1024;
 
         public const int m_ROMsize = 1024 * 1024 * 4;
 
         // NVM (eeprom) layout info
         [StructLayout(LayoutKind.Sequential)]
-        private struct NVMLayout
+        public struct NVMLayout
         {
 	        public int biosVer;	// bios version that this eeprom layout is for
             public int config0;	// offset of 1st config block
@@ -363,7 +364,7 @@ namespace Omega_Red.Tools
             ref int versionInt,
             ref string data, 
             ref string build,
-            ref Models.GameType gameType)
+            ref GameType gameType)
         {
             bool l_result = false;
 
@@ -382,7 +383,7 @@ namespace Omega_Red.Tools
                         ref data,
                         ref build);
 
-                    gameType = Models.GameType.PS1;
+                    gameType = GameType.PS1;
 
                     break;
                 }
@@ -472,7 +473,7 @@ namespace Omega_Red.Tools
                     l_RomDir = ByteToType<RomDir>(stream);
                 }
                                
-                gameType = Models.GameType.PS2;
+                gameType = GameType.PS2;
 
             } while (false);
 
@@ -493,7 +494,7 @@ namespace Omega_Red.Tools
             ref int versionInt,
             ref string data,
             ref string build,
-            ref Models.GameType gameType)
+            ref GameType gameType)
         {
             bool l_result = false;
 
@@ -657,7 +658,7 @@ namespace Omega_Red.Tools
         // Exceptions:
         //   BadStream - Thrown if the primary bios file (usually .bin) is not found, corrupted, etc.
         //
-        static public bool LoadBIOS(IntPtr a_FirstArg, Int32 a_SecondArg, Models.GameType a_gameType)
+        static public bool LoadBIOS(IntPtr a_FirstArg, Int32 a_SecondArg, GameType a_gameType)
         {
             bool l_result = false;
 	
@@ -666,13 +667,13 @@ namespace Omega_Red.Tools
                 do
                 {
 
-                    if (PCSX2Controller.Instance.BiosInfo == null)
+                    if (Emul.Instance.BiosInfo == null)
                         break;
 
-                    if (PCSX2Controller.Instance.BiosInfo.GameType != a_gameType)
+                    if (Emul.Instance.BiosInfo.GameType != a_gameType)
                         break;
 
-                    var l_filePath = PCSX2Controller.Instance.BiosInfo.FilePath;
+                    var l_filePath = Emul.Instance.BiosInfo.FilePath;
 
 
                     if (!File.Exists(l_filePath))
@@ -786,17 +787,17 @@ namespace Omega_Red.Tools
 
         public static void CDVDGetMechaVer(IntPtr buffer)
         {
-            if (PCSX2Controller.Instance.BiosInfo == null)
+            if (Emul.Instance.BiosInfo == null)
                 return;
 
-            if (PCSX2Controller.Instance.BiosInfo.MEC == null ||
-                PCSX2Controller.Instance.BiosInfo.MEC.Length < 4)
+            if (Emul.Instance.BiosInfo.MEC == null ||
+                Emul.Instance.BiosInfo.MEC.Length < 4)
             {
-                PCSX2Controller.Instance.BiosInfo.MEC = new byte[4];
+                Emul.Instance.BiosInfo.MEC = new byte[4];
 
                 byte[] version = { 0x3, 0x6, 0x2, 0x0 };
 
-                using (MemoryStream l_memoryStream = new MemoryStream(PCSX2Controller.Instance.BiosInfo.MEC))
+                using (MemoryStream l_memoryStream = new MemoryStream(Emul.Instance.BiosInfo.MEC))
                 {
                     l_memoryStream.Write(version, 0, version.Length);
                 }
@@ -804,7 +805,7 @@ namespace Omega_Red.Tools
                 BiosManager.Instance.save();
             }
 
-            using (var l_MECFileStream = new MemoryStream(PCSX2Controller.Instance.BiosInfo.MEC))
+            using (var l_MECFileStream = new MemoryStream(Emul.Instance.BiosInfo.MEC))
             {
                 if (l_MECFileStream == null)
                     return;
@@ -817,7 +818,7 @@ namespace Omega_Red.Tools
             }
 
 
-            //var l_filePath = PCSX2Controller.Instance.BiosInfo.FilePath;
+            //var l_filePath = Emul.Instance.BiosInfo.FilePath;
 
             //if (!File.Exists(l_filePath))
             //    return;
@@ -862,19 +863,19 @@ namespace Omega_Red.Tools
 
         public static void NVMFile(IntPtr buffer, Int32 offset, Int32 bytes, Boolean read)
         {
-            if (PCSX2Controller.Instance.BiosInfo == null)
+            if (Emul.Instance.BiosInfo == null)
                 return;
 
-            if(PCSX2Controller.Instance.BiosInfo.NVM == null ||
-                PCSX2Controller.Instance.BiosInfo.NVM.Length < m_nvmSize)
+            if(Emul.Instance.BiosInfo.NVM == null ||
+                Emul.Instance.BiosInfo.NVM.Length < m_nvmSize)
             {
-                PCSX2Controller.Instance.BiosInfo.NVM = new byte[m_nvmSize];
+                Emul.Instance.BiosInfo.NVM = new byte[m_nvmSize];
 
                 NVMLayout nvmLayout = getNvmLayout();
 
                 byte[] ILinkID_Data = { 0x00, 0xAC, 0xFF, 0xFF, 0xFF, 0xFF, 0xB9, 0x86 };
 
-                using (MemoryStream l_memoryStream = new MemoryStream(PCSX2Controller.Instance.BiosInfo.NVM))
+                using (MemoryStream l_memoryStream = new MemoryStream(Emul.Instance.BiosInfo.NVM))
                 {
                     l_memoryStream.Seek(nvmLayout.ilinkId, SeekOrigin.Begin);
 
@@ -895,7 +896,7 @@ namespace Omega_Red.Tools
 
                 //foreach (var item in ILinkID_Data)
                 //{
-                //    PCSX2Controller.Instance.BiosInfo.NVM[lposition++] = item;
+                //    Emul.Instance.BiosInfo.NVM[lposition++] = item;
                 //}
                                
 
@@ -904,7 +905,7 @@ namespace Omega_Red.Tools
             }
 
 
-            //var l_filePath = PCSX2Controller.Instance.BiosInfo.FilePath;
+            //var l_filePath = Emul.Instance.BiosInfo.FilePath;
 
             //if (!File.Exists(l_filePath))
             //    return;
@@ -942,7 +943,7 @@ namespace Omega_Red.Tools
 
             //var l_NVMFileStream = File.Open(l_NVMFilePath, FileMode.Open);
 
-            using (var l_NVMFileStream = new MemoryStream(PCSX2Controller.Instance.BiosInfo.NVM))
+            using (var l_NVMFileStream = new MemoryStream(Emul.Instance.BiosInfo.NVM))
             {
                 if (l_NVMFileStream == null)
                     return;
@@ -975,14 +976,14 @@ namespace Omega_Red.Tools
             //    read ? L"read from" : L"write to", WX_STR(fname), ret, bytes);
         }
 
-        private static NVMLayout getNvmLayout()
+        public static NVMLayout getNvmLayout()
         {
             NVMLayout nvmLayout = null;
 
             int BiosVersion = 0;
 
-            if (PCSX2Controller.Instance.BiosInfo != null)
-                BiosVersion = PCSX2Controller.Instance.BiosInfo.VersionInt;
+            if (Emul.Instance.BiosInfo != null)
+                BiosVersion = Emul.Instance.BiosInfo.VersionInt;
 
             if (nvmlayouts[1].biosVer <= BiosVersion)
                 nvmLayout = nvmlayouts[1];

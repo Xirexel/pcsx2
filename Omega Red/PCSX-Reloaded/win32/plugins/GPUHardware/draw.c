@@ -257,7 +257,7 @@ void GetExtInfos(void)
  //if(bPacked && (iTexQuality==1 || iTexQuality==2))     // packed available and 16 bit texture format?
  // {
  //  bGLFastMovie=TRUE;                                  // -> ok
-   bGLExt=TRUE;
+   //bGLExt=TRUE;
  // }
  
 

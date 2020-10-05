@@ -29,6 +29,11 @@
                     <CircleEase EasingMode="EaseOut" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
+            <Int32Animation 
+                            Storyboard.TargetName="mControlGrid"
+                            Storyboard.TargetProperty="(Canvas.ZIndex)"
+                            From="0" To="1" Duration="0:0:0.25">
+            </Int32Animation>
         </Storyboard>
         <Storyboard x:Key="AnimCloseControlPanel" x:Shared="False" Completed="Storyboard_Completed">
             <DoubleAnimation 
@@ -41,6 +46,11 @@
                     <CircleEase EasingMode="EaseIn" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
+            <Int32Animation 
+                            Storyboard.TargetName="mMediaGrid"
+                            Storyboard.TargetProperty="(Canvas.ZIndex)"
+                            To="0" Duration="0:0:0.25">
+            </Int32Animation>
         </Storyboard>
         <Storyboard x:Key="AnimOpenMediaPanel" x:Shared="False">
             <DoubleAnimation 
@@ -51,6 +61,11 @@
                     <CircleEase EasingMode="EaseOut" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
+            <Int32Animation 
+                            Storyboard.TargetName="mMediaGrid"
+                            Storyboard.TargetProperty="(Canvas.ZIndex)"
+                            From="0" To="1" Duration="0:0:0.25">
+            </Int32Animation>
         </Storyboard>
         <Storyboard x:Key="AnimCloseMediaPanel" x:Shared="False" Completed="Storyboard_Completed_1">
             <DoubleAnimation 
@@ -63,6 +78,11 @@
                     <CircleEase EasingMode="EaseIn" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
+            <Int32Animation 
+                            Storyboard.TargetName="mMediaGrid"
+                            Storyboard.TargetProperty="(Canvas.ZIndex)"
+                            To="0" Duration="0:0:0.25">
+            </Int32Animation>
         </Storyboard>
     </Window.Resources>
     <Grid>
@@ -316,7 +336,6 @@
                 <Button x:Name="mControlCloseBtn"
                         Grid.Column="1"
                         Click="mControlCloseBtn_Click"
-                        Visibility="{Binding Source={StaticResource mConfigViewModel}, Path=TouchControlVisibility}"
                         Style="{DynamicResource TouchDragBtn}">
                     <Button.LayoutTransform>
                         <RotateTransform Angle="90"/>
@@ -364,7 +383,6 @@
                 <Button x:Name="mMediaCloseBtn"
                         Grid.Column="1"
                         Click="mMediaCloseBtn_Click"
-                        Visibility="{Binding Source={StaticResource mConfigViewModel}, Path=TouchControlVisibility}"
                         Style="{DynamicResource TouchDragBtn}">
                     <Button.LayoutTransform>
                         <RotateTransform Angle="270"/>

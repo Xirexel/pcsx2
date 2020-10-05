@@ -13,6 +13,7 @@
 */
 
 using Omega_Red.Capture;
+using Omega_Red.Emulators;
 using Omega_Red.Models;
 using Omega_Red.Panels;
 using Omega_Red.Properties;
@@ -188,19 +189,14 @@ namespace Omega_Red.Managers
 
             mCustomerView.SortDescriptions.Add(
             new SortDescription("DateTime", ListSortDirection.Descending));
-
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate()
-            {
-                executeLoading();
-            });
-
+            
             mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
         }
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
         {
-            if(PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Started)
-                PCSX2Controller.Instance.PlayPause();
+            if (Emul.Instance.Status == Emul.StatusEnum.Started)
+                Emul.Instance.pause();
 
             Managers.MediaRecorderManager.Instance.StartStop(false);
 
@@ -208,8 +204,10 @@ namespace Omega_Red.Managers
                 LockScreenManager.Instance.showVideo();
         }
 
-        private void executeLoading()
+        public void loadAsync()
         {
+            _mediaRecorderInfoCollection.Clear();
+
             ThreadStart loadVideosStart = new ThreadStart(load);
 
             Thread loadVideosThread = new Thread(loadVideosStart);
@@ -253,27 +251,91 @@ namespace Omega_Red.Managers
 
                             l_MediaRecorderInfo.DateTime = fi.LastWriteTime;
 
-                            addVideo(l_MediaRecorderInfo);
+                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                            {
+                                _mediaRecorderInfoCollection.Add(l_MediaRecorderInfo);
+                            });
                         }
+                    }
+                }
+
+            } while (false);
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                loadWithPreviewAsync();
+            });
+        }
+
+        private void loadWithPreviewAsync()
+        {
+            ThreadStart loadVideosStart = new ThreadStart(loadWithPreview);
+
+            Thread loadVideosThread = new Thread(loadVideosStart);
+
+            loadVideosThread.Start();
+        }
+
+        private void loadWithPreview()
+        {
+            do
+            {
+                foreach (var l_mediaRecorderInfo in _mediaRecorderInfoCollection.Reverse())
+                {
+                    try
+                    {
+                        Thread.Sleep(600);
+
+                        getThumbnail(l_mediaRecorderInfo);
+                    }
+                    catch (Exception)
+                    {
                     }
                 }
 
             } while (false);
         }
 
+        private async void getThumbnail(MediaRecorderInfo a_MediaRecorderInfo)
+        {
+            try
+            {
+                var l_mediaData = await getThumbnail(a_MediaRecorderInfo.FilePath);
+
+                await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    a_MediaRecorderInfo.SmallImageSource = l_mediaData.Item1;
+
+                    a_MediaRecorderInfo.Duration = l_mediaData.Item2;
+
+                    if (mCustomerView != null)
+                        mCustomerView.Refresh();
+                });
+            }
+            catch (Exception)
+            {
+            }
+        }
+
         private async void addVideo(MediaRecorderInfo a_MediaRecorderInfo)
         {
-            var l_mediaData = await getThumbnail(a_MediaRecorderInfo.FilePath);
-
-            a_MediaRecorderInfo.SmallImageSource = l_mediaData.Item1;
-
-            a_MediaRecorderInfo.Duration = l_mediaData.Item2;
-
-            await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            try
             {
-                if (a_MediaRecorderInfo.SmallImageSource != null)
-                    _mediaRecorderInfoCollection.Add(a_MediaRecorderInfo);
-            });
+                var l_mediaData = await getThumbnail(a_MediaRecorderInfo.FilePath);
+
+                a_MediaRecorderInfo.SmallImageSource = l_mediaData.Item1;
+
+                a_MediaRecorderInfo.Duration = l_mediaData.Item2;
+
+                await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    if (a_MediaRecorderInfo.SmallImageSource != null)
+                        _mediaRecorderInfoCollection.Add(a_MediaRecorderInfo);
+                });
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private double GetRandomNumber(double minimum, double maximum)
@@ -546,7 +608,7 @@ namespace Omega_Red.Managers
                 return;
             }
 
-            var l_isoInfo = PCSX2Controller.Instance.IsoInfo;
+            var l_isoInfo = Emul.Instance.IsoInfo;
 
             if (l_isoInfo == null)
                 return;

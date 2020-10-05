@@ -1169,7 +1169,9 @@ PCSX2_EXPORT void STDAPICALLTYPE SysThreadBase_ResumeFunc()
 
 PCSX2_EXPORT void STDAPICALLTYPE SysThreadBase_SuspendFunc()
 {
-    GetCoreThread().Suspend(true);
+    //GetCoreThread().Suspend(true);
+
+	GetCoreThread().Pause();
 }
 
 PCSX2_EXPORT void STDAPICALLTYPE SysThreadBase_ResetFunc()

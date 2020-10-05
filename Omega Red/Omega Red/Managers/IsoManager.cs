@@ -33,6 +33,7 @@ using System.Windows;
 using System.Windows.Threading;
 using System.Threading;
 using Omega_Red.SocialNetworks.Google;
+using Omega_Red.Emulators;
 
 namespace Omega_Red.Managers
 {
@@ -191,7 +192,7 @@ namespace Omega_Red.Managers
                 _isoInfoCollection.Remove(a_IsoInfo);
 
                 if (a_IsoInfo.IsCurrent)
-                    PCSX2Controller.Instance.IsoInfo = null;
+                    Emul.Instance.IsoInfo = null;
 
                 IsoManager.Instance.save();
             }
@@ -208,195 +209,12 @@ namespace Omega_Red.Managers
 
                 a_IsoInfo.IsCurrent = true;
 
-                PCSX2Controller.Instance.IsoInfo = a_IsoInfo;
+                Emul.Instance.IsoInfo = a_IsoInfo;
 
                 IsoManager.Instance.save();
             }
         }
-
-        public static IsoInfo getGameDiscInfo(string aFilePath)
-        {
-            IsoInfo l_result = null;
-            
-            do
-            {
-                var l_module = PCSX2ModuleManager.Instance.getModule(Omega_Red.Tools.PCSX2ModuleManager.ModuleType.CDVD);
-
-                string l_commandResult = "";
-
-                if (l_module != null)
-                {
-                    XmlDocument l_XmlDocument = new XmlDocument();
-
-                    XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
-
-                    l_XmlDocument.AppendChild(ldocNode);
-
-                    XmlNode rootNode = l_XmlDocument.CreateElement("Commands");
-
-
-                    XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Check");
-
-                    var l_Atrr = l_XmlDocument.CreateAttribute("FilePath");
-
-                    l_Atrr.Value = aFilePath;
-
-                    l_PropertyNode.Attributes.Append(l_Atrr);
-
-                    rootNode.AppendChild(l_PropertyNode);
-
-
-                    l_PropertyNode = l_XmlDocument.CreateElement("GetDiscSerial");
-
-                    l_Atrr = l_XmlDocument.CreateAttribute("FilePath");
-
-                    l_Atrr.Value = aFilePath;
-
-                    l_PropertyNode.Attributes.Append(l_Atrr);
-
-                    rootNode.AppendChild(l_PropertyNode);
-
-                    l_XmlDocument.AppendChild(rootNode);
-
-                    using (var stringWriter = new StringWriter())
-                    using (var xmlTextWriter = XmlWriter.Create(stringWriter))
-                    {
-                        l_XmlDocument.WriteTo(xmlTextWriter);
-
-                        xmlTextWriter.Flush();
-
-                        l_module.execute(stringWriter.GetStringBuilder().ToString(), out l_commandResult);
-                    }
-
-                }
-                
-                if (!string.IsNullOrEmpty(l_commandResult))
-                {
-                    XmlDocument l_XmlDocument = new XmlDocument();
-
-                    l_XmlDocument.LoadXml(l_commandResult);
-
-                    if (l_XmlDocument.DocumentElement != null)
-                    {
-
-                        var l_bResult = false;
-
-                        IsoType l_isoType = IsoType.ISOTYPE_ILLEGAL;
-
-                        var l_CheckNode = l_XmlDocument.DocumentElement.SelectSingleNode("Result[@Command='Check']");
-
-                        if (l_CheckNode != null)
-                        {
-                            var l_StateNode = l_CheckNode.SelectSingleNode("@State");
-
-                            var l_IsoTypeNode = l_CheckNode.SelectSingleNode("@IsoType");
-
-                            if (l_StateNode != null)
-                            {
-                                Boolean.TryParse(l_StateNode.Value, out l_bResult);
-                            }
-
-                            if (l_IsoTypeNode != null)
-                            {
-                                Enum.TryParse<IsoType>(l_IsoTypeNode.Value, true, out l_isoType);
-                            }
-                        }
-                        
-                        l_CheckNode = l_XmlDocument.DocumentElement.SelectSingleNode("Result[@Command='GetDiscSerial']");
-
-                        if (l_CheckNode != null 
-                            && l_bResult
-                            && (l_isoType != IsoType.ISOTYPE_ILLEGAL)
-                            && (l_isoType != IsoType.ISOTYPE_AUDIO))
-                        {
-                            IsoInfo local_result = new IsoInfo();
-
-                            local_result.IsoType = l_isoType.ToString().Replace("ISOTYPE_", "");
-
-                            local_result.FilePath = aFilePath;
-
-                            var l_GameDiscType = l_CheckNode.SelectSingleNode("@GameDiscType");
-
-                            var l_DiscSerial = l_CheckNode.SelectSingleNode("@DiscSerial");
-
-                            var l_DiscRegionType = l_CheckNode.SelectSingleNode("@DiscRegionType");
-
-                            var l_SoftwareVersion = l_CheckNode.SelectSingleNode("@SoftwareVersion");
-
-                            var l_ElfCRC = l_CheckNode.SelectSingleNode("@ElfCRC");                            
-
-                            if (l_GameDiscType == null
-                                || l_DiscSerial == null
-                                || l_DiscRegionType == null
-                                || l_SoftwareVersion == null
-                                || l_ElfCRC == null)
-                                break;
-
-                            if (l_GameDiscType != null && !string.IsNullOrWhiteSpace(l_GameDiscType.Value))
-                            {
-                                local_result.GameDiscType = l_GameDiscType.Value;
-
-                                local_result.GameType = GameType.Unknown;
-
-                                if (l_GameDiscType.Value.Contains("PS1"))
-                                    local_result.GameType = GameType.PS1;
-                                else if (l_GameDiscType.Value.Contains("PS2"))
-                                    local_result.GameType = GameType.PS2;
-                            }
-
-                            if (l_DiscSerial != null && l_DiscSerial.Value != null)
-                            {
-                                local_result.DiscSerial = l_DiscSerial.Value.ToUpper();
-
-                                var l_gameData = GameIndex.Instance.convert(local_result.DiscSerial);
-
-                                if (l_gameData != null)
-                                {
-                                    local_result.Title = l_gameData.FriendlyName;
-                                }
-                                else
-                                {
-                                    FileInfo l_FileInfo = new FileInfo(aFilePath);
-
-                                    var l_name = l_FileInfo.Name;
-
-                                    if (!string.IsNullOrWhiteSpace(l_FileInfo.Extension))
-                                        l_name = l_name.Replace(l_FileInfo.Extension, "");
-
-                                    local_result.Title = l_name;
-                                }
-                            }
-
-                            if (l_DiscRegionType != null)
-                            {
-                                local_result.DiscRegionType = l_DiscRegionType.Value;
-                            }
-
-                            if (l_SoftwareVersion != null)
-                            {
-                                local_result.SoftwareVersion = l_SoftwareVersion.Value;
-                            }
-
-                            if (l_ElfCRC != null)
-                            {
-                                uint l_value = 0;
-
-                                if (uint.TryParse(l_ElfCRC.Value, out l_value))
-                                {
-                                    local_result.ElfCRC = l_value;
-                                }
-                            }                                                       
-
-                            l_result = local_result;
-                        }
-                    }
-                }
-
-            } while (false);
-
-            return l_result;
-        }
-
+        
         private void addIsoInfo()
         {
             OpenFileDialog l_OpenFileDialog = new OpenFileDialog();
@@ -410,32 +228,16 @@ namespace Omega_Red.Managers
 
             if (l_result)
             {
-                var l_IsoInfo = IsoManager.getGameDiscInfo(l_OpenFileDialog.FileName);
+                var l_IsoInfo = PCSX2Emul.getGameDiscInfo(l_OpenFileDialog.FileName);
 
                 if (l_IsoInfo != null && l_IsoInfo.GameDiscType != "Invalid or unknown disc.")
-                {
-                    IsoManager.Instance.addIsoInfo(l_IsoInfo);
-                }
+                    addIsoInfo(l_IsoInfo);
                 else
                 {
-                    var l_info = PPSSPPControl.Instance.getGameInfo(l_OpenFileDialog.FileName);
+                    l_IsoInfo = PPSSPPEmul.getGameDiscInfo(l_OpenFileDialog.FileName);
 
-                    if(!string.IsNullOrWhiteSpace(l_info.Item1) && !string.IsNullOrWhiteSpace(l_info.Item2))
-                    {
-                        l_IsoInfo.Title = l_info.Item1;
-
-                        l_IsoInfo.GameDiscType = "PSP Disc";
-
-                        l_IsoInfo.GameType = GameType.PSP;
-
-                        l_IsoInfo.DiscSerial = l_info.Item2.ToUpper();
-
-                        l_IsoInfo.DiscRegionType = "PAL";
-
-                        l_IsoInfo.SoftwareVersion = "1.0";
-
-                        IsoManager.Instance.addIsoInfo(l_IsoInfo);
-                    }
+                    if (l_IsoInfo != null && l_IsoInfo.GameDiscType != "Invalid or unknown disc.")
+                        addIsoInfo(l_IsoInfo);
                 }
             }
         }
@@ -498,11 +300,11 @@ namespace Omega_Red.Managers
                         l_IsoInfo.FilePath,
                         lProgressBannerGrid);
 
-                l_IsoInfo = IsoManager.getGameDiscInfo(l_IsoInfo.FilePath);
+                l_IsoInfo = PCSX2Emul.getGameDiscInfo(l_IsoInfo.FilePath);
 
                 if (l_IsoInfo != null && l_IsoInfo.GameDiscType != "Invalid or unknown disc.")
                 {
-                    IsoManager.Instance.addIsoInfo(l_IsoInfo);
+                    addIsoInfo(l_IsoInfo);
 
                     l_IsoInfo.IsCloudsave = true;
 
@@ -510,18 +312,14 @@ namespace Omega_Red.Managers
                 }
                 else
                 {
-                    var l_info = PPSSPPControl.Instance.getGameInfo(l_IsoInfo.FilePath);
+                    l_IsoInfo = PPSSPPEmul.getGameDiscInfo(l_IsoInfo.FilePath);
 
-                    if (!string.IsNullOrEmpty(l_info.Item1) && !string.IsNullOrWhiteSpace(l_info.Item2))
+                    if (l_IsoInfo != null && l_IsoInfo.GameDiscType != "Invalid or unknown disc.")
                     {
-                        l_IsoInfo.Title = l_info.Item1;
-
                         l_IsoInfo.GameDiscType = "PSP Disc";
 
                         l_IsoInfo.GameType = GameType.PSP;
-
-                        l_IsoInfo.DiscSerial = l_info.Item2.ToUpper();
-
+                        
                         l_IsoInfo.DiscRegionType = "PAL";
 
                         l_IsoInfo.SoftwareVersion = "1.0";
@@ -533,8 +331,7 @@ namespace Omega_Red.Managers
                         IsoManager.Instance.addIsoInfo(l_IsoInfo);
                     }
                 }
-
-
+                
 
                 //var lSaveState = IsoManager.Instance.addIsoInfo.readData(l_IsoInfo.FilePath, l_IsoInfo.Index, l_IsoInfo.IsAutosave, l_IsoInfo.IsQuicksave);
 

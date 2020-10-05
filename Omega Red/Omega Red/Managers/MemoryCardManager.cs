@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Models;
 using Omega_Red.Properties;
 using Omega_Red.SocialNetworks.Google;
@@ -103,7 +104,7 @@ namespace Omega_Red.Managers
 
             mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
 
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
 
 
             GoogleAccountManager.Instance.mEnableStateEvent += (obj) =>
@@ -112,14 +113,14 @@ namespace Omega_Red.Managers
 
                 m_disk_serial = "";
 
-                if (PCSX2Controller.Instance.IsoInfo != null)
+                if (Emul.Instance.IsoInfo != null)
                     load();
             };
         }
 
-        void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
-            if (a_Status != PCSX2Controller.StatusEnum.NoneInitilized)
+            if (a_Status != Emul.StatusEnum.NoneInitilized)
                 load();
         }
 
@@ -145,7 +146,7 @@ namespace Omega_Red.Managers
 
         public void load()
         {
-            if (PCSX2Controller.Instance.IsoInfo == null)
+            if (Emul.Instance.IsoInfo == null)
                 return;
 
             string l_ext = getCurrentMemoryCardExtention();
@@ -153,14 +154,14 @@ namespace Omega_Red.Managers
             if (string.IsNullOrWhiteSpace(l_ext))
                 return;
 
-            if (m_disk_serial == PCSX2Controller.Instance.IsoInfo.DiscSerial)
+            if (m_disk_serial == Emul.Instance.IsoInfo.DiscSerial)
                 return;
 
-            m_disk_serial = PCSX2Controller.Instance.IsoInfo.DiscSerial;
+            m_disk_serial = Emul.Instance.IsoInfo.DiscSerial;
 
             _memoryCardInfoCollection.Clear();
 
-            if (PCSX2Controller.Instance.IsoInfo.GameType == GameType.PS1)
+            if (Emul.Instance.IsoInfo.GameType == GameType.PS1)
             {
                 try
                 {
@@ -218,7 +219,7 @@ namespace Omega_Red.Managers
 
             if (System.IO.Directory.Exists(Settings.Default.MemoryCardsFolder))
             {
-                var l_SelectedMemoryCardFile = PCSX2Controller.Instance.IsoInfo.SelectedMemoryCardFile;
+                var l_SelectedMemoryCardFile = Emul.Instance.IsoInfo.SelectedMemoryCardFile;
 
                 string[] files = System.IO.Directory.GetFiles(Settings.Default.MemoryCardsFolder, "*" + l_ext);
 
@@ -244,7 +245,7 @@ namespace Omega_Red.Managers
 
                     if (l_splits != null && l_splits.Length == 3)
                     {
-                        if (fi.Name.Contains(PCSX2Controller.Instance.IsoInfo.DiscSerial))
+                        if (fi.Name.Contains(Emul.Instance.IsoInfo.DiscSerial))
                         {
                             int l_value = 0;
 
@@ -277,7 +278,7 @@ namespace Omega_Red.Managers
                     //});
                 }
 
-                fetchCloudMemoryCard(PCSX2Controller.Instance.IsoInfo.Title + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial);
+                fetchCloudMemoryCard(Emul.Instance.IsoInfo.Title + "-" + Emul.Instance.IsoInfo.DiscSerial);
 
                 fetchCloudMemoryCard("MemoryCard.shared");
 
@@ -323,7 +324,7 @@ namespace Omega_Red.Managers
 
         private void addMemoryCardInfo()
         {
-            if (PCSX2Controller.Instance.IsoInfo == null)
+            if (Emul.Instance.IsoInfo == null)
                 return;
 
             string l_ext = getCurrentMemoryCardExtention();
@@ -338,15 +339,15 @@ namespace Omega_Red.Managers
                 if (lIndexString.Length == 1)
                     lIndexString = lIndexString.PadLeft(2, '0');
 
-                var Name = (PCSX2Controller.Instance.IsoInfo.Title + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial) + "." + lIndexString + l_ext;
+                var Name = (Emul.Instance.IsoInfo.Title + "-" + Emul.Instance.IsoInfo.DiscSerial) + "." + lIndexString + l_ext;
 
                 var FullName = Settings.Default.MemoryCardsFolder + Name;
 
-                if (PCSX2Controller.Instance.IsoInfo.GameType == GameType.PS1)
+                if (Emul.Instance.IsoInfo.GameType == GameType.PS1)
                 {
                     createPS1Mcd(FullName);
                 }
-                else if (PCSX2Controller.Instance.IsoInfo.GameType == GameType.PS2)
+                else if (Emul.Instance.IsoInfo.GameType == GameType.PS2)
                 {
                     try
                     {
@@ -367,7 +368,7 @@ namespace Omega_Red.Managers
                     }
                     catch (Exception)
                     {
-                        Name = PCSX2Controller.Instance.IsoInfo.DiscSerial + "." + lIndexString + l_ext;
+                        Name = Emul.Instance.IsoInfo.DiscSerial + "." + lIndexString + l_ext;
 
                         FullName = Settings.Default.MemoryCardsFolder + Name;
 
@@ -502,7 +503,7 @@ namespace Omega_Red.Managers
 
                 if (aMemoryCardInfo.IsCurrent)
                 {
-                    ModuleControl.Instance.setMemoryCard();
+                    Emul.Instance.setMemoryCard();
                 }
 
                 File.Delete(aMemoryCardInfo.FilePath);
@@ -516,7 +517,7 @@ namespace Omega_Red.Managers
                 {
                     aMemoryCardInfo.IsCloudOnlysave = true;
 
-                    fetchCloudMemoryCard(PCSX2Controller.Instance.IsoInfo.Title + "-" + m_disk_serial);
+                    fetchCloudMemoryCard(Emul.Instance.IsoInfo.Title + "-" + m_disk_serial);
                 }
             }
         }
@@ -533,11 +534,11 @@ namespace Omega_Red.Managers
 
             aMemoryCardInfo.IsCurrent = true;
 
-            ModuleControl.Instance.setMemoryCard(aMemoryCardInfo.FilePath);
+            Emul.Instance.setMemoryCard(aMemoryCardInfo.FilePath);
 
-            if (PCSX2Controller.Instance.IsoInfo != null)
+            if (Emul.Instance.IsoInfo != null)
             {
-                PCSX2Controller.Instance.IsoInfo.SelectedMemoryCardFile = aMemoryCardInfo.FileName;
+                Emul.Instance.IsoInfo.SelectedMemoryCardFile = aMemoryCardInfo.FileName;
 
                 IsoManager.Instance.save();
             }
@@ -549,10 +550,10 @@ namespace Omega_Red.Managers
 
             do
             {
-                if (PCSX2Controller.Instance.IsoInfo == null)
+                if (Emul.Instance.IsoInfo == null)
                     break;
 
-                switch (PCSX2Controller.Instance.IsoInfo.GameType)
+                switch (Emul.Instance.IsoInfo.GameType)
                 {
                     case GameType.Unknown:
                         break;
@@ -704,7 +705,7 @@ namespace Omega_Red.Managers
 
                 File.Copy(l_MemoryCardInfo.FilePath, l_TempFileName, true);
 
-                string l_disk_serial = PCSX2Controller.Instance.IsoInfo.Title + "-" + PCSX2Controller.Instance.IsoInfo.DiscSerial;
+                string l_disk_serial = Emul.Instance.IsoInfo.Title + "-" + Emul.Instance.IsoInfo.DiscSerial;
 
                 if (l_MemoryCardInfo.Index == -1)
                     l_disk_serial = "MemoryCard.shared";
@@ -749,7 +750,7 @@ namespace Omega_Red.Managers
             {
                 if (l_MemoryCardInfo.IsCurrent)
                 {
-                    ModuleControl.Instance.setMemoryCard();
+                    Emul.Instance.setMemoryCard();
                 }
 
                 var lProgressBannerGrid = l_Grid.FindName("mProgressBannerBorder") as System.Windows.FrameworkElement;

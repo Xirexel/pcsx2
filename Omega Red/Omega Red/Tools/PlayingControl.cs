@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.ViewModels;
 using System;
@@ -28,7 +29,7 @@ namespace Omega_Red.Tools
     {
         private delegate bool CheckStateDelegate();
 
-        private PCSX2Controller.StatusEnum m_Status = PCSX2Controller.StatusEnum.NoneInitilized;
+        private Emul.StatusEnum m_Status = Emul.StatusEnum.NoneInitilized;
 
         private bool m_isPaused = false;
 
@@ -36,7 +37,7 @@ namespace Omega_Red.Tools
         
         public PlayingControl()
         {
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
         }
 
         public string Message
@@ -49,31 +50,31 @@ namespace Omega_Red.Tools
             }
         }        
 
-        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
             Status = a_Status;
 
             switch (a_Status)
             {
-                case PCSX2Controller.StatusEnum.NoneInitilized:
+                case Emul.StatusEnum.NoneInitilized:
                     Message = App.Current.Resources["NoneInitilizedTitle"] as String;
                     break;
-                case PCSX2Controller.StatusEnum.Initilized:
+                case Emul.StatusEnum.Initilized:
                     Message = App.Current.Resources["InitilizedTitle"] as String;
                     break;
-                case PCSX2Controller.StatusEnum.Stopped:
+                case Emul.StatusEnum.Stopped:
                     Message = App.Current.Resources["StoppedTitle"] as String;
                     break;
-                case PCSX2Controller.StatusEnum.Paused:
+                case Emul.StatusEnum.Paused:
                     Message = App.Current.Resources["PausedTitle"] as String;
                     break;
-                case PCSX2Controller.StatusEnum.Started:
+                case Emul.StatusEnum.Started:
                 default:
                     Message = "";
                     break;
             }
 
-            if (a_Status == PCSX2Controller.StatusEnum.Started)
+            if (a_Status == Emul.StatusEnum.Started)
                 IsPaused = false;
 
 
@@ -112,7 +113,7 @@ namespace Omega_Red.Tools
             }
         }
 
-        public PCSX2Controller.StatusEnum Status
+        public Emul.StatusEnum Status
         {
             get { return m_Status; }
             set
@@ -125,7 +126,7 @@ namespace Omega_Red.Tools
         public ICommand PlayPauseCommand
         {
             get { return new PlayingControlCommand(playPauseInner, () => {
-                return Status != PCSX2Controller.StatusEnum.NoneInitilized;
+                return Status != Emul.StatusEnum.NoneInitilized;
             });
             }
         }
@@ -133,8 +134,8 @@ namespace Omega_Red.Tools
         public ICommand StopCommand
         {
             get { return new PlayingControlCommand(stopInner, () => {
-                return Status == PCSX2Controller.StatusEnum.Started ||
-                    Status == PCSX2Controller.StatusEnum.Paused;
+                return Status == Emul.StatusEnum.Started ||
+                    Status == Emul.StatusEnum.Paused;
             });
             }
         }
@@ -163,8 +164,8 @@ namespace Omega_Red.Tools
             {
                 if ((bool)aState)
                 {
-                    if (m_Status == PCSX2Controller.StatusEnum.Started)
-                        PCSX2Controller.Instance.PlayPause();
+                    if (m_Status == Emul.StatusEnum.Started)
+                        Emul.Instance.pause();
                 }
 
             }
@@ -173,14 +174,19 @@ namespace Omega_Red.Tools
 
         private void playPauseInner()
         {
-            PCSX2Controller.Instance.PlayPause();
+            if (m_Status == Emul.StatusEnum.Started)
+                Emul.Instance.pause();
+            else if (
+                m_Status == Emul.StatusEnum.Paused ||
+                m_Status == Emul.StatusEnum.Stopped ||
+                m_Status == Emul.StatusEnum.Initilized
+                )
+                Emul.Instance.play();
         }
 
         private void stopInner()
         {
-            LockScreenManager.Instance.show();
-
-            PCSX2Controller.Instance.Stop();
+            Emul.Instance.stop();
         }
     }
 }

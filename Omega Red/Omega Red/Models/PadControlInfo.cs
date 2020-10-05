@@ -38,7 +38,7 @@ namespace Omega_Red.Models
 
         object PadConfigPanel { get; set; }
 
-
+        void stopTimer();
     }
 
     class TouchPadControlInfo: PadControlInfo
@@ -54,6 +54,10 @@ namespace Omega_Red.Models
         public PadType PadType { get; set; }
         public IPadControl PadControl { get; set; }
         public object PadConfigPanel { get; set; }
+
+        public void stopTimer()
+        {
+        }
 
         public override string ToString()
         {

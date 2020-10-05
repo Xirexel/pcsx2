@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Models;
 using Omega_Red.Panels;
@@ -49,7 +50,7 @@ namespace Omega_Red.ViewModels
 
         public BiosInfoViewModel()
         {
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
             if(Collection != null)
                 Collection.CollectionChanged += Collection_CollectionChanged;
@@ -65,29 +66,29 @@ namespace Omega_Red.ViewModels
 
         private bool m_IsEnabled = true;
                 
-        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
-            IsEnabled = a_Status == PCSX2Controller.StatusEnum.Stopped 
-                || a_Status == PCSX2Controller.StatusEnum.Initilized
-                || a_Status == PCSX2Controller.StatusEnum.NoneInitilized;
+            IsEnabled = a_Status == Emul.StatusEnum.Stopped 
+                || a_Status == Emul.StatusEnum.Initilized
+                || a_Status == Emul.StatusEnum.NoneInitilized;
 
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
             {
                 CurrentBiosZone = "";
                 
-                if (PCSX2Controller.Instance.BiosInfo == null)
+                if (Emul.Instance.BiosInfo == null)
                     return;
 
                 string l_prefix = ": ";
 
-                if (!string.IsNullOrWhiteSpace(PCSX2Controller.Instance.BiosInfo.ContainerFile.ToString()))
+                if (!string.IsNullOrWhiteSpace(Emul.Instance.BiosInfo.ContainerFile.ToString()))
                 {
-                    CurrentContainerFile = l_prefix + PCSX2Controller.Instance.BiosInfo.ContainerFile.ToString();
+                    CurrentContainerFile = l_prefix + Emul.Instance.BiosInfo.ContainerFile.ToString();
 
                     l_prefix = " - ";
                 }
 
-                CurrentBiosZone = l_prefix + PCSX2Controller.Instance.BiosInfo.Zone + " " + PCSX2Controller.Instance.BiosInfo.Version;
+                CurrentBiosZone = l_prefix + Emul.Instance.BiosInfo.Zone + " " + Emul.Instance.BiosInfo.Version;
             });
         }  
 
