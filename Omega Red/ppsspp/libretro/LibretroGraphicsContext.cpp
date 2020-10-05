@@ -43,6 +43,7 @@ void LibretroHWRenderContext::ContextReset() {
 
 	if (!draw_) {
 		CreateDrawContext();
+		PSP_CoreParameter().thin3d = draw_;
 		bool success = draw_->CreatePresets();
 		assert(success);
 	}

@@ -44,8 +44,6 @@
 // Report the time and throughput for each larger scaling operation in the log
 //#define SCALING_MEASURE_TIME
 
-//#define DEBUG_SCALER_OUTPUT
-
 #ifdef SCALING_MEASURE_TIME
 #include "base/timeutil.h"
 #endif
@@ -455,8 +453,6 @@ void bilinearV(int factor, u32* data, u32* out, int w, int gl, int gu, int l, in
 #undef B
 #undef A
 
-#ifdef DEBUG_SCALER_OUTPUT
-
 // used for debugging texture scaling (writing textures to files)
 static int g_imgCount = 0;
 void dbgPPM(int w, int h, u8* pixels, const char* prefix = "dbg") { // 3 component RGB
@@ -487,9 +483,6 @@ void dbgPGM(int w, int h, u32* pixels, const char* prefix = "dbg") { // 1 compon
 	}
 	fclose(fp);
 }
-
-#endif
-
 }
 
 /////////////////////////////////////// Texture Scaler

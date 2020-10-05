@@ -2,20 +2,19 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <sys:String x:Key="MainName">Красный Омега PS1/PS2/PSP эмулятор</sys:String>
+    <sys:String x:Key="MainName">Красный Омега PS2/PSP эмулятор</sys:String>
     <sys:String x:Key="ControlTitle">Настройка</sys:String>
     <sys:String x:Key="MediaTitle">Медиа</sys:String>
     <sys:String x:Key="DisplayModeTitle">Режим отображения:</sys:String>
     <sys:String x:Key="ControlModeTitle">Режим управления:</sys:String>
     <sys:String x:Key="TopmostTitle">Установить окно поверх всех</sys:String>
     <sys:String x:Key="CompressionQualityTitle">Качество сжатия видео:</sys:String>
-    <sys:String x:Key="EnableWideScreenTitle">Включить широкоформатный режим</sys:String>
+    <sys:String x:Key="DisableWideScreenTitle">Отключить широкоформатный режим</sys:String>
     <sys:String x:Key="LanguageTitle">Текущий перевод</sys:String>
     <sys:String x:Key="ColourSchemaTitle">Цветовая схема</sys:String>
     <sys:String x:Key="CaptureManagerTitle">Поддерживает CaptureManager SDK</sys:String>
     <sys:String x:Key="PCSX2Title">Поддерживает PCSX2</sys:String>
     <sys:String x:Key="PPSSPPTitle">Поддерживает PPSSPP</sys:String>
-    <sys:String x:Key="PCSXRTitle">Поддерживает PCSX-Reloaded</sys:String>
     <sys:String x:Key="YesTitle">Выполнить</sys:String>
     <sys:String x:Key="NoTitle">Отменить</sys:String>
     <sys:String xml:space="preserve" x:Key="VersionTitle">Версия: </sys:String>
@@ -61,7 +60,7 @@
     <sys:String x:Key="MediaOutputTypeStreamNotSupportingTitle">Freeware не поддерживается</sys:String>
     <sys:String x:Key="TouchPadScaleTitle">Масштаб сенсорного контроллера:</sys:String>
     <sys:String x:Key="RenderingSchemaTitle">Схема рендеринга:</sys:String>
-    <sys:String x:Key="IsFXAATitle">Включить PS2-FXAA &amp; PS1-Sharpen</sys:String>
+    <sys:String x:Key="IsFXAATitle">Включить FXAA</sys:String>
     <sys:String x:Key="SavingTitle">Сохранение...</sys:String>
     <sys:String x:Key="BiosTipTitle">Биос отсутствует, архив доступен по ссылке:</sys:String>
     <sys:String x:Key="IsoTipTitle">Диск отсутствует, диски доступены по ссылкам:</sys:String>
@@ -85,39 +84,9 @@
     <sys:String x:Key="YouTubeBroadcastTitle">Трансляция</sys:String>
     <sys:String x:Key="YouTubeBroadcastTitleTitle">Заголовок трансляции:</sys:String>
     <sys:String x:Key="YouTubeBroadcastDescriptionTitle">Описание трансляции:</sys:String>
-    <sys:String x:Key="VideoStreamBitRateTitle">Видео битрейт:</sys:String>
-    <sys:String x:Key="AudioStreamBitRateTitle">Аудио битрейт:</sys:String>
+    <sys:String x:Key="VideoStreamBitRateTitle">Видео битрате:</sys:String>
+    <sys:String x:Key="AudioStreamBitRateTitle">Аудио битрате:</sys:String>
     <sys:String x:Key="StreamServiceTitle">Стрим сервис:</sys:String>
     <sys:String x:Key="StreamKeyTitle">Стрим идентификатор:</sys:String>
     <sys:String x:Key="StreamConnectionWarningTitle">Соединение с сервером потеряно!!!</sys:String>
-    <sys:String x:Key="RecordServiceTitle">Размер файла записи:</sys:String>
-    <sys:String x:Key="UnlimitedTitle">Не ограниченный</sys:String>
-    <sys:String x:Key="S_1_4_GbTitle">1.4 Гб</sys:String>
-    <sys:String x:Key="S_700_MbTitle">700 Мб</sys:String>
-    <sys:String x:Key="VariableBitrateTitle">Переменный битрейт</sys:String>
-    <sys:String xml:space="preserve" x:Key="VideoFileRecordedInfoTitle"> записан!!!</sys:String>
-    <sys:String x:Key="VideoFileRecordingFailedTitle">Запись невозможна!!!</sys:String>
-    <sys:String x:Key="VideoFileRecordingStartedTitle">Запись начата!!!</sys:String>
-    <sys:String x:Key="VideoStreamingFailedTitle">Стриминг невозможен!!!</sys:String>
-    <sys:String x:Key="VideoStreamingStartedTitle">Стриминг начат!!!</sys:String>
-    <sys:String x:Key="VideoStreamingIsClosedTitle">Стриминг закончен!!!</sys:String>
-    <sys:String xml:space="preserve" x:Key="MemoryCardInfoTitle">Карта памяти </sys:String>
-    <sys:String x:Key="SharedTitle">общая</sys:String>
-    <sys:String x:Key="VisualVibrationIsEnabledTitle">Визуальная вибрация включена</sys:String>
-    <sys:String x:Key="GroupTitle">Количество</sys:String>
-    <sys:String x:Key="TexturePackModeTitle">Режим загрузки внешних текстур</sys:String>
-    <sys:String x:Key="TexturePackModeNoneTitle">Без внешних текстур</sys:String>
-    <sys:String x:Key="TexturePackModeLoadTitle">Загрузка внешних текстур</sys:String>
-    <sys:String x:Key="TexturePackModeSaveTitle">Сохранение текстур</sys:String>
-    <sys:String x:Key="LowBatteryTitle">малый заряд батареи!!!</sys:String>
-    <sys:String x:Key="EmptyBatteryTitle">батарея разряжена!!!</sys:String>
-    <sys:String x:Key="SkipFrameModeTitle">Режим пропуска кадров:</sys:String>
-    <sys:String x:Key="SkipFrameModeNoneTitle">Без пропуска кадров</sys:String>
-    <sys:String x:Key="SkipFrameModeOneTitle">Пропуск одного кадра</sys:String>
-    <sys:String x:Key="SkipFrameModeTwoTitle">Пропуск двух кадров</sys:String>
-    <sys:String x:Key="ShowFrameRateTitle">Показать число кадров в секунду</sys:String>
-    <sys:String x:Key="RefreshScreenTitle">Обновление экрана:</sys:String>
-    <sys:String x:Key="FPSTitle">к/с</sys:String>
-    <sys:String x:Key="ResolutionModeTitle">Pазрешениe изображения:</sys:String>
-    
 </ResourceDictionary>

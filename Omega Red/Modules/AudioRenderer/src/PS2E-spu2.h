@@ -50,7 +50,7 @@ SPU2read(u32 mem);
 
 // These defines are useless and gcc-4.6 complain about redefinition
 // so we remove them on linux
-#ifndef __POSIX__
+//#ifndef __POSIX__
 EXPORT_C_(void)
 SPU2readDMA4Mem(u16 *pMem, u32 size);
 EXPORT_C_(void)
@@ -72,7 +72,7 @@ EXPORT_C_(void)
 SPU2WriteMemAddr(int core, u32 value);
 EXPORT_C_(void)
 SPU2irqCallback(void (*SPU2callback)(), void (*DMA4callback)(), void (*DMA7callback)());
-#endif
+//#endif
 
 // extended funcs
 // if start is 1, starts recording spu2 data, else stops

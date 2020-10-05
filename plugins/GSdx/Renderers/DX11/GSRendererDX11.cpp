@@ -295,7 +295,7 @@ void GSRendererDX11::EmulateTextureShuffleAndFbmask()
 
 		if (m_ps_sel.fbmask && enable_fbmask_emulation)
 		{
-			// fprintf(stderr, "%d: FBMASK Unsafe SW emulated fb_mask:%x on tex shuffle\n", s_n, fbmask);
+			// fprintf(stderr, "%d: FBMASK SW emulated fb_mask:%x on tex shuffle\n", s_n, fbmask);
 			ps_cb.FbMask.r = rg_mask;
 			ps_cb.FbMask.g = rg_mask;
 			ps_cb.FbMask.b = ba_mask;
@@ -329,7 +329,7 @@ void GSRendererDX11::EmulateTextureShuffleAndFbmask()
 			// it will work. Masked bit will be constant and normally the same everywhere
 			// RT/FS output/Cached value.
 
-			/*fprintf(stderr, "%d: FBMASK Unsafe SW emulated fb_mask:%x on %d bits format\n", s_n, m_context->FRAME.FBMSK,
+			/*fprintf(stderr, "%d: FBMASK SW emulated fb_mask:%x on %d bits format\n", s_n, m_context->FRAME.FBMSK,
 				(GSLocalMemory::m_psm[m_context->FRAME.PSM].fmt == 2) ? 16 : 32);*/
 			m_bind_rtsample = true;
 		}
@@ -613,9 +613,7 @@ void GSRendererDX11::EmulateBlending()
 
 void GSRendererDX11::EmulateTextureSampler(const GSTextureCache::Source* tex)
 {
-	// Warning fetch the texture PSM format rather than the context format. The latter could have been corrected in the texture cache for depth.
-	//const GSLocalMemory::psm_t &psm = GSLocalMemory::m_psm[m_context->TEX0.PSM];
-	const GSLocalMemory::psm_t &psm = GSLocalMemory::m_psm[tex->m_TEX0.PSM];
+	const GSLocalMemory::psm_t &psm = GSLocalMemory::m_psm[m_context->TEX0.PSM];
 	const GSLocalMemory::psm_t &cpsm = psm.pal > 0 ? GSLocalMemory::m_psm[m_context->TEX0.CPSM] : psm;
 
 	const uint8 wms = m_context->CLAMP.WMS;
@@ -990,9 +988,9 @@ void GSRendererDX11::DrawPrims(GSTexture* rt, GSTexture* ds, GSTextureCache::Sou
 		GSVector4 fc = GSVector4::rgba32(m_env.FOGCOL.u32[0]);
 #if _M_SSE >= 0x401
 		// Blend AREF to avoid to load a random value for alpha (dirty cache)
-		ps_cb.FogColor_AREF = fc.blend32<8>(ps_cb.FogColor_AREF);
+		ps_cb.FogColor_AREF = fc.blend32<8>(ps_cb.FogColor_AREF) / 255;
 #else
-		ps_cb.FogColor_AREF = fc;
+		ps_cb.FogColor_AREF = fc / 255;
 #endif
 	}
 

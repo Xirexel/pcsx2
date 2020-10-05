@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Omega Red</string>
+    <string name="controlBtnTitle">Control</string>
+    <string name="selectBIOSBtn">BIOS</string>
+    <string name="selectISOBtnTitle">Games</string>
+    <string name="ZoneTitle">Region: </string>
+    <string name="VersionTitle">"Version: "</string>
+    <string name="DateTitle">Date: </string>
+    <string name="TypeISOTitle">Тип файла:</string>
+    <string name="GameDiscTypeTitle">Тип диска:</string>
+    <string name="DiscRegionTypeTitle">Регион:</string>
+    <string name="removeBtn">Удалить</string>
+    <string name="stopBtnTitle">Стоп</string>
+    <string name="addBtn">Добавить</string>
+    <string name="hideBtnTitle">Скрыть</string>
+    <string name="startPauseBtnTitle">Старт</string>
+</resources>

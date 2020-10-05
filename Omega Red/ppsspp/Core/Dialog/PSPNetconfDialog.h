@@ -44,11 +44,6 @@ public:
 	virtual int Shutdown(bool force = false) override;
 	virtual void DoState(PointerWrap &p) override;
 
-protected:
-	bool UseAutoStatus() override {
-		return false;
-	}
-
 private:
 	void DrawBanner();
 	SceUtilityNetconfParam request;

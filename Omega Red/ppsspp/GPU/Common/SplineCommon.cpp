@@ -28,6 +28,13 @@
 #include "GPU/ge_constants.h"
 #include "GPU/GPUState.h"  // only needed for UVScale stuff
 
+bool CanUseHardwareTessellation(GEPatchPrimType prim) {
+	if (g_Config.bHardwareTessellation && !g_Config.bSoftwareRendering) {
+		return CanUseHardwareTransform(PatchPrimToPrim(prim));
+	}
+	return false;
+}
+
 class SimpleBufferManager {
 private:
 	u8 *buf_;
@@ -396,7 +403,6 @@ public:
 								vert.nrm *= -1.0f;
 						} else {
 							vert.nrm.SetZero();
-							vert.nrm.z = 1.0f;
 						}
 					}
 				}
@@ -411,7 +417,7 @@ public:
 
 	static void Tessellate(OutputBuffers &output, const Surface &surface, const ControlPoints &points, const Weight2D &weights, u32 origVertType) {
 		const bool params[] = {
-			(origVertType & GE_VTYPE_NRM_MASK) != 0 || gstate.isLightingEnabled(),
+			(origVertType & GE_VTYPE_NRM_MASK) != 0,
 			(origVertType & GE_VTYPE_COL_MASK) != 0,
 			(origVertType & GE_VTYPE_TC_MASK) != 0,
 			cpu_info.bSSE4_1,

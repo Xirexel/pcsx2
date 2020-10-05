@@ -37,7 +37,6 @@ public:
 	ReportScreen(const std::string &gamePath);
 
 protected:
-	void postRender() override;
 	void update() override;
 	void resized() override;
 	void CreateViews() override;
@@ -61,7 +60,6 @@ protected:
 	int gameplay_ = -1;
 	bool enableReporting_;
 	bool ratingEnabled_;
-	bool tookScreenshot_ = false;
 	bool includeScreenshot_ = true;
 };
 

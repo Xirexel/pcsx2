@@ -30,7 +30,7 @@ namespace Omega_Red.Tools.Converters
         public object ConvertBack(object value, Type targetType, object parameter,
             System.Globalization.CultureInfo culture)
         {
-            return false;
+            throw new NotSupportedException();
         }
 
         #endregion

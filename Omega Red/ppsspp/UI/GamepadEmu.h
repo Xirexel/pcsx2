@@ -43,7 +43,7 @@ protected:
 
 class MultiTouchButton : public GamepadView {
 public:
-	MultiTouchButton(ImageID bgImg, ImageID bgDownImg, ImageID img, float scale, UI::LayoutParams *layoutParams)
+	MultiTouchButton(int bgImg, int bgDownImg, int img, float scale, UI::LayoutParams *layoutParams)
 		: GamepadView(layoutParams), scale_(scale), bgImg_(bgImg), bgDownImg_(bgDownImg), img_(img) {
 	}
 
@@ -61,9 +61,9 @@ protected:
 	float scale_;
 
 private:
-	ImageID bgImg_;
-	ImageID bgDownImg_;
-	ImageID img_;
+	int bgImg_;
+	int bgDownImg_;
+	int img_;
 	float bgAngle_ = 0.0f;
 	float angle_ = 0.0f;
 	bool flipImageH_ = false;
@@ -71,7 +71,7 @@ private:
 
 class BoolButton : public MultiTouchButton {
 public:
-	BoolButton(bool *value, ImageID bgImg, ImageID bgDownImg, ImageID img, float scale, UI::LayoutParams *layoutParams)
+	BoolButton(bool *value, int bgImg, int bgDownImg, int img, float scale, UI::LayoutParams *layoutParams)
 		: MultiTouchButton(bgImg, bgDownImg, img, scale, layoutParams), value_(value) {
 
 	}
@@ -86,7 +86,7 @@ private:
 
 class FPSLimitButton : public MultiTouchButton {
 public:
-	FPSLimitButton(FPSLimit limit, ImageID bgImg, ImageID bgDownImg, ImageID img, float scale, UI::LayoutParams *layoutParams)
+	FPSLimitButton(FPSLimit limit, int bgImg, int bgDownImg, int img, float scale, UI::LayoutParams *layoutParams)
 		: MultiTouchButton(bgImg, bgDownImg, img, scale, layoutParams), limit_(limit) {
 
 	}
@@ -97,31 +97,9 @@ private:
 	FPSLimit limit_;
 };
 
-class RapidFireButton : public MultiTouchButton {
-public:
-	RapidFireButton(ImageID bgImg, ImageID bgDownImg, ImageID img, float scale, UI::LayoutParams *layoutParams)
-		: MultiTouchButton(bgImg, bgDownImg, img, scale, layoutParams) {
-	}
-	void Touch(const TouchInput &input) override;
-	bool IsDown() override;
-};
-
-class AnalogRotationButton : public MultiTouchButton {
-public:
-	AnalogRotationButton(bool clockWise, ImageID bgImg, ImageID bgDownImg, ImageID img, float scale, UI::LayoutParams *layoutParams)
-		: MultiTouchButton(bgImg, bgDownImg, img, scale, layoutParams), clockWise_(clockWise) {
-	}
-	void Touch(const TouchInput &input) override;
-	void Update() override;
-
-private:
-	bool autoRotating_ = false;
-	bool clockWise_;
-};
-
 class PSPButton : public MultiTouchButton {
 public:
-	PSPButton(int pspButtonBit, ImageID bgImg, ImageID bgDownImg, ImageID img, float scale, UI::LayoutParams *layoutParams)
+	PSPButton(int pspButtonBit, int bgImg, int bgDownImg, int img, float scale, UI::LayoutParams *layoutParams)
 		: MultiTouchButton(bgImg, bgDownImg, img, scale, layoutParams), pspButtonBit_(pspButtonBit) {
 	}
 	void Touch(const TouchInput &input) override;
@@ -133,7 +111,7 @@ private:
 
 class PSPDpad : public GamepadView {
 public:
-	PSPDpad(ImageID arrowIndex, ImageID arrowDownIndex, ImageID overlayIndex, float scale, float spacing, UI::LayoutParams *layoutParams);
+	PSPDpad(int arrowIndex, int arrowDownIndex, int overlayIndex, float scale, float spacing, UI::LayoutParams *layoutParams);
 
 	void Touch(const TouchInput &input) override;
 	void Draw(UIContext &dc) override;
@@ -141,9 +119,9 @@ public:
 
 private:
 	void ProcessTouch(float x, float y, bool down);
-	ImageID arrowIndex_;
-	ImageID arrowDownIndex_;
-	ImageID overlayIndex_;
+	int arrowIndex_;
+	int arrowDownIndex_;
+	int overlayIndex_;
 
 	float scale_;
 	float spacing_;
@@ -154,41 +132,25 @@ private:
 
 class PSPStick : public GamepadView {
 public:
-	PSPStick(ImageID bgImg, ImageID stickImg, ImageID stickDownImg, int stick, float scale, UI::LayoutParams *layoutParams);
+	PSPStick(int bgImg, int stickImg, int stickDownImg, int stick, float scale, UI::LayoutParams *layoutParams);
 
 	void Touch(const TouchInput &input) override;
 	void Draw(UIContext &dc) override;
 	void GetContentDimensions(const UIContext &dc, float &w, float &h) const override;
 
-protected:
-	int dragPointerId_;
-	ImageID bgImg_;
-	ImageID stickImageIndex_;
-	ImageID stickDownImg_;
+private:
+	void ProcessTouch(float x, float y, bool down);
 
+	int dragPointerId_;
+	int bgImg_;
+	int stickImageIndex_;
+	int stickDownImg_;
 	int stick_;
 	float stick_size_;
 	float scale_;
 
 	float centerX_;
 	float centerY_;
-
-private:
-	void ProcessTouch(float x, float y, bool down);
-};
-
-class PSPCustomStick : public PSPStick {
-public:
-	PSPCustomStick(ImageID bgImg, ImageID stickImg, ImageID stickDownImg, float scale, UI::LayoutParams *layoutParams);
-
-	void Touch(const TouchInput &input) override;
-	void Draw(UIContext &dc) override;
-
-private:
-	void ProcessTouch(float x, float y, bool down);
-
-	float posX_ = 0.0f;
-	float posY_ = 0.0f;
 };
 
 //initializes the layout from Config. if a default layout does not exist,
@@ -201,11 +163,10 @@ const int baseActionButtonSpacing = 60;
 
 class ComboKey : public MultiTouchButton {
 public:
-	ComboKey(int pspButtonBit, bool toggle, ImageID bgImg, ImageID bgDownImg, ImageID img, float scale, UI::LayoutParams *layoutParams)
-		: MultiTouchButton(bgImg, bgDownImg, img, scale, layoutParams), pspButtonBit_(pspButtonBit), toggle_(toggle) {
+	ComboKey(int pspButtonBit, int bgImg, int bgDownImg, int img, float scale, UI::LayoutParams *layoutParams)
+		: MultiTouchButton(bgImg, bgDownImg, img, scale, layoutParams), pspButtonBit_(pspButtonBit)  {
 	}
 	void Touch(const TouchInput &input) override;
 private:
 	int pspButtonBit_;
-	bool toggle_;
 };

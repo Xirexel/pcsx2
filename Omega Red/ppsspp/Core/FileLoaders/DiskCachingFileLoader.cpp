@@ -21,7 +21,6 @@
 #include <mutex>
 #include <cstring>
 
-#include "ppsspp_config.h"
 #include "file/file_util.h"
 #include "file/free.h"
 #include "util/text/utf8.h"
@@ -29,11 +28,6 @@
 #include "Common/CommonWindows.h"
 #include "Core/FileLoaders/DiskCachingFileLoader.h"
 #include "Core/System.h"
-
-#if PPSSPP_PLATFORM(SWITCH)
-// Far from optimal, but I guess it works...
-#define fseeko fseek
-#endif
 
 static const char *CACHEFILE_MAGIC = "ppssppDC";
 static const s64 SAFETY_FREE_DISK_SPACE = 768 * 1024 * 1024; // 768 MB

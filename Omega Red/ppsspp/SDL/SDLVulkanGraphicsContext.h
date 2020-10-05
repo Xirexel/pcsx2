@@ -1,13 +1,13 @@
 #include "SDL.h"
+#if !defined(__APPLE__)
 #include "SDL_syswm.h"
+#endif
 
 #include "Common/GraphicsContext.h"
 #include "Common/Vulkan/VulkanContext.h"
 #include "Common/Vulkan/VulkanDebug.h"
 
 #include "thin3d/thin3d.h"
-
-class VulkanRenderManager;
 
 class SDLVulkanGraphicsContext : public GraphicsContext {
 public:
@@ -24,9 +24,13 @@ public:
 		// We don't do it this way.
 	}
 
-	void Resize() override;
-
-	void Poll() override;
+	void Resize() override {
+		draw_->HandleEvent(Draw::Event::LOST_BACKBUFFER, vulkan_->GetBackbufferWidth(), vulkan_->GetBackbufferHeight());
+		vulkan_->DestroyObjects();
+		vulkan_->ReinitSurface();
+		vulkan_->InitObjects();
+		draw_->HandleEvent(Draw::Event::GOT_BACKBUFFER, vulkan_->GetBackbufferWidth(), vulkan_->GetBackbufferHeight());
+	}
 
 	void SwapInterval(int interval) override {
 	}
@@ -40,5 +44,5 @@ public:
 private:
 	Draw::DrawContext *draw_ = nullptr;
 	VulkanContext *vulkan_ = nullptr;
-	VulkanRenderManager *renderManager_ = nullptr;
+	VulkanLogOptions g_LogOptions;
 };

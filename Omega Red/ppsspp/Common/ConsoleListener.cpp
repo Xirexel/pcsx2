@@ -15,7 +15,7 @@
 // Official SVN repository and contact information can be found at
 // http://code.google.com/p/dolphin-emu/
 
-#include <atomic>
+
 #include <algorithm>  // min
 #include <string> // System: To be able to add strings with "+"
 #include <math.h>
@@ -35,6 +35,7 @@
 #include "util/text/utf8.h"
 #include "Common.h"
 #include "ConsoleListener.h" // Common
+#include "Atomics.h"
 
 #if defined(USING_WIN_UI)
 const int LOG_PENDING_MAX = 120 * 10000;
@@ -48,8 +49,8 @@ HANDLE ConsoleListener::hTriggerEvent = NULL;
 CRITICAL_SECTION ConsoleListener::criticalSection;
 
 char *ConsoleListener::logPending = NULL;
-std::atomic<u32> ConsoleListener::logPendingReadPos;
-std::atomic<u32> ConsoleListener::logPendingWritePos;
+volatile u32 ConsoleListener::logPendingReadPos = 0;
+volatile u32 ConsoleListener::logPendingWritePos = 0;
 #endif
 
 ConsoleListener::ConsoleListener() : bHidden(true)
@@ -63,7 +64,11 @@ ConsoleListener::ConsoleListener() : bHidden(true)
 		logPending = new char[LOG_PENDING_MAX];
 	}
 	++refCount;
-#elif PPSSPP_PLATFORM(ANDROID) || PPSSPP_PLATFORM(IOS) || PPSSPP_PLATFORM(UWP) || PPSSPP_PLATFORM(SWITCH)
+#elif defined(ANDROID)
+	bUseColor = false;
+#elif defined(IOS)
+	bUseColor = false;
+#elif PPSSPP_PLATFORM(UWP)
 	bUseColor = false;
 #elif defined(_MSC_VER)
 	bUseColor = false;
@@ -187,7 +192,7 @@ void ConsoleListener::Close()
 	{
 		if (hThread != NULL)
 		{
-			logPendingWritePos.store((u32)-1, std::memory_order_release);
+			Common::AtomicStoreRelease(logPendingWritePos, (u32) -1);
 
 			SetEvent(hTriggerEvent);
 			WaitForSingleObject(hThread, LOG_SHUTDOWN_DELAY_MS);
@@ -314,7 +319,7 @@ void ConsoleListener::LogWriterThread()
 		WaitForSingleObject(hTriggerEvent, INFINITE);
 		Sleep(LOG_LATENCY_DELAY_MS);
 
-		u32 logRemotePos = logPendingWritePos.load(std::memory_order_acquire);
+		u32 logRemotePos = Common::AtomicLoadAcquire(logPendingWritePos);
 		if (logRemotePos == (u32) -1)
 			break;
 		else if (logRemotePos == logPendingReadPos)
@@ -322,7 +327,7 @@ void ConsoleListener::LogWriterThread()
 		else
 		{
 			EnterCriticalSection(&criticalSection);
-			logRemotePos = logPendingWritePos.load(std::memory_order_acquire);
+			logRemotePos = Common::AtomicLoadAcquire(logPendingWritePos);
 
 			int start = 0;
 			if (logRemotePos < logPendingReadPos)
@@ -397,7 +402,7 @@ void ConsoleListener::SendToThread(LogTypes::LOG_LEVELS Level, const char *Text)
 	}
 
 	EnterCriticalSection(&criticalSection);
-	u32 logWritePos = logPendingWritePos.load();
+	u32 logWritePos = Common::AtomicLoad(logPendingWritePos);
 	u32 prevLogWritePos = logWritePos;
 	if (logWritePos + ColorLen + Len >= LOG_PENDING_MAX)
 	{
@@ -447,7 +452,7 @@ void ConsoleListener::SendToThread(LogTypes::LOG_LEVELS Level, const char *Text)
 		return;
 	}
 
-	logPendingWritePos.store(logWritePos, std::memory_order::memory_order_release);
+	Common::AtomicStoreRelease(logPendingWritePos, logWritePos);
 	LeaveCriticalSection(&criticalSection);
 
 	SetEvent(hTriggerEvent);

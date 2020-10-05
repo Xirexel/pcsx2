@@ -51,22 +51,18 @@
 #include "Windows/WindowsHost.h"
 #include "Windows/MainWindow.h"
 
-#if PPSSPP_API(ANY_GL)
-#include "Windows/GPU/WindowsGLContext.h"
-#endif
-#include "Windows/GPU/WindowsVulkanContext.h"
-#include "Windows/GPU/D3D9Context.h"
 #include "Windows/GPU/D3D11Context.h"
 
 #include "Windows/Debugger/DebuggerShared.h"
 #include "Windows/Debugger/Debugger_Disasm.h"
 #include "Windows/Debugger/Debugger_MemoryDlg.h"
 
-#ifndef _M_ARM
 #include "Windows/DinputDevice.h"
-#endif
 #include "Windows/XinputDevice.h"
+#include "Windows/KeyboardDevice.h"
 #include "Windows/OmegaRedinputDevice.h"
+
+
 
 #include "Windows/main.h"
 #include "UI/OnScreenDisplay.h"
@@ -81,25 +77,26 @@ static BOOL PostDialogMessage(Dialog *dialog, UINT message, WPARAM wParam = 0, L
 }
 
 WindowsHost::WindowsHost(HINSTANCE hInstance, IUnknown *a_PtrUnkDirectX11Device, HWND mainWindow, HWND displayWindow, HWND captureTarget)
-    : hInstance_(hInstance)
-    , unkDirectX11Device_(a_PtrUnkDirectX11Device)
-    , mainWindow_(mainWindow)
-    , displayWindow_(displayWindow)
-    , captureTarget_(captureTarget)
+    : hInstance_(hInstance), 
+	unkDirectX11Device_(a_PtrUnkDirectX11Device),
+		mainWindow_(mainWindow), displayWindow_(displayWindow), captureTarget_(captureTarget)
 {
 	g_mouseDeltaX = 0;
 	g_mouseDeltaY = 0;
 
-    input.push_back(std::make_unique<OmegaRedinputDevice>());
+    input.push_back(std::shared_ptr<InputDevice>(new OmegaRedinputDevice()));
 	//add first XInput device to respond
-	//input.push_back(std::make_unique<XinputDevice>());
-#ifndef _M_ARM
+	input.push_back(std::shared_ptr<InputDevice>(new XinputDevice()));
 	//find all connected DInput devices of class GamePad
-	//numDinputDevices_ = DinputDevice::getNumPads();
-	//for (size_t i = 0; i < numDinputDevices_; i++) {
-	//	input.push_back(std::make_unique<DinputDevice>(static_cast<int>(i)));
-	//}
-#endif
+	numDinputDevices_ = DinputDevice::getNumPads();
+	for (size_t i = 0; i < numDinputDevices_; i++) {
+		input.push_back(std::shared_ptr<InputDevice>(new DinputDevice(static_cast<int>(i))));
+	}
+	keyboard = std::shared_ptr<KeyboardDevice>(new KeyboardDevice());
+	input.push_back(keyboard);
+
+	
+
 	SetConsolePosition();
 }
 
@@ -119,22 +116,22 @@ void WindowsHost::UpdateConsolePosition() {
 }
 
 bool WindowsHost::InitGraphics(std::string *error_message, GraphicsContext **ctx) {
-    WindowsGraphicsContext *graphicsContext = nullptr;
+	WindowsGraphicsContext *graphicsContext = nullptr;
 
-    D3D11Context *d3D11ContextContext = new D3D11Context();
+	D3D11Context* d3D11ContextContext = new D3D11Context();
 
-    graphicsContext = d3D11ContextContext;
+	graphicsContext = d3D11ContextContext;
 
-    if (d3D11ContextContext->Init(hInstance_, unkDirectX11Device_, displayWindow_, captureTarget_, error_message)) {
-        *ctx = graphicsContext;
-        gfx_ = graphicsContext;
-        return true;
-    } else {
-        delete graphicsContext;
-        *ctx = nullptr;
-        gfx_ = nullptr;
-        return false;
-    }
+	if (d3D11ContextContext->Init(hInstance_, unkDirectX11Device_, displayWindow_, captureTarget_, error_message)) {
+		*ctx = graphicsContext;
+		gfx_ = graphicsContext;
+		return true;
+	} else {
+		delete graphicsContext;			   
+		*ctx = nullptr;
+		gfx_ = nullptr;
+		return false;
+	}
 }
 
 void WindowsHost::ShutdownGraphics() {
@@ -202,22 +199,24 @@ void WindowsHost::PollControllers() {
 	static int checkCounter = 0;
 	static const int CHECK_FREQUENCY = 71;
 	if (checkCounter++ > CHECK_FREQUENCY) {
-#ifndef _M_ARM
 		size_t newCount = DinputDevice::getNumPads();
 		if (newCount > numDinputDevices_) {
 			INFO_LOG(SYSTEM, "New controller device detected");
 			for (size_t i = numDinputDevices_; i < newCount; i++) {
-				input.push_back(std::make_unique<DinputDevice>(static_cast<int>(i)));
+				input.push_back(std::shared_ptr<InputDevice>(new DinputDevice(static_cast<int>(i))));
 			}
 			numDinputDevices_ = newCount;
 		}
-#endif
+
 		checkCounter = 0;
 	}
 
+	bool doPad = true;
 	for (const auto &device : input) {
+		if (!doPad && device->IsPad())
+			continue;
 		if (device->UpdateState() == InputDevice::UPDATESTATE_SKIP_PAD)
-			break;
+			doPad = false;
 	}
 
 	// Disabled by default, needs a workaround to map to psp keys.
@@ -236,8 +235,8 @@ void WindowsHost::PollControllers() {
 		axisY.value = my;
 
 		if (GetUIState() == UISTATE_INGAME || g_Config.bMapMouse) {
-			NativeAxis(axisX);
-			NativeAxis(axisY);
+			if (fabsf(mx) > 0.01f) NativeAxis(axisX);
+			if (fabsf(my) > 0.01f) NativeAxis(axisY);
 		}
 	}
 
@@ -343,7 +342,6 @@ bool WindowsHost::CreateDesktopShortcut(std::string argumentPath, std::string ga
 
 
 	// Get the desktop folder
-	// TODO: Not long path safe.
 	wchar_t *pathbuf = new wchar_t[MAX_PATH + gameTitle.size() + 100];
 	SHGetFolderPath(0, CSIDL_DESKTOPDIRECTORY, NULL, SHGFP_TYPE_CURRENT, pathbuf);
 	
@@ -361,16 +359,10 @@ bool WindowsHost::CreateDesktopShortcut(std::string argumentPath, std::string ga
 	wcscat(pathbuf, L"\\");
 	wcscat(pathbuf, ConvertUTF8ToWString(gameTitle).c_str());
 
-	std::wstring moduleFilename;
-	size_t sz;
-	do {
-		moduleFilename.resize(moduleFilename.size() + MAX_PATH);
-		// On failure, this will return the same value as passed in, but success will always be one lower.
-		sz = GetModuleFileName(nullptr, &moduleFilename[0], (DWORD)moduleFilename.size());
-	} while (sz >= moduleFilename.size());
-	moduleFilename.resize(sz);
+	wchar_t module[MAX_PATH];
+	GetModuleFileName(NULL, module, MAX_PATH);
 
-	CreateLink(moduleFilename.c_str(), ConvertUTF8ToWString(argumentPath).c_str(), pathbuf, ConvertUTF8ToWString(gameTitle).c_str());
+	CreateLink(module, ConvertUTF8ToWString(argumentPath).c_str(), pathbuf, ConvertUTF8ToWString(gameTitle).c_str());
 
 	delete [] pathbuf;
 	return false;

@@ -597,9 +597,10 @@ BOOL CDisasm::DlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case IDC_ALLFUNCTIONS:
-				if (g_symbolMap)
+				{
 					g_symbolMap->FillSymbolListBox(GetDlgItem(m_hDlg, IDC_FUNCTIONLIST),ST_FUNCTION);
-				break;
+					break;
+				}
 			default:
 				return FALSE;
 			}
@@ -861,8 +862,7 @@ void CDisasm::SetDebugMode(bool _bDebug, bool switchPC)
 
 void CDisasm::NotifyMapLoaded()
 {
-	if (g_symbolMap)
-		g_symbolMap->FillSymbolListBox(GetDlgItem(m_hDlg, IDC_FUNCTIONLIST),ST_FUNCTION);
+	g_symbolMap->FillSymbolListBox(GetDlgItem(m_hDlg, IDC_FUNCTIONLIST),ST_FUNCTION);
 	CtrlDisAsmView *ptr = CtrlDisAsmView::getFrom(GetDlgItem(m_hDlg,IDC_DISASMVIEW));
 	ptr->clearFunctions();
 	ptr->redraw();

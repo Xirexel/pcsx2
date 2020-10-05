@@ -12,7 +12,6 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Omega_Red.Emulators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +20,12 @@ using System.Threading.Tasks;
 
 namespace Omega_Red.Models
 {
+    public enum GameType
+    {
+        PS2,
+        PSP
+    }
+
     public class IsoInfo
     {
         public string Title { get; set; }
@@ -45,8 +50,6 @@ namespace Omega_Red.Models
 
         public bool IsCloudsave { get; set; }
 
-        public bool IsCloudOnlysave { get; set; }
-
-        public string SelectedMemoryCardFile { get; set; }
+        public bool IsCloudOnlysave { get; set; }        
     }
 }

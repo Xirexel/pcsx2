@@ -39,16 +39,20 @@ protected:
 	virtual UI::EventReturn OnZoomTypeChange(UI::EventParams &e);
 
 private:
-	DragDropDisplay *displayRepresentation_ = nullptr;
-	UI::ChoiceStrip *mode_ = nullptr;
-	bool dragging_ = false;
-	bool bRotated_ = false;
-	bool stickToEdgeX_ = false;
-	bool stickToEdgeY_ = false;
+	DragDropDisplay *picked_;
+	DragDropDisplay *displayRepresentation_;
+	UI::ChoiceStrip *mode_;
+	UI::PopupMultiChoice *zoom_;
+	UI::PopupMultiChoice *rotation_;
+	bool displayRotEnable_;
+	bool bRotated;
+	bool stickToEdgeX;
+	bool stickToEdgeY;
 	// Touch down state for drag to resize etc
-	float startY_ = 0.0f;
-	float startScale_ = 1.0f;
-	int offsetTouchX_ = 0;
-	int offsetTouchY_ = 0;
+	float startX_;
+	float startY_;
+	float startScale_, scaleUpdate_;
+	float displayRepresentationScale_;
+	int offsetTouchX, offsetTouchY;
 	
 };

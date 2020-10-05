@@ -66,21 +66,15 @@ namespace Omega_Red.ViewModels
     {
         private readonly Action<T> _action;
 
-        private Action<object> m_callback_action;
-
         private CheckStateDelegate m_CheckStateDelegate;
-        private Action<object, bool> startStop;
-        private Func<bool> p;
 
-        public DelegateCommand(Action<T> action, CheckStateDelegate a_CheckStateDelegate = null, Action<object> a_callback_action = null)
+        public DelegateCommand(Action<T> action, CheckStateDelegate a_CheckStateDelegate = null)
         {
             _action = action;
 
             m_CheckStateDelegate = a_CheckStateDelegate;
-
-            m_callback_action = a_callback_action;
         }
-        
+
         public void Execute(object parameter)
         {
             _action(parameter as T);
@@ -88,9 +82,6 @@ namespace Omega_Red.ViewModels
 
         public bool CanExecute(object parameter)
         {
-            if (m_callback_action != null && parameter != null)
-                m_callback_action(parameter);
-
             if (m_CheckStateDelegate == null)
                 return true;
 

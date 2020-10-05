@@ -46,13 +46,6 @@ GSDevice11::GSDevice11()
 
 	m_mipmap = theApp.GetConfigI("mipmap");
 	m_upscale_multiplier = theApp.GetConfigI("upscale_multiplier");
-	
-	const BiFiltering nearest_filter = static_cast<BiFiltering>(theApp.GetConfigI("filter"));
-	const int aniso_level = theApp.GetConfigI("MaxAnisotropy");
-	if ((nearest_filter != BiFiltering::Nearest && !theApp.GetConfigB("paltex") && aniso_level))
-		m_aniso_filter = aniso_level;
-	else
-		m_aniso_filter = 0;
 }
 
 bool GSDevice11::LoadD3DCompiler()
@@ -233,12 +226,6 @@ bool GSDevice11::Create(const std::shared_ptr<GSWnd> &wnd)
 		return false;
 	}
 
-	// Set maximum texture size limit based on supported feature level.
-	if (level >= D3D_FEATURE_LEVEL_11_0)
-		m_d3d_texsize = D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION;
-	else
-		m_d3d_texsize = D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION;
-
 	{	// HACK: check nVIDIA
 		// Note: It can cause issues on several games such as SOTC, Fatal Frame, plus it adds border offset.
 		bool disable_safe_features = theApp.GetConfigB("UserHacks") && theApp.GetConfigB("UserHacks_Disable_Safe_Features");
@@ -415,18 +402,18 @@ bool GSDevice11::Create(const std::shared_ptr<GSWnd> &wnd)
 
 	memset(&sd, 0, sizeof(sd));
 
-	sd.Filter = m_aniso_filter ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sd.Filter = theApp.GetConfigI("MaxAnisotropy") && !theApp.GetConfigB("paltex") ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	sd.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sd.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sd.MinLOD = -FLT_MAX;
 	sd.MaxLOD = FLT_MAX;
-	sd.MaxAnisotropy = m_aniso_filter;
+	sd.MaxAnisotropy = theApp.GetConfigI("MaxAnisotropy");
 	sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
 	hr = m_dev->CreateSamplerState(&sd, &m_convert.ln);
 
-	sd.Filter = m_aniso_filter ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_POINT;
+	sd.Filter = theApp.GetConfigI("MaxAnisotropy") && !theApp.GetConfigB("paltex") ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_POINT;
 
 	hr = m_dev->CreateSamplerState(&sd, &m_convert.pt);
 
@@ -645,18 +632,14 @@ void GSDevice11::ClearStencil(GSTexture* t, uint8 c)
 
 GSTexture* GSDevice11::CreateSurface(int type, int w, int h, int format)
 {
-	ASSERT(w > 0 && w <= m_d3d_texsize);
-	ASSERT(h > 0 && h <= m_d3d_texsize);
-
 	HRESULT hr;
 
 	D3D11_TEXTURE2D_DESC desc;
 
 	memset(&desc, 0, sizeof(desc));
 
-	// Texture limit for D3D10/11 min 1, max 8192 D3D10, max 16384 D3D11.
-	desc.Width = std::max(1, std::min(w, m_d3d_texsize));
-	desc.Height = std::max(1, std::min(h, m_d3d_texsize));
+	desc.Width = std::max(1, std::min(w, 8192)); // Texture limit for D3D10 min 1, max 8192
+	desc.Height = std::max(1, std::min(h, 8192));
 	desc.Format = (DXGI_FORMAT)format;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;

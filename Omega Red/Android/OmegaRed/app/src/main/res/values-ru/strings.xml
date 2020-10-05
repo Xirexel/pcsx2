@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Красный Омега</string>
+    <string name="controlBtnTitle">Контроль</string>
+    <string name="selectBIOSBtn">БИОС</string>
+    <string name="selectISOBtnTitle">Игры</string>
+    <string name="ZoneTitle">Регион:</string>
+    <string name="VersionTitle">"Версия: "</string>
+    <string name="DateTitle">Дата: </string>
+    <string name="TypeISOTitle">Тип файла:</string>
+    <string name="GameDiscTypeTitle">Тип диска:</string>
+    <string name="DiscRegionTypeTitle">Регион:</string>
+    <string name="removeBtn">Удалить</string>
+    <string name="stopBtnTitle">Стоп</string>
+    <string name="addBtn">Добавить</string>
+    <string name="hideBtnTitle">Скрыть</string>
+    <string name="startPauseBtnTitle">Старт</string>
+</resources>

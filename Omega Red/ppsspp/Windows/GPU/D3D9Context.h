@@ -53,6 +53,5 @@ private:
 	HWND hWnd_;   // Holds Our Window Handle
 	HMODULE hD3D9_;
 	D3DPRESENT_PARAMETERS presentParams_;
-	int swapInterval_ = 0;
 };
 

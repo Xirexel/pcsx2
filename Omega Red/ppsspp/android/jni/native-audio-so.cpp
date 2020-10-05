@@ -10,7 +10,7 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 
-#include "base/logging.h"
+#include "../base/logging.h"
 #include "native-audio-so.h"
 
 AudioContext::AudioContext(AndroidAudioCallback cb, int _FramesPerBuffer, int _SampleRate)
@@ -56,9 +56,7 @@ void OpenSLContext::BqPlayerCallback(SLAndroidSimpleBufferQueueItf bq) {
 		ELOG("OpenSL ES: Failed to enqueue! %i %i", renderedFrames, sizeInBytes);
 	}
 
-	curBuffer += 1; // Switch buffer
-	if (curBuffer == NUM_BUFFERS)
-		curBuffer = 0;
+	curBuffer ^= 1;	// Switch buffer
 }
 
 // create the engine and output mix objects
@@ -71,7 +69,6 @@ bool OpenSLContext::Init() {
 	result = slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
 	if (result != SL_RESULT_SUCCESS) {
 		ELOG("OpenSL ES: Failed to create the engine: %d", (int)result);
-		engineObject = nullptr;
 		return false;
 	}
 	result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
@@ -79,20 +76,14 @@ bool OpenSLContext::Init() {
 	result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
 	assert(SL_RESULT_SUCCESS == result);
 	result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);
-	if (result != SL_RESULT_SUCCESS) {
-		ELOG("OpenSL ES: Failed to create output mix: %d", (int)result);
-		(*engineObject)->Destroy(engineObject);
-		engineEngine = nullptr;
-		engineObject = nullptr;
-		return false;
-	}
+	assert(SL_RESULT_SUCCESS == result);
 	result = (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
 	assert(SL_RESULT_SUCCESS == result);
 
 	// The constants, such as SL_SAMPLINGRATE_44_1, are just 44100000.
 	SLuint32 sr = (SLuint32)sampleRate * 1000;
 
-	SLDataLocator_AndroidSimpleBufferQueue loc_bufq = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, NUM_BUFFERS};
+	SLDataLocator_AndroidSimpleBufferQueue loc_bufq = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};
 	SLDataFormat_PCM format_pcm = {
 		SL_DATAFORMAT_PCM,
 		2,
@@ -115,13 +106,7 @@ bool OpenSLContext::Init() {
 	result = (*engineEngine)->CreateAudioPlayer(engineEngine, &bqPlayerObject, &audioSrc, &audioSnk, 2, ids, req);
 	if (result != SL_RESULT_SUCCESS) {
 		ELOG("OpenSL ES: CreateAudioPlayer failed: %d", (int)result);
-		(*outputMixObject)->Destroy(outputMixObject);
-		outputMixObject = nullptr;
-
 		// Should really tear everything down here. Sigh.
-		(*engineObject)->Destroy(engineObject);
-		engineEngine = nullptr;
-		engineObject = nullptr;
 		return false;
 	}
 
@@ -139,20 +124,18 @@ bool OpenSLContext::Init() {
 	result = (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
 	assert(SL_RESULT_SUCCESS == result);
 
-	// Allocate and enqueue N empty buffers.
-	for (int i = 0; i < NUM_BUFFERS; i++) {
-		buffer[i] = new short[framesPerBuffer * 2]{};
-	}
-
-	int sizeInBytes = framesPerBuffer * 2 * sizeof(short);
-	for (int i = 0; i < NUM_BUFFERS; i++) {
-		result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, buffer[i], sizeInBytes);
-		if (SL_RESULT_SUCCESS != result) {
-			return false;
-		}
-	}
+	// Render and enqueue a first buffer. (or should we just play the buffer empty?)
+	buffer[0] = new short[framesPerBuffer * 2];
+	buffer[1] = new short[framesPerBuffer * 2];
 
 	curBuffer = 0;
+	audioCallback(buffer[curBuffer], framesPerBuffer);
+
+	result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, buffer[curBuffer], sizeof(buffer[curBuffer]));
+	if (SL_RESULT_SUCCESS != result) {
+		return false;
+	}
+	curBuffer ^= 1;
 	return true;
 }
 
@@ -174,6 +157,7 @@ OpenSLContext::~OpenSLContext() {
 		bqPlayerObject = nullptr;
 		bqPlayerPlay = nullptr;
 		bqPlayerBufferQueue = nullptr;
+		bqPlayerMuteSolo = nullptr;
 		bqPlayerVolume = nullptr;
 	}
 
@@ -191,11 +175,10 @@ OpenSLContext::~OpenSLContext() {
 		engineObject = nullptr;
 		engineEngine = nullptr;
 	}
-
-	for (int i = 0; i < NUM_BUFFERS; i++) {
-		delete[] buffer[i];
-		buffer[i] = nullptr;
-	}
+	delete [] buffer[0];
+	delete [] buffer[1];
+	buffer[0] = nullptr;
+	buffer[1] = nullptr;
 	ILOG("OpenSLWrap_Shutdown - finished");
 }	
 

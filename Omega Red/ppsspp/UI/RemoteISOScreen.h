@@ -38,9 +38,8 @@ protected:
 	UI::EventReturn HandleBrowse(UI::EventParams &e);
 	UI::EventReturn HandleSettings(UI::EventParams &e);
 
-	UI::TextView *firewallWarning_ = nullptr;
-	bool serverRunning_ = false;
-	bool serverStopping_ = false;
+	bool serverRunning_;
+	bool serverStopping_;
 };
 
 enum class ScanStatus {
@@ -64,29 +63,25 @@ protected:
 	ScanStatus GetStatus();
 	void ExecuteScan();
 	void ExecuteLoad();
-	bool FindServer(std::string &resultHost, int &resultPort);
 
 	UI::TextView *statusView_;
 
-	ScanStatus status_ = ScanStatus::SCANNING;
-	std::string statusMessage_;
-	double nextRetry_ = 0.0;
+	ScanStatus status_;
+	double nextRetry_;
 	std::thread *scanThread_;
 	std::mutex statusLock_;
 	std::string host_;
 	int port_;
-	std::string url_;
 	std::vector<std::string> games_;
 };
 
 class RemoteISOBrowseScreen : public MainScreen {
 public:
-	RemoteISOBrowseScreen(const std::string &url, const std::vector<std::string> &games);
+	RemoteISOBrowseScreen(const std::vector<std::string> &games);
 
 protected:
 	void CreateViews() override;
 
-	std::string url_;
 	std::vector<std::string> games_;
 };
 

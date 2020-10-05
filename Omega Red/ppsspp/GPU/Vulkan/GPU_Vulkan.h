@@ -66,8 +66,6 @@ public:
 		return textureCacheVulkan_;
 	}
 
-	std::string GetGpuProfileString();
-
 protected:
 	void FinishDeferred() override;
 
@@ -78,8 +76,9 @@ private:
 	void CheckFlushOp(int cmd, u32 diff);
 	void BuildReportingInfo();
 	void InitClear() override;
-	void CopyDisplayToOutput(bool reallyDirty) override;
+	void CopyDisplayToOutput() override;
 	void Reinitialize() override;
+	inline void UpdateVsyncInterval(bool force);
 
 	void InitDeviceObjects();
 	void DestroyDeviceObjects();

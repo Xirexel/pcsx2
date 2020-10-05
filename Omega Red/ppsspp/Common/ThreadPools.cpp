@@ -1,16 +1,18 @@
 #include "ThreadPools.h"
 
 #include "../Core/Config.h"
-#include "Common/MakeUnique.h"
 
-std::unique_ptr<ThreadPool> GlobalThreadPool::pool;
-std::once_flag GlobalThreadPool::init_flag;
+std::shared_ptr<ThreadPool> GlobalThreadPool::pool;
+bool  GlobalThreadPool::initialized = false;
 
 void GlobalThreadPool::Loop(const std::function<void(int,int)>& loop, int lower, int upper) {
-	std::call_once(init_flag, Inititialize);
+	Inititialize();
 	pool->ParallelLoop(loop, lower, upper);
 }
 
 void GlobalThreadPool::Inititialize() {
-	pool = make_unique<ThreadPool>(g_Config.iNumWorkerThreads);
+	if(!initialized) {
+		pool = std::make_shared<ThreadPool>(g_Config.iNumWorkerThreads);
+		initialized = true;
+	}
 }

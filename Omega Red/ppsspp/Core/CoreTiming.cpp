@@ -15,7 +15,7 @@
 // Official git repository and contact information can be found at
 // https://github.com/hrydgard/ppsspp and http://www.ppsspp.org/.
 
-#include <atomic>
+
 #include <vector>
 #include <cstdio>
 #include <mutex>
@@ -24,6 +24,7 @@
 #include "profiler/profiler.h"
 
 #include "Common/MsgHandler.h"
+#include "Common/Atomics.h"
 #include "Core/CoreTiming.h"
 #include "Core/Core.h"
 #include "Core/Config.h"
@@ -75,7 +76,7 @@ Event *eventPool = 0;
 Event *eventTsPool = 0;
 int allocatedTsEvents = 0;
 // Optimization to skip MoveEvents when possible.
-std::atomic<u32> hasTsEvents;
+volatile u32 hasTsEvents = 0;
 
 // Downcount has been moved to currentMIPS, to save a couple of clocks in every ARM JIT block
 // as we can already reach that structure through a register.
@@ -254,7 +255,7 @@ void ScheduleEvent_Threadsafe(s64 cyclesIntoFuture, int event_type, u64 userdata
 		tsLast->next = ne;
 	tsLast = ne;
 
-	hasTsEvents.store(1, std::memory_order::memory_order_release);
+	Common::AtomicStoreRelease(hasTsEvents, 1);
 }
 
 // Same as ScheduleEvent_Threadsafe(0, ...) EXCEPT if we are already on the CPU thread
@@ -534,7 +535,7 @@ void ProcessFifoWaitEvents()
 
 void MoveEvents()
 {
-	hasTsEvents.store(0, std::memory_order::memory_order_release);
+	Common::AtomicStoreRelease(hasTsEvents, 0);
 
 	std::lock_guard<std::mutex> lk(externalEventLock);
 	// Move events from async queue into main queue
@@ -578,7 +579,7 @@ void Advance()
 	globalTimer += cyclesExecuted;
 	currentMIPS->downcount = slicelength;
 
-	if (hasTsEvents.load(std::memory_order_acquire))
+	if (Common::AtomicLoadAcquire(hasTsEvents))
 		MoveEvents();
 	ProcessFifoWaitEvents();
 

@@ -19,3 +19,8 @@ bool wxThread::IsMain()
 {
 	return false;
 }
+
+unsigned int wxThread::GetCPUCount()
+{
+    return 1;
+}

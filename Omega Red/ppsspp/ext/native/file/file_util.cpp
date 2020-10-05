@@ -8,7 +8,6 @@
 #define strcasecmp _stricmp
 #endif
 #else
-#include <strings.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
@@ -29,13 +28,6 @@
 #if !defined(__linux__) && !defined(_WIN32) && !defined(__QNX__)
 #define stat64 stat
 #endif
-
-#ifdef HAVE_LIBNX
-// Far from optimal, but I guess it works...
-#define fseeko fseek
-#define ftello ftell
-#define fileno
-#endif // HAVE_LIBNX
 
 FILE *openCFile(const std::string &filename, const char *mode)
 {
@@ -219,19 +211,20 @@ bool FileInfo::operator <(const FileInfo &other) const {
 size_t getFilesInDir(const char *directory, std::vector<FileInfo> *files, const char *filter, int flags) {
 	size_t foundEntries = 0;
 	std::set<std::string> filters;
+	std::string tmp;
 	if (filter) {
-		std::string tmp;
 		while (*filter) {
 			if (*filter == ':') {
-				filters.insert(std::move(tmp));
+				filters.insert(tmp);
+				tmp = "";
 			} else {
 				tmp.push_back(*filter);
 			}
 			filter++;
 		}
-		if (!tmp.empty())
-			filters.insert(std::move(tmp));
 	}
+	if (tmp.size())
+		filters.insert(tmp);
 #ifdef _WIN32
 	// Find the first file in the directory.
 	WIN32_FIND_DATA ffd;
@@ -259,20 +252,14 @@ size_t getFilesInDir(const char *directory, std::vector<FileInfo> *files, const 
 		const std::string virtualName(result->d_name);
 #endif
 		// check for "." and ".."
-		if (virtualName == "." || virtualName == "..")
+		if (((virtualName[0] == '.') && (virtualName[1] == '\0')) ||
+			((virtualName[0] == '.') && (virtualName[1] == '.') && 
+			(virtualName[2] == '\0')))
 			continue;
 
 		// Remove dotfiles (optional with flag.)
-		if (!(flags & GETFILES_GETHIDDEN))
-		{
-#ifdef _WIN32
-			if ((ffd.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)
-				continue;
-#else
-			if (virtualName[0] == '.')
-				continue;
-#endif
-		}
+		if (!(flags & GETFILES_GETHIDDEN) && virtualName[0] == '.')
+			continue;
 
 		FileInfo info;
 		info.name = virtualName;
@@ -287,7 +274,6 @@ size_t getFilesInDir(const char *directory, std::vector<FileInfo> *files, const 
 		info.isDirectory = isDirectory(info.fullName);
 		info.exists = true;
 		info.size = 0;
-		info.isWritable = false;  // TODO - implement some kind of check
 		if (!info.isDirectory) {
 			std::string ext = getFileExtension(info.fullName);
 			if (filter) {
@@ -297,7 +283,7 @@ size_t getFilesInDir(const char *directory, std::vector<FileInfo> *files, const 
 		}
 
 		if (files)
-			files->push_back(std::move(info));
+			files->push_back(info);
 		foundEntries++;
 #ifdef _WIN32
 	} while (FindNextFile(hFind, &ffd) != 0);

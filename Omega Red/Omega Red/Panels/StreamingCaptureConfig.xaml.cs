@@ -74,7 +74,9 @@ namespace Omega_Red.Panels
             if(l_PasswordBox != null)
             {
                 Settings.Default.StreamName = l_PasswordBox.Password;
-                
+
+                Settings.Default.Save();
+
                 lstate = !string.IsNullOrWhiteSpace(Settings.Default.StreamName);
             }
 
@@ -97,6 +99,8 @@ namespace Omega_Red.Panels
                 if (l_ComboBoxItem != null)
                 {
                     Settings.Default.StreamAddress = (string)l_ComboBoxItem.Content;
+
+                    Settings.Default.Save();
                 }
             }
         }
@@ -109,6 +113,8 @@ namespace Omega_Red.Panels
             if (l_ComboBox != null)
             {
                 Settings.Default.StreamAddress = l_ComboBox.Text;
+
+                Settings.Default.Save();
 
                 Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, (System.Threading.ThreadStart)delegate ()
                 {

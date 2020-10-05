@@ -12,7 +12,6 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Omega_Red.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,50 +20,20 @@ using System.Threading.Tasks;
 
 namespace Omega_Red.Models
 {
-    public enum PadType
+    class PadControlInfo
     {
-        TouchPad,
-        XInputPad,
-        DirectInputPad
-    }
-
-    interface PadControlInfo
-    {
-        string Title_Key { get; set; }
-
-        PadType PadType { get; set; }
-
-        Tools.IPadControl PadControl { get; set; }
-
-        object PadConfigPanel { get; set; }
-
-        void stopTimer();
-    }
-
-    class TouchPadControlInfo: PadControlInfo
-    {
-        public TouchPadControlInfo()
-        {
-            PadType = Models.PadType.TouchPad;
-            Title_Key = "TouchPadTitle";
-            PadConfigPanel = new Panels.TouchPadConfigPanel();
-        }
-
         public string Title_Key { get; set; }
-        public PadType PadType { get; set; }
-        public IPadControl PadControl { get; set; }
-        public object PadConfigPanel { get; set; }
-
-        public void stopTimer()
-        {
-        }
+        public bool IsTouchPad { get; set; }
+        public string Instance_ID { get; set; }
+        public string API { get; set; }
+        public string Type { get; set; }
+        public string Product_ID { get; set; }
+        public string[] Bindings_Data { get; set; }
+        public string[] Force_Feedback_Bindings_Data { get; set; }
 
         public override string ToString()
         {
-            if (PadType == PadType.TouchPad)
-                return App.Current.Resources[Title_Key] as String;
-            else
-                return Title_Key;
+            return App.Current.Resources[Title_Key] as String;
         }
     }
 }

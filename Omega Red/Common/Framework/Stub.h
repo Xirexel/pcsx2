@@ -4,6 +4,10 @@
 
 #undef Yield // release the burden of windows.h global namespace spam.
 
+#ifndef _WINDOWS
+	#define __thiscall
+#endif
+
 struct DisassemblyWindow
 {
 	void update(){}

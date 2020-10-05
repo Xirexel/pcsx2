@@ -86,9 +86,6 @@ public:
 	void SubmitCurve(const void *control_points, const void *indices, Surface &surface, u32 vertType, int *bytesRead, const char *scope);
 	void ClearSplineBezierWeights();
 
-	bool CanUseHardwareTransform(int prim);
-	bool CanUseHardwareTessellation(GEPatchPrimType prim);
-
 	std::vector<std::string> DebugGetVertexLoaderIDs();
 	std::string DebugGetVertexLoaderString(std::string id, DebugShaderStringType stringType);
 
@@ -104,7 +101,6 @@ public:
 	VertexDecoder *GetVertexDecoder(u32 vtype);
 
 protected:
-	virtual bool UpdateUseHWTessellation(bool enabled) { return enabled; }
 	virtual void ClearTrackedVertexArrays() {}
 
 	int ComputeNumVertsToDecode() const;
@@ -131,9 +127,6 @@ protected:
 		}
 		return 1;
 	}
-
-	bool useHWTransform_ = false;
-	bool useHWTessellation_ = false;
 
 	// Vertex collector buffers
 	u8 *decoded = nullptr;

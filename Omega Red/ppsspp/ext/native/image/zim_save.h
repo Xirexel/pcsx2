@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdio>
-
 #include "base/basictypes.h"
 #include "image/zim_load.h"
 
@@ -10,4 +8,4 @@
 // * Generate mipmaps if requested
 // * Convert images to the requested format
 // Input image is always 8888 RGBA. SaveZIM takes care of downsampling and mipmap generation.
-void SaveZIM(FILE *f, int width, int height, int pitch, int format, const uint8_t *image);
+void SaveZIM(const char *filename, int width, int height, int pitch, int format, const uint8_t *image);

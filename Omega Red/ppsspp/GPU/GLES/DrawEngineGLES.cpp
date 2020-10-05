@@ -156,13 +156,9 @@ void DrawEngineGLES::ClearInputLayoutMap() {
 }
 
 void DrawEngineGLES::BeginFrame() {
-	DecimateTrackedVertexArrays();
-
 	FrameData &frameData = frameData_[render_->GetCurFrame()];
 	render_->BeginPushBuffer(frameData.pushIndex);
 	render_->BeginPushBuffer(frameData.pushVertex);
-
-	lastRenderStepId_ = -1;
 }
 
 void DrawEngineGLES::EndFrame() {
@@ -309,15 +305,6 @@ void DrawEngineGLES::DoFlush() {
 	gpuStats.numFlushes++;
 	gpuStats.numTrackedVertexArrays = (int)vai_.size();
 
-	// A new render step means we need to flush any dynamic state. Really, any state that is reset in
-	// GLQueueRunner::PerformRenderPass.
-	int curRenderStepId = render_->GetCurrentStepId();
-	if (lastRenderStepId_ != curRenderStepId) {
-		// Dirty everything that has dynamic state that will need re-recording.
-		gstate_c.Dirty(DIRTY_VIEWPORTSCISSOR_STATE | DIRTY_DEPTHSTENCIL_STATE | DIRTY_BLEND_STATE | DIRTY_RASTER_STATE);
-		lastRenderStepId_ = curRenderStepId;
-	}
-
 	bool textureNeedsApply = false;
 	if (gstate_c.IsDirty(DIRTY_TEXTURE_IMAGE | DIRTY_TEXTURE_PARAMS) && !gstate.isModeClear() && gstate.isTextureMapEnabled()) {
 		textureCache_->SetTexture();
@@ -331,7 +318,7 @@ void DrawEngineGLES::DoFlush() {
 	GEPrimitiveType prim = prevPrim_;
 
 	VShaderID vsid;
-	Shader *vshader = shaderManager_->ApplyVertexShader(CanUseHardwareTransform(prim), useHWTessellation_, lastVType_, &vsid);
+	Shader *vshader = shaderManager_->ApplyVertexShader(prim, lastVType_, &vsid);
 
 	GLRBuffer *vertexBuffer = nullptr;
 	GLRBuffer *indexBuffer = nullptr;
@@ -439,7 +426,7 @@ void DrawEngineGLES::DoFlush() {
 						// for a very minor speed boost.
 						if (useElements) {
 							size_t esz = sizeof(short) * indexGen.VertexCount();
-							vai->ebo = render_->CreateBuffer(GL_ELEMENT_ARRAY_BUFFER, esz, GL_STATIC_DRAW);
+							vai->ebo = render_->CreateBuffer(GL_ARRAY_BUFFER, esz, GL_STATIC_DRAW);
 							render_->BufferSubdata(vai->ebo, 0, esz, (uint8_t *)decIndex, false);
 						} else {
 							vai->ebo = 0;
@@ -524,7 +511,7 @@ rotateVBO:
 		ApplyDrawState(prim);
 		ApplyDrawStateLate(false, 0);
 		
-		LinkedShader *program = shaderManager_->ApplyFragmentShader(vsid, vshader, lastVType_, framebufferManager_->UseBufferedRendering());
+		LinkedShader *program = shaderManager_->ApplyFragmentShader(vsid, vshader, lastVType_, prim);
 		GLRInputLayout *inputLayout = SetupDecFmtForDraw(program, dec_->GetDecVtxFmt());
 		render_->BindVertexBuffer(inputLayout, vertexBuffer, vertexBufferOffset);
 		if (useElements) {
@@ -551,6 +538,9 @@ rotateVBO:
 		if (prim == GE_PRIM_TRIANGLE_STRIP)
 			prim = GE_PRIM_TRIANGLES;
 
+		TransformedVertex *drawBuffer = NULL;
+		int numTrans;
+		bool drawIndexed = false;
 		u16 *inds = decIndex;
 		SoftwareTransformResult result{};
 		// TODO: Keep this static?  Faster than repopulating?
@@ -572,40 +562,34 @@ rotateVBO:
 		if (vertexCount > 0x10000 / 3)
 			vertexCount = 0x10000 / 3;
 #endif
-
-		SoftwareTransform swTransform(params);
-		swTransform.Decode(prim, dec_->VertexType(), dec_->GetDecVtxFmt(), maxIndex, &result);
-		if (result.action == SW_NOT_READY)
-			swTransform.DetectOffsetTexture(maxIndex);
+		SoftwareTransform(
+			prim, vertexCount,
+			dec_->VertexType(), inds, GE_VTYPE_IDX_16BIT, dec_->GetDecVtxFmt(),
+			maxIndex, drawBuffer, numTrans, drawIndexed, &params, &result);
 
 		if (textureNeedsApply)
 			textureCache_->ApplyTexture();
 
-		// Need to ApplyDrawState after ApplyTexture because depal can launch a render pass and that wrecks the state.
 		ApplyDrawState(prim);
-
-		if (result.action == SW_NOT_READY)
-			swTransform.BuildDrawingParams(prim, vertexCount, dec_->VertexType(), inds, maxIndex, &result);
-
 		ApplyDrawStateLate(result.setStencil, result.stencilValue);
 
-		LinkedShader *program = shaderManager_->ApplyFragmentShader(vsid, vshader, lastVType_, framebufferManager_->UseBufferedRendering());
+		LinkedShader *program = shaderManager_->ApplyFragmentShader(vsid, vshader, lastVType_, prim);
 
 		if (result.action == SW_DRAW_PRIMITIVES) {
 			const int vertexSize = sizeof(transformed[0]);
 
 			bool doTextureProjection = gstate.getUVGenMode() == GE_TEXMAP_TEXTURE_MATRIX;
 
-			if (result.drawIndexed) {
-				vertexBufferOffset = (uint32_t)frameData.pushVertex->Push(result.drawBuffer, maxIndex * sizeof(TransformedVertex), &vertexBuffer);
-				indexBufferOffset = (uint32_t)frameData.pushIndex->Push(inds, sizeof(uint16_t) * result.drawNumTrans, &indexBuffer);
+			if (drawIndexed) {
+				vertexBufferOffset = (uint32_t)frameData.pushVertex->Push(drawBuffer, maxIndex * sizeof(TransformedVertex), &vertexBuffer);
+				indexBufferOffset = (uint32_t)frameData.pushIndex->Push(inds, sizeof(uint16_t) * numTrans, &indexBuffer);
 				render_->BindVertexBuffer(softwareInputLayout_, vertexBuffer, vertexBufferOffset);
 				render_->BindIndexBuffer(indexBuffer);
-				render_->DrawIndexed(glprim[prim], result.drawNumTrans, GL_UNSIGNED_SHORT, (void *)(intptr_t)indexBufferOffset);
+				render_->DrawIndexed(glprim[prim], numTrans, GL_UNSIGNED_SHORT, (void *)(intptr_t)indexBufferOffset);
 			} else {
-				vertexBufferOffset = (uint32_t)frameData.pushVertex->Push(result.drawBuffer, result.drawNumTrans * sizeof(TransformedVertex), &vertexBuffer);
+				vertexBufferOffset = (uint32_t)frameData.pushVertex->Push(drawBuffer, numTrans * sizeof(TransformedVertex), &vertexBuffer);
 				render_->BindVertexBuffer(softwareInputLayout_, vertexBuffer, vertexBufferOffset);
-				render_->Draw(glprim[prim], 0, result.drawNumTrans);
+				render_->Draw(glprim[prim], 0, numTrans);
 			}
 		} else if (result.action == SW_CLEAR) {
 			u32 clearColor = result.color;
@@ -667,15 +651,6 @@ bool DrawEngineGLES::IsCodePtrVertexDecoder(const u8 *ptr) const {
 	return decJitCache_->IsInSpace(ptr);
 }
 
-bool DrawEngineGLES::SupportsHWTessellation() const {
-	bool hasTexelFetch = gl_extensions.GLES3 || (!gl_extensions.IsGLES && gl_extensions.VersionGEThan(3, 3, 0)) || gl_extensions.EXT_gpu_shader4;
-	return hasTexelFetch && gstate_c.SupportsAll(GPU_SUPPORTS_VERTEX_TEXTURE_FETCH | GPU_SUPPORTS_TEXTURE_FLOAT);
-}
-
-bool DrawEngineGLES::UpdateUseHWTessellation(bool enable) {
-	return enable && SupportsHWTessellation();
-}
-
 void TessellationDataTransferGLES::SendDataToShader(const SimpleVertex *const *points, int size_u, int size_v, u32 vertType, const Spline::Weight2D &weights) {
 	bool hasColor = (vertType & GE_VTYPE_COL_MASK) != 0;
 	bool hasTexCoord = (vertType & GE_VTYPE_TC_MASK) != 0;
@@ -694,40 +669,40 @@ void TessellationDataTransferGLES::SendDataToShader(const SimpleVertex *const *p
 		prevSizeV = size_v;
 		if (!data_tex[0])
 			data_tex[0] = renderManager_->CreateTexture(GL_TEXTURE_2D);
-		renderManager_->TextureImage(data_tex[0], 0, size_u * 3, size_v, Draw::DataFormat::R32G32B32A32_FLOAT, nullptr, GLRAllocType::NONE, false);
+		renderManager_->TextureImage(data_tex[0], 0, size_u * 3, size_v, GL_RGBA32F, GL_RGBA, GL_FLOAT, nullptr, GLRAllocType::NONE, false);
 		renderManager_->FinalizeTexture(data_tex[0], 0, false);
 	}
 	renderManager_->BindTexture(TEX_SLOT_SPLINE_POINTS, data_tex[0]);
 	// Position
-	renderManager_->TextureSubImage(data_tex[0], 0, 0, 0, size_u, size_v, Draw::DataFormat::R32G32B32A32_FLOAT, (u8 *)pos, GLRAllocType::NEW);
+	renderManager_->TextureSubImage(data_tex[0], 0, 0, 0, size_u, size_v, GL_RGBA, GL_FLOAT, (u8 *)pos, GLRAllocType::NEW);
 	// Texcoord
 	if (hasTexCoord)
-		renderManager_->TextureSubImage(data_tex[0], 0, size_u, 0, size_u, size_v, Draw::DataFormat::R32G32B32A32_FLOAT, (u8 *)tex, GLRAllocType::NEW);
+		renderManager_->TextureSubImage(data_tex[0], 0, size_u, 0, size_u, size_v, GL_RGBA, GL_FLOAT, (u8 *)tex, GLRAllocType::NEW);
 	// Color
 	if (hasColor)
-		renderManager_->TextureSubImage(data_tex[0], 0, size_u * 2, 0, size_u, size_v, Draw::DataFormat::R32G32B32A32_FLOAT, (u8 *)col, GLRAllocType::NEW);
+		renderManager_->TextureSubImage(data_tex[0], 0, size_u * 2, 0, size_u, size_v, GL_RGBA, GL_FLOAT, (u8 *)col, GLRAllocType::NEW);
 
 	// Weight U
 	if (prevSizeWU < weights.size_u) {
 		prevSizeWU = weights.size_u;
 		if (!data_tex[1])
 			data_tex[1] = renderManager_->CreateTexture(GL_TEXTURE_2D);
-		renderManager_->TextureImage(data_tex[1], 0, weights.size_u * 2, 1, Draw::DataFormat::R32G32B32A32_FLOAT, nullptr, GLRAllocType::NONE, false);
+		renderManager_->TextureImage(data_tex[1], 0, weights.size_u * 2, 1, GL_RGBA32F, GL_RGBA, GL_FLOAT, nullptr, GLRAllocType::NONE, false);
 		renderManager_->FinalizeTexture(data_tex[1], 0, false);
 	}
 	renderManager_->BindTexture(TEX_SLOT_SPLINE_WEIGHTS_U, data_tex[1]);
-	renderManager_->TextureSubImage(data_tex[1], 0, 0, 0, weights.size_u * 2, 1, Draw::DataFormat::R32G32B32A32_FLOAT, (u8 *)weights.u, GLRAllocType::NONE);
+	renderManager_->TextureSubImage(data_tex[1], 0, 0, 0, weights.size_u * 2, 1, GL_RGBA, GL_FLOAT, (u8 *)weights.u, GLRAllocType::NONE);
 
 	// Weight V
 	if (prevSizeWV < weights.size_v) {
 		prevSizeWV = weights.size_v;
 		if (!data_tex[2])
 			data_tex[2] = renderManager_->CreateTexture(GL_TEXTURE_2D);
-		renderManager_->TextureImage(data_tex[2], 0, weights.size_v * 2, 1, Draw::DataFormat::R32G32B32A32_FLOAT, nullptr, GLRAllocType::NONE, false);
+		renderManager_->TextureImage(data_tex[2], 0, weights.size_v * 2, 1, GL_RGBA32F, GL_RGBA, GL_FLOAT, nullptr, GLRAllocType::NONE, false);
 		renderManager_->FinalizeTexture(data_tex[2], 0, false);
 	}
 	renderManager_->BindTexture(TEX_SLOT_SPLINE_WEIGHTS_V, data_tex[2]);
-	renderManager_->TextureSubImage(data_tex[2], 0, 0, 0, weights.size_v * 2, 1, Draw::DataFormat::R32G32B32A32_FLOAT, (u8 *)weights.v, GLRAllocType::NONE);
+	renderManager_->TextureSubImage(data_tex[2], 0, 0, 0, weights.size_v * 2, 1, GL_RGBA, GL_FLOAT, (u8 *)weights.v, GLRAllocType::NONE);
 }
 
 void TessellationDataTransferGLES::EndFrame() {

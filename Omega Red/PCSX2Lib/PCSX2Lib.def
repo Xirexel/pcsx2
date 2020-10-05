@@ -18,7 +18,6 @@ EXPORTS
 	MTGS_WaitForOpenFunc
 	MTGS_IsSelfFunc
 	MTGS_SuspendFunc
-	MTGS_ResetFunc
 	MTGS_CancelFunc
 	MTGS_FreezeFunc
 	MTGS_WaitGSFunc

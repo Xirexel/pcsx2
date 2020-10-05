@@ -257,16 +257,16 @@ void cdvdStopThread()
     s_thread.join();
 }
 
-void cdvdRequestSector(u32 sector, s32 mode)
+s32 cdvdRequestSector(u32 sector, s32 mode)
 {
     if (sector >= src->GetSectorCount())
-        return;
+        return -1;
 
     // Align to cache block
     sector &= ~(sectors_per_read - 1);
 
     if (cdvdCacheCheck(sector))
-        return;
+        return 0;
 
     {
         std::lock_guard<std::mutex> guard(s_request_lock);
@@ -274,6 +274,8 @@ void cdvdRequestSector(u32 sector, s32 mode)
     }
 
     s_notify_cv.notify_one();
+
+    return 0;
 }
 
 u8 *cdvdGetSector(u32 sector, s32 mode)

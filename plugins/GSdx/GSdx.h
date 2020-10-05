@@ -29,7 +29,9 @@ class GSdxApp
 	std::string m_ini;
 	std::string m_section;
 	std::map< std::string, std::string > m_default_configuration;
+#if defined(__unix__)
 	std::map< std::string, std::string > m_configuration_map;
+#endif
 	GSRendererType m_current_renderer_type;
 
 public:
@@ -42,12 +44,14 @@ public:
  	HMODULE GetModuleHandle() {return (HMODULE)GetModuleHandlePtr();}
 #endif
 
+#if defined(__unix__)
 	void BuildConfigurationMap(const char* lpFileName);
 	void ReloadConfig();
 
-	size_t GetIniString(const char* lpAppName, const char* lpKeyName, const char* lpDefault, char* lpReturnedString, size_t nSize, const char* lpFileName);
-	bool WriteIniString(const char* lpAppName, const char* lpKeyName, const char* pString, const char* lpFileName);
-	int GetIniInt(const char* lpAppName, const char* lpKeyName, int nDefault, const char* lpFileName);
+	size_t GetPrivateProfileString(const char* lpAppName, const char* lpKeyName, const char* lpDefault, char* lpReturnedString, size_t nSize, const char* lpFileName);
+	bool WritePrivateProfileString(const char* lpAppName, const char* lpKeyName, const char* pString, const char* lpFileName);
+	int GetPrivateProfileInt(const char* lpAppName, const char* lpKeyName, int nDefault, const char* lpFileName);
+#endif
 
 	bool LoadResource(int id, std::vector<char>& buff, const char* type = nullptr);
 
@@ -72,8 +76,8 @@ public:
 	std::vector<GSSetting> m_gs_max_anisotropy;
 	std::vector<GSSetting> m_gs_bifilter;
 	std::vector<GSSetting> m_gs_trifilter;
+	std::vector<GSSetting> m_gs_gl_ext;
 	std::vector<GSSetting> m_gs_hack;
-	std::vector<GSSetting> m_gs_generic_list;
 	std::vector<GSSetting> m_gs_offset_hack;
 	std::vector<GSSetting> m_gs_hw_mipmapping;
 	std::vector<GSSetting> m_gs_crc_level;

@@ -1,5 +1,9 @@
 
+#ifdef __ANDROID__
+#include "MC.h"
+#else
 #include "stdafx.h"
+#endif
 #include "MemoryCard.h"
 
 #include "PluginCallbacks.h"

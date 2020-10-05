@@ -43,8 +43,7 @@
 #include <vector>
 #include <map>
 #include <string>
-#include <mutex>
-#include <queue>
+#include <pthread.h>
 
 #define PADdefs
 #include "PS2Edefs.h"
@@ -55,7 +54,6 @@
 #include "bitwise.h"
 #include "controller.h"
 #include "KeyStatus.h"
-#include "mt_queue.h"
 
 #ifdef _MSC_VER
 #define EXPORT_C_(type) extern "C" __declspec(dllexport) type CALLBACK
@@ -124,7 +122,8 @@ enum gamePadValues {
 };
 
 extern keyEvent event;
-extern MtQueue<keyEvent> g_ev_fifo;
+extern std::queue<keyEvent> ev_fifo;
+extern pthread_spinlock_t mutex_KeyEvent;
 
 void clearPAD(int pad);
 s32 _PADopen(void *pDsp);

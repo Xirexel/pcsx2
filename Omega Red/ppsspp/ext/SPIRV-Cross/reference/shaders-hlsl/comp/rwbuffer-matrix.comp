@@ -1,12 +1,9 @@
-static const uint3 gl_WorkGroupSize = uint3(1u, 1u, 1u);
-
 RWByteAddressBuffer _28 : register(u0);
-cbuffer UBO : register(b1)
+cbuffer _68 : register(b1)
 {
     int _68_index0 : packoffset(c0);
     int _68_index1 : packoffset(c0.y);
 };
-
 
 void row_to_col()
 {

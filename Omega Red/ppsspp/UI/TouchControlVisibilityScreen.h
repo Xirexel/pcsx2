@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "gfx/texture_atlas.h"
 #include "MiscScreens.h"
 
 namespace UI {
@@ -27,7 +26,7 @@ namespace UI {
 struct TouchButtonToggle {
 	const char *key;
 	bool *show;
-	ImageID img;
+	int img;
 };
 
 class TouchControlVisibilityScreen : public UIDialogScreenWithBackground {
@@ -37,14 +36,8 @@ public:
 
 protected:
 	UI::EventReturn OnToggleAll(UI::EventParams &e);
-	UI::EventReturn RightAnalogBindScreen(UI::EventParams &e);
 
 private:
 	std::vector<TouchButtonToggle> toggles_;
 	bool nextToggleAll_ = true;
-};
-
-class RightAnalogMappingScreen : public UIDialogScreenWithBackground {
-public:
-	void CreateViews() override;
 };

@@ -75,11 +75,6 @@ SysMtgsThread::SysMtgsThread() :
 	// All other state vars are initialized by OnStart().
 }
 
-void MTGS_ResetQuick()
-{
-    GetMTGS().Suspend();
-}
-
 void SysMtgsThread::OnStart()
 {
 	m_PluginOpened		= false;
@@ -285,9 +280,11 @@ class RingBufferLock {
 	}
 };
 
+#ifdef _MSC_VER
 static HANDLE mmcssHandle = NULL;
 
 static DWORD mmcssTaskIndex = 0;
+#endif
 
 extern bool DoFreeze(PluginsEnum_t pid, int mode, freezeData* data);
 

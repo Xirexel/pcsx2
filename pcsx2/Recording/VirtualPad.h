@@ -21,7 +21,6 @@
 
 #include "Recording/PadData.h"
 
-#ifndef DISABLE_RECORDING
 class VirtualPad : public wxFrame
 {
 public:
@@ -91,4 +90,3 @@ private:
 protected:
 	wxDECLARE_EVENT_TABLE();
 };
-#endif

@@ -35,7 +35,7 @@ option(USE_VTUNE "Plug VTUNE to profile GSdx JIT.")
 #-------------------------------------------------------------------------------
 option(GLSL_API "Replace ZZogl CG backend by GLSL (experimental option)")
 option(EGL_API "Use EGL on ZZogl/GSdx (experimental/developer option)")
-option(OPENCL_API "Add OpenCL support on GSdx")
+option(OPENCL_API "Add OpenCL suppport on GSdx")
 option(REBUILD_SHADER "Rebuild GLSL/CG shader (developer option)")
 option(BUILD_REPLAY_LOADERS "Build GS replayer to ease testing (developer option)")
 option(GSDX_LEGACY "Build a GSdx legacy plugin compatible with GL3.3")
@@ -306,26 +306,16 @@ set(COMMON_FLAG "-pipe -fvisibility=hidden -pthread -fno-builtin-strcmp -fno-bui
 if (DISABLE_SVU)
     set(COMMON_FLAG "${COMMON_FLAG} -DDISABLE_SVU")
 endif()
-
 if(USE_VTUNE)
     set(COMMON_FLAG "${COMMON_FLAG} -DENABLE_VTUNE")
 endif()
-
-# Remove FORTIFY_SOURCE when compiling as debug, because it spams a lot of warnings on clang due to no optimization.
-# Should probably be checked on gcc as well, as the USE_CLANG might not be needed.
-if (USE_CLANG AND CMAKE_BUILD_TYPE MATCHES "Debug")
-set(HARDENING_FLAG "-Wformat -Wformat-security")
-else()
 set(HARDENING_FLAG "-D_FORTIFY_SOURCE=2  -Wformat -Wformat-security")
-endif()
-
 # -Wno-attributes: "always_inline function might not be inlinable" <= real spam (thousand of warnings!!!)
 # -Wno-missing-field-initializers: standard allow to init only the begin of struct/array in static init. Just a silly warning.
 # Note: future GCC (aka GCC 5.1.1) has less false positive so warning could maybe put back
 # -Wno-unused-function: warn for function not used in release build
 # -Wno-unused-value: lots of warning for this kind of statements "0 && ...". There are used to disable some parts of code in release/dev build.
-# -Wno-overloaded-virtual: Gives a fair number of warnings under clang over in the wxwidget gui section of the code.
-set(DEFAULT_WARNINGS "-Wall -Wextra -Wno-attributes -Wno-unused-function -Wno-unused-parameter -Wno-missing-field-initializers -Wno-overloaded-virtual")
+set(DEFAULT_WARNINGS "-Wall -Wextra -Wno-attributes -Wno-unused-function -Wno-unused-parameter -Wno-missing-field-initializers ")
 if (NOT USE_ICC)
     set(DEFAULT_WARNINGS "${DEFAULT_WARNINGS} -Wno-unused-value ")
 endif()

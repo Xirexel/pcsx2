@@ -31,50 +31,9 @@ namespace Omega_Red.ViewModels
     [DataTemplateNameAttribute("ScreenshotInfoItem")]
     class ScreenshotsInfoViewModel : BaseViewModel
     {     
-        public ScreenshotsInfoViewModel()
-        {
-            ScreenshotsManager.Instance.TakeScreenshotEvent += (a_state, a_source) => {
-
-                if(a_state)
-                {
-                    LockVisibility = Visibility.Visible;
-                }
-                else
-                {
-                    LockVisibility = Visibility.Collapsed;
-                }
-
-                ScreenshotSource = a_source;
-            };
-        }
-
         protected override IManager Manager
         {
             get { return ScreenshotsManager.Instance; }
-        }
-        
-        private System.Windows.Visibility mLockVisibility = System.Windows.Visibility.Collapsed;
-
-        public System.Windows.Visibility LockVisibility
-        {
-            get { return mLockVisibility; }
-            set
-            {
-                mLockVisibility = value;
-                RaisePropertyChangedEvent("LockVisibility");
-            }
-        }
-
-        private System.Windows.Media.ImageSource mScreenshotSource = null;
-
-        public System.Windows.Media.ImageSource ScreenshotSource
-        {
-            get { return mScreenshotSource; }
-            set
-            {
-                mScreenshotSource = value;
-                RaisePropertyChangedEvent("ScreenshotSource");
-            }
         }
     }
 }

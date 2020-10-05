@@ -44,6 +44,8 @@ namespace Omega_Red.ViewModels
                 if(lYouTubeStreamInfo != null)
                 {
                     Settings.Default.YouTubeStreamSelectedId = lYouTubeStreamInfo.Id;
+
+                    Settings.Default.Save();
                 }
 
                 IsSyncEnabled = true;

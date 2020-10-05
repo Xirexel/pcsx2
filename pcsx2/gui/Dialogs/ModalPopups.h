@@ -60,6 +60,9 @@ namespace Dialogs
 {
 	class AboutBoxDialog: public wxDialogWithHelpers
 	{
+	protected:
+		wxStaticBitmap m_bitmap_logo;
+
 	public:
 		AboutBoxDialog( wxWindow* parent=NULL );
 		virtual ~AboutBoxDialog() = default;

@@ -1,35 +1,33 @@
 #include "base/logging.h"
 #include "thread/threadpool.h"
 #include "thread/threadutil.h"
-#include "Common/MakeUnique.h"
 
 ///////////////////////////// WorkerThread
 
+WorkerThread::WorkerThread() : active(true), started(false) {
+	thread.reset(new std::thread(std::bind(&WorkerThread::WorkFunc, this)));
+	while(!started) { };
+}
+
 WorkerThread::~WorkerThread() {
-	{
-		std::lock_guard<std::mutex> guard(mutex);
-		active = false;
-		signal.notify_one();
-	}
-	if (thread.joinable()) {
-		thread.join();
-	}
+	mutex.lock();
+	active = false;
+	signal.notify_one();
+	mutex.unlock();
+	thread->join();
 }
 
-void WorkerThread::StartUp() {
-	thread = std::thread(std::bind(&WorkerThread::WorkFunc, this));
-}
-
-void WorkerThread::Process(std::function<void()> work) {
-	std::lock_guard<std::mutex> guard(mutex);
-	work_ = std::move(work);
+void WorkerThread::Process(const std::function<void()>& work) {
+	mutex.lock();
+	work_ = work;
 	jobsTarget = jobsDone + 1;
 	signal.notify_one();
+	mutex.unlock();
 }
 
 void WorkerThread::WaitForCompletion() {
 	std::unique_lock<std::mutex> guard(doneMutex);
-	while (jobsDone < jobsTarget) {
+	if (jobsDone < jobsTarget) {
 		done.wait(guard);
 	}
 }
@@ -37,25 +35,27 @@ void WorkerThread::WaitForCompletion() {
 void WorkerThread::WorkFunc() {
 	setCurrentThreadName("Worker");
 	std::unique_lock<std::mutex> guard(mutex);
+	started = true;
 	while (active) {
-		// 'active == false' is one of the conditions for signaling,
-		// do not "optimize" it
-		while (active && jobsTarget <= jobsDone) {
-			signal.wait(guard);
-		}
+		signal.wait(guard);
 		if (active) {
 			work_();
-
-			std::lock_guard<std::mutex> doneGuard(doneMutex);
-			jobsDone++;
+			doneMutex.lock();
 			done.notify_one();
+			jobsDone++;
+			doneMutex.unlock();
 		}
 	}
 }
 
-void LoopWorkerThread::Process(std::function<void(int, int)> work, int start, int end) {
+LoopWorkerThread::LoopWorkerThread() : WorkerThread(true) {
+	thread.reset(new std::thread(std::bind(&LoopWorkerThread::WorkFunc, this)));
+	while (!started) { };
+}
+
+void LoopWorkerThread::Process(const std::function<void(int, int)> &work, int start, int end) {
 	std::lock_guard<std::mutex> guard(mutex);
-	work_ = std::move(work);
+	work_ = work;
 	start_ = start;
 	end_ = end;
 	jobsTarget = jobsDone + 1;
@@ -65,25 +65,22 @@ void LoopWorkerThread::Process(std::function<void(int, int)> work, int start, in
 void LoopWorkerThread::WorkFunc() {
 	setCurrentThreadName("LoopWorker");
 	std::unique_lock<std::mutex> guard(mutex);
+	started = true;
 	while (active) {
-		// 'active == false' is one of the conditions for signaling,
-		// do not "optimize" it
-		while (active && jobsTarget <= jobsDone) {
-			signal.wait(guard);
-		}
+		signal.wait(guard);
 		if (active) {
 			work_(start_, end_);
-
-			std::lock_guard<std::mutex> doneGuard(doneMutex);
-			jobsDone++;
+			doneMutex.lock();
 			done.notify_one();
+			jobsDone++;
+			doneMutex.unlock();
 		}
 	}
 }
 
 ///////////////////////////// ThreadPool
 
-ThreadPool::ThreadPool(int numThreads) {
+ThreadPool::ThreadPool(int numThreads) : workersStarted(false) {
 	if (numThreads <= 0) {
 		numThreads_ = 1;
 		ILOG("ThreadPool: Bad number of threads %i", numThreads);
@@ -97,11 +94,8 @@ ThreadPool::ThreadPool(int numThreads) {
 
 void ThreadPool::StartWorkers() {
 	if (!workersStarted) {
-		workers.reserve(numThreads_ - 1);
-		for(int i = 0; i < numThreads_ - 1; ++i) { // create one less worker thread as the thread calling ParallelLoop will also do work
-			auto workerPtr = make_unique<LoopWorkerThread>();
-			workerPtr->StartUp();
-			workers.push_back(std::move(workerPtr));
+		for(int i = 0; i < numThreads_; ++i) {
+			workers.push_back(std::make_shared<LoopWorkerThread>());
 		}
 		workersStarted = true;
 	}
@@ -117,14 +111,14 @@ void ThreadPool::ParallelLoop(const std::function<void(int,int)> &loop, int lowe
 		// but doesn't matter since all our loops are power of 2
 		int chunk = range / numThreads_;
 		int s = lower;
-		for (auto& worker : workers) {
-			worker->Process(loop, s, s+chunk);
+		for (int i = 0; i < numThreads_ - 1; ++i) {
+			workers[i]->Process(loop, s, s+chunk);
 			s+=chunk;
 		}
 		// This is the final chunk.
 		loop(s, upper);
-		for (auto& worker : workers) {
-			worker->WaitForCompletion();
+		for (int i = 0; i < numThreads_ - 1; ++i) {
+			workers[i]->WaitForCompletion();
 		}
 	} else {
 		loop(lower, upper);

@@ -76,8 +76,6 @@ public:
 		template<class T>
 		void Set(const char *key, T *ptr);
 
-		void AddComment(const std::string &comment);
-
 		bool Get(const char* key, int* value, int defaultValue = 0);
 		bool Get(const char* key, uint32_t* value, uint32_t defaultValue = 0);
 		bool Get(const char* key, bool* value, bool defaultValue = false);

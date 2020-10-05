@@ -1,8 +1,6 @@
 #include "math/lin/quat.h"
 #include "math/lin/matrix4x4.h"
 
-namespace Lin {
-
 void Quaternion::toMatrix(Matrix4x4 *out) const {
 	Matrix4x4 temp;
 	temp.setIdentity();
@@ -124,6 +122,4 @@ Quaternion Quaternion::multiply(const Quaternion &q) const {
 		(w * q.y) + (y * q.w) + (z * q.x) - (x * q.z),
 		(w * q.z) + (z * q.w) + (x * q.y) - (y * q.x),
 		(w * q.w) - (x * q.x) - (y * q.y) - (z * q.z));
-}
-
 }

@@ -18,23 +18,12 @@ namespace Omega_Red.Capture
     class BitRate
     {
         public uint Value { get; private set; }
-        public string EncoderCLSID { get; private set; }
-
-        public string EncoderModeCLSID { get; private set; }
 
         private string m_formatedValue = "";
 
-        private string m_encoderName = "";
-
-        public BitRate(uint a_bitrate, bool a_isVideo = true, string a_encoderCLSID="", string a_encoderModeCLSID = "", string a_encoderName="")
+        public BitRate(uint a_bitrate, bool a_isVideo = true)
         {
             Value = a_bitrate;
-
-            EncoderCLSID = a_encoderCLSID;
-
-            EncoderModeCLSID = a_encoderModeCLSID;
-
-            m_encoderName = a_encoderName;
 
             if (a_isVideo)
             {
@@ -49,36 +38,13 @@ namespace Omega_Red.Capture
             }
             else
             {
-                m_formatedValue = (a_bitrate / (1000)).ToString() + " Kbit";
+                m_formatedValue = (a_bitrate / (1000)).ToString() + " kbit";
             }
         }
         
         public override string ToString()
         {
-            string l_formatedValue = m_formatedValue;
-
-            if (Value == 0)
-            {
-                l_formatedValue = "Variable bitrate";
-
-                try
-                {
-                    var l_Title = new System.Windows.Controls.TextBlock();
-
-                    l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, "VariableBitrateTitle");
-
-                    l_formatedValue = l_Title.Text;
-                }
-                finally
-                {
-                }
-
-            }
-
-            if (!string.IsNullOrWhiteSpace(m_encoderName))
-                l_formatedValue += " - " + m_encoderName;
-
-            return l_formatedValue;
+            return m_formatedValue;
         }
 
         public override bool Equals(object obj)
@@ -185,8 +151,25 @@ namespace Omega_Red.Capture
                 m_isConnected = isConnected;
 
                 var l_ExecutingAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-                
-                using (var lStream = l_ExecutingAssembly.GetManifestResourceStream("Omega_Red.Modules.AnyCPU.MediaStream.dll"))
+
+                AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
+                {
+                    using (var lStreamManagerToCSharpProxyStream = l_ExecutingAssembly.GetManifestResourceStream("Omega_Red.Modules.x86.CaptureManagerToCSharpProxy.dll"))
+                    {
+                        if (lStreamManagerToCSharpProxyStream == null)
+                            return null;
+
+                        byte[] lStreamManagerToCSharpProxybuffer = new byte[(int)lStreamManagerToCSharpProxyStream.Length];
+
+                        lStreamManagerToCSharpProxyStream.Read(lStreamManagerToCSharpProxybuffer, 0, lStreamManagerToCSharpProxybuffer.Length);
+
+                        var lStreamManagerToCSharpProxyAssembly = Assembly.Load(lStreamManagerToCSharpProxybuffer);
+
+                        return lStreamManagerToCSharpProxyAssembly;
+                    }
+                };
+
+                using (var lStream = l_ExecutingAssembly.GetManifestResourceStream("Omega_Red.Modules.x86.MediaStream.dll"))
                 {
                     if (lStream == null)
                         return;
@@ -292,14 +275,12 @@ namespace Omega_Red.Capture
             get { return mFileExtention; }
         }
 
-        public bool start(ref string a_resultMessage)
+        public bool start()
         {
             bool l_result = false;
 
             do
-            {
-                a_resultMessage = "VideoStreamingFailedTitle";
-                
+            {                
                 if (m_StreamObj == null)
                     break;
 
@@ -307,36 +288,32 @@ namespace Omega_Red.Capture
                     break;
                 
                 mFileExtention = m_Start.Invoke(m_StreamObj, new object[] {
-                    TargetTexture.Instance.TargetNative.ToString(),
+                    CaptureTargetTexture.Instance.CaptureNative.ToString(),
                     AudioCaptureTarget.Instance.RegisterAction,
                     m_isConnected
                 }) as string;
 
-                if (string.IsNullOrWhiteSpace(mFileExtention))
-                    break;
-
                 l_result = true;
-
-                a_resultMessage = "VideoStreamingStartedTitle";
 
             } while (false);
 
             return l_result;
         }
 
-        public bool stop(bool a_is_explicitly = false)
+        public bool stop()
         {
             bool l_result = false;
 
             do
             {
+                
                 if (m_StreamObj == null)
                     break;
 
                 if (m_Stop == null)
                     break;
 
-                m_Stop.Invoke(m_StreamObj, new object[] {a_is_explicitly});
+                m_Stop.Invoke(m_StreamObj, null);
                    
                 l_result = true;
 
@@ -380,6 +357,7 @@ namespace Omega_Red.Capture
 
             do
             {
+
                 if (m_StreamObj == null)
                     break;
 
@@ -399,18 +377,12 @@ namespace Omega_Red.Capture
 
                 getVideoBitRates(out lVideoBitRateMax, out lVideoBitRateMin);
 
-                if (lVideoBitRateMax == 0 || lVideoBitRateMin == 0)
-                    break;
-
 
                 uint lAudioBitRateMax = 0;
 
                 uint lAudioBitRateMin = 0;
 
                 getAudioBitRates(out lAudioBitRateMax, out lAudioBitRateMin);
-
-                if (lAudioBitRateMax == 0 || lAudioBitRateMin == 0)
-                    break;
 
 
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
@@ -428,6 +400,8 @@ namespace Omega_Red.Capture
 
 
                             Settings.Default.VideoBitRate = l_SelectedVideoBitStream.Value;
+
+                            Settings.Default.Save();
                         };
                     }
 
@@ -444,6 +418,8 @@ namespace Omega_Red.Capture
 
 
                             Settings.Default.AudioBitRate = l_SelectedAudioBitStream.Value;
+
+                            Settings.Default.Save();
                         };
                     }
 
@@ -492,6 +468,7 @@ namespace Omega_Red.Capture
 
             do
             {
+
                 if (m_StreamObj == null)
                     break;
 
@@ -509,6 +486,7 @@ namespace Omega_Red.Capture
         {
             do
             {
+
                 if (m_StreamObj == null)
                     break;
 
@@ -524,6 +502,7 @@ namespace Omega_Red.Capture
         {
             do
             {
+
                 if (m_StreamObj == null)
                     break;
 
@@ -541,6 +520,7 @@ namespace Omega_Red.Capture
 
             do
             {
+
                 if (m_StreamObj == null)
                     break;
 
@@ -560,6 +540,7 @@ namespace Omega_Red.Capture
 
             do
             {
+
                 if (m_StreamObj == null)
                     break;
 
@@ -659,6 +640,7 @@ namespace Omega_Red.Capture
         {
             do
             {
+
                 if (m_StreamObj == null)
                     break;
 
@@ -674,6 +656,7 @@ namespace Omega_Red.Capture
         {
             do
             {
+
                 if (m_StreamObj == null)
                     break;
 

@@ -56,6 +56,18 @@
 
 namespace {  // anonymous namespace functions
 
+const bool UseHlslTypes = true;
+
+const char* BaseTypeName(const char argOrder, const char* scalarName, const char* vecName, const char* matName)
+{
+    switch (argOrder) {
+    case 'S': return scalarName;
+    case 'V': return vecName;
+    case 'M': return matName;
+    default:  return "UNKNOWN_TYPE";
+    }
+}
+
 // arg order queries
 bool IsSamplerType(const char argType)     { return argType == 'S' || argType == 's'; }
 bool IsArrayed(const char argOrder)        { return argOrder == '@' || argOrder == '&' || argOrder == '#'; }
@@ -204,7 +216,8 @@ int FixedVecSize(const char* arg)
     return 0; // none found.
 }
 
-// Create and return a type name, using HLSL type conventions.
+// Create and return a type name.  This is done in GLSL, not HLSL conventions, until such
+// time as builtins are parsed using the HLSL parser.
 //
 //    order:   S = scalar, V = vector, M = matrix
 //    argType: F = float, D = double, I = int, U = uint, B = bool, S = sampler
@@ -239,34 +252,62 @@ glslang::TString& AppendTypeName(glslang::TString& s, const char* argOrder, cons
 
     char order = *argOrder;
 
-    switch (type) {
-    case '-': s += "void";                                break;
-    case 'F': s += "float";                               break;
-    case 'D': s += "double";                              break;
-    case 'I': s += "int";                                 break;
-    case 'U': s += "uint";                                break;
-    case 'L': s += "int64_t";                             break;
-    case 'M': s += "uint64_t";                            break;
-    case 'B': s += "bool";                                break;
-    case 'S': s += "sampler";                             break;
-    case 's': s += "SamplerComparisonState";              break;
-    case 'T': s += ((isBuffer && isImage) ? "RWBuffer" :
-                    isSubpass ? "SubpassInput" :
-                    isBuffer ? "Buffer" :
-                    isImage  ? "RWTexture" : "Texture");  break;
-    case 'i': s += ((isBuffer && isImage) ? "RWBuffer" :
-                    isSubpass ? "SubpassInput" :
-                    isBuffer ? "Buffer" :
-                    isImage ? "RWTexture" : "Texture");   break;
-    case 'u': s += ((isBuffer && isImage) ? "RWBuffer" :
-                    isSubpass ? "SubpassInput" :
-                    isBuffer ? "Buffer" :
-                    isImage ? "RWTexture" : "Texture");   break;
-    default:  s += "UNKNOWN_TYPE";                        break;
-    }
+    if (UseHlslTypes) {
+        switch (type) {
+        case '-': s += "void";                                break;
+        case 'F': s += "float";                               break;
+        case 'D': s += "double";                              break;
+        case 'I': s += "int";                                 break;
+        case 'U': s += "uint";                                break;
+        case 'L': s += "int64_t";                             break;
+        case 'M': s += "uint64_t";                            break;
+        case 'B': s += "bool";                                break;
+        case 'S': s += "sampler";                             break;
+        case 's': s += "SamplerComparisonState";              break;
+        case 'T': s += ((isBuffer && isImage) ? "RWBuffer" :
+                        isSubpass ? "SubpassInput" :
+                        isBuffer ? "Buffer" :
+                        isImage  ? "RWTexture" : "Texture");  break;
+        case 'i': s += ((isBuffer && isImage) ? "RWBuffer" :
+                        isSubpass ? "SubpassInput" :
+                        isBuffer ? "Buffer" :
+                        isImage ? "RWTexture" : "Texture");   break;
+        case 'u': s += ((isBuffer && isImage) ? "RWBuffer" :
+                        isSubpass ? "SubpassInput" :
+                        isBuffer ? "Buffer" :
+                        isImage ? "RWTexture" : "Texture");   break;
+        default:  s += "UNKNOWN_TYPE";                        break;
+        }
 
-    if (isSubpass && isMS)
-        s += "MS";
+        if (isSubpass && isMS)
+            s += "MS";
+
+    } else {
+        switch (type) {
+        case '-': s += "void"; break;
+        case 'F': s += BaseTypeName(order, "float",  "vec",  "mat");  break;
+        case 'D': s += BaseTypeName(order, "double", "dvec", "dmat"); break;
+        case 'I': s += BaseTypeName(order, "int",    "ivec", "imat"); break;
+        case 'U': s += BaseTypeName(order, "uint",   "uvec", "umat"); break;
+        case 'B': s += BaseTypeName(order, "bool",   "bvec", "bmat"); break;
+        case 'S': s += "sampler";                                     break;
+        case 's': s += "samplerShadow";                               break;
+        case 'T': // fall through
+        case 'i': // ...
+        case 'u': // ...
+            if (type != 'T') // create itexture, utexture, etc
+                s += type;
+
+            s += ((isImage && isBuffer) ? "imageBuffer"   :
+                  isSubpass             ? "subpassInput" :
+                  isImage               ? "image"         :
+                  isBuffer              ? "samplerBuffer" :
+                  "texture");
+            break;
+
+        default:  s += "UNKNOWN_TYPE"; break;
+        }
+    }
 
     // handle fixed vector sizes, such as float3, and only ever 3.
     const int fixedVecSize = FixedVecSize(argOrder);
@@ -283,7 +324,7 @@ glslang::TString& AppendTypeName(glslang::TString& s, const char* argOrder, cons
             case 1: s += "1D";                   break;
             case 2: s += (isMS ? "2DMS" : "2D"); break;
             case 3: s += "3D";                   break;
-            case 4: s += (type == 'S'? "CUBE" : "Cube"); break;
+            case 4: s += "Cube";                 break;
             default: s += "UNKNOWN_SAMPLER";     break;
             }
         }
@@ -316,24 +357,26 @@ glslang::TString& AppendTypeName(glslang::TString& s, const char* argOrder, cons
     if (isArrayed)
         s += "Array";
 
-    switch (type) {
-    case 'i': s += "<int";   s += dim0Char; s += ">"; break;
-    case 'u': s += "<uint";  s += dim0Char; s += ">"; break;
-    case 'T': s += "<float"; s += dim0Char; s += ">"; break;
-    default: break;
+    // For HLSL, append return type for texture types
+    if (UseHlslTypes) {
+        switch (type) {
+        case 'i': s += "<int";   s += dim0Char; s += ">"; break;
+        case 'u': s += "<uint";  s += dim0Char; s += ">"; break;
+        case 'T': s += "<float"; s += dim0Char; s += ">"; break;
+        default: break;
+        }
     }
 
     return s;
 }
 
-// This rejects prototypes not normally valid for GLSL and it's way of finding
-// overloaded built-ins under implicit type conversion.
-//
-// It is possible that this is not needed, but that would require some tweaking
-// of other rules to get the same results.
-inline bool IsValid(const char* cname, char /* retOrder */, char /* retType */, char argOrder, char /* argType */, int dim0, int /* dim1 */)
+// The GLSL parser can be used to parse a subset of HLSL prototypes.  However, many valid HLSL prototypes
+// are not valid GLSL prototypes.  This rejects the invalid ones.  Thus, there is a single switch below
+// to enable creation of the entire HLSL space.
+inline bool IsValid(const char* cname, char retOrder, char retType, char argOrder, char argType, int dim0, int dim1)
 {
     const bool isVec = (argOrder == 'V');
+    const bool isMat = (argOrder == 'M');
 
     const std::string name(cname);
 
@@ -343,6 +386,26 @@ inline bool IsValid(const char* cname, char /* retOrder */, char /* retType */, 
 
     if (!IsTextureType(argOrder) && (isVec && dim0 == 1)) // avoid vec1
         return false;
+
+    if (UseHlslTypes) {
+        // NO further restrictions for HLSL
+    } else {
+        // GLSL parser restrictions
+        if ((isMat && (argType == 'I' || argType == 'U' || argType == 'B')) ||
+            (retOrder == 'M' && (retType == 'I' || retType == 'U' || retType == 'B')))
+            return false;
+
+        if (isMat && dim0 == 1 && dim1 == 1)  // avoid mat1x1
+            return false;
+
+        if (isMat && dim1 == 1)  // TODO: avoid mat Nx1 until we find the right GLSL profile
+            return false;
+
+        if (name == "GetRenderTargetSamplePosition" ||
+            name == "tex1D" ||
+            name == "tex1Dgrad")
+            return false;
+    }
 
     return true;
 }
@@ -398,10 +461,12 @@ void TBuiltInParseablesHlsl::createMatTimesMat()
 {
     TString& s = commonBuiltins;
 
-    for (int xRows = 1; xRows <=4; xRows++) {
-        for (int xCols = 1; xCols <=4; xCols++) {
+    const int first = (UseHlslTypes ? 1 : 2);
+
+    for (int xRows = first; xRows <=4; xRows++) {
+        for (int xCols = first; xCols <=4; xCols++) {
             const int yRows = xCols;
-            for (int yCols = 1; yCols <=4; yCols++) {
+            for (int yCols = first; yCols <=4; yCols++) {
                 const int retRows = xRows;
                 const int retCols = yCols;
 
@@ -633,17 +698,17 @@ void TBuiltInParseablesHlsl::initialize(int /*version*/, EProfile /*profile*/, c
         { "step",                             nullptr, nullptr,   "SVM,",           "F,",            EShLangAll,    false },
         { "tan",                              nullptr, nullptr,   "SVM",            "F",             EShLangAll,    false },
         { "tanh",                             nullptr, nullptr,   "SVM",            "F",             EShLangAll,    false },
-        { "tex1D",                            "V4",    "F",       "S,S",            "S,F",           EShLangPS,     false },
-        { "tex1D",                            "V4",    "F",       "S,S,V1,",        "S,F,,",         EShLangPS,     false },
-        { "tex1Dbias",                        "V4",    "F",       "S,V4",           "S,F",           EShLangPS,     false },
-        { "tex1Dgrad",                        "V4",    "F",       "S,,,",           "S,F,,",         EShLangPS,     false },
-        { "tex1Dlod",                         "V4",    "F",       "S,V4",           "S,F",           EShLangPS,     false },
-        { "tex1Dproj",                        "V4",    "F",       "S,V4",           "S,F",           EShLangPS,     false },
+        { "tex1D",                            "V4",    "F",       "V1,S",           "S,F",           EShLangPS,     false },
+        { "tex1D",                            "V4",    "F",       "V1,S,V1,",       "S,F,,",         EShLangPS,     false },
+        { "tex1Dbias",                        "V4",    "F",       "V1,V4",          "S,F",           EShLangPS,     false },
+        { "tex1Dgrad",                        "V4",    "F",       "V1,,,",          "S,F,,",         EShLangPS,     false },
+        { "tex1Dlod",                         "V4",    "F",       "V1,V4",          "S,F",           EShLangPS,     false },
+        { "tex1Dproj",                        "V4",    "F",       "V1,V4",          "S,F",           EShLangPS,     false },
         { "tex2D",                            "V4",    "F",       "V2,",            "S,F",           EShLangPS,     false },
         { "tex2D",                            "V4",    "F",       "V2,,,",          "S,F,,",         EShLangPS,     false },
         { "tex2Dbias",                        "V4",    "F",       "V2,V4",          "S,F",           EShLangPS,     false },
         { "tex2Dgrad",                        "V4",    "F",       "V2,,,",          "S,F,,",         EShLangPS,     false },
-        { "tex2Dlod",                         "V4",    "F",       "V2,V4",          "S,F",           EShLangAll,    false },
+        { "tex2Dlod",                         "V4",    "F",       "V2,V4",          "S,F",           EShLangPS,     false },
         { "tex2Dproj",                        "V4",    "F",       "V2,V4",          "S,F",           EShLangPS,     false },
         { "tex3D",                            "V4",    "F",       "V3,",            "S,F",           EShLangPS,     false },
         { "tex3D",                            "V4",    "F",       "V3,,,",          "S,F,,",         EShLangPS,     false },
@@ -852,7 +917,7 @@ void TBuiltInParseablesHlsl::initialize(int /*version*/, EProfile /*profile*/, c
         { "WaveActiveAllEqual",               "S",     "B",       "SV",             "DFUI",           EShLangPSCS,  false},
         { "WaveActiveAllEqualBool",           "S",     "B",       "S",              "B",              EShLangPSCS,  false},
         { "WaveActiveCountBits",              "S",     "U",       "S",              "B",              EShLangPSCS,  false},
-
+        
         { "WaveActiveSum",                    nullptr, nullptr,   "SV",             "DFUI",           EShLangPSCS,  false},
         { "WaveActiveProduct",                nullptr, nullptr,   "SV",             "DFUI",           EShLangPSCS,  false},
         { "WaveActiveBitAnd",                 nullptr, nullptr,   "SV",             "DFUI",           EShLangPSCS,  false},

@@ -59,7 +59,8 @@ files=`git diff --name-only --diff-filter=ACMRT $diff_range  -- $PWD | \
     grep -v "bin/" | \
     grep -v "cmake/" | \
     grep -v "tools/" | \
-    grep -v "tests/"
+    grep -v "tests/" | \
+    grep -v "unfree/"
 `
 
 # Check remaining files are clang-format compliant

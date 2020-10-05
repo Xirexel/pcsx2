@@ -18,7 +18,6 @@
 #include "NewRecordingFrame.h"
 
 
-#ifndef DISABLE_RECORDING
 NewRecordingFrame::NewRecordingFrame(wxWindow *parent)
 	: wxDialog(parent, wxID_ANY, "New Input Recording", wxDefaultPosition, wxDefaultSize, wxSTAY_ON_TOP | wxCAPTION)
 {
@@ -74,4 +73,3 @@ int NewRecordingFrame::GetFrom() const
 {
 	return m_fromChoice->GetSelection();
 }
-#endif

@@ -29,7 +29,7 @@ GSRendererHW::GSRendererHW(GSTextureCache* tc)
 	, m_custom_height(1024)
 	, m_reset(false)
 	, m_upscale_multiplier(1)
-	, m_userhacks_ts_half_bottom(-1)
+	, m_disable_ts_half_bottom(false)
 	, m_tc(tc)
 	, m_src(nullptr)
 	, m_userhacks_tcoffset(false)
@@ -42,15 +42,15 @@ GSRendererHW::GSRendererHW(GSTextureCache* tc)
 	m_upscale_multiplier = theApp.GetConfigI("upscale_multiplier");
 	m_large_framebuffer  = theApp.GetConfigB("large_framebuffer");
 	m_accurate_date = theApp.GetConfigI("accurate_date");
+	m_disable_ts_half_bottom = theApp.GetConfigB("disable_ts_half_bottom");
 
 	if (theApp.GetConfigB("UserHacks")) {
 		m_userhacks_enabled_gs_mem_clear = !theApp.GetConfigB("UserHacks_Disable_Safe_Features");
 		m_userHacks_enabled_unscale_ptln = !theApp.GetConfigB("UserHacks_Disable_Safe_Features");
 		m_userhacks_align_sprite_X       = theApp.GetConfigB("UserHacks_align_sprite_X");
-		m_userHacks_merge_sprite         = theApp.GetConfigB("UserHacks_merge_pp_sprite");
-		m_userhacks_ts_half_bottom       = theApp.GetConfigI("UserHacks_Half_Bottom_Override");
 		m_userhacks_round_sprite_offset  = theApp.GetConfigI("UserHacks_round_sprite_offset");
 		m_userHacks_HPO                  = theApp.GetConfigI("UserHacks_HalfPixelOffset");
+		m_userHacks_merge_sprite         = theApp.GetConfigB("UserHacks_merge_pp_sprite");
 		m_userhacks_tcoffset_x           = theApp.GetConfigI("UserHacks_TCOffsetX") / -1000.0f;
 		m_userhacks_tcoffset_y           = theApp.GetConfigI("UserHacks_TCOffsetY") / -1000.0f;
 		m_userhacks_tcoffset             = m_userhacks_tcoffset_x < 0.0f || m_userhacks_tcoffset_y < 0.0f;
@@ -58,10 +58,9 @@ GSRendererHW::GSRendererHW(GSTextureCache* tc)
 		m_userhacks_enabled_gs_mem_clear = true;
 		m_userHacks_enabled_unscale_ptln = true;
 		m_userhacks_align_sprite_X       = false;
-		m_userHacks_merge_sprite         = false;
-		m_userhacks_ts_half_bottom       = -1;
 		m_userhacks_round_sprite_offset  = 0;
 		m_userHacks_HPO                  = 0;
+		m_userHacks_merge_sprite         = false;
 	}
 
 	if (!m_upscale_multiplier) { //Custom Resolution
@@ -211,11 +210,12 @@ void GSRendererHW::SetGameCRC(uint32 crc, int options)
 			case CRC::HarryPotterATHBP:
 			case CRC::HarryPotterATPOA:
 			case CRC::HarryPotterOOTP:
-			case CRC::Jak1:
-			case CRC::Jak3:
+			// Disable Automatic mipmapping for Jak games for now, it seems to cause a hard crash.
+			// Issue https://github.com/PCSX2/pcsx2/issues/2916
+			// case CRC::Jak1:
+			// case CRC::Jak3:
 			case CRC::LegacyOfKainDefiance:
 			case CRC::NicktoonsUnite:
-			case CRC::Persona3:
 			case CRC::ProjectSnowblind:
 			case CRC::Quake3Revolution:
 			case CRC::RatchetAndClank:
@@ -453,39 +453,19 @@ void GSRendererHW::ConvertSpriteTextureShuffle(bool& write_ba, bool& read_ba)
 	tex_pos &= 0xFF;
 	read_ba = (tex_pos > 112 && tex_pos < 144);
 
-	bool half_bottom = false;
-	switch (m_userhacks_ts_half_bottom) {
-		case 0:
-			// Force Disabled.
-			// Force Disabled will help games such as Xenosaga.
-			// Xenosaga handles the half bottom as an vertex offset instead of a buffer offset which does the effect twice.
-			// Half bottom won't trigger a cache miss that skip the draw because it is still the normal buffer but with a vertices offset.
-			half_bottom = false;
-			break;
-		case 1:
-			// Force Enabled.
-			// Force Enabled will help games such as Superman Shadows of Apokolips, The Lord of the Rings: The Two Towers,
-			// Demon Stone, Midnight Club 3.
-			half_bottom = true;
-			break;
-		case -1:
-		default:
-			// Default, Automatic.
-			// Here's the idea
-			// TS effect is 16 bits but we emulate it on a 32 bits format
-			// Normally this means we need to divide size by 2.
-			//
-			// Some games do two TS effects on each half of the buffer.
-			// This makes a mess for us in the TC because we end up with two targets
-			// when we only want one, thus half screen bug.
-			//
-			// 32bits emulation means we can do the effect once but double the size.
-			// Test cases: Crash Twinsantiy and DBZ BT3
-			const int height_delta = m_src->m_valid_rect.height() - m_r.height();
-			// Test Case: NFS: HP2 splits the effect h:256 and h:192 so 64
-			half_bottom = abs(height_delta) <= 64;
-			break;
-	}
+	// Here's the idea
+	// TS effect is 16 bits but we emulate it on a 32 bits format
+	// Normally this means we need to divide size by 2.
+	//
+	// Some games do two TS effects on each half of the buffer.
+	// This makes a mess for us in the TC because we end up with two targets
+	// when we only want one, thus half screen bug.
+	//
+	// 32bits emulation means we can do the effect once but double the size.
+	// Test cases: Crash Twinsantiy and DBZ BT3
+	int height_delta = m_src->m_valid_rect.height() - m_r.height();
+	// Test Case: NFS: HP2 splits the effect h:256 and h:192 so 64
+	bool half_bottom = abs(height_delta) <= 64 && !m_disable_ts_half_bottom;
 
 	if (PRIM->FST) {
 		GL_INS("First vertex is  P: %d => %d    T: %d => %d", v[0].XYZ.X, v[1].XYZ.X, v[0].U, v[1].U);
@@ -728,6 +708,7 @@ void GSRendererHW::SwSpriteRender()
 	ASSERT(!PRIM->IIP);  // Flat shading method
 	ASSERT(!PRIM->FGE);  // No FOG
 	ASSERT(!PRIM->AA1);  // No antialiasing
+	ASSERT(!PRIM->FST);  // STQ texture coordinates
 	ASSERT(!PRIM->FIX);  // Normal fragment value control
 
 	ASSERT(!m_env.DTHE.DTHE); // No dithering
@@ -747,7 +728,7 @@ void GSRendererHW::SwSpriteRender()
 	// No rasterization required
 	ASSERT(m_vt.m_eq.rgba == 0xffff);
 	ASSERT(m_vt.m_eq.z == 0x1);
-	ASSERT(!PRIM->TME || PRIM->FST || m_vt.m_eq.q == 0x1);  // Check Q equality only if texturing enabled and STQ coords used
+	ASSERT(m_vt.m_eq.q == 0x1);
 
 	bool texture_mapping_enabled = PRIM->TME;
 
@@ -774,12 +755,19 @@ void GSRendererHW::SwSpriteRender()
 
 	GIFRegTRXREG trxreg;
 
-	GSVector4i r = m_r;  // Rectangle of the draw
-	ASSERT(r.x == 0 && r.y == 0);  // No offset
-	ASSERT(!texture_mapping_enabled || (r.z <= (1 << m_context->TEX0.TW)) && (r.w <= (1 << m_context->TEX0.TH)));  // Input texture is big enough, if any
-
-	trxreg.RRW = r.width();
-	trxreg.RRH = r.height();
+	if (texture_mapping_enabled)
+	{
+		trxreg.RRW = m_context->TEX0.TW * 4;
+		trxreg.RRH = m_context->TEX0.TH * 4;
+		// Check drawing region
+		ASSERT((GSVector4i(m_vt.m_min.p.xyxy(m_vt.m_max.p)).rintersect(GSVector4i(m_context->scissor.in)) == GSVector4i(0, 0, trxreg.RRW, trxreg.RRH)).alltrue());
+	}
+	else
+	{
+		GSVector4i r = GSVector4i(m_vt.m_min.p.xyxy(m_vt.m_max.p)).rintersect(GSVector4i(m_context->scissor.in));
+		trxreg.RRW = r.width();
+		trxreg.RRH = r.height();
+	}
 
 	// SW rendering code, mainly taken from GSState::Move(), TRXPOS.DIR{X,Y} management excluded
 
@@ -1476,7 +1464,6 @@ GSRendererHW::Hacks::Hacks()
 	, m_oo(NULL)
 	, m_cu(NULL)
 {
-	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::BigMuthaTruckers, CRC::RegionCount, &GSRendererHW::OI_BigMuthaTruckers));
 	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::FFXII, CRC::EU, &GSRendererHW::OI_FFXII));
 	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::FFX, CRC::RegionCount, &GSRendererHW::OI_FFX));
 	m_oi_list.push_back(HackEntry<OI_Ptr>(CRC::MetalSlug6, CRC::RegionCount, &GSRendererHW::OI_MetalSlug6));
@@ -1702,38 +1689,6 @@ bool GSRendererHW::OI_BlitFMV(GSTextureCache::Target* _rt, GSTextureCache::Sourc
 
 // OI (others input?/implementation?) hacks replace current draw call
 
-bool GSRendererHW::OI_BigMuthaTruckers(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t)
-{
-	// Rendering pattern:
-	// CRTC frontbuffer at 0x0 is interlaced (half vertical resolution),
-	// game needs to do a depth effect (so green channel to alpha),
-	// but there is a vram limitation so green is pushed into the alpha channel of the CRCT buffer,
-	// vertical resolution is half so only half is processed at once
-	// We, however, don't have this limitation so we'll replace the draw with a full-screen TS.
-
-	GIFRegTEX0 Texture = m_context->TEX0;
-
-	GIFRegTEX0 Frame;
-	Frame.TBW = m_context->FRAME.FBW;
-	Frame.TBP0 = m_context->FRAME.FBP;
-	Frame.TBP0 = m_context->FRAME.Block();
-
-	if (PRIM->TME && Frame.TBW == 10 && Texture.TBW == 10 && Frame.TBP0 == 0x00a00 && Texture.PSM == PSM_PSMT8H && (m_r.y == 256 || m_r.y == 224))
-	{
-		// 224 ntsc, 256 pal.
-		GL_INS("OI_BigMuthaTruckers half bottom offset");
-
-		size_t count = m_vertex.next;
-		GSVertex* v = &m_vertex.buff[0];
-		const uint16 offset = (uint16)m_r.y * 16;
-
-		for (size_t i = 0; i < count; i++)
-			v[i].V += offset;
-	}
-
-	return true;
-}
-
 bool GSRendererHW::OI_FFXII(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t)
 {
 	static uint32* video = NULL;
@@ -1825,7 +1780,6 @@ bool GSRendererHW::OI_FFX(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* 
 	if((FBP == 0x00d00 || FBP == 0x00000) && ZBP == 0x02100 && PRIM->TME && TBP == 0x01a00 && m_context->TEX0.PSM == PSM_PSMCT16S)
 	{
 		// random battle transition (z buffer written directly, clear it now)
-		GL_INS("OI_FFX ZB clear");
 		if(ds)
 			ds->Commit(); // Don't bother to save few MB for a single game
 		m_dev->ClearDepth(ds);
@@ -1878,7 +1832,6 @@ bool GSRendererHW::OI_RozenMaidenGebetGarden(GSTexture* rt, GSTexture* ds, GSTex
 
 			if(GSTextureCache::Target* tmp_rt = m_tc->LookupTarget(TEX0, m_width, m_height, GSTextureCache::RenderTarget, true))
 			{
-				GL_INS("OI_RozenMaidenGebetGarden FB clear");
 				tmp_rt->m_texture->Commit(); // Don't bother to save few MB for a single game
 				m_dev->ClearRenderTarget(tmp_rt->m_texture, 0);
 			}
@@ -1897,7 +1850,6 @@ bool GSRendererHW::OI_RozenMaidenGebetGarden(GSTexture* rt, GSTexture* ds, GSTex
 
 			if(GSTextureCache::Target* tmp_ds = m_tc->LookupTarget(TEX0, m_width, m_height, GSTextureCache::DepthStencil, true))
 			{
-				GL_INS("OI_RozenMaidenGebetGarden ZB clear");
 				tmp_ds->m_texture->Commit(); // Don't bother to save few MB for a single game
 				m_dev->ClearDepth(tmp_ds->m_texture);
 			}
@@ -1931,16 +1883,12 @@ bool GSRendererHW::OI_SonicUnleashed(GSTexture* rt, GSTexture* ds, GSTextureCach
 	if ((Texture.TBP0 == Frame.TBP0) || (Frame.TBW != 16 && Texture.TBW != 16))
 		return true;
 
-	GL_INS("OI_SonicUnleashed replace draw by a copy");
-
 	GSTextureCache::Target* src = m_tc->LookupTarget(Texture, m_width, m_height, GSTextureCache::RenderTarget, true);
-
-	GSVector2i size = rt->GetSize();
-
 	GSVector4 sRect(0, 0, 1, 1);
-	GSVector4 dRect(0, 0, size.x, size.y);
+	GSVector4 dRect(0, 0, m_width, m_height);
 
 	m_dev->StretchRect(src->m_texture, sRect, rt, dRect, true, true, true, false);
+	GL_INS("OI_SonicUnleashed replace draw by a copy");
 
 	return false;
 }
@@ -1954,7 +1902,6 @@ bool GSRendererHW::OI_StarWarsForceUnleashed(GSTexture* rt, GSTexture* ds, GSTex
 	{
 		if((FBP == 0x0 || FBP == 0x01180) && FPSM == PSM_PSMCT32 && (m_vt.m_eq.z && m_vt.m_max.p.z == 0))
 		{
-			GL_INS("OI_StarWarsForceUnleashed FB clear");
 			if(ds)
 				ds->Commit(); // Don't bother to save few MB for a single game
 			m_dev->ClearDepth(ds);
@@ -2046,7 +1993,6 @@ bool GSRendererHW::OI_SuperManReturns(GSTexture* rt, GSTexture* ds, GSTextureCac
 	m_dev->ClearRenderTarget(rt, GSVector4(m_vt.m_min.c));
 
 	m_tc->InvalidateVideoMemType(GSTextureCache::DepthStencil, ctx->FRAME.Block());
-	GL_INS("OI_SuperManReturns");
 
 	return false;
 }

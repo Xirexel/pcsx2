@@ -36,7 +36,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackgroundAudio.cpp" />
-    <ClCompile Include="ChatScreen.cpp" />
     <ClCompile Include="ComboKeyMappingScreen.cpp" />
     <ClCompile Include="ControlMappingScreen.cpp" />
     <ClCompile Include="CwCheatScreen.cpp" />
@@ -66,10 +65,10 @@
     <ClCompile Include="TouchControlLayoutScreen.cpp" />
     <ClCompile Include="TouchControlVisibilityScreen.cpp" />
     <ClCompile Include="InstallZipScreen.cpp" />
+    <ClCompile Include="ui_atlas.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackgroundAudio.h" />
-    <ClInclude Include="ChatScreen.h" />
     <ClInclude Include="ComboKeyMappingScreen.h" />
     <ClInclude Include="ControlMappingScreen.h" />
     <ClInclude Include="DevScreens.h" />
@@ -99,14 +98,12 @@
     <ClInclude Include="TouchControlLayoutScreen.h" />
     <ClInclude Include="TouchControlVisibilityScreen.h" />
     <ClInclude Include="InstallZipScreen.h" />
+    <ClInclude Include="ui_atlas.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ext\discord-rpc-build\discord-rpc.vcxproj">
       <Project>{beb0a821-3c7f-410f-a525-63afbc69bf8f}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{004B8D11-2BE3-4BD9-AB40-2BE04CF2096F}</ProjectGuid>
@@ -210,7 +207,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRTDBG_MAP_ALLOC;USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;_ARCH_32=1;WIN32;_DEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ffmpeg\WindowsInclude;..\ffmpeg\Windows\x86_64\include;../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -223,6 +220,10 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -230,7 +231,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRTDBG_MAP_ALLOC;USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;_ARCH_64=1;WIN32;_DEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ffmpeg\WindowsInclude;..\ffmpeg\Windows\x86_64\include;../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -244,6 +245,10 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <ClCompile>
@@ -265,6 +270,10 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
@@ -272,7 +281,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRTDBG_MAP_ALLOC;USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;_ARCH_32=1;WIN32;_DEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ffmpeg\WindowsInclude;..\ffmpeg\Windows\x86_64\include;../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -287,6 +296,10 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -297,14 +310,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;_ARCH_32=1;WIN32;NDEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ffmpeg\WindowsInclude;..\ffmpeg\Windows\x86_64\include;../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>$(EXTERNAL_COMPILE_OPTIONS)</AdditionalOptions>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -312,6 +324,10 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -322,7 +338,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;_ARCH_64=1;WIN32;NDEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ffmpeg\WindowsInclude;..\ffmpeg\Windows\x86_64\include;../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -331,7 +347,6 @@
       <AdditionalOptions>$(EXTERNAL_COMPILE_OPTIONS)</AdditionalOptions>
       <OmitFramePointers>false</OmitFramePointers>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -339,6 +354,10 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
@@ -358,7 +377,6 @@
       <AdditionalOptions>$(EXTERNAL_COMPILE_OPTIONS)</AdditionalOptions>
       <OmitFramePointers>false</OmitFramePointers>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -366,6 +384,10 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
@@ -376,7 +398,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;_ARCH_32=1;WIN32;NDEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ffmpeg\WindowsInclude;..\ffmpeg\Windows\x86_64\include;../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common;..;../ext/native;../ext/glew;../ext/snappy;../ext/zlib;../ext/native/ext</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -385,7 +407,6 @@
       <AdditionalOptions>$(EXTERNAL_COMPILE_OPTIONS)</AdditionalOptions>
       <OmitFramePointers>false</OmitFramePointers>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -393,15 +414,12 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\..\packages\FFmpeg.Nightly.20200628.0.0\build\native\FFmpeg.Nightly.targets" Condition="Exists('..\..\packages\FFmpeg.Nightly.20200628.0.0\build\native\FFmpeg.Nightly.targets')" />
   </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\FFmpeg.Nightly.20200628.0.0\build\native\FFmpeg.Nightly.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\FFmpeg.Nightly.20200628.0.0\build\native\FFmpeg.Nightly.targets'))" />
-  </Target>
 </Project>

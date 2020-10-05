@@ -12,7 +12,6 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Tools;
 using System;
@@ -48,7 +47,7 @@ namespace Omega_Red.Panels
 
             ConfigManager.Instance.SwitchControlModeEvent += Instance_SwitchControlModeEvent;
 
-            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
 
             { 
@@ -184,15 +183,15 @@ namespace Omega_Red.Panels
             mIPList.Visibility = VisibilityStateIP;
         }
 
-        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
         {
             switch (a_Status)
             {
-                case Emul.StatusEnum.NoneInitilized:
-                case Emul.StatusEnum.Initilized:
-                case Emul.StatusEnum.Stopped:
-                case Emul.StatusEnum.Paused:
-                case Emul.StatusEnum.Started:
+                case PCSX2Controller.StatusEnum.NoneInitilized:
+                case PCSX2Controller.StatusEnum.Initilized:
+                case PCSX2Controller.StatusEnum.Stopped:
+                case PCSX2Controller.StatusEnum.Paused:
+                case PCSX2Controller.StatusEnum.Started:
                     for (int i = 0; i < m_Panels.Items.Count; i++)
                     {
                         Expander l_ItemExpander = m_Panels.Items.GetItemAt(i) as Expander;
@@ -213,15 +212,15 @@ namespace Omega_Red.Panels
 
             var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
 
-            //if(obj)
-            //{
-            //    var l_PanelWidth = (double)App.Current.Resources["PanelWidth"];
+            if(obj)
+            {
+                var l_PanelWidth = (double)App.Current.Resources["PanelWidth"];
 
-            //    this.Width = l_PanelWidth;
+                this.Width = l_PanelWidth;
 
-            //    Canvas.SetLeft(l_ParentElement, -l_PanelWidth);
-            //}
-            //else
+                Canvas.SetLeft(l_ParentElement, -l_PanelWidth);
+            }
+            else
             {
                 Binding l_Binding = new Binding("ActualWidth");
 
@@ -329,11 +328,11 @@ namespace Omega_Red.Panels
 
         public Visibility VisibilityState
         {
-            get { return Visibility.Visible; }
+            get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
         }
         public Visibility VisibilityStateIP
         {
-            get { return Visibility.Collapsed; }
+            get { return App.m_AppType == App.AppType.OffScreen ? Visibility.Visible : Visibility.Collapsed; }
         }
 
         private static IPAddress[] GetIPAddresses()

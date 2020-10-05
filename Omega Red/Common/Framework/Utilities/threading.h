@@ -15,7 +15,10 @@
 
 #pragma once
 
+#ifndef __ANDROID__
 typedef unsigned int mode_t;
+#endif
+
 #include <semaphore.h>
 #include <errno.h> // EBUSY
 #include <pthread.h>

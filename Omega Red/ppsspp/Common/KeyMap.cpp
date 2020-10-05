@@ -15,24 +15,23 @@
 // Official git repository and contact information can be found at
 // https://github.com/hrydgard/ppsspp and http://www.ppsspp.org/.
 
-#include <set>
-#include <algorithm>
-
 #if defined(SDL)
 #include <SDL_keyboard.h>
 #elif defined(USING_WIN_UI)
 #include "CommonWindows.h"
 #endif
+#include <set>
 
 #include "base/logging.h"
 #include "base/NativeApp.h"
 #include "file/ini_file.h"
 #include "input/input_state.h"
-#include "ppsspp_config.h"
 
 #include "KeyMap.h"
-#include "Core/HLE/sceUtility.h"
-#include "Core/Config.h"
+#include "../Core/HLE/sceUtility.h"
+#include "../Core/Config.h"
+
+#include <algorithm>
 
 namespace KeyMap {
 
@@ -185,27 +184,6 @@ static const DefMappingStruct defaultShieldKeyMap[] = {
 	{VIRTKEY_PAUSE, NKCODE_BACK },
 };
 
-static const DefMappingStruct defaultMOQI7SKeyMap[] = {
-	{CTRL_CROSS, NKCODE_BUTTON_A},
-	{CTRL_CIRCLE, NKCODE_BUTTON_B},
-	{CTRL_SQUARE, NKCODE_BUTTON_X},
-	{CTRL_TRIANGLE, NKCODE_BUTTON_Y},
-	{CTRL_START,  JOYSTICK_AXIS_Z, +1},
-	{CTRL_SELECT, JOYSTICK_AXIS_Z, -1},
-	{CTRL_LTRIGGER, NKCODE_BUTTON_L1},
-	{CTRL_RTRIGGER, NKCODE_BUTTON_R1},
-	{VIRTKEY_AXIS_X_MIN, JOYSTICK_AXIS_X, -1},
-	{VIRTKEY_AXIS_X_MAX, JOYSTICK_AXIS_X, +1},
-	{VIRTKEY_AXIS_Y_MIN, JOYSTICK_AXIS_Y, +1},
-	{VIRTKEY_AXIS_Y_MAX, JOYSTICK_AXIS_Y, -1},
-	{CTRL_LEFT, JOYSTICK_AXIS_HAT_X, -1},
-	{CTRL_RIGHT, JOYSTICK_AXIS_HAT_X, +1},
-	{CTRL_UP, JOYSTICK_AXIS_HAT_Y, -1},
-	{CTRL_DOWN, JOYSTICK_AXIS_HAT_Y, +1},
-	{VIRTKEY_UNTHROTTLE, JOYSTICK_AXIS_RZ, +1 },
-	{VIRTKEY_PAUSE, NKCODE_BACK },
-};
-
 static const DefMappingStruct defaultPadMap[] = {
 #if defined(__ANDROID__)
 	{CTRL_CROSS          , NKCODE_BUTTON_A},
@@ -303,15 +281,14 @@ void UpdateNativeMenuKeys() {
 	int confirmKey = g_Config.iButtonPreference == PSP_SYSTEMPARAM_BUTTON_CROSS ? CTRL_CROSS : CTRL_CIRCLE;
 	int cancelKey = g_Config.iButtonPreference == PSP_SYSTEMPARAM_BUTTON_CROSS ? CTRL_CIRCLE : CTRL_CROSS;
 
-	// Mouse mapping might be problematic in UI, so let's ignore mouse for UI
-	KeyFromPspButton(confirmKey, &confirmKeys, true);
-	KeyFromPspButton(cancelKey, &cancelKeys, true);
-	KeyFromPspButton(CTRL_LTRIGGER, &tabLeft, true);
-	KeyFromPspButton(CTRL_RTRIGGER, &tabRight, true);
-	KeyFromPspButton(CTRL_UP, &upKeys, true);
-	KeyFromPspButton(CTRL_DOWN, &downKeys, true);
-	KeyFromPspButton(CTRL_LEFT, &leftKeys, true);
-	KeyFromPspButton(CTRL_RIGHT, &rightKeys, true);
+	KeyFromPspButton(confirmKey, &confirmKeys);
+	KeyFromPspButton(cancelKey, &cancelKeys);
+	KeyFromPspButton(CTRL_LTRIGGER, &tabLeft);
+	KeyFromPspButton(CTRL_RTRIGGER, &tabRight);
+	KeyFromPspButton(CTRL_UP, &upKeys);
+	KeyFromPspButton(CTRL_DOWN, &downKeys);
+	KeyFromPspButton(CTRL_LEFT, &leftKeys);
+	KeyFromPspButton(CTRL_RIGHT, &rightKeys);
 
 #ifdef __ANDROID__
 	// Hardcode DPAD on Android
@@ -326,7 +303,6 @@ void UpdateNativeMenuKeys() {
 		KeyDef(DEVICE_ID_KEYBOARD, NKCODE_SPACE),
 		KeyDef(DEVICE_ID_KEYBOARD, NKCODE_ENTER),
 		KeyDef(DEVICE_ID_ANY, NKCODE_BUTTON_A),
-		KeyDef(DEVICE_ID_PAD_0, NKCODE_DPAD_CENTER),  // A number of Android devices.
 	};
 
 	// If they're not already bound, add them in.
@@ -339,7 +315,6 @@ void UpdateNativeMenuKeys() {
 		KeyDef(DEVICE_ID_KEYBOARD, NKCODE_ESCAPE),
 		KeyDef(DEVICE_ID_ANY, NKCODE_BACK),
 		KeyDef(DEVICE_ID_ANY, NKCODE_BUTTON_B),
-		KeyDef(DEVICE_ID_MOUSE, NKCODE_EXT_MOUSEBUTTON_4),
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(hardcodedCancelKeys); i++) {
@@ -406,9 +381,6 @@ void SetDefaultKeyMap(DefaultMaps dmap, bool replace) {
 		break;
 	case DEFAULT_MAPPING_SHIELD:
 		SetDefaultKeyMap(DEVICE_ID_PAD_0, defaultShieldKeyMap, ARRAY_SIZE(defaultShieldKeyMap), replace);
-		break;
-	case DEFAULT_MAPPING_MOQI_I7S:
-		SetDefaultKeyMap(DEVICE_ID_PAD_0, defaultMOQI7SKeyMap, ARRAY_SIZE(defaultMOQI7SKeyMap), replace);
 		break;
 	case DEFAULT_MAPPING_PAD:
 		SetDefaultKeyMap(DEVICE_ID_PAD_0, defaultPadMap, ARRAY_SIZE(defaultPadMap), replace);
@@ -685,7 +657,7 @@ const KeyMap_IntStrPair psp_button_names[] = {
 	{VIRTKEY_SAVE_STATE, "Save State"},
 	{VIRTKEY_LOAD_STATE, "Load State"},
 	{VIRTKEY_NEXT_SLOT,  "Next Slot"},
-#if !defined(MOBILE_DEVICE)
+#if !defined(_WIN32) && !defined(MOBILE_DEVICE)
 	{VIRTKEY_TOGGLE_FULLSCREEN, "Toggle Fullscreen"},
 #endif
 
@@ -693,16 +665,12 @@ const KeyMap_IntStrPair psp_button_names[] = {
 	{VIRTKEY_AXIS_RIGHT_Y_MIN, "RightAn.Down"},
 	{VIRTKEY_AXIS_RIGHT_X_MIN, "RightAn.Left"},
 	{VIRTKEY_AXIS_RIGHT_X_MAX, "RightAn.Right"},
-	{VIRTKEY_OPENCHAT, "OpenChat" },
 
 	{VIRTKEY_AXIS_SWAP, "AxisSwap"},
 	{VIRTKEY_DEVMENU, "DevMenu"},
 	{VIRTKEY_TEXTURE_DUMP, "Texture Dumping"},
 	{VIRTKEY_TEXTURE_REPLACE, "Texture Replacement"},
 	{VIRTKEY_SCREENSHOT, "Screenshot"},
-	{VIRTKEY_MUTE_TOGGLE, "Mute toggle"},
-	{VIRTKEY_ANALOG_ROTATE_CW, "Rotate Analog (CW)"},
-	{VIRTKEY_ANALOG_ROTATE_CCW, "Rotate Analog (CCW)"},
 
 	{CTRL_HOME, "Home"},
 	{CTRL_HOLD, "Hold"},
@@ -817,12 +785,11 @@ bool KeyToPspButton(int deviceId, int key, std::vector<int> *pspKeys) {
 }
 
 // TODO: vector output
-bool KeyFromPspButton(int btn, std::vector<KeyDef> *keys, bool ignoreMouse) {
+bool KeyFromPspButton(int btn, std::vector<KeyDef> *keys) {
 	for (auto iter = g_controllerMap.begin(); iter != g_controllerMap.end(); ++iter) {
 		if (iter->first == btn) {
 			for (auto iter2 = iter->second.begin(); iter2 != iter->second.end(); ++iter2) {
-				if (!ignoreMouse || iter2->deviceId != DEVICE_ID_MOUSE)
-					keys->push_back(*iter2);
+				keys->push_back(*iter2);
 			}
 		}
 	}
@@ -883,24 +850,20 @@ void SetAxisMapping(int btn, int deviceId, int axisId, int direction, bool repla
 // Note that it's easy to add other defaults if desired.
 void RestoreDefault() {
 	g_controllerMap.clear();
-#if PPSSPP_PLATFORM(WINDOWS)
+#if defined(_WIN32)
 	SetDefaultKeyMap(DEFAULT_MAPPING_KEYBOARD, true);
 	SetDefaultKeyMap(DEFAULT_MAPPING_X360, false);
 	SetDefaultKeyMap(DEFAULT_MAPPING_PAD, false);
-#elif PPSSPP_PLATFORM(ANDROID)
-	// Autodetect a few common (and less common) devices
+#elif defined(__ANDROID__)
+	// Autodetect a few common devices
 	std::string name = System_GetProperty(SYSPROP_NAME);
 	if (IsNvidiaShield(name) || IsNvidiaShieldTV(name)) {
 		SetDefaultKeyMap(DEFAULT_MAPPING_SHIELD, true);
-	} else if (IsOuya(name)) {
+	} else if (IsOuya(name)) {  // TODO: check!
 		SetDefaultKeyMap(DEFAULT_MAPPING_OUYA, true);
 	} else if (IsXperiaPlay(name)) {
 		SetDefaultKeyMap(DEFAULT_MAPPING_XPERIA_PLAY, true);
-	} else if (IsMOQII7S(name)) {
-		ILOG("MOQI pad map");
-		SetDefaultKeyMap(DEFAULT_MAPPING_MOQI_I7S, true);
 	} else {
-		ILOG("Default pad map");
 		SetDefaultKeyMap(DEFAULT_MAPPING_PAD, true);
 	}
 #else
@@ -947,7 +910,7 @@ void SaveToIni(IniFile &file) {
 
 	for (size_t i = 0; i < ARRAY_SIZE(psp_button_names); i++) {
 		std::vector<KeyDef> keys;
-		KeyFromPspButton(psp_button_names[i].key, &keys, false);
+		KeyFromPspButton(psp_button_names[i].key, &keys);
 
 		std::string value;
 		for (size_t j = 0; j < keys.size(); j++) {
@@ -978,12 +941,8 @@ bool IsXperiaPlay(const std::string &name) {
 	return name == "Sony Ericsson:R800a" || name == "Sony Ericsson:R800i" || name == "Sony Ericsson:R800x" || name == "Sony Ericsson:R800at" || name == "Sony Ericsson:SO-01D" || name == "Sony Ericsson:zeus";
 }
 
-bool IsMOQII7S(const std::string &name) {
-	return name == "MOQI:I7S";
-}
-
 bool HasBuiltinController(const std::string &name) {
-	return IsOuya(name) || IsXperiaPlay(name) || IsNvidiaShield(name) || IsMOQII7S(name);
+	return IsOuya(name) || IsXperiaPlay(name) || IsNvidiaShield(name);
 }
 
 void NotifyPadConnected(const std::string &name) {
@@ -991,7 +950,7 @@ void NotifyPadConnected(const std::string &name) {
 }
 
 void AutoConfForPad(const std::string &name) {
-	ILOG("Autoconfiguring pad for '%s'", name.c_str());
+	ILOG("Autoconfiguring pad for %s", name.c_str());
 	if (name == "Xbox 360 Pad") {
 		SetDefaultKeyMap(DEFAULT_MAPPING_X360, true);
 	} else {

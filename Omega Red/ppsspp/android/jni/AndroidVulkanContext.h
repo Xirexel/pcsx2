@@ -2,6 +2,8 @@
 
 #include "AndroidGraphicsContext.h"
 
+static const bool g_validate_ = true;
+
 class VulkanContext;
 
 class AndroidVulkanContext : public AndroidGraphicsContext {
@@ -31,4 +33,10 @@ public:
 private:
 	VulkanContext *g_Vulkan = nullptr;
 	Draw::DrawContext *draw_ = nullptr;
+};
+
+struct VulkanLogOptions {
+	bool breakOnWarning;
+	bool breakOnError;
+	bool msgBoxOnError;
 };

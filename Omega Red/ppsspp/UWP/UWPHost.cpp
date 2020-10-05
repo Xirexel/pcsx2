@@ -38,7 +38,7 @@
 UWPHost::UWPHost() {
 
 	// add first XInput device to respond
-	input.push_back(std::make_unique<XinputDevice>());
+	input.push_back(std::shared_ptr<InputDevice>(new XinputDevice()));
 }
 
 UWPHost::~UWPHost() {
@@ -86,10 +86,14 @@ void UWPHost::SetDebugMode(bool mode) {
 }
 
 void UWPHost::PollControllers() {
-	for (const auto& device : this->input)
+	bool doPad = true;
+	for (auto iter = this->input.begin(); iter != this->input.end(); iter++)
 	{
+		auto device = *iter;
+		if (!doPad && device->IsPad())
+			continue;
 		if (device->UpdateState() == InputDevice::UPDATESTATE_SKIP_PAD)
-			break;
+			doPad = false;
 	}
 
 	/*

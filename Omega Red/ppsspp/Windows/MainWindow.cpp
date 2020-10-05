@@ -41,6 +41,9 @@
 #include "thread/threadutil.h"
 #include "util/text/utf8.h"
 
+
+#include <GraphicsContext.h>
+
 #include "Core/Core.h"
 #include "Core/Config.h"
 #include "Core/ConfigValues.h"
@@ -49,19 +52,12 @@
 #include "Core/MIPS/JitCommon/JitBlockCache.h"
 #include "Windows/InputBox.h"
 #include "Windows/InputDevice.h"
-#if PPSSPP_API(ANY_GL)
-#include "Windows/GPU/WindowsGLContext.h"
-#include "Windows/GEDebugger/GEDebugger.h"
-#endif
 #include "Windows/Debugger/Debugger_Disasm.h"
 #include "Windows/Debugger/Debugger_MemoryDlg.h"
-
-#include "Common/GraphicsContext.h"
+#include "Windows/GEDebugger/GEDebugger.h"
 
 #include "Windows/main.h"
-#ifndef _M_ARM
 #include "Windows/DinputDevice.h"
-#endif
 #include "Windows/EmuThread.h"
 #include "Windows/resource.h"
 
@@ -72,7 +68,6 @@
 #include "Windows/W32Util/ShellUtil.h"
 #include "Windows/W32Util/Misc.h"
 #include "Windows/RawInput.h"
-#include "Windows/CaptureDevice.h"
 #include "Windows/TouchInputHandler.h"
 #include "Windows/MainWindowMenu.h"
 #include "GPU/GPUInterface.h"
@@ -104,17 +99,15 @@ extern ScreenManager *screenManager;
 
 #define TIMER_CURSORUPDATE 1
 #define TIMER_CURSORMOVEUPDATE 2
-#define TIMER_WHEELRELEASE 3
 #define CURSORUPDATE_INTERVAL_MS 1000
 #define CURSORUPDATE_MOVE_TIMESPAN_MS 500
-#define WHEELRELEASE_DELAY_MS 16
 
 namespace MainWindow
 {
 	IUnknown *unkDirectX11Device;
 	HWND hwndMain;
 	HWND hwndDisplay;
-	HWND hwndCapture;
+    HWND hwndCapture;
 	HWND hwndGameList;
 	TouchInputHandler touchHandler;
 	static HMENU menu;
@@ -144,29 +137,30 @@ namespace MainWindow
 	LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 	LRESULT CALLBACK DisplayProc(HWND, UINT, WPARAM, LPARAM);
 
+    IUnknown *GetUnkDirectX11Device()
+    {
+        return unkDirectX11Device;
+    }
+
 	HWND GetHWND() {
 		return hwndMain;
 	}
 
+
 	HWND GetDisplayHWND() {
 		return hwndDisplay;
-    }
+	}
 
-    void SetUnkDirectX11Device(IUnknown *a_PtrUnkDirectX11Device)
+	void SetUnkDirectX11Device(IUnknown * a_PtrUnkDirectX11Device)
     {
         unkDirectX11Device = a_PtrUnkDirectX11Device;
-    }
-
-    IUnknown *GetUnkDirectX11Device()
-    {
-        return unkDirectX11Device;
     }
 
     void SetDisplayHWND(HWND hwnd)
     {
         hwndDisplay = hwnd;
     }
-
+		
     HWND GetCaptureHWND()
     {
         return hwndCapture;
@@ -176,12 +170,12 @@ namespace MainWindow
     {
         hwndCapture = hwnd;
     }
-
+	   
 	void Init(HINSTANCE hInstance) {
 		// Register classes - Main Window
 		WNDCLASSEX wcex;
 		memset(&wcex, 0, sizeof(wcex));
-		wcex.cbSize = sizeof(WNDCLASSEX);
+		wcex.cbSize = sizeof(WNDCLASSEX); 
 		wcex.style = 0;  // Show in taskbar
 		wcex.lpfnWndProc = (WNDPROC)WndProc;
 		wcex.hInstance = hInstance;
@@ -255,7 +249,7 @@ namespace MainWindow
 			if (++g_Config.iInternalResolution > RESOLUTION_MAX)
 				g_Config.iInternalResolution = 0;
 		}
-
+		
 		// Taking auto-texture scaling into account
 		if (g_Config.iTexScalingLevel == TEXSCALING_AUTO)
 			setTexScalingMultiplier(0);
@@ -286,47 +280,36 @@ namespace MainWindow
 		}
 	}
 
-	void ReleaseMouseWheel() {
-			// For simplicity release both wheel events
-			KeyInput key;
-			key.deviceId = DEVICE_ID_MOUSE;
-			key.flags = KEY_UP;
-			key.keyCode = NKCODE_EXT_MOUSEWHEEL_DOWN;
-			NativeKey(key);
-			key.keyCode = NKCODE_EXT_MOUSEWHEEL_UP;
-			NativeKey(key);
-	}
-
 	static void HandleSizeChange(int newSizingType) {
 		SavePosition();
 		Core_NotifyWindowHidden(false);
 		if (!g_Config.bPauseWhenMinimized) {
 			NativeMessageReceived("window minimized", "false");
-        }
+		}
 
-        int width = 1280, height = 720;
-        //RECT rc;
-        //GetClientRect(hwndMain, &rc);
-        //width = rc.right - rc.left;
-        //height = rc.bottom - rc.top;
+		int width = 1280, height = 720;
+		//RECT rc;
+		//GetClientRect(hwndMain, &rc);
+		//width = rc.right - rc.left;
+		//height = rc.bottom - rc.top;
 
-        //// Moves the internal display window to match the inner size of the main window.
-        ////MoveWindow(hwndDisplay, 0, 0, width, height, TRUE);
+		//// Moves the internal display window to match the inner size of the main window.
+		////MoveWindow(hwndDisplay, 0, 0, width, height, TRUE);
 
-        //// Setting pixelWidth to be too small could have odd consequences.
-        //if (width >= 4 && height >= 4) {
-        //	// The framebuffer manager reads these once per frame, hopefully safe enough.. should really use a mutex or some
-        //	// much better mechanism.
-        //      }
+		//// Setting pixelWidth to be too small could have odd consequences.
+		//if (width >= 4 && height >= 4) {
+		//	// The framebuffer manager reads these once per frame, hopefully safe enough.. should really use a mutex or some
+		//	// much better mechanism.
+  //      }
 
         width = PSP_CoreParameter().pixelWidth;
         height = PSP_CoreParameter().pixelHeight;
 
-        DEBUG_LOG(SYSTEM, "Pixel width/height: %dx%d", PSP_CoreParameter().pixelWidth, PSP_CoreParameter().pixelHeight);
+		DEBUG_LOG(SYSTEM, "Pixel width/height: %dx%d", PSP_CoreParameter().pixelWidth, PSP_CoreParameter().pixelHeight);
 
-        if (UpdateScreenScale(width, height)) {
-            NativeMessageReceived("gpu_resized", "");
-        }
+		if (UpdateScreenScale(width, height)) {
+			NativeMessageReceived("gpu_resized", "");
+		}
 
 		// Don't save the window state if fullscreen.
 		if (!g_Config.bFullScreen) {
@@ -357,7 +340,7 @@ namespace MainWindow
 			dwStyle &= ~WS_POPUP;
 			// Re-add caption and border styles.
 			dwStyle |= WS_OVERLAPPEDWINDOW;
-
+			
 			// Put back the menu bar.
 			::SetMenu(hWnd, menu);
 		} else {
@@ -465,7 +448,7 @@ namespace MainWindow
 			bool portrait = g_Config.IsPortrait();
 
 			// We want to adjust for DPI but still get an integer pixel scaling ratio.
-			double dpi_scale = 96.0 / System_GetPropertyFloat(SYSPROP_DISPLAY_DPI);
+			double dpi_scale = 96.0 / System_GetPropertyInt(SYSPROP_DISPLAY_DPI);
 			int scale = (int)ceil(2.0 / dpi_scale);
 
 			GetWindowSizeAtResolution(scale * (portrait ? 272 : 480), scale * (portrait ? 480 : 272), &windowWidth, &windowHeight);
@@ -505,7 +488,7 @@ namespace MainWindow
 		RECT rc = DetermineWindowRectangle();
 		SavePosition();
 
-		//u32 style = WS_OVERLAPPEDWINDOW;
+		u32 style = WS_OVERLAPPEDWINDOW;
 
 		//hwndMain = CreateWindowEx(0,szWindowClass, L"", style,
 		//	rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, hInstance, NULL);
@@ -519,8 +502,8 @@ namespace MainWindow
 
 		//hwndDisplay = CreateWindowEx(0, szDisplayClass, L"", WS_CHILD | WS_VISIBLE,
 		//	0, 0, rcClient.right - rcClient.left, rcClient.bottom - rcClient.top, hwndMain, 0, hInstance, 0);
-		//if (!hwndDisplay)
-		//	return FALSE;
+		if (!hwndDisplay)
+			return FALSE;
 
 		//menu = GetMenu(hwndMain);
 
@@ -538,16 +521,16 @@ namespace MainWindow
 		//TranslateMenus(hwndMain, menu);
 		//UpdateMenus();
 
-		//// Accept dragged files.
+		// Accept dragged files.
 		//DragAcceptFiles(hwndMain, TRUE);
 
 		hideCursor = true;
 		//SetTimer(hwndMain, TIMER_CURSORUPDATE, CURSORUPDATE_INTERVAL_MS, 0);
 
-        HandleSizeChange(0);
+		HandleSizeChange(0);
 
 		//ToggleFullscreen(hwndMain, g_Config.bFullScreen);
-
+		
 		//W32Util::MakeTopMost(hwndMain, g_Config.bTopMost);
 
 		//touchHandler.registerTouchWindow(hwndDisplay);
@@ -577,14 +560,12 @@ namespace MainWindow
 		if (disasmWindow[0])
 			delete disasmWindow[0];
 		disasmWindow[0] = 0;
-
-#if PPSSPP_API(ANY_GL)
+		
 		DialogManager::RemoveDlg(geDebuggerWindow);
 		if (geDebuggerWindow)
 			delete geDebuggerWindow;
 		geDebuggerWindow = 0;
-#endif
-
+		
 		DialogManager::RemoveDlg(memoryWindow[0]);
 		if (memoryWindow[0])
 			delete memoryWindow[0];
@@ -712,7 +693,7 @@ namespace MainWindow
 		}
 		return 0;
 	}
-
+	
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)	{
 		switch (message) {
 		case WM_CREATE:
@@ -721,7 +702,7 @@ namespace MainWindow
 				RemoveMenu(GetMenu(hWnd), ID_OPTIONS_DIRECT3D11, MF_BYCOMMAND);
 			}
 			break;
-
+			
 		case WM_GETMINMAXINFO:
 			{
 				MINMAXINFO *minmax = reinterpret_cast<MINMAXINFO *>(lParam);
@@ -813,7 +794,21 @@ namespace MainWindow
 			}
 			break;
 
-		// Wheel events have to stay in WndProc for compatibility with older Windows(7). See #12156
+    case WM_TIMER:
+			// Hack: Take the opportunity to also show/hide the mouse cursor in fullscreen mode.
+			switch (wParam) {
+			case TIMER_CURSORUPDATE:
+				CorrectCursor();
+				return 0;
+
+			case TIMER_CURSORMOVEUPDATE:
+				hideCursor = true;
+				KillTimer(hWnd, TIMER_CURSORMOVEUPDATE);
+				return 0;
+			}
+			break;
+
+		// For some reason, need to catch this here rather than in DisplayProc.
 		case WM_MOUSEWHEEL:
 			{
 				int wheelDelta = (short)(wParam >> 16);
@@ -826,30 +821,10 @@ namespace MainWindow
 				} else {
 					key.keyCode = NKCODE_EXT_MOUSEWHEEL_UP;
 				}
-				// There's no separate keyup event for mousewheel events,
-				// so we release it with a slight delay.
-				key.flags = KEY_DOWN | KEY_HASWHEELDELTA | (wheelDelta << 16);
-				SetTimer(hwndMain, TIMER_WHEELRELEASE, WHEELRELEASE_DELAY_MS, 0);
+				// There's no separate keyup event for mousewheel events, let's pass them both together.
+				// This also means it really won't work great for key mapping :( Need to build a 1 frame delay or something.
+				key.flags = KEY_DOWN | KEY_UP | KEY_HASWHEELDELTA | (wheelDelta << 16);
 				NativeKey(key);
-			}
-			break;
-
-		case WM_TIMER:
-			// Hack: Take the opportunity to also show/hide the mouse cursor in fullscreen mode.
-			switch (wParam) {
-			case TIMER_CURSORUPDATE:
-				CorrectCursor();
-				return 0;
-
-			case TIMER_CURSORMOVEUPDATE:
-				hideCursor = true;
-				KillTimer(hWnd, TIMER_CURSORMOVEUPDATE);
-				return 0;
-			// Hack: need to release wheel event with a delay for games to register it was "pressed down".
-			case TIMER_WHEELRELEASE:
-				ReleaseMouseWheel();
-				KillTimer(hWnd, TIMER_WHEELRELEASE);
-				return 0;
 			}
 			break;
 
@@ -876,10 +851,7 @@ namespace MainWindow
 			return WindowsRawInput::ProcessChar(hWnd, wParam, lParam);
 
 		case WM_DEVICECHANGE:
-#ifndef _M_ARM
 			DinputDevice::CheckDevices();
-#endif
-			WindowsCaptureDevice::CheckDevices();
 			return DefWindowProc(hWnd, message, wParam, lParam);
 
 		case WM_VERYSLEEPY_MSG:
@@ -939,7 +911,6 @@ namespace MainWindow
 		case WM_DESTROY:
 			KillTimer(hWnd, TIMER_CURSORUPDATE);
 			KillTimer(hWnd, TIMER_CURSORMOVEUPDATE);
-			KillTimer(hWnd, TIMER_WHEELRELEASE);
 			PostQuitMessage(0);
 			break;
 
@@ -1005,10 +976,10 @@ namespace MainWindow
 		case WM_SYSCOMMAND:
 			{
 				switch (wParam) {
-				case SC_SCREENSAVE:
+				case SC_SCREENSAVE:  
 					return 0;
 				case SC_MONITORPOWER:
-					return 0;
+					return 0;      
 				}
 				return DefWindowProc(hWnd, message, wParam, lParam);
 			}
@@ -1018,9 +989,9 @@ namespace MainWindow
 		}
 		return 0;
 	}
-
+	
 	void Redraw() {
-		InvalidateRect(hwndDisplay,0,0);
+		//InvalidateRect(hwndDisplay,0,0);
 	}
 
 	HINSTANCE GetHInstance() {

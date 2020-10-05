@@ -72,7 +72,6 @@ private:
 	u32 frameSize;
 	u32 numBlocks;
 	u32 numFrames;
-	int ver_;
 };
 
 

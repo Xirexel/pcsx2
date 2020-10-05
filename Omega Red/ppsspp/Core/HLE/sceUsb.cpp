@@ -63,13 +63,13 @@ void __UsbDoState(PointerWrap &p)
 }
 
 static int sceUsbStart(const char* driverName, u32 argsSize, u32 argsPtr) {
-	INFO_LOG(HLE, "sceUsbStart(%s, %i, %08x)", driverName, argsSize, argsPtr);
+	ERROR_LOG(HLE, "UNIMPL sceUsbStart(%s, %i, %08x)", driverName, argsSize, argsPtr);
 	usbStarted = true;
 	return 0;
 }
 
 static int sceUsbStop(const char* driverName, u32 argsSize, u32 argsPtr) {
-	INFO_LOG(HLE, "sceUsbStop(%s, %i, %08x)", driverName, argsSize, argsPtr);
+	ERROR_LOG(HLE, "UNIMPL sceUsbStop(%s, %i, %08x)", driverName, argsSize, argsPtr);
 	usbStarted = false;
 	return 0;
 }
@@ -83,29 +83,19 @@ static int sceUsbGetState() {
 			| (usbConnected ? USB_STATUS_CONNECTED : USB_STATUS_DISCONNECTED)
 			| (usbActivated ? USB_STATUS_ACTIVATED : USB_STATUS_DEACTIVATED);
 	}
-	INFO_LOG(HLE, "sceUsbGetState: 0x%x", state);
+	ERROR_LOG(HLE, "UNIMPL sceUsbGetState: 0x%x", state);
 	return state;
 }
 
 static int sceUsbActivate(u32 pid) {
-	INFO_LOG(HLE, "sceUsbActivate(%i)", pid);
+	ERROR_LOG(HLE, "UNIMPL sceUsbActivate(%i)", pid);
 	usbActivated = true;
 	return 0;
 }
 
 static int sceUsbDeactivate(u32 pid) {
-	INFO_LOG(HLE, "sceUsbDeactivate(%i)", pid);
+	ERROR_LOG(HLE, "UNIMPL sceUsbDeactivate(%i)", pid);
 	usbActivated = false;
-	return 0;
-}
-
-static int sceUsbWaitState(int state, int waitMode, u32 timeoutAddr) {
-	ERROR_LOG(HLE, "UNIMPL sceUsbWaitStat(%i, %i, %08x)", state, waitMode, timeoutAddr);
-	return sceUsbGetState();
-}
-
-static int sceUsbWaitStateCB(int state, int waitMode, u32 timeoutAddr) {
-	ERROR_LOG(HLE, "UNIMPL sceUsbWaitStateCB(%i, %i, %08x)", state, waitMode, timeoutAddr);
 	return 0;
 }
 
@@ -118,8 +108,8 @@ const HLEFunction sceUsb[] =
 	{0X112CC951, nullptr,                            "sceUsbGetDrvState",                       '?', ""   },
 	{0X586DB82C, &WrapI_U<sceUsbActivate>,           "sceUsbActivate",                          'i', "x"  },
 	{0XC572A9C8, &WrapI_U<sceUsbDeactivate>,         "sceUsbDeactivate",                        'i', "x"  },
-	{0X5BE0E002, &WrapI_IIU<sceUsbWaitState>,        "sceUsbWaitState",                         '?', "xxx"},
-	{0X616F2B61, &WrapI_IIU<sceUsbWaitStateCB>,      "sceUsbWaitStateCB",                       '?', "xxx"},
+	{0X5BE0E002, nullptr,                            "sceUsbWaitState",                         '?', ""   },
+	{0X616F2B61, nullptr,                            "sceUsbWaitStateCB",                       '?', ""   },
 	{0X1C360735, nullptr,                            "sceUsbWaitCancel",                        '?', ""   },
 };
 

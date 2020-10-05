@@ -92,7 +92,6 @@ bool GameInfo::Delete() {
 		{
 			const std::string &fileToRemove = filePath_;
 			File::Delete(fileToRemove);
-			g_Config.RemoveRecent(filePath_);
 			return true;
 		}
 
@@ -265,7 +264,6 @@ void GameInfo::ParseParamSFO() {
 		case 'J': region = GAMEREGION_JAPAN; break;
 		case 'H': region = GAMEREGION_HONGKONG; break;
 		case 'A': region = GAMEREGION_ASIA; break;
-		case 'K': region = GAMEREGION_KOREA; break;
 		}
 		/*
 		if (regStr == "NPEZ" || regStr == "NPEG" || regStr == "ULES" || regStr == "UCES" ||
@@ -302,7 +300,7 @@ static bool ReadFileToString(IFileSystem *fs, const char *filename, std::string 
 	}
 
 	int handle = fs->OpenFile(filename, FILEACCESS_READ);
-	if (handle < 0) {
+	if (!handle) {
 		return false;
 	}
 
@@ -735,7 +733,6 @@ void GameInfoCache::WaitUntilDone(std::shared_ptr<GameInfo> &info) {
 
 
 // Runs on the main thread. Only call from render() and similar, not update()!
-// Can also be called from the audio thread for menu background music.
 std::shared_ptr<GameInfo> GameInfoCache::GetInfo(Draw::DrawContext *draw, const std::string &gamePath, int wantFlags) {
 	std::shared_ptr<GameInfo> info;
 

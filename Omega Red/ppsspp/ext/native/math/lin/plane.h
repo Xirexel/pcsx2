@@ -3,8 +3,6 @@
 
 #include "math/lin/vec3.h"
 
-namespace Lin {
-
 class Matrix4x4;
 
 class Plane {
@@ -35,7 +33,5 @@ public:
 	// out cannot be equal to this.
 	void TransformByIT(const Matrix4x4 &matrix, Plane *out);
 };
-
-}  // namespace Lin
 
 #endif

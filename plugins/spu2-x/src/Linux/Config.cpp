@@ -120,32 +120,32 @@ void ReadSettings()
     VolumeAdjustLFE = powf(10, VolumeAdjustLFEdb / 10);
     delayCycles = CfgReadInt(L"DEBUG", L"DelayCycles", 4);
 
-    wxString temp;
 
-#if SDL_MAJOR_VERSION >= 2
-    CfgReadStr(L"OUTPUT", L"Output_Module", temp, SDLOut->GetIdent());
-#else
+    wxString temp;
     CfgReadStr(L"OUTPUT", L"Output_Module", temp, PortaudioOut->GetIdent());
-#endif
     OutputModule = FindOutputModuleById(temp.c_str()); // find the driver index of this module
 
 // find current API
 #ifdef __linux__
     CfgReadStr(L"PORTAUDIO", L"HostApi", temp, L"ALSA");
+    OutputAPI = -1;
+    if (temp == L"ALSA")
+        OutputAPI = 0;
     if (temp == L"OSS")
         OutputAPI = 1;
-    else if (temp == L"JACK")
+    if (temp == L"JACK")
         OutputAPI = 2;
-    else // L"ALSA"
-        OutputAPI = 0;
 #else
     CfgReadStr(L"PORTAUDIO", L"HostApi", temp, L"OSS");
-    OutputAPI = 0; // L"OSS"
+    OutputAPI = -1;
+
+    if (temp == L"OSS")
+        OutputAPI = 0;
 #endif
 
 #ifdef __unix__
     CfgReadStr(L"SDL", L"HostApi", temp, L"pulseaudio");
-    SdlOutputAPI = 0;
+    SdlOutputAPI = -1;
 #if SDL_MAJOR_VERSION >= 2
     // YES It sucks ...
     for (int i = 0; i < SDL_GetNumAudioDrivers(); ++i) {
@@ -169,12 +169,6 @@ void ReadSettings()
     // -------------
 
     Clampify(SndOutLatencyMS, LATENCY_MIN, LATENCY_MAX);
-
-    if (mods[OutputModule] == NULL) {
-        fwprintf(stderr, L"* SPU2-X: Unknown output module '%s' specified in configuration file.\n", temp.wc_str());
-        fprintf(stderr, "* SPU2-X: Defaulting to SDL (%S).\n", SDLOut->GetIdent());
-        OutputModule = FindOutputModuleById(SDLOut->GetIdent());
-    }
 
     WriteSettings();
     spuConfig->Flush();

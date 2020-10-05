@@ -8,9 +8,7 @@ struct SSBO
     float4 value;
 };
 
-constant uint3 gl_WorkGroupSize [[maybe_unused]] = uint3(1u);
-
-kernel void main0(volatile device SSBO& _10 [[buffer(0)]])
+kernel void main0(device SSBO& _10 [[buffer(1)]])
 {
     _10.value = float4(20.0);
 }

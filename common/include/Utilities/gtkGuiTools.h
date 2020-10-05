@@ -34,11 +34,6 @@
 // on what it's built for.
 //
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-function"
-#endif
-
 static GtkWidget *ps_gtk_hbox_new(int padding = 5)
 {
 #if GTK_MAJOR_VERSION < 3
@@ -136,7 +131,3 @@ static void pcsx2_message(const wchar_t *fmt, ...)
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif

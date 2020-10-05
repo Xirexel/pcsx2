@@ -41,6 +41,7 @@ namespace Omega_Red.Views
 
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            Omega_Red.Properties.Settings.Default.Save();
         }
 
         private void Slider_TouchDown(object sender, TouchEventArgs e)

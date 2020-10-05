@@ -29,12 +29,4 @@ enum class DisplayRotation {
 };
 
 extern DisplayRotation g_display_rotation;
-extern Lin::Matrix4x4 g_display_rot_matrix;
-
-template<class T>
-struct DisplayRect {
-	T x, y, w, h;
-};
-
-void RotateRectToDisplay(DisplayRect<float> &rect, float rtWidth, float rtHeight);
-void RotateRectToDisplay(DisplayRect<int> &rect, int rtWidth, int rtHeight);
+extern Matrix4x4 g_display_rot_matrix;

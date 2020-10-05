@@ -111,7 +111,7 @@ void DrawEngineDX9::ApplyDrawState(int prim) {
 	// Start profiling here to skip SetTexture which is already accounted for
 	PROFILE_THIS_SCOPE("applydrawstate");
 
-	bool useBufferedRendering = framebufferManager_->UseBufferedRendering();
+	bool useBufferedRendering = g_Config.iRenderingMode != FB_NON_BUFFERED_MODE;
 
 	if (gstate_c.IsDirty(DIRTY_BLEND_STATE)) {
 		gstate_c.Clean(DIRTY_BLEND_STATE);

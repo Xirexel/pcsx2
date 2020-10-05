@@ -56,3 +56,11 @@ extern InfoVector iop;
 extern InfoVector vu;
 extern InfoVector vif;
 }
+
+#ifdef __ANDROID__
+extern int pthread_setcancelstate (int state, int *oldstate);
+
+#define PTHREAD_CANCEL_DISABLE 		0
+#define PTHREAD_CANCEL_ENABLE 		0
+
+#endif

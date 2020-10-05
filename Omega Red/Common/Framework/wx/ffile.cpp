@@ -54,3 +54,5 @@ bool wxFFile::IsOpened()
 {
 	return false;
 }
+
+void wxFFile::Flush(){}

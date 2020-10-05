@@ -38,9 +38,9 @@ PFNGLISVERTEXARRAYOESPROC glIsVertexArrayOES;
 
 GLExtensions gl_extensions;
 std::string g_all_gl_extensions;
-static std::set<std::string> g_set_gl_extensions;
+std::set<std::string> g_set_gl_extensions;
 std::string g_all_egl_extensions;
-static std::set<std::string> g_set_egl_extensions;
+std::set<std::string> g_set_egl_extensions;
 
 static bool extensionsDone = false;
 static bool useCoreContext = false;
@@ -109,7 +109,6 @@ void ProcessGPUFeatures() {
 			WLOG("GL DRIVER BUG: PVR with bad and terrible precision");
 			gl_extensions.bugs |= BUG_PVR_SHADER_PRECISION_TERRIBLE | BUG_PVR_SHADER_PRECISION_BAD;
 		} else {
-			// TODO: I'm not sure if the Rogue series is affected by this.
 			WLOG("GL DRIVER BUG: PVR with bad precision");
 			gl_extensions.bugs |= BUG_PVR_SHADER_PRECISION_BAD;
 		}
@@ -562,15 +561,6 @@ void SetGLCoreContext(bool flag) {
 	useCoreContext = flag;
 	// For convenience, it'll get reset later.
 	gl_extensions.IsCoreContext = useCoreContext;
-}
-
-void ResetGLExtensions() {
-	extensionsDone = false;
-
-	gl_extensions = {};
-	gl_extensions.IsCoreContext = useCoreContext;
-	g_all_gl_extensions.clear();
-	g_all_egl_extensions.clear();
 }
 
 static const char *glsl_fragment_prelude =

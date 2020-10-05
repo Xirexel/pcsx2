@@ -20,6 +20,8 @@
 #include "Common/Common.h"
 #include "Common/CommonTypes.h"
 
+#define MISSING_KEY -10
+
 #ifdef _MSC_VER
 #pragma pack(push, 1)
 #endif
@@ -64,4 +66,5 @@ typedef struct
 #pragma pack(pop)
 #endif
 
-int pspDecryptPRX(const u8 *inbuf, u8 *outbuf, u32 size, const u8 *seed = nullptr);
+int pspDecryptPRX(const u8 *inbuf, u8 *outbuf, u32 size);
+

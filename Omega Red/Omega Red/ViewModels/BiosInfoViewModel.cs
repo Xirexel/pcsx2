@@ -12,10 +12,8 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Models;
-using Omega_Red.Panels;
 using Omega_Red.Properties;
 using Omega_Red.Tools;
 using System;
@@ -43,6 +41,9 @@ namespace Omega_Red.ViewModels
     [DataTemplateNameAttribute("BiosInfoItem")]
     public class BiosInfoViewModel : BaseViewModel
     {
+        [DllImport("user32.dll")]
+        static extern bool SetForegroundWindow(IntPtr hWnd);
+
         protected override Managers.IManager Manager
         {
             get { return BiosManager.Instance; }
@@ -50,7 +51,7 @@ namespace Omega_Red.ViewModels
 
         public BiosInfoViewModel()
         {
-            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
             if(Collection != null)
                 Collection.CollectionChanged += Collection_CollectionChanged;
@@ -66,30 +67,11 @@ namespace Omega_Red.ViewModels
 
         private bool m_IsEnabled = true;
                 
-        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
         {
-            IsEnabled = a_Status == Emul.StatusEnum.Stopped 
-                || a_Status == Emul.StatusEnum.Initilized
-                || a_Status == Emul.StatusEnum.NoneInitilized;
-
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
-            {
-                CurrentBiosZone = "";
-                
-                if (Emul.Instance.BiosInfo == null)
-                    return;
-
-                string l_prefix = ": ";
-
-                if (!string.IsNullOrWhiteSpace(Emul.Instance.BiosInfo.ContainerFile.ToString()))
-                {
-                    CurrentContainerFile = l_prefix + Emul.Instance.BiosInfo.ContainerFile.ToString();
-
-                    l_prefix = " - ";
-                }
-
-                CurrentBiosZone = l_prefix + Emul.Instance.BiosInfo.Zone + " " + Emul.Instance.BiosInfo.Version;
-            });
+            IsEnabled = a_Status == PCSX2Controller.StatusEnum.Stopped 
+                || a_Status == PCSX2Controller.StatusEnum.Initilized
+                || a_Status == PCSX2Controller.StatusEnum.NoneInitilized;
         }  
 
         public bool IsEnabled
@@ -120,44 +102,48 @@ namespace Omega_Red.ViewModels
         {
             get {
 
-                TipInfoPanel l_TipInfoPanel = new TipInfoPanel();
+                Border lBackBorder = new Border();
 
-                l_TipInfoPanel.addHyperLink(@"https://www.google.com.au/search?client=opera&q=ps2+bios+pack&sourceid=opera&ie=UTF-8&oe=UTF-8");
+                TextBlock lTextBlock = new TextBlock();
+
+                lTextBlock.Foreground = System.Windows.Media.Brushes.Black;
+
+                lTextBlock.TextWrapping = TextWrapping.Wrap;
+
+                lBackBorder.Child = lTextBlock;
+
+                lBackBorder.Margin = new Thickness(5);
                 
-                var l_TipTitle = App.Current.Resources["BiosTipTitle"];
+                var lHyperlink = new Hyperlink();
 
-                if (l_TipTitle != null)
-                    l_TipInfoPanel.setTipTitle(l_TipTitle.ToString());
+                lHyperlink.Inlines.Add(@"https://www.google.com.au/search?client=opera&q=ps2+bios+pack&sourceid=opera&ie=UTF-8&oe=UTF-8");
 
-                return l_TipInfoPanel;
+                lHyperlink.Click += delegate (object sender, RoutedEventArgs e)
+                {
+                    var lHyperlink1 = sender as Hyperlink;
+
+                    if (lHyperlink1 == null)
+                        return;
+
+                    var lRun = lHyperlink1.Inlines.FirstInline as Run;
+
+                    if (lRun == null)
+                        return;
+
+                    Native.openURL(lRun.Text);
+                };
+
+                var l_BiosTipTitle = App.Current.Resources["BiosTipTitle"];
+                               
+                lTextBlock.Inlines.Add(l_BiosTipTitle as string);
+
+                lTextBlock.Inlines.Add(new LineBreak());
+
+                lTextBlock.Inlines.Add(lHyperlink);
+
+                return lBackBorder;
             }
         }
-
-        private string mCurrentContainerFile = "";
-
-        public string CurrentContainerFile
-        {
-            get { return mCurrentContainerFile; }
-            set
-            {
-                mCurrentContainerFile = value;
-
-                RaisePropertyChangedEvent("CurrentContainerFile");
-            }
-        }
-
-        private string mCurrentBiosZone = "";
-
-        public string CurrentBiosZone
-        {
-            get { return mCurrentBiosZone; }
-            set
-            {
-                mCurrentBiosZone = value;
-
-                RaisePropertyChangedEvent("CurrentBiosZone");
-            }
-        }        
     }
 }
 

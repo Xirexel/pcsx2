@@ -87,7 +87,7 @@ public:
 
 	wxDateTime& FromTimezone(const GMT& a_GMT, bool noDST = false);
 
-	inline time_t wxDateTime::GetTicks() const
+	inline time_t GetTicks() const
 	{
 		return m_mill;
 	}
@@ -99,7 +99,7 @@ public:
 		return dt;
 	}
 
-	inline wxDateTime& wxDateTime::Add(const wxTimeSpan& diff)
+	inline wxDateTime& Add(const wxTimeSpan& diff)
 	{
 		m_mill += diff.GetMilliseconds();
 

@@ -18,10 +18,6 @@
 #include <string>
 #include <cstring>
 
-#ifndef _MSC_VER
-#include <strings.h>
-#endif
-
 #include "Core/Debugger/Breakpoints.h"
 #include "Core/Debugger/SymbolMap.h"
 #include "Core/Debugger/DebugInterface.h"

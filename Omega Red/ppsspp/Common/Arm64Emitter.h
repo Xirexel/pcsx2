@@ -162,8 +162,7 @@ enum RoundingMode {
 
 struct FixupBranch
 {
-	// Pointer to executable code address.
-	const u8 *ptr;
+	u8* ptr;
 	// Type defines
 	// 0 = CBZ (32bit)
 	// 1 = CBNZ (32bit)
@@ -339,12 +338,11 @@ public:
 class ARM64XEmitter
 {
 	friend class ARM64FloatEmitter;
-	friend class ARM64CodeBlock;
 
 private:
-	const u8 *m_code = nullptr;
-	u8 *m_writable = nullptr;
-	const u8 *m_lastCacheFlushEnd = nullptr;
+	u8* m_code;
+	u8* m_startcode;
+	u8* m_lastCacheFlushEnd;
 
 	void EncodeCompareBranchInst(u32 op, ARM64Reg Rt, const void* ptr);
 	void EncodeTestBranchInst(u32 op, ARM64Reg Rt, u8 bits, const void* ptr);
@@ -378,30 +376,34 @@ private:
 protected:
 	inline void Write32(u32 value)
 	{
-		*(u32 *)m_writable = value;
+		*(u32*)m_code = value;
 		m_code += 4;
-		m_writable += 4;
 	}
 
 public:
 	ARM64XEmitter()
+		: m_code(nullptr), m_startcode(nullptr), m_lastCacheFlushEnd(nullptr)
 	{
 	}
 
-	ARM64XEmitter(const u8 *codePtr, u8 *writablePtr);
+	ARM64XEmitter(u8* code_ptr) {
+		m_code = code_ptr;
+		m_lastCacheFlushEnd = code_ptr;
+		m_startcode = code_ptr;
+	}
 
 	virtual ~ARM64XEmitter()
 	{
 	}
 
-	void SetCodePointer(const u8 *ptr, u8 *writePtr);
+	void SetCodePointer(u8* ptr);
 	const u8* GetCodePointer() const;
 
 	void ReserveCodeSpace(u32 bytes);
 	const u8* AlignCode16();
 	const u8* AlignCodePage();
 	void FlushIcache();
-	void FlushIcacheSection(const u8* start, const u8* end);
+	void FlushIcacheSection(u8* start, u8* end);
 	u8* GetWritableCodePtr();
 
 	// FixupBranch branching

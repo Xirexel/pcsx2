@@ -70,7 +70,7 @@ private:
 
 	void InitClear() override;
 	void BeginFrame() override;
-	void CopyDisplayToOutput(bool reallyDirty) override;
+	void CopyDisplayToOutput() override;
 
 	LPDIRECT3DDEVICE9 device_;
 	LPDIRECT3DDEVICE9EX deviceEx_;
@@ -80,6 +80,8 @@ private:
 	DepalShaderCacheDX9 depalShaderCache_;
 	DrawEngineDX9 drawEngine_;
 	ShaderManagerDX9 *shaderManagerDX9_;
+
+	int lastVsync_;
 };
 
 }  // namespace DX9

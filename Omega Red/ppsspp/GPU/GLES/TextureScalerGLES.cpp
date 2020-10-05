@@ -28,32 +28,30 @@
 #include "Common/ColorConv.h"
 #include "Common/Log.h"
 #include "Common/ThreadPools.h"
-#include "thin3d/DataFormat.h"
 
 int TextureScalerGLES::BytesPerPixel(u32 format) {
-	return ((Draw::DataFormat)format == Draw::DataFormat::R8G8B8A8_UNORM) ? 4 : 2;
+	return (format == GL_UNSIGNED_BYTE) ? 4 : 2;
 }
 
 u32 TextureScalerGLES::Get8888Format() {
-	return (u32)Draw::DataFormat::R8G8B8A8_UNORM;
+	return GL_UNSIGNED_BYTE;
 }
 
 void TextureScalerGLES::ConvertTo8888(u32 format, u32* source, u32* &dest, int width, int height) {
-	Draw::DataFormat fmt = (Draw::DataFormat)format;
-	switch (fmt) {
-	case Draw::DataFormat::R8G8B8A8_UNORM:
+	switch(format) {
+	case GL_UNSIGNED_BYTE:
 		dest = source; // already fine
 		break;
 
-	case Draw::DataFormat::R4G4B4A4_UNORM_PACK16:
+	case GL_UNSIGNED_SHORT_4_4_4_4:
 		GlobalThreadPool::Loop(std::bind(&convert4444_gl, (u16*)source, dest, width, std::placeholders::_1, std::placeholders::_2), 0, height);
 		break;
 
-	case Draw::DataFormat::R5G6B5_UNORM_PACK16:
+	case GL_UNSIGNED_SHORT_5_6_5:
 		GlobalThreadPool::Loop(std::bind(&convert565_gl, (u16*)source, dest, width, std::placeholders::_1, std::placeholders::_2), 0, height);
 		break;
 
-	case Draw::DataFormat::R5G5B5A1_UNORM_PACK16:
+	case GL_UNSIGNED_SHORT_5_5_5_1:
 		GlobalThreadPool::Loop(std::bind(&convert5551_gl, (u16*)source, dest, width, std::placeholders::_1, std::placeholders::_2), 0, height);
 		break;
 

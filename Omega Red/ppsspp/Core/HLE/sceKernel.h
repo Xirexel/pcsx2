@@ -340,7 +340,6 @@ enum TMIDPurpose
 	PPSSPP_KERNEL_TMID_PMB             = 0x100002,
 	PPSSPP_KERNEL_TMID_File            = 0x100003,
 	PPSSPP_KERNEL_TMID_DirList         = 0x100004,
-	PPSSPP_KERNEL_TMID_Heap            = 0x100005,
 };
 
 typedef int SceUID;

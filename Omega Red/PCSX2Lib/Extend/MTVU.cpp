@@ -104,9 +104,11 @@ void VU_Thread::Reset()
 		vu1Thread.vuCycles[i] = 0;
 }
 
+#ifdef _MSC_VER
 static HANDLE mmcssHandle = NULL;
 
 static DWORD mmcssTaskIndex = 0;
+#endif
 
 void VU_Thread::ExecuteTaskInThread()
 {

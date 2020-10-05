@@ -54,8 +54,6 @@ private:
 
 namespace http {
 
-bool GetHeaderValue(const std::vector<std::string> &responseHeaders, const std::string &header, std::string *value);
-
 class Client : public net::Connection {
 public:
 	Client();
@@ -71,9 +69,9 @@ public:
 
 	// HEAD, PUT, DELETE aren't implemented yet, but can be done with SendRequest.
 
-	int SendRequest(const char *method, const char *resource, const char *otherHeaders = nullptr, float *progress = nullptr, bool *cancelled = nullptr);
-	int SendRequestWithData(const char *method, const char *resource, const std::string &data, const char *otherHeaders = nullptr, float *progress = nullptr, bool *cancelled = nullptr);
-	int ReadResponseHeaders(Buffer *readbuf, std::vector<std::string> &responseHeaders, float *progress = nullptr, bool *cancelled = nullptr);
+	int SendRequest(const char *method, const char *resource, const char *otherHeaders = nullptr, float *progress = nullptr);
+	int SendRequestWithData(const char *method, const char *resource, const std::string &data, const char *otherHeaders = nullptr, float *progress = nullptr);
+	int ReadResponseHeaders(Buffer *readbuf, std::vector<std::string> &responseHeaders, float *progress = nullptr);
 	// If your response contains a response, you must read it.
 	int ReadResponseEntity(Buffer *readbuf, const std::vector<std::string> &responseHeaders, Buffer *output, float *progress = nullptr, bool *cancelled = nullptr);
 
@@ -93,9 +91,9 @@ public:
 	Download(const std::string &url, const std::string &outfile);
 	~Download();
 
-	void Start();
-
-	void Join();
+	// Keeps around an instance of the shared_ptr, so that it doesn't get destructed
+	// until done.
+	void Start(std::shared_ptr<Download> self);
 
 	// Returns 1.0 when done. That one value can be compared exactly - or just use Done().
 	float Progress() const { return progress_; }
@@ -138,22 +136,17 @@ public:
 	void SetHidden(bool hidden) { hidden_ = hidden; }
 
 private:
-	void Do();  // Actually does the download. Runs on thread.
-	int PerformGET(const std::string &url);
-	std::string RedirectLocation(const std::string &baseUrl);
+	void Do(std::shared_ptr<Download> self);  // Actually does the download. Runs on thread.
 	void SetFailed(int code);
-	float progress_ = 0.0f;
+	float progress_;
 	Buffer buffer_;
-	std::vector<std::string> responseHeaders_;
 	std::string url_;
 	std::string outfile_;
-	std::thread thread_;
-	int resultCode_ = 0;
-	bool completed_ = false;
-	bool failed_ = false;
-	bool cancelled_ = false;
-	bool hidden_ = false;
-	bool joined_ = false;
+	int resultCode_;
+	bool completed_;
+	bool failed_;
+	bool cancelled_;
+	bool hidden_;
 	std::function<void(Download &)> callback_;
 };
 

@@ -1,7 +1,11 @@
 // MemoryCard.cpp : Defines the exported functions for the DLL application.
 //
 
+#ifdef __ANDROID__
+#include "MC.h"
+#else
 #include "stdafx.h"
+#endif
 #include "MemoryCard.h"
 
 MemoryCard g_MemoryCard;
@@ -68,10 +72,7 @@ void MemoryCard::execute(const wchar_t* a_command, wchar_t** a_result)
 				{
 					close();
 
-					for (auto &l_item : m_McdFiles) {
-
-                        l_item.second.m_file_stream = std::fstream();
-                    }
+					m_McdFiles.clear();
 				}
 
 				l_ChildNode = l_ChildNode.next_sibling();

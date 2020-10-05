@@ -20,70 +20,11 @@
 #include "resource.h"
 #include "InputManager.h"
 #include "Config.h"
-
-#include "Tooltips.h"
-#include "Diagnostics.h"
 #include "DeviceEnumerator.h"
-#include "KeyboardQueue.h"
-#include "WndProcEater.h"
-#include "DualShock3.h"
 
-#include <Shlwapi.h>
 
-// Needed to know if raw input is available.  It requires XP or higher.
-#include "RawInput.h"
-
-//max len 24 wchar_t
-const wchar_t *padTypes[] = {
-    L"Unplugged",
-    L"Dualshock 2",
-    L"Guitar",
-    L"Pop'n Music controller",
-    L"PS1 Mouse",
-    L"neGcon"};
-
-// Hacks or configurations which PCSX2 needs with a specific value
-void PCSX2_overrideConfig(GeneralConfig &config_in_out)
-{
-    config_in_out.disableScreenSaver = 0;   // Not required - handled internally by PCSX2
-    config_in_out.escapeFullscreenHack = 0; // Not required - handled internally by PCSX2
-    config_in_out.saveStateTitle = 0;       // Not required - handled internally by PCSX2
-    config_in_out.closeHack = 0;            // Cannot function when used by PCSX2
-}
-
-// Dialog widgets which should be disabled - mostly matching PCSX2_overrideConfig
-const UINT *PCSX2_disabledWidgets()
-{
-    static const UINT disabledWidgets[] = {
-        IDC_DISABLE_SCREENSAVER,
-        IDC_ESCAPE_FULLSCREEN_HACK,
-        IDC_SAVE_STATE_TITLE,
-        IDC_ANALOG_START1, // start in analog mode - only useful for PS1
-        IDC_CLOSE_HACK,
-        0};
-    return disabledWidgets;
-}
 
 GeneralConfig config;
-
-// 1 if running inside a PS2 emulator.  Set to 1 on any
-// of the PS2-specific functions (PS2EgetLibVersion2, PS2EgetLibType).
-// Only affects if I allow read input in GS thread to be set.
-// Also disables usage of AutoAnalog mode if in PS2 mode.
-u8 ps2e = 0;
-
-HWND hWndProp = 0;
-
-int selected = 0;
-bool quickSetup = false;
-
-// Older versions of PCSX2 don't always create the ini dir on startup, so LilyPad does it
-// for it.  But if PCSX2 sets the ini path with a call to setSettingsDir, then it means
-// we shouldn't make our own.
-bool createIniDir = true;
-
-HWND hWnds[2][4][numPadTypes];
-HWND hWndGeneral = 0;
 
 struct GeneralSettingsBool
 {
@@ -114,6 +55,86 @@ const GeneralSettingsBool BoolOptionsInfo[] = {
     {L"Save State in Title", IDC_SAVE_STATE_TITLE, 0}, // Not required for PCSX2
     {L"GH2", IDC_GH2_HACK, 0},
 };
+
+
+// Hacks or configurations which PCSX2 needs with a specific value
+void PCSX2_overrideConfig(GeneralConfig &config_in_out)
+{
+    config_in_out.disableScreenSaver = 0;   // Not required - handled internally by PCSX2
+    config_in_out.escapeFullscreenHack = 0; // Not required - handled internally by PCSX2
+    config_in_out.saveStateTitle = 0;       // Not required - handled internally by PCSX2
+    config_in_out.closeHack = 0;            // Cannot function when used by PCSX2
+}
+
+
+// 1 if running inside a PS2 emulator.  Set to 1 on any
+// of the PS2-specific functions (PS2EgetLibVersion2, PS2EgetLibType).
+// Only affects if I allow read input in GS thread to be set.
+// Also disables usage of AutoAnalog mode if in PS2 mode.
+u8 ps2e = 0;
+
+
+#ifdef __ANDROID__
+
+
+// Only used when deleting things from ListView. Will remove from listview if needed.
+void DeleteBinding(int port, int slot, int padtype, Device *dev, Binding *b)
+{
+    Binding *bindings = dev->pads[port][slot][padtype].bindings;
+    int i = b - bindings;
+    memmove(bindings + i, bindings + i + 1, sizeof(Binding) * (dev->pads[port][slot][padtype].numBindings - i - 1));
+    dev->pads[port][slot][padtype].numBindings--;
+}
+
+#else
+
+#include "Tooltips.h"
+#include "Diagnostics.h"
+#include "KeyboardQueue.h"
+#include "WndProcEater.h"
+#include "DualShock3.h"
+
+#include <Shlwapi.h>
+
+// Needed to know if raw input is available.  It requires XP or higher.
+#include "RawInput.h"
+
+//max len 24 wchar_t
+const wchar_t *padTypes[] = {
+    L"Unplugged",
+    L"Dualshock 2",
+    L"Guitar",
+    L"Pop'n Music controller",
+    L"PS1 Mouse",
+    L"neGcon"};
+
+
+// Dialog widgets which should be disabled - mostly matching PCSX2_overrideConfig
+const UINT *PCSX2_disabledWidgets()
+{
+    static const UINT disabledWidgets[] = {
+        IDC_DISABLE_SCREENSAVER,
+        IDC_ESCAPE_FULLSCREEN_HACK,
+        IDC_SAVE_STATE_TITLE,
+        IDC_ANALOG_START1, // start in analog mode - only useful for PS1
+        IDC_CLOSE_HACK,
+        0};
+    return disabledWidgets;
+}
+
+
+HWND hWndProp = 0;
+
+int selected = 0;
+bool quickSetup = false;
+
+// Older versions of PCSX2 don't always create the ini dir on startup, so LilyPad does it
+// for it.  But if PCSX2 sets the ini path with a call to setSettingsDir, then it means
+// we shouldn't make our own.
+bool createIniDir = true;
+
+HWND hWnds[2][4][numPadTypes];
+HWND hWndGeneral = 0;
 
 void Populate(int port, int slot, int padtype);
 
@@ -183,95 +204,6 @@ void SetLogSliderVal(HWND hWnd, int id, HWND hWndText, int val)
     int val2 = (int)(1000 * (__int64)val / BASE_SENSITIVITY);
     wsprintfW(temp, L"%i.%03i", val2 / 1000, val2 % 1000);
     SetWindowTextW(hWndText, temp);
-}
-
-void RefreshEnabledDevices(int updateDeviceList)
-{
-	for (int i = 0; i < dm->numDevices; i++) {
-		Device *dev = dm->devices[i];
-	}
-
-
-    // Clears all device state.
-    static int lastXInputState = -1;
-    if (updateDeviceList || lastXInputState != config.gameApis.xInput) {
-        EnumDevices(config.gameApis.xInput);
-        lastXInputState = config.gameApis.xInput;
-    }
-
-    for (int i = 0; i < dm->numDevices; i++) {
-        Device *dev = dm->devices[i];
-
-        if (!dev->attached && dev->displayName[0] != '[') {
-            wchar_t *newName = (wchar_t *)malloc(sizeof(wchar_t) * (wcslen(dev->displayName) + 12));
-            wsprintfW(newName, L"[Detached] %s", dev->displayName);
-            free(dev->displayName);
-            dev->displayName = newName;
-        }
-
-        if ((dev->type == KEYBOARD && dev->api == IGNORE_KEYBOARD) ||
-            (dev->type == KEYBOARD && dev->api == config.keyboardApi) ||
-            (dev->type == MOUSE && dev->api == config.mouseApi) ||
-            (dev->type == OTHER &&
-             ((dev->api == DI && config.gameApis.directInput) ||
-              (dev->api == DS3 && config.gameApis.dualShock3) ||
-			  (dev->api == XINPUT && config.gameApis.xInput) ||
-			  (dev->api == TOUCH_PAD && config.gameApis.xInput)))) {
-            if (config.gameApis.dualShock3 && dev->api == DI && dev->displayName &&
-                !_wcsicmp(dev->displayName, L"DX PLAYSTATION(R)3 Controller")) {
-                dm->DisableDevice(i);
-            } else {
-                dm->EnableDevice(i);
-            }
-        } else {
-            dm->DisableDevice(i);
-        }
-    }
-}
-
-// Disables/enables devices as necessary.  Also updates diagnostic list
-// and pad1/pad2 bindings lists, depending on params.  Also updates device
-// list, if indicated.
-
-// Must be called at some point when entering config mode, as I disable
-// (non-keyboard/mice) devices with no active bindings when the emulator's running.
-void RefreshEnabledDevicesAndDisplay(int updateDeviceList = 0, HWND hWnd = 0, int populate = 0)
-{
-    RefreshEnabledDevices(updateDeviceList);
-    if (hWnd) {
-        HWND hWndList = GetDlgItem(hWnd, IDC_DIAG_LIST);
-        ListView_SetExtendedListViewStyleEx(hWndList, LVS_EX_DOUBLEBUFFER, LVS_EX_DOUBLEBUFFER);
-        int count = ListView_GetItemCount(hWndList);
-        LVITEM item;
-        item.iItem = 0;
-        item.iSubItem = 0;
-        item.mask = LVIF_TEXT | LVIF_PARAM;
-        for (int j = 0; j < dm->numDevices; j++) {
-            if (dm->devices[j]->enabled && dm->devices[j]->api != IGNORE_KEYBOARD) {
-                item.lParam = j;
-                item.pszText = dm->devices[j]->displayName;
-                if (count > 0) {
-                    ListView_SetItem(hWndList, &item);
-                    count--;
-                } else {
-                    ListView_InsertItem(hWndList, &item);
-                }
-                item.iItem++;
-            }
-        }
-        // This way, won't scroll list to start.
-        while (count > 0) {
-            ListView_DeleteItem(hWndList, item.iItem);
-            count--;
-        }
-    }
-    if (populate) {
-        for (int j = 0; j < numPadTypes; j++) {
-            for (int i = 0; i < 8; i++) {
-                Populate(i & 1, i >> 1, j);
-            }
-        }
-    }
 }
 
 wchar_t *GetCommandStringW(u8 command, int port, int slot)
@@ -933,216 +865,6 @@ u8 GetPrivateProfileBool(wchar_t *s1, wchar_t *s2, int def, wchar_t *ini)
     return (0 != GetPrivateProfileIntW(s1, s2, def, ini));
 }
 
-void AddDevice(
-	pugi::xml_node& a_device_node)
-{
-	auto l_display_name_attribute = a_device_node.attribute(L"Display_Name");
-
-	auto temp2 = l_display_name_attribute.value();
-
-	auto l_instance_id_attribute = a_device_node.attribute(L"Instance_ID");
-
-	auto temp3 = l_instance_id_attribute.value();
-
-	auto id2 = a_device_node.attribute(L"Product_ID").value();
-
-	int api = a_device_node.attribute(L"API").as_int();
-	int type = a_device_node.attribute(L"Type").as_int();
-	if (!api || !type)
-		return;
-
-	Device *dev = new Device((DeviceAPI)api, (DeviceType)type, temp2, temp3, id2);
-	dev->attached = 0;
-	dm->AddDevice(dev);
-
-	int last = 0;
-
-	auto l_bindings = a_device_node.select_nodes(L"Binding[@Type = 'Regular']");
-
-	// Regular Bindings
-	for (auto& l_item : l_bindings)
-	{
-		last = 1;
-		unsigned int uid;
-		int port, command, sensitivity, rapidFire, slot = 0, deadZone = 0, skipDeadZone = 0, padtype = 0;
-		int w = 0;
-
-		//char string[1000];
-		//while (temp2[w]) {
-		//	string[w] = (char)temp2[w];
-		//	w++;
-		//}
-		//string[w] = 0;
-		
-		auto string = l_item.node().attribute(L"Data").value();
-		
-		int len = swscanf(string, L" %i , %i , %i , %i , %i , %i , %i , %i , %i", &uid, &port, &command, &sensitivity, &rapidFire, &slot, &deadZone, &skipDeadZone, &padtype);
-		if (len >= 5 && type) {
-			VirtualControl *c = dev->GetVirtualControl(uid);
-			if (!c)
-				c = dev->AddVirtualControl(uid, -1);
-			if (c) {
-				//if (len < 8) { // If ini file is imported from older version, make sure bindings aren't applied to "Unplugged" padtype.
-				//	oldIni = true;
-				//	if (config.padConfigs[port][slot].type != 0) {
-				//		padtype = config.padConfigs[port][slot].type;
-				//	}
-				//	else {
-				//		padtype = 1;
-				//	}
-				//}
-				//else 
-					if (len == 8) {
-					padtype = skipDeadZone;
-					skipDeadZone = 0;
-				}
-				BindCommand(dev, uid, port, slot, padtype, command, sensitivity, rapidFire, deadZone, skipDeadZone);
-			}
-		}
-	}
-	
-
-	l_bindings = a_device_node.select_nodes(L"Binding[@Type = 'FF']");
-
-	// Regular Bindings
-	for (auto& l_item : l_bindings)
-	{
-
-			last = 1;
-			int port, slot, motor, padtype;
-			int w = 0;
-
-			wchar_t effect[1000];
-			
-			auto string = l_item.node().attribute(L"Data").value();
-			// wcstok not in ntdll.  More effore than its worth to shave off
-			// whitespace without it.
-			if (swscanf(string, L" %100s %i , %i , %i , %i", effect, &port, &motor, &slot, &padtype) == 5) {
-				//char *s;
-				//if (oldIni) { // Make sure bindings aren't applied to "Unplugged" padtype and FF settings are read from old location.
-				//	if (config.padConfigs[port][slot].type != 0) {
-				//		padtype = config.padConfigs[port][slot].type;
-				//	}
-				//	else {
-				//		padtype = 1;
-				//	}
-				//	s = strchr(strchr(strchr(string, ',') + 1, ',') + 1, ',');
-				//}
-				//else {
-				auto s = wcschr(wcschr(wcschr(wcschr(string, L',') + 1, L',') + 1, L',') + 1, L',');
-				//}
-				if (!s)
-					continue;
-				s++;
-				w = 0;
-				wchar_t temp2[1000];
-				while (effect[w]) {
-					temp2[w] = effect[w];
-					w++;
-				}
-				temp2[w] = 0;
-				ForceFeedbackEffectType *eff = dev->GetForcefeedbackEffect(temp2);
-				if (!eff) {
-					// At the moment, don't record effect types.
-					// Only used internally, anyways, so not an issue.
-					dev->AddFFEffectType(temp2, temp2, EFFECT_CONSTANT);
-					// eff = &dev->ffEffectTypes[dev->numFFEffectTypes-1];
-				}
-				ForceFeedbackBinding *b;
-				CreateEffectBinding(dev, temp2, port, slot, padtype, motor, &b);
-				if (b) {
-					while (1) {
-						int axisID = _wtoi(s);
-						if (!(s = wcschr(s, L',')))
-							break;
-						s++;
-						int force = _wtoi(s);
-						int i;
-						for (i = 0; i < dev->numFFAxes; i++) {
-							if (axisID == dev->ffAxes[i].id)
-								break;
-						}
-						if (i == dev->numFFAxes) {
-							dev->AddFFAxis(L"?", axisID);
-						}
-						b->axes[i].force = force;
-						if (!(s = wcschr(s, L',')))
-							break;
-						s++;
-					}
-				}
-			}
-		}
-}
-
-int LoadSettings(int force, pugi::xml_node& a_init_node)
-{
-    if (dm && !force)
-        return 0;
-
-    if (createIniDir) {
-        PADsetSettingsDir("inis");
-        createIniDir = false;
-    }
-
-    // Could just do ClearDevices() instead, but if I ever add any extra stuff,
-    // this will still work.
-    UnloadConfigs();
-    dm = new InputDeviceManager();
-	
-	for (int i = 0; i < sizeof(BoolOptionsInfo) / sizeof(BoolOptionsInfo[0]); i++) {
-		config.bools[i] = BoolOptionsInfo[i].defaultValue;
-	}
-	config.closeHack = 0;
-
-	config.keyboardApi = WM;
-
-	if (!config.keyboardApi)
-		config.keyboardApi = WM;
-
-	config.mouseApi = (DeviceAPI)0;
-
-	config.configureOnBind = (DeviceAPI)0;
-
-
-	for (int port = 0; port < 2; port++) {
-		for (int slot = 0; slot < 4; slot++) {
-			wchar_t temp[50];
-			wsprintf(temp, L"Pad %i %i", port, slot);
-			config.padConfigs[port][slot].type = Dualshock2Pad;
-			config.padConfigs[port][slot].autoAnalog = 0;
-		}
-	}
-
-
-    bool oldIni = false;
-    int i = 0;
-    int multipleBinding = config.multipleBinding;
-    // Disabling multiple binding only prevents new multiple bindings.
-	config.multipleBinding = 1;
-	
-	auto l_ChildNode = a_init_node.first_child();
-
-	while (!l_ChildNode.empty())
-	{
-		if (std::wstring(l_ChildNode.name()) == L"Device")
-		{
-			AddDevice(l_ChildNode);
-		}
-
-		l_ChildNode = l_ChildNode.next_sibling();
-	}
-	
-    config.multipleBinding = multipleBinding;
-
-    RefreshEnabledDevicesAndDisplay(1);
-
-    if (ps2e)
-        PCSX2_overrideConfig(config);
-
-    return 0;
-}
-
 inline int GetPort(HWND hWnd, int *slot)
 {
     if (sizeof(hWnds) / sizeof(hWnds[0][0][0]) != (2 * 4 * numPadTypes))
@@ -1215,24 +937,6 @@ int GetBinding(int port, int slot, int index, Device *&dev, Binding *&b, ForceFe
     return 0;
 }
 
-// Only used when deleting things from ListView. Will remove from listview if needed.
-void DeleteBinding(int port, int slot, int padtype, Device *dev, Binding *b)
-{
-    if (dev->enabled && hWnds[port][slot][padtype]) {
-        int count = GetItemIndex(port, slot, dev, b);
-        if (count >= 0) {
-            HWND hWndList = GetDlgItem(hWnds[port][slot][padtype], IDC_BINDINGS_LIST);
-            if (hWndList) {
-                ListView_DeleteItem(hWndList, count);
-            }
-        }
-    }
-    Binding *bindings = dev->pads[port][slot][padtype].bindings;
-    int i = b - bindings;
-    memmove(bindings + i, bindings + i + 1, sizeof(Binding) * (dev->pads[port][slot][padtype].numBindings - i - 1));
-    dev->pads[port][slot][padtype].numBindings--;
-}
-
 void DeleteFFBinding(int port, int slot, Device *dev, ForceFeedbackBinding *b)
 {
     int padtype = config.padConfigs[port][slot].type;
@@ -1249,6 +953,26 @@ void DeleteFFBinding(int port, int slot, Device *dev, ForceFeedbackBinding *b)
     int i = b - bindings;
     memmove(bindings + i, bindings + i + 1, sizeof(Binding) * (dev->pads[port][slot][padtype].numFFBindings - i - 1));
     dev->pads[port][slot][padtype].numFFBindings--;
+}
+
+
+// Only used when deleting things from ListView. Will remove from listview if needed.
+void DeleteBinding(int port, int slot, int padtype, Device *dev, Binding *b)
+{
+    if (dev->enabled && hWnds[port][slot][padtype]) {
+        int count = GetItemIndex(port, slot, dev, b);
+        if (count >= 0) {
+            HWND hWndList = GetDlgItem(hWnds[port][slot][padtype], IDC_BINDINGS_LIST);
+            if (hWndList) {
+                ListView_DeleteItem(hWndList, count);
+            }
+        }
+    }
+
+    Binding *bindings = dev->pads[port][slot][padtype].bindings;
+    int i = b - bindings;
+    memmove(bindings + i, bindings + i + 1, sizeof(Binding) * (dev->pads[port][slot][padtype].numBindings - i - 1));
+    dev->pads[port][slot][padtype].numBindings--;
 }
 
 int DeleteByIndex(int port, int slot, int index)
@@ -1318,109 +1042,6 @@ int CreateEffectBinding(Device *dev, wchar_t *effectID, unsigned int port, unsig
     if (binding)
         *binding = b;
     return ListBoundEffect(port, slot, dev, b);
-}
-
-int BindCommand(Device *dev, unsigned int uid, unsigned int port, unsigned int slot, unsigned int padtype, int command, int sensitivity, int rapidFire, int deadZone, int skipDeadZone)
-{
-    // Checks needed because I use this directly when loading bindings.
-    if (port > 1 || slot > 3 || padtype >= numPadTypes)
-        return -1;
-
-    if (!sensitivity) {
-        if (((uid >> 16) & 0xFF) == ABSAXIS) {
-            sensitivity = BASE_ANALOG_SENSITIVITY;
-        } else {
-            sensitivity = BASE_SENSITIVITY;
-        }
-    }
-    if ((uid >> 16) & (PSHBTN | TGLBTN)) {
-        deadZone = 0;
-        skipDeadZone = 0;
-    } else if (!deadZone) {
-        if ((uid >> 16) & PRESSURE_BTN) {
-            deadZone = 1;
-        } else {
-            deadZone = DEFAULT_DEADZONE;
-        }
-    } else if (!skipDeadZone) {
-        skipDeadZone = 1;
-    }
-
-    // Relative axes can have negative sensitivity.
-    else if (((uid >> 16) & 0xFF) == RELAXIS) {
-        sensitivity = abs(sensitivity);
-    }
-    VirtualControl *c = dev->GetVirtualControl(uid);
-    if (!c)
-        return -1;
-    // Add before deleting.  Means I won't scroll up one line when scrolled down to bottom.
-    int controlIndex = c - dev->virtualControls;
-    int index = 0;
-    PadBindings *p = dev->pads[port][slot] + padtype;
-    p->bindings = (Binding *)realloc(p->bindings, (p->numBindings + 1) * sizeof(Binding));
-    for (index = p->numBindings; index > 0; index--) {
-        if (p->bindings[index - 1].controlIndex < controlIndex)
-            break;
-        p->bindings[index] = p->bindings[index - 1];
-    }
-    Binding *b = p->bindings + index;
-    p->numBindings++;
-    b->command = command;
-    b->controlIndex = controlIndex;
-    b->rapidFire = rapidFire;
-    b->sensitivity = sensitivity;
-    b->deadZone = deadZone;
-    b->skipDeadZone = skipDeadZone;
-    // Where it appears in listview.
-    int count = ListBoundCommand(port, slot, dev, b);
-
-    int newBindingIndex = index;
-    index = 0;
-    while (index < p->numBindings) {
-        if (index == newBindingIndex) {
-            index++;
-            continue;
-        }
-        b = p->bindings + index;
-        int nuke = 0;
-        if (config.multipleBinding) {
-            if (b->controlIndex == controlIndex && b->command == command)
-                nuke = 1;
-        } else {
-            int uid2 = dev->virtualControls[b->controlIndex].uid;
-            if (b->controlIndex == controlIndex || (!((uid2 ^ uid) & 0xFFFFFF) && ((uid | uid2) & (UID_POV | UID_AXIS))))
-                nuke = 1;
-        }
-        if (!nuke) {
-            index++;
-            continue;
-        }
-        if (index < newBindingIndex) {
-            newBindingIndex--;
-            count--;
-        }
-        DeleteBinding(port, slot, padtype, dev, b);
-    }
-    if (!config.multipleBinding) {
-        for (int port2 = 0; port2 < 2; port2++) {
-            for (int slot2 = 0; slot2 < 4; slot2++) {
-                if (port2 == port && slot2 == slot)
-                    continue;
-                int padtype2 = config.padConfigs[port2][slot2].type;
-                PadBindings *p = dev->pads[port2][slot2] + padtype2;
-                for (int i = 0; i < p->numBindings; i++) {
-                    Binding *b = p->bindings + i;
-                    int uid2 = dev->virtualControls[b->controlIndex].uid;
-                    if (b->controlIndex == controlIndex || (!((uid2 ^ uid) & 0xFFFFFF) && ((uid | uid2) & (UID_POV | UID_AXIS)))) {
-                        DeleteBinding(port2, slot2, padtype2, dev, b);
-                        i--;
-                    }
-                }
-            }
-        }
-    }
-
-    return count;
 }
 
 // Does nothing, but makes sure I'm overriding the dialog's window proc, to block
@@ -1635,4 +1256,433 @@ void UnloadConfigs()
         delete dm;
         dm = 0;
     }
+}
+
+#endif
+
+
+
+int BindCommand(Device *dev, unsigned int uid, unsigned int port, unsigned int slot, unsigned int padtype, int command, int sensitivity, int rapidFire, int deadZone, int skipDeadZone)
+{
+    // Checks needed because I use this directly when loading bindings.
+    if (port > 1 || slot > 3 || padtype >= numPadTypes)
+        return -1;
+
+    if (!sensitivity) {
+        if (((uid >> 16) & 0xFF) == ABSAXIS) {
+            sensitivity = BASE_ANALOG_SENSITIVITY;
+        } else {
+            sensitivity = BASE_SENSITIVITY;
+        }
+    }
+    if ((uid >> 16) & (PSHBTN | TGLBTN)) {
+        deadZone = 0;
+        skipDeadZone = 0;
+    } else if (!deadZone) {
+        if ((uid >> 16) & PRESSURE_BTN) {
+            deadZone = 1;
+        } else {
+            deadZone = DEFAULT_DEADZONE;
+        }
+    } else if (!skipDeadZone) {
+        skipDeadZone = 1;
+    }
+
+    // Relative axes can have negative sensitivity.
+    else if (((uid >> 16) & 0xFF) == RELAXIS) {
+        sensitivity = abs(sensitivity);
+    }
+    VirtualControl *c = dev->GetVirtualControl(uid);
+    if (!c)
+        return -1;
+    // Add before deleting.  Means I won't scroll up one line when scrolled down to bottom.
+    int controlIndex = c - dev->virtualControls;
+    int index = 0;
+    PadBindings *p = dev->pads[port][slot] + padtype;
+    p->bindings = (Binding *)realloc(p->bindings, (p->numBindings + 1) * sizeof(Binding));
+    for (index = p->numBindings; index > 0; index--) {
+        if (p->bindings[index - 1].controlIndex < controlIndex)
+            break;
+        p->bindings[index] = p->bindings[index - 1];
+    }
+    Binding *b = p->bindings + index;
+    p->numBindings++;
+    b->command = command;
+    b->controlIndex = controlIndex;
+    b->rapidFire = rapidFire;
+    b->sensitivity = sensitivity;
+    b->deadZone = deadZone;
+    b->skipDeadZone = skipDeadZone;
+
+
+#ifdef __ANDROID__
+	// Where it appears in listview.
+	int count = -1;
+#else
+	// Where it appears in listview.
+    int count = ListBoundCommand(port, slot, dev, b);
+#endif
+
+
+    int newBindingIndex = index;
+    index = 0;
+    while (index < p->numBindings) {
+        if (index == newBindingIndex) {
+            index++;
+            continue;
+        }
+        b = p->bindings + index;
+        int nuke = 0;
+        if (config.multipleBinding) {
+            if (b->controlIndex == controlIndex && b->command == command)
+                nuke = 1;
+        } else {
+            int uid2 = dev->virtualControls[b->controlIndex].uid;
+            if (b->controlIndex == controlIndex || (!((uid2 ^ uid) & 0xFFFFFF) && ((uid | uid2) & (UID_POV | UID_AXIS))))
+                nuke = 1;
+        }
+        if (!nuke) {
+            index++;
+            continue;
+        }
+        if (index < newBindingIndex) {
+            newBindingIndex--;
+            count--;
+        }
+        DeleteBinding(port, slot, padtype, dev, b);
+    }
+    if (!config.multipleBinding) {
+        for (int port2 = 0; port2 < 2; port2++) {
+            for (int slot2 = 0; slot2 < 4; slot2++) {
+                if (port2 == port && slot2 == slot)
+                    continue;
+                int padtype2 = config.padConfigs[port2][slot2].type;
+                PadBindings *p = dev->pads[port2][slot2] + padtype2;
+                for (int i = 0; i < p->numBindings; i++) {
+                    Binding *b = p->bindings + i;
+                    int uid2 = dev->virtualControls[b->controlIndex].uid;
+                    if (b->controlIndex == controlIndex || (!((uid2 ^ uid) & 0xFFFFFF) && ((uid | uid2) & (UID_POV | UID_AXIS)))) {
+                        DeleteBinding(port2, slot2, padtype2, dev, b);
+                        i--;
+                    }
+                }
+            }
+        }
+    }
+
+    return count;
+}
+
+
+void AddDevice(
+    pugi::xml_node &a_device_node)
+{
+    auto l_display_name_attribute = a_device_node.attribute(L"Display_Name");
+
+    auto temp2 = l_display_name_attribute.value();
+
+    auto l_instance_id_attribute = a_device_node.attribute(L"Instance_ID");
+
+    auto temp3 = l_instance_id_attribute.value();
+
+    auto id2 = a_device_node.attribute(L"Product_ID").value();
+
+    int api = a_device_node.attribute(L"API").as_int();
+    int type = a_device_node.attribute(L"Type").as_int();
+    if (!api || !type)
+        return;
+
+    Device *dev = new Device((DeviceAPI)api, (DeviceType)type, temp2, temp3, id2);
+    dev->attached = 0;
+    dm->AddDevice(dev);
+
+    int last = 0;
+
+    auto l_bindings = a_device_node.select_nodes(L"Binding[@Type = 'Regular']");
+
+    // Regular Bindings
+    for (auto &l_item : l_bindings) {
+        last = 1;
+        unsigned int uid;
+        int port, command, sensitivity, rapidFire, slot = 0, deadZone = 0, skipDeadZone = 0, padtype = 0;
+        int w = 0;
+
+        //char string[1000];
+        //while (temp2[w]) {
+        //	string[w] = (char)temp2[w];
+        //	w++;
+        //}
+        //string[w] = 0;
+
+        auto string = l_item.node().attribute(L"Data").value();
+
+        int len = swscanf(string, L" %i , %i , %i , %i , %i , %i , %i , %i , %i", &uid, &port, &command, &sensitivity, &rapidFire, &slot, &deadZone, &skipDeadZone, &padtype);
+        if (len >= 5 && type) {
+            VirtualControl *c = dev->GetVirtualControl(uid);
+            if (!c)
+                c = dev->AddVirtualControl(uid, -1);
+            if (c) {
+                //if (len < 8) { // If ini file is imported from older version, make sure bindings aren't applied to "Unplugged" padtype.
+                //	oldIni = true;
+                //	if (config.padConfigs[port][slot].type != 0) {
+                //		padtype = config.padConfigs[port][slot].type;
+                //	}
+                //	else {
+                //		padtype = 1;
+                //	}
+                //}
+                //else
+                if (len == 8) {
+                    padtype = skipDeadZone;
+                    skipDeadZone = 0;
+                }
+                BindCommand(dev, uid, port, slot, padtype, command, sensitivity, rapidFire, deadZone, skipDeadZone);
+            }
+        }
+    }
+
+
+    l_bindings = a_device_node.select_nodes(L"Binding[@Type = 'FF']");
+
+    // Regular Bindings
+    for (auto &l_item : l_bindings) {
+
+        last = 1;
+        int port, slot, motor, padtype;
+        int w = 0;
+
+        char effect[1000];
+
+        auto string = l_item.node().attribute(L"Data").value();
+        // wcstok not in ntdll.  More effore than its worth to shave off
+        // whitespace without it.
+        if (swscanf(string, L" %100s %i , %i , %i , %i", effect, &port, &motor, &slot, &padtype) == 5) {
+            //char *s;
+            //if (oldIni) { // Make sure bindings aren't applied to "Unplugged" padtype and FF settings are read from old location.
+            //	if (config.padConfigs[port][slot].type != 0) {
+            //		padtype = config.padConfigs[port][slot].type;
+            //	}
+            //	else {
+            //		padtype = 1;
+            //	}
+            //	s = strchr(strchr(strchr(string, ',') + 1, ',') + 1, ',');
+            //}
+            //else {
+            auto s = wcschr(wcschr(wcschr(wcschr(string, L',') + 1, L',') + 1, L',') + 1, L',');
+            //}
+            if (!s)
+                continue;
+            s++;
+            w = 0;
+            wchar_t temp2[1000];
+            while (effect[w]) {
+                temp2[w] = effect[w];
+                w++;
+            }
+            temp2[w] = 0;
+            ForceFeedbackEffectType *eff = dev->GetForcefeedbackEffect(temp2);
+            if (!eff) {
+                // At the moment, don't record effect types.
+                // Only used internally, anyways, so not an issue.
+                dev->AddFFEffectType(temp2, temp2, EFFECT_CONSTANT);
+                // eff = &dev->ffEffectTypes[dev->numFFEffectTypes-1];
+            }
+
+#ifndef __ANDROID__
+
+			ForceFeedbackBinding *b;
+            CreateEffectBinding(dev, temp2, port, slot, padtype, motor, &b);
+            if (b) {
+                while (1) {
+                    int axisID = _wtoi(s);
+                    if (!(s = wcschr(s, L',')))
+                        break;
+                    s++;
+                    int force = _wtoi(s);
+                    int i;
+                    for (i = 0; i < dev->numFFAxes; i++) {
+                        if (axisID == dev->ffAxes[i].id)
+                            break;
+                    }
+                    if (i == dev->numFFAxes) {
+                        dev->AddFFAxis(L"?", axisID);
+                    }
+                    b->axes[i].force = force;
+                    if (!(s = wcschr(s, L',')))
+                        break;
+                    s++;
+                }
+            }
+#endif
+
+        }
+    }
+}
+
+
+
+// Disables/enables devices as necessary.  Also updates diagnostic list
+// and pad1/pad2 bindings lists, depending on params.  Also updates device
+// list, if indicated.
+
+// Must be called at some point when entering config mode, as I disable
+// (non-keyboard/mice) devices with no active bindings when the emulator's running.
+void RefreshEnabledDevicesAndDisplay(int updateDeviceList = 0, HWND hWnd = 0, int populate = 0)
+{
+	RefreshEnabledDevices(updateDeviceList);
+
+
+
+#ifndef __ANDROID__
+
+	if (hWnd) {
+		HWND hWndList = GetDlgItem(hWnd, IDC_DIAG_LIST);
+		ListView_SetExtendedListViewStyleEx(hWndList, LVS_EX_DOUBLEBUFFER, LVS_EX_DOUBLEBUFFER);
+		int count = ListView_GetItemCount(hWndList);
+		LVITEM item;
+		item.iItem = 0;
+		item.iSubItem = 0;
+		item.mask = LVIF_TEXT | LVIF_PARAM;
+		for (int j = 0; j < dm->numDevices; j++) {
+			if (dm->devices[j]->enabled && dm->devices[j]->api != IGNORE_KEYBOARD) {
+				item.lParam = j;
+				item.pszText = dm->devices[j]->displayName;
+				if (count > 0) {
+					ListView_SetItem(hWndList, &item);
+					count--;
+				} else {
+					ListView_InsertItem(hWndList, &item);
+				}
+				item.iItem++;
+			}
+		}
+		// This way, won't scroll list to start.
+		while (count > 0) {
+			ListView_DeleteItem(hWndList, item.iItem);
+			count--;
+		}
+	}
+
+	if (populate) {
+		for (int j = 0; j < numPadTypes; j++) {
+			for (int i = 0; i < 8; i++) {
+				Populate(i & 1, i >> 1, j);
+			}
+		}
+	}
+
+#endif
+
+}
+
+void RefreshEnabledDevices(int updateDeviceList)
+{
+    for (int i = 0; i < dm->numDevices; i++) {
+        Device *dev = dm->devices[i];
+    }
+
+
+    // Clears all device state.
+    static int lastXInputState = -1;
+    if (updateDeviceList || lastXInputState != config.gameApis.xInput) {
+        EnumDevices(config.gameApis.xInput);
+        lastXInputState = config.gameApis.xInput;
+    }
+
+    for (int i = 0; i < dm->numDevices; i++) {
+        Device *dev = dm->devices[i];
+
+        if (!dev->attached && dev->displayName[0] != '[') {
+            wchar_t *newName = (wchar_t *)malloc(sizeof(wchar_t) * (wcslen(dev->displayName) + 12));
+            wsprintfW(newName, L"[Detached] %s", dev->displayName);
+            free(dev->displayName);
+            dev->displayName = newName;
+        }
+
+        if ((dev->type == KEYBOARD && dev->api == IGNORE_KEYBOARD) ||
+            (dev->type == KEYBOARD && dev->api == config.keyboardApi) ||
+            (dev->type == MOUSE && dev->api == config.mouseApi) ||
+            (dev->type == OTHER &&
+             ((dev->api == DI && config.gameApis.directInput) ||
+              (dev->api == DS3 && config.gameApis.dualShock3) ||
+              (dev->api == XINPUT && config.gameApis.xInput) ||
+              (dev->api == TOUCH_PAD && config.gameApis.xInput)))) {
+            if (config.gameApis.dualShock3 && dev->api == DI && dev->displayName &&
+                !_wcsicmp(dev->displayName, L"DX PLAYSTATION(R)3 Controller")) {
+                dm->DisableDevice(i);
+            } else {
+                dm->EnableDevice(i);
+            }
+        } else {
+            dm->DisableDevice(i);
+        }
+    }
+}
+
+int LoadSettings(int force, pugi::xml_node &a_init_node)
+{
+    if (dm && !force)
+        return 0;
+
+#ifndef __ANDROID__
+    if (createIniDir) {
+        PADsetSettingsDir("inis");
+        createIniDir = false;
+    }
+#endif
+
+    // Could just do ClearDevices() instead, but if I ever add any extra stuff,
+    // this will still work.
+    UnloadConfigs();
+    dm = new InputDeviceManager();
+
+    for (int i = 0; i < sizeof(BoolOptionsInfo) / sizeof(BoolOptionsInfo[0]); i++) {
+        config.bools[i] = BoolOptionsInfo[i].defaultValue;
+    }
+    config.closeHack = 0;
+
+    config.keyboardApi = WM;
+
+    if (!config.keyboardApi)
+        config.keyboardApi = WM;
+
+    config.mouseApi = (DeviceAPI)0;
+
+    config.configureOnBind = (DeviceAPI)0;
+
+
+    for (int port = 0; port < 2; port++) {
+        for (int slot = 0; slot < 4; slot++) {
+            wchar_t temp[50];
+            wsprintf(temp, L"Pad %i %i", port, slot);
+            config.padConfigs[port][slot].type = Dualshock2Pad;
+            config.padConfigs[port][slot].autoAnalog = 0;
+        }
+    }
+
+
+    bool oldIni = false;
+    int i = 0;
+    int multipleBinding = config.multipleBinding;
+    // Disabling multiple binding only prevents new multiple bindings.
+    config.multipleBinding = 1;
+
+    auto l_ChildNode = a_init_node.first_child();
+
+    while (!l_ChildNode.empty()) {
+        if (std::wstring(l_ChildNode.name()) == L"Device") {
+            AddDevice(l_ChildNode);
+        }
+
+        l_ChildNode = l_ChildNode.next_sibling();
+    }
+
+    config.multipleBinding = multipleBinding;
+
+    RefreshEnabledDevicesAndDisplay(1);
+
+    if (ps2e)
+        PCSX2_overrideConfig(config);
+
+    return 0;
 }

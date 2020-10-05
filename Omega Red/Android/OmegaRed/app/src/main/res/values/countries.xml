@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="country_icons">
+        <item>@drawable/china</item>
+        <item>@drawable/europe</item>
+        <item>@drawable/hk</item>
+        <item>@drawable/japan</item>
+        <item>@drawable/test</item>
+        <item>@drawable/usa</item>
+        <item>@drawable/unknown</item>
+    </array>
+</resources>

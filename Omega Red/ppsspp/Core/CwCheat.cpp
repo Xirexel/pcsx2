@@ -16,17 +16,16 @@
 #include "Core/System.h"
 #include "Core/HLE/sceCtrl.h"
 #include "Core/MIPS/JitCommon/JitCommon.h"
-#include "GPU/Common/PostShader.h"
 
 #ifdef _WIN32
 #include "util/text/utf8.h"
 #endif
 
 static int CheatEvent = -1;
+std::string gameTitle;
+std::string activeCheatFile;
 static CWCheatEngine *cheatEngine;
 static bool cheatsEnabled;
-using namespace SceCtrl;
-
 void hleCheat(u64 userdata, int cyclesLate);
 
 static inline std::string TrimString(const std::string &s) {
@@ -44,9 +43,9 @@ class CheatFileParser {
 public:
 	CheatFileParser(const std::string &filename, const std::string &gameID = "") {
 #if defined(_WIN32) && !defined(__MINGW32__)
-		file_.open(ConvertUTF8ToWString(filename));
+		file_.open(ConvertUTF8ToWString(activeCheatFile));
 #else
-		file_.open(filename.c_str());
+		file_.open(activeCheatFile.c_str());
 #endif
 
 		validGameID_ = ReplaceAll(gameID, "-", "");
@@ -62,13 +61,8 @@ public:
 		return cheats_;
 	}
 
-	std::vector<CheatFileInfo> GetFileInfo() const {
-		return cheatInfo_;
-	}
-
 protected:
 	void Flush();
-	void FlushCheatInfo();
 	void AddError(const std::string &msg);
 	void ParseLine(const std::string &line);
 	void ParseDataLine(const std::string &line, CheatCodeFormat format);
@@ -80,11 +74,9 @@ protected:
 	int line_ = 0;
 	int games_ = 0;
 	std::vector<std::string> errors_;
-	std::vector<CheatFileInfo> cheatInfo_;
 	std::vector<CheatCode> cheats_;
 	std::vector<CheatLine> pendingLines_;
 	CheatCodeFormat codeFormat_ = CheatCodeFormat::UNDEFINED;
-	CheatFileInfo lastCheatInfo_;
 	bool gameEnabled_ = true;
 	bool gameRiskyEnabled_ = false;
 	bool cheatEnabled_ = false;
@@ -96,7 +88,9 @@ bool CheatFileParser::Parse() {
 		getline(file_, line, '\n');
 		line = TrimString(line);
 
-		// Minimum length 5 is shortest possible _ lines name of the game "_G N+"
+		// Minimum length is set to 5 just to match GetCodesList() function
+		// which discards anything shorter when called anyway.
+		// It's decided from shortest possible _ lines name of the game "_G N+"
 		// and a minimum of 1 displayable character in cheat name string "_C0 1"
 		// which both equal to 5 characters.
 		if (line.length() >= 5 && line[0] == '_') {
@@ -117,18 +111,10 @@ bool CheatFileParser::Parse() {
 
 void CheatFileParser::Flush() {
 	if (!pendingLines_.empty()) {
-		FlushCheatInfo();
 		cheats_.push_back({ codeFormat_, pendingLines_ });
 		pendingLines_.clear();
 	}
 	codeFormat_ = CheatCodeFormat::UNDEFINED;
-}
-
-void CheatFileParser::FlushCheatInfo() {
-	if (lastCheatInfo_.lineNum != 0) {
-		cheatInfo_.push_back(lastCheatInfo_);
-		lastCheatInfo_ = { 0 };
-	}
 }
 
 void CheatFileParser::AddError(const std::string &err) {
@@ -146,7 +132,6 @@ void CheatFileParser::ParseLine(const std::string &line) {
 			if (gameRiskyEnabled_) {
 				// We found the right one, so let's not use this risky stuff.
 				cheats_.clear();
-				cheatInfo_.clear();
 				gameRiskyEnabled_ = false;
 			}
 			gameEnabled_ = true;
@@ -159,7 +144,6 @@ void CheatFileParser::ParseLine(const std::string &line) {
 			if (gameRiskyEnabled_) {
 				// There are multiple games here, kill the risky stuff.
 				cheats_.clear();
-				cheatInfo_.clear();
 				gameRiskyEnabled_ = false;
 			}
 			gameEnabled_ = false;
@@ -171,20 +155,18 @@ void CheatFileParser::ParseLine(const std::string &line) {
 		return;
 
 	case 'C':
-		Flush();
-
 		// Cheat name and activation status.
 		if (line.length() >= 3 && line[2] >= '1' && line[2] <= '9') {
-			lastCheatInfo_ = { line_, line.length() >= 5 ? line.substr(4) : "", true };
 			cheatEnabled_ = true;
 		} else if (line.length() >= 3 && line[2] == '0') {
-			lastCheatInfo_ = { line_, line.length() >= 5 ? line.substr(4) : "", false };
 			cheatEnabled_ = false;
 		} else {
 			AddError("could not parse cheat name line");
 			cheatEnabled_ = false;
 			return;
 		}
+
+		Flush();
 		return;
 
 	case 'L':
@@ -208,16 +190,11 @@ void CheatFileParser::ParseDataLine(const std::string &line, CheatCodeFormat for
 		codeFormat_ = format;
 	} else if (codeFormat_ != format) {
 		AddError("mixed code format (cwcheat/tempar)");
-		lastCheatInfo_ = { 0 };
 		pendingLines_.clear();
 		cheatEnabled_ = false;
 	}
 
-	if (!gameEnabled_) {
-		return;
-	}
-	if (!cheatEnabled_) {
-		FlushCheatInfo();
+	if (!cheatEnabled_ || !gameEnabled_) {
 		return;
 	}
 
@@ -248,20 +225,13 @@ static void __CheatStop() {
 static void __CheatStart() {
 	__CheatStop();
 
-	std::string realGameID = g_paramSFO.GetValueString("DISC_ID");
-	std::string gameID = realGameID;
-	const std::string gamePath = PSP_CoreParameter().fileToStart;
-	const bool badGameSFO = realGameID.empty() || !g_paramSFO.GetValueInt("DISC_TOTAL");
-	if (badGameSFO && gamePath.find("/PSP/GAME/") != std::string::npos) {
-		gameID = g_paramSFO.GenerateFakeID(gamePath);
-	}
+	gameTitle = g_paramSFO.GetValueString("DISC_ID");
 
-	cheatEngine = new CWCheatEngine(gameID);
-	// This only generates ini files on boot, let's leave homebrew ini file for UI.
-	if (!realGameID.empty()) {
+	if (gameTitle != "") { //this only generates ini files on boot, let's leave homebrew ini file for UI
 		cheatEngine->CreateCheatFile();
 	}
 
+	cheatEngine = new CWCheatEngine();
 	cheatEngine->ParseCheats();
 	g_Config.bReloadCheats = false;
 	cheatsEnabled = true;
@@ -356,32 +326,28 @@ void hleCheat(u64 userdata, int cyclesLate) {
 	cheatEngine->Run();
 }
 
-CWCheatEngine::CWCheatEngine(const std::string &gameID) : gameID_(gameID) {
-	filename_ = GetSysDirectory(DIRECTORY_CHEATS) + gameID_ + ".ini";
+CWCheatEngine::CWCheatEngine() {
 }
 
 void CWCheatEngine::CreateCheatFile() {
+	activeCheatFile = GetSysDirectory(DIRECTORY_CHEATS) + gameTitle + ".ini";
 	File::CreateFullPath(GetSysDirectory(DIRECTORY_CHEATS));
 
-	if (!File::Exists(filename_)) {
-		FILE *f = File::OpenCFile(filename_, "wb");
+	if (!File::Exists(activeCheatFile)) {
+		FILE *f = File::OpenCFile(activeCheatFile, "wb");
 		if (f) {
 			fwrite("\xEF\xBB\xBF\n", 1, 4, f);
 			fclose(f);
 		}
-		if (!File::Exists(filename_)) {
-			auto err = GetI18NCategory("Error");
+		if (!File::Exists(activeCheatFile)) {
+			I18NCategory *err = GetI18NCategory("Error");
 			host->NotifyUserMessage(err->T("Unable to create cheat file, disk may be full"));
 		}
 	}
 }
 
-std::string CWCheatEngine::CheatFilename() {
-	return filename_;
-}
-
 void CWCheatEngine::ParseCheats() {
-	CheatFileParser parser(filename_, gameID_);
+	CheatFileParser parser(activeCheatFile, gameTitle);
 
 	parser.Parse();
 	// TODO: Report errors.
@@ -395,11 +361,37 @@ u32 CWCheatEngine::GetAddress(u32 value) {
 	return address;
 }
 
-std::vector<CheatFileInfo> CWCheatEngine::FileInfo() {
-	CheatFileParser parser(filename_, gameID_);
+std::vector<std::string> CWCheatEngine::GetCodesList() {
+	// Reads the entire cheat list from the appropriate .ini.
+	std::vector<std::string> codesList;
+#if defined(_WIN32) && !defined(__MINGW32__)
+	std::ifstream list(ConvertUTF8ToWString(activeCheatFile));
+#else
+	std::ifstream list(activeCheatFile.c_str());
+#endif
+	while (list && !list.eof()) {
+		std::string line;
+		getline(list, line, '\n');
 
-	parser.Parse();
-	return parser.GetFileInfo();
+		bool validCheatLine = false;
+		// This function is called by cheat menu(UI) which doesn't support empty names
+		// minimum 1 non space character is required starting from 5 position.
+		// It also goes through other "_" lines, but they all have to meet this requirement anyway
+		// so we don't have to specify any syntax checks here that are made by cheat engine.
+		if (line.length() >= 5 && line[0] == '_') {
+			for (size_t i = 4; i < line.length(); i++) {
+				if (line[i] != ' ') {
+					validCheatLine = true;
+					break;
+				}
+			}
+		}
+		// Any lines not passing this check are discarded when we save changes to the cheat ini file
+		if (validCheatLine || (line.length() >= 2 && line[0] == '/' && line[1] == '/') || (line.length() >= 1 && line[0] == '#')) {
+			codesList.push_back(TrimString(line));
+		}
+	}
+	return codesList;
 }
 
 void CWCheatEngine::InvalidateICache(u32 addr, int size) {
@@ -420,10 +412,6 @@ enum class CheatOp {
 	MultiWrite,
 
 	CopyBytesFrom,
-	Vibration,
-	VibrationFromMemory,
-	PostShader,
-	PostShaderFromMemory,
 	Delay,
 
 	Assert,
@@ -472,21 +460,6 @@ struct CheatOperation {
 			int count;
 			int type;
 		} pointerCommands;
-		struct {
-			uint16_t vibrL;
-			uint16_t vibrR;
-			uint8_t vibrLTime;
-			uint8_t vibrRTime;
-		} vibrationValues;
-		struct {
-			union {
-				float f;
-				uint32_t u;
-			} value;
-			uint8_t shader;
-			uint8_t uniform;
-			uint8_t format;
-		} PostShaderUniform;
 	};
 };
 
@@ -617,42 +590,6 @@ CheatOperation CWCheatEngine::InterpretNextCwCheat(const CheatCode &cheat, size_
 			return op;
 		}
 		return { CheatOp::Invalid };
-
-	case 0xA: // PPSSPP specific cheats
-		switch (line1.part1 >> 24 & 0xF) {
-		case 0x0: // 0x0 sets gamepad vibration by cheat parameters
-			{
-				CheatOperation op = { CheatOp::Vibration };
-				op.vibrationValues.vibrL = line1.part1 & 0x0000FFFF;
-				op.vibrationValues.vibrR = line1.part2 & 0x0000FFFF;
-				op.vibrationValues.vibrLTime = (line1.part1 >> 16) & 0x000000FF;
-				op.vibrationValues.vibrRTime = (line1.part2 >> 16) & 0x000000FF;
-				return op;
-			}
-		case 0x1: // 0x1 reads value for gamepad vibration from memory
-			addr = line1.part2;
-			return { CheatOp::VibrationFromMemory, addr };
-		case 0x2: // 0x2 sets postprocessing shader uniform
-			{
-				CheatOperation op = { CheatOp::PostShader };
-				op.PostShaderUniform.uniform = line1.part1 & 0x000000FF;
-				op.PostShaderUniform.shader = (line1.part1 >> 16) & 0x000000FF;
-				op.PostShaderUniform.value.u = line1.part2;
-				return op;
-			}
-		case 0x3: // 0x3 sets postprocessing shader uniform from memory
-			{
-				addr = line1.part2;
-				CheatOperation op = { CheatOp::PostShaderFromMemory, addr };
-				op.PostShaderUniform.uniform = line1.part1 & 0x000000FF;
-				op.PostShaderUniform.format = (line1.part1 >> 8) & 0x000000FF;
-				op.PostShaderUniform.shader = (line1.part1 >> 16) & 0x000000FF;
-				return op;
-			}
-		// Place for other PPSSPP specific cheats
-		default:
-			return { CheatOp::Invalid };
-		}
 
 	case 0xB: // Delay command.
 		return { CheatOp::Delay, 0, 0, arg };
@@ -919,73 +856,6 @@ void CWCheatEngine::ExecuteOp(const CheatOperation &op, const CheatCode &cheat, 
 			InvalidateICache(op.copyBytesFrom.destAddr, op.val);
 
 			Memory::MemcpyUnchecked(op.copyBytesFrom.destAddr, op.addr, op.val);
-		}
-		break;
-
-	case CheatOp::Vibration:
-		if (op.vibrationValues.vibrL > 0) {
-			SetLeftVibration(op.vibrationValues.vibrL);
-			SetVibrationLeftDropout(op.vibrationValues.vibrLTime);
-		}
-		if (op.vibrationValues.vibrR > 0) {
-			SetRightVibration(op.vibrationValues.vibrR);
-			SetVibrationRightDropout(op.vibrationValues.vibrRTime);
-		}
-		break;
-
-	case CheatOp::VibrationFromMemory:
-		if (Memory::IsValidAddress(op.addr) && Memory::IsValidAddress(op.addr + 0x4)) {
-			uint16_t checkLeftVibration = Memory::Read_U16(op.addr);
-			uint16_t checkRightVibration = Memory::Read_U16(op.addr + 0x2);
-			if (checkLeftVibration > 0) {
-				SetLeftVibration(checkLeftVibration);
-				SetVibrationLeftDropout(Memory::Read_U8(op.addr + 0x4));
-			}
-			if (checkRightVibration > 0) {
-				SetRightVibration(checkRightVibration);
-				SetVibrationRightDropout(Memory::Read_U8(op.addr + 0x6));
-			}
-		}
-		break;
-
-	case CheatOp::PostShader:
-		{
-			auto shaderChain = GetPostShaderChain(g_Config.sPostShaderName);
-			if (op.PostShaderUniform.shader < shaderChain.size()) {
-				std::string shaderName = shaderChain[op.PostShaderUniform.shader]->section;
-				if (shaderName != "Off")
-					g_Config.mPostShaderSetting[StringFromFormat("%sSettingValue%d", shaderName.c_str(), op.PostShaderUniform.uniform + 1)] = op.PostShaderUniform.value.f;
-			}
-		}
-		break;
-
-	case CheatOp::PostShaderFromMemory:
-		{
-			auto shaderChain = GetPostShaderChain(g_Config.sPostShaderName);
-			if (Memory::IsValidAddress(op.addr) && op.PostShaderUniform.shader < shaderChain.size()) {
-				union {
-					float f;
-					uint32_t u;
-				} value;
-				value.u = Memory::Read_U32(op.addr);
-				std::string shaderName = shaderChain[op.PostShaderUniform.shader]->section;
-				if (shaderName != "Off") {
-					switch (op.PostShaderUniform.format) {
-					case 0:
-						g_Config.mPostShaderSetting[StringFromFormat("%sSettingValue%d", shaderName.c_str(), op.PostShaderUniform.uniform + 1)] = value.u & 0x000000FF;
-						break;
-					case 1:
-						g_Config.mPostShaderSetting[StringFromFormat("%sSettingValue%d", shaderName.c_str(), op.PostShaderUniform.uniform + 1)] = value.u & 0x0000FFFF;
-						break;
-					case 2:
-						g_Config.mPostShaderSetting[StringFromFormat("%sSettingValue%d", shaderName.c_str(), op.PostShaderUniform.uniform + 1)] = value.u;
-						break;
-					case 3:
-						g_Config.mPostShaderSetting[StringFromFormat("%sSettingValue%d", shaderName.c_str(), op.PostShaderUniform.uniform + 1)] = value.f;
-						break;
-					}
-				}
-			}
 		}
 		break;
 

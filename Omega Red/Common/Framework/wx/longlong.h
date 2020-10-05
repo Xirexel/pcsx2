@@ -1,6 +1,9 @@
 
 #pragma once
 
+#ifdef __ANDROID__
+#include "../../../Android/OmegaRed/app/src/main/cpp/Extend/direct.h"
+#endif
 
 #define wxLongLong_t __int64
 

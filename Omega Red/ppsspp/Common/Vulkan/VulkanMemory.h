@@ -22,10 +22,7 @@ class VulkanPushBuffer {
 	};
 
 public:
-	// NOTE: If you create a push buffer with only VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-	// then you can't use any of the push functions as pointers will not be reachable from the CPU.
-	// You must in this case use Allocate() only, and pass the returned offset and the VkBuffer to Vulkan APIs.
-	VulkanPushBuffer(VulkanContext *vulkan, size_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyMask = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	VulkanPushBuffer(VulkanContext *vulkan, size_t size, VkBufferUsageFlags usage);
 	~VulkanPushBuffer();
 
 	void Destroy(VulkanContext *vulkan);
@@ -38,18 +35,15 @@ public:
 		offset_ = 0;
 		// Note: we must defrag because some buffers may be smaller than size_.
 		Defragment(vulkan);
-		if (memoryPropertyMask_ & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-			Map();
+		Map();
 	}
 
 	void BeginNoReset() {
-		if (memoryPropertyMask_ & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-			Map();
+		Map();
 	}
 
 	void End() {
-		if (memoryPropertyMask_ & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-			Unmap();
+		Unmap();
 	}
 
 	void Map();
@@ -115,8 +109,6 @@ private:
 	void Defragment(VulkanContext *vulkan);
 
 	VulkanContext *vulkan_;
-	VkMemoryPropertyFlags memoryPropertyMask_;
-
 	std::vector<BufInfo> buffers_;
 	size_t buf_ = 0;
 	size_t offset_ = 0;

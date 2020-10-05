@@ -24,39 +24,18 @@
 #include "ui/viewgroup.h"
 #include "UI/MiscScreens.h"
 
-enum GameBrowserFlags {
-	FLAG_HOMEBREWSTOREBUTTON = 1
-};
-
-enum class BrowseFlags {
-	NONE = 0,
-	NAVIGATE = 1,
-	ARCHIVES = 2,
-	PIN = 4,
-	HOMEBREW_STORE = 8,
-	STANDARD = 1 | 2 | 4,
-};
-
-static inline BrowseFlags operator |(const BrowseFlags &lhs, const BrowseFlags &rhs) {
-	return BrowseFlags((int)lhs | (int)rhs);
-}
-
-static inline bool operator &(const BrowseFlags &lhs, const BrowseFlags &rhs) {
-	return ((int)lhs & (int)rhs) != 0;
-}
-
 class GameBrowser : public UI::LinearLayout {
 public:
-	GameBrowser(std::string path, BrowseFlags browseFlags, bool *gridStyle, ScreenManager *screenManager, std::string lastText, std::string lastLink, UI::LayoutParams *layoutParams = nullptr);
+	GameBrowser(std::string path, bool allowBrowsing, bool *gridStyle_, std::string lastText, std::string lastLink, int flags = 0, UI::LayoutParams *layoutParams = 0);
 
 	UI::Event OnChoice;
 	UI::Event OnHoldChoice;
 	UI::Event OnHighlight;
 
+	UI::Choice *HomebrewStoreButton() { return homebrewStoreButton_; }
+
 	void FocusGame(const std::string &gamePath);
 	void SetPath(const std::string &path);
-	void Draw(UIContext &dc) override;
-	void Update() override;
 
 protected:
 	virtual bool DisplayTopBar();
@@ -77,21 +56,16 @@ private:
 	UI::EventReturn LastClick(UI::EventParams &e);
 	UI::EventReturn HomeClick(UI::EventParams &e);
 	UI::EventReturn PinToggleClick(UI::EventParams &e);
-	UI::EventReturn GridSettingsClick(UI::EventParams &e);
-	UI::EventReturn OnRecentClear(UI::EventParams &e);
-	UI::EventReturn OnHomebrewStore(UI::EventParams &e);
 
-	UI::ViewGroup *gameList_ = nullptr;
+	UI::ViewGroup *gameList_;
 	PathBrowser path_;
-	bool *gridStyle_ = nullptr;
-	BrowseFlags browseFlags_;
+	bool *gridStyle_;
+	bool allowBrowsing_;
 	std::string lastText_;
 	std::string lastLink_;
+	int flags_;
+	UI::Choice *homebrewStoreButton_;
 	std::string focusGamePath_;
-	bool listingPending_ = false;
-	float lastScale_ = 1.0f;
-	bool lastLayoutWasGrid_ = true;
-	ScreenManager *screenManager_;
 };
 
 class RemoteISOBrowseScreen;
@@ -122,6 +96,7 @@ protected:
 	// Event handlers
 	UI::EventReturn OnLoadFile(UI::EventParams &e);
 	UI::EventReturn OnGameSettings(UI::EventParams &e);
+	UI::EventReturn OnRecentChange(UI::EventParams &e);
 	UI::EventReturn OnCredits(UI::EventParams &e);
 	UI::EventReturn OnSupport(UI::EventParams &e);
 	UI::EventReturn OnPPSSPPOrg(UI::EventParams &e);
@@ -129,20 +104,21 @@ protected:
 	UI::EventReturn OnExit(UI::EventParams &e);
 	UI::EventReturn OnDownloadUpgrade(UI::EventParams &e);
 	UI::EventReturn OnDismissUpgrade(UI::EventParams &e);
+	UI::EventReturn OnHomebrewStore(UI::EventParams &e);
 	UI::EventReturn OnAllowStorage(UI::EventParams &e);
 
-	UI::LinearLayout *upgradeBar_ = nullptr;
-	UI::TabHolder *tabHolder_ = nullptr;
+	UI::LinearLayout *upgradeBar_;
+	UI::TabHolder *tabHolder_;
 
 	std::string restoreFocusGamePath_;
 	std::vector<GameBrowser *> gameBrowsers_;
 
 	std::string highlightedGamePath_;
 	std::string prevHighlightedGamePath_;
-	float highlightProgress_ = 0.0f;
-	float prevHighlightProgress_ = 0.0f;
-	bool backFromStore_ = false;
-	bool lockBackgroundAudio_ = false;
+	float highlightProgress_;
+	float prevHighlightProgress_;
+	bool backFromStore_;
+	bool lockBackgroundAudio_;
 	bool lastVertical_;
 	bool confirmedTemporary_ = false;
 
@@ -164,18 +140,4 @@ private:
 
 	UI::EventReturn OnCancel(UI::EventParams &e);
 	UI::EventReturn OnGameSettings(UI::EventParams &e);
-};
-
-class GridSettingsScreen : public PopupScreen {
-public:
-	GridSettingsScreen(std::string label) : PopupScreen(label) {}
-	void CreatePopupContents(UI::ViewGroup *parent) override;
-	UI::Event OnRecentChanged;
-
-private:
-	UI::EventReturn GridPlusClick(UI::EventParams &e);
-	UI::EventReturn GridMinusClick(UI::EventParams &e);
-	UI::EventReturn OnRecentClearClick(UI::EventParams &e);
-	const float MAX_GAME_GRID_SCALE = 3.0f;
-	const float MIN_GAME_GRID_SCALE = 0.8f;
 };

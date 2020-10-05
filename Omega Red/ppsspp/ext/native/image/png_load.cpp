@@ -5,7 +5,7 @@
 #ifdef USING_QT_UI
 #include <QtGui/QImage>
 #else
-#include <png.h>
+#include "libpng17/png.h"
 #endif
 
 #include "png_load.h"

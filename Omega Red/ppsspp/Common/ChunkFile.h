@@ -459,8 +459,7 @@ public:
 
 	// Store strings.
 	void Do(std::string &x);
-	void Do(std::wstring &x);  // DEPRECATED, do not save wstrings
-	void Do(std::u16string &x);
+	void Do(std::wstring &x);
 
 	void Do(tm &t);
 

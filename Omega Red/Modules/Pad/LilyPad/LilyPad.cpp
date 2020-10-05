@@ -6,6 +6,16 @@
 #include "resource.h"
 #include <mutex>
 
+#ifdef __ANDROID__
+
+#define __int64 long long
+#define DWORD			   unsigned int
+
+void DEBUG_NEW_SET(){}
+
+
+#endif
+
 
 // Counter similar to stateUpdated for each pad, except used for PADkeyEvent instead.
 // Only matters when GS thread updates is disabled (Just like summed pad values
@@ -290,7 +300,7 @@ void LilyPad::UpdateEnabledDevices(int updateList)
 	}
 }
 
-static GetTouchPadCallback s_getTouchPad = nullptr;
+static void* s_TouchPadHandler = nullptr;
 
 s32 LilyPad::init(u32 flags, pugi::xml_node& a_init_node)
 {
@@ -305,7 +315,7 @@ s32 LilyPad::init(u32 flags, pugi::xml_node& a_init_node)
 		return init(2, a_init_node);
 	}
 
-	s_getTouchPad = (GetTouchPadCallback)a_init_node.attribute(L"GetTouchPadCallbackHandler").as_llong();
+	s_TouchPadHandler = (void*)a_init_node.attribute(L"TouchPadHandler").as_llong();
 
 #if defined(PCSX2_DEBUG) && defined(_MSC_VER)
 	int tmpFlag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
@@ -385,6 +395,8 @@ s32 LilyPad::open()
 	// activeWindow = GetActiveWindow() == hWnd;
 
 	// activeWindow = (GetAncestor(hWnd, GA_ROOT) == GetAncestor(GetForegroundWindow(), GA_ROOT));
+#elif __ANDROID__
+
 #else
 	// Not used so far
 	GSdsp = *(Display **)pDsp;
@@ -535,7 +547,14 @@ void LilyPad::Update(unsigned int port, unsigned int slot)
 	for (i = 0; i < 8; i++) {
 		s[i & 1][i >> 1] = pads[i & 1][i >> 1].lockedSum;
 	}
-#ifdef __linux__
+
+#ifdef __ANDROID__
+	InitInfo info = {
+		0, 0,
+		nullptr, // hWndTop,
+		s_TouchPadHandler
+	};
+#elif __linux__
 	InitInfo info = {
 		0, 0, GSdsp, GSwin };
 #else
@@ -543,7 +562,7 @@ void LilyPad::Update(unsigned int port, unsigned int slot)
 		0, 0, 
 		nullptr, // hWndTop, 
 		nullptr,  // &hWndGSProc
-        s_getTouchPad
+		s_TouchPadHandler
 	};
 #endif
 	dm->Update(&info);

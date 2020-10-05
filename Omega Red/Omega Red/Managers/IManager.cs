@@ -34,8 +34,6 @@ namespace Omega_Red.Managers
 
         void createItem();
 
-        void registerItem(object a_Item);
-
         System.ComponentModel.ICollectionView Collection { get; }
     }
 }

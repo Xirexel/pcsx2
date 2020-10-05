@@ -32,6 +32,7 @@
     <ClCompile Include="..\..\UI\TiltEventProcessor.cpp" />
     <ClCompile Include="..\..\UI\TouchControlLayoutScreen.cpp" />
     <ClCompile Include="..\..\UI\TouchControlVisibilityScreen.cpp" />
+    <ClCompile Include="..\..\UI\ui_atlas.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -66,5 +67,6 @@
     <ClInclude Include="..\..\UI\TiltEventProcessor.h" />
     <ClInclude Include="..\..\UI\TouchControlLayoutScreen.h" />
     <ClInclude Include="..\..\UI\TouchControlVisibilityScreen.h" />
+    <ClInclude Include="..\..\UI\ui_atlas.h" />
   </ItemGroup>
 </Project>

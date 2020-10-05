@@ -57,8 +57,8 @@
       <ModuleDefinitionFile>USBnull.def</ModuleDefinitionFile>
       <TargetMachine Condition="'$(Platform)'=='Win32'">MachineX86</TargetMachine>
       <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
-      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)Omega Red\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
-      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)Omega Red\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <ClCompile>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)Emitters;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)PCSX2Lib;$(SolutionDir)Common\Framework;$(SolutionDir)..\common\include;$(SolutionDir)Common\PugiXML;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

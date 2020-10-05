@@ -67,8 +67,6 @@ void TParseContextBase::outputMessage(const TSourceLoc& loc, const char* szReaso
     }
 }
 
-#if !defined(GLSLANG_WEB) || defined(GLSLANG_WEB_DEVEL)
-
 void C_DECL TParseContextBase::error(const TSourceLoc& loc, const char* szReason, const char* szToken,
                                      const char* szExtraInfoFormat, ...)
 {
@@ -115,8 +113,6 @@ void C_DECL TParseContextBase::ppWarn(const TSourceLoc& loc, const char* szReaso
     va_end(args);
 }
 
-#endif
-
 //
 // Both test and if necessary, spit out an error, to see if the node is really
 // an l-value that can be operated on this way.
@@ -153,18 +149,10 @@ bool TParseContextBase::lValueErrorCheck(const TSourceLoc& loc, const char* op, 
     case EvqConst:          message = "can't modify a const";        break;
     case EvqConstReadOnly:  message = "can't modify a const";        break;
     case EvqUniform:        message = "can't modify a uniform";      break;
-#ifndef GLSLANG_WEB
     case EvqBuffer:
-        if (node->getQualifier().isReadOnly())
+        if (node->getQualifier().readonly)
             message = "can't modify a readonly buffer";
-        if (node->getQualifier().isShaderRecord())
-            message = "can't modify a shaderrecordnv qualified buffer";
         break;
-    case EvqHitAttr:
-        if (language != EShLangIntersect)
-            message = "cannot modify hitAttributeNV in this stage";
-        break;
-#endif
 
     default:
         //
@@ -174,20 +162,12 @@ bool TParseContextBase::lValueErrorCheck(const TSourceLoc& loc, const char* op, 
         case EbtSampler:
             message = "can't modify a sampler";
             break;
-        case EbtVoid:
-            message = "can't modify void";
-            break;
-#ifndef GLSLANG_WEB
         case EbtAtomicUint:
             message = "can't modify an atomic_uint";
             break;
-        case EbtAccStruct:
-            message = "can't modify accelerationStructureNV";
+        case EbtVoid:
+            message = "can't modify void";
             break;
-        case EbtRayQuery:
-            message = "can't modify rayQueryEXT";
-            break;
-#endif
         default:
             break;
         }
@@ -239,7 +219,7 @@ void TParseContextBase::rValueErrorCheck(const TSourceLoc& loc, const char* op, 
     }
 
     TIntermSymbol* symNode = node->getAsSymbolNode();
-    if (symNode && symNode->getQualifier().isWriteOnly())
+    if (symNode && symNode->getQualifier().writeonly)
         error(loc, "can't read from writeonly object: ", op, symNode->getName().c_str());
 }
 
@@ -259,17 +239,11 @@ void TParseContextBase::trackLinkage(TSymbol& symbol)
 // Give an error if not.
 void TParseContextBase::checkIndex(const TSourceLoc& loc, const TType& type, int& index)
 {
-    const auto sizeIsSpecializationExpression = [&type]() {
-        return type.containsSpecializationSize() &&
-               type.getArraySizes()->getOuterNode() != nullptr &&
-               type.getArraySizes()->getOuterNode()->getAsSymbolNode() == nullptr; };
-
     if (index < 0) {
         error(loc, "", "[", "index out of range '%d'", index);
         index = 0;
     } else if (type.isArray()) {
-        if (type.isSizedArray() && !sizeIsSpecializationExpression() &&
-            index >= type.getOuterArraySize()) {
+        if (type.isSizedArray() && index >= type.getOuterArraySize()) {
             error(loc, "", "[", "array index out of range '%d'", index);
             index = type.getOuterArraySize() - 1;
         }
@@ -579,7 +553,6 @@ void TParseContextBase::parseSwizzleSelector(const TSourceLoc& loc, const TStrin
         selector.push_back(0);
 }
 
-#ifdef ENABLE_HLSL
 //
 // Make the passed-in variable information become a member of the
 // global uniform block.  If this doesn't exist yet, make it.
@@ -624,7 +597,6 @@ void TParseContextBase::growGlobalUniformBlock(const TSourceLoc& loc, TType& mem
 
     ++firstNewMember;
 }
-#endif
 
 void TParseContextBase::finish()
 {

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2016-2018 Google, Inc.
+// Copyright (C) 2016 Google, Inc.
 // Copyright (C) 2016 LunarG, Inc.
 //
 // All rights reserved.
@@ -36,9 +36,9 @@
 #ifndef HLSL_PARSE_INCLUDED_
 #define HLSL_PARSE_INCLUDED_
 
-#include "../MachineIndependent/parseVersions.h"
-#include "../MachineIndependent/ParseHelper.h"
-#include "../MachineIndependent/attribute.h"
+#include "../glslang/MachineIndependent/parseVersions.h"
+#include "../glslang/MachineIndependent/ParseHelper.h"
+#include "../glslang/MachineIndependent/attribute.h"
 
 #include <array>
 
@@ -60,8 +60,8 @@ public:
     virtual const char* getGlobalUniformBlockName() const override { return "$Global"; }
     virtual void setUniformBlockDefaults(TType& block) const override
     {
-        block.getQualifier().layoutPacking = globalUniformDefaults.layoutPacking;
-        block.getQualifier().layoutMatrix = globalUniformDefaults.layoutMatrix;
+        block.getQualifier().layoutPacking = ElpStd140;
+        block.getQualifier().layoutMatrix = ElmRowMajor;
     }
 
     void reservedPpErrorCheck(const TSourceLoc&, const char* /*name*/, const char* /*op*/) override { }
@@ -155,7 +155,7 @@ public:
     void declareBlock(const TSourceLoc&, TType&, const TString* instanceName = 0);
     void declareStructBufferCounter(const TSourceLoc& loc, const TType& bufferType, const TString& name);
     void fixBlockLocations(const TSourceLoc&, TQualifier&, TTypeList&, bool memberWithLocation, bool memberWithoutLocation);
-    void fixXfbOffsets(TQualifier&, TTypeList&);
+    void fixBlockXfbOffsets(TQualifier&, TTypeList&);
     void fixBlockUniformOffsets(const TQualifier&, TTypeList&);
     void addQualifierToExisting(const TSourceLoc&, TQualifier, const TString& identifier);
     void addQualifierToExisting(const TSourceLoc&, TQualifier, TIdentifierList&);
@@ -182,11 +182,6 @@ public:
     void popNamespace();
     void getFullNamespaceName(TString*&) const;
     void addScopeMangler(TString&);
-
-    void beginParameterParsing(TFunction& function)
-    {
-        parsingEntrypointParameters = isEntrypointName(function.getName());
-    }
 
     void pushSwitchSequence(TIntermSequence* sequence) { switchSequenceStack.push_back(sequence); }
     void popSwitchSequence() { switchSequenceStack.pop_back(); }
@@ -246,7 +241,6 @@ protected:
     TIntermTyped* convertInitializerList(const TSourceLoc&, const TType&, TIntermTyped* initializer, TIntermTyped* scalarInit);
     bool isScalarConstructor(const TIntermNode*);
     TOperator mapAtomicOp(const TSourceLoc& loc, TOperator op, bool isImage);
-    bool isEntrypointName(const TString& name) { return name.compare(intermediate.getEntryPointName().c_str()) == 0; }
 
     // Return true if this node requires L-value conversion (e.g, to an imageStore).
     bool shouldConvertLValue(const TIntermNode*) const;
@@ -276,7 +270,7 @@ protected:
 
     void fixBuiltInIoType(TType&);
 
-    void flatten(const TVariable& variable, bool linkage, bool arrayed = false);
+    void flatten(const TVariable& variable, bool linkage);
     int flatten(const TVariable& variable, const TType&, TFlattenData&, TString name, bool linkage,
                 const TQualifier& outerQualifier, const TArraySizes* builtInArraySizes);
     int flattenStruct(const TVariable& variable, const TType&, TFlattenData&, TString name, bool linkage,
@@ -320,7 +314,7 @@ protected:
     // Finalization step: remove unused buffer blocks from linkage (we don't know until the
     // shader is entirely compiled)
     void removeUnusedStructBufferCounters();
-
+ 
     static bool isClipOrCullDistance(TBuiltInVariable);
     static bool isClipOrCullDistance(const TQualifier& qual) { return isClipOrCullDistance(qual.builtIn); }
     static bool isClipOrCullDistance(const TType& type) { return isClipOrCullDistance(type.getQualifier()); }
@@ -407,7 +401,7 @@ protected:
     // This tracks texture sample user structure return types.  Only a limited number are supported, as
     // may fit in TSampler::structReturnIndex.
     TVector<TTypeList*> textureReturnStruct;
-
+    
     TMap<TString, bool> structBufferCounter;  // true if counter buffer is in use
 
     // The built-in interstage IO map considers e.g, EvqPosition on input and output separately, so that we
@@ -456,7 +450,7 @@ protected:
     std::array<int, maxClipCullRegs> cullSemanticNSizeOut; // vector, indexed by cull semantic ID
 
     // This tracks the first (mip level) argument to the .mips[][] operator.  Since this can be nested as
-    // in tx.mips[tx.mips[0][1].x][2], we need a stack.  We also track the TSourceLoc for error reporting
+    // in tx.mips[tx.mips[0][1].x][2], we need a stack.  We also track the TSourceLoc for error reporting 
     // purposes.
     struct tMipsOperatorData {
         tMipsOperatorData(TSourceLoc l, TIntermTyped* m) : loc(l), mipLevel(m) { }
@@ -500,7 +494,6 @@ protected:
     };
 
     TMap<int, tShadowTextureSymbols*> textureShadowVariant;
-    bool parsingEntrypointParameters;
 };
 
 // This is the prefix we use for built-in methods to avoid namespace collisions with

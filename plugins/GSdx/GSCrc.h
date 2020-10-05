@@ -46,6 +46,7 @@ public:
 		DBZBT2,
 		DBZBT3,
 		DeathByDegreesTekkenNinaWilliams,
+		DemonStone,
 		DestroyAllHumans,
 		DestroyAllHumans2,
 		DevilMayCry3,
@@ -99,7 +100,6 @@ public:
 		Okami,
 		Oneechanbara2Special,
 		Onimusha3,
-		Persona3,
 		PiaCarroteYoukosoGPGakuenPrincess,
 		ProjectSnowblind,
 		Quake3Revolution,
@@ -110,6 +110,7 @@ public:
 		RatchetAndClank4,
 		RatchetAndClank5,
 		RedDeadRevolver,
+		ResidentEvil4,
 		RickyPontingInternationalCricket,
 		RozenMaidenGebetGarden,
 		SacredBlaze,
@@ -184,7 +185,6 @@ public:
 	enum Flags
 	{
 		PointListPalette = 1,
-		TextureInsideRt = 2,
 	};
 
 	struct Game

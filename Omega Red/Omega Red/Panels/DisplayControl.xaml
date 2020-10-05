@@ -6,11 +6,8 @@
              xmlns:local="clr-namespace:Omega_Red.Panels"
              mc:Ignorable="d">
     <Grid>
-        <Border x:Name="m_TargetRenderBorder" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Stretch">
+        <Border x:Name="m_TargetRenderBorder" HorizontalAlignment="Stretch">
             <local:VideoPanel/>
-            <Border.RenderTransform>
-                <RotateTransform x:Name="m_vibrationRotateTransform" Angle="0" />
-            </Border.RenderTransform>
         </Border>
         <Canvas x:Name="m_SourceCanvas"/>
     </Grid>

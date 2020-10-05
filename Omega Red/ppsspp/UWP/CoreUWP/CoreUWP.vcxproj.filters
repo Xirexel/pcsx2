@@ -236,6 +236,9 @@
     <ClCompile Include="..\..\Core\Util\GameManager.cpp">
       <Filter>Util</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Core\Util\ppge_atlas.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Core\Util\PPGeDraw.cpp">
       <Filter>Util</Filter>
     </ClCompile>
@@ -366,9 +369,6 @@
       <Filter>HLE</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Core\HLE\sceKernelInterrupt.cpp">
-      <Filter>HLE</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Core\HLE\sceKernelHeap.cpp">
       <Filter>HLE</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Core\HLE\sceKernelMbx.cpp">
@@ -631,9 +631,6 @@
     <ClCompile Include="..\..\Core\HLE\sceUsbAcc.cpp">
       <Filter>HLE</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Core\HLE\sceUsbMic.cpp">
-      <Filter>HLE</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Core\Debugger\WebSocket.cpp">
       <Filter>Debugger</Filter>
     </ClCompile>
@@ -702,9 +699,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Core\MIPS\ARM64\Arm64RegCacheFPU.cpp">
       <Filter>MIPS\ARM64</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Core\HW\Camera.cpp">
-      <Filter>HW</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -828,6 +822,9 @@
       <Filter>Util</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Core\Util\GameManager.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Core\Util\ppge_atlas.h">
       <Filter>Util</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Core\Util\PPGeDraw.h">
@@ -969,9 +966,6 @@
       <Filter>HLE</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Core\HLE\sceKernelInterrupt.h">
-      <Filter>HLE</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Core\HLE\sceKernelHeap.h">
       <Filter>HLE</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Core\HLE\sceKernelMbx.h">
@@ -1249,9 +1243,6 @@
     <ClInclude Include="..\..\Core\HLE\sceUsbAcc.h">
       <Filter>HLE</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Core\HLE\sceUsbMic.h">
-      <Filter>HLE</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Core\Debugger\WebSocket.h">
       <Filter>Debugger</Filter>
     </ClInclude>
@@ -1299,9 +1290,6 @@
     </ClInclude>
     <ClInclude Include="..\..\Core\MIPS\ARM64\Arm64RegCacheFPU.h">
       <Filter>MIPS\ARM64</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Core\HW\Camera.h">
-      <Filter>HW</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

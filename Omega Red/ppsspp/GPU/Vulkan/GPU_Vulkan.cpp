@@ -17,7 +17,6 @@
 // https://github.com/hrydgard/ppsspp and http://www.ppsspp.org/.
 
 #include <thread>
-
 #include "base/logging.h"
 #include "base/timeutil.h"
 #include "profiler/profiler.h"
@@ -28,6 +27,7 @@
 #include "Core/Config.h"
 #include "Core/Debugger/Breakpoints.h"
 #include "Core/MemMapHelpers.h"
+#include "Core/Config.h"
 #include "Core/Reporting.h"
 #include "Core/System.h"
 #include "Core/ELF/ParamSFO.h"
@@ -56,6 +56,7 @@ GPU_Vulkan::GPU_Vulkan(GraphicsContext *gfxCtx, Draw::DrawContext *draw)
 		drawEngine_(vulkan_, draw),
 		depalShaderCache_(draw, vulkan_),
 		vulkan2D_(vulkan_) {
+	UpdateVsyncInterval(true);
 	CheckGPUFeatures();
 
 	shaderManagerVulkan_ = new ShaderManagerVulkan(draw, vulkan_);
@@ -135,7 +136,6 @@ void GPU_Vulkan::LoadCache(std::string filename) {
 	// it can just memcpy the finished shader binaries out of the pipeline cache file.
 	bool result = shaderManagerVulkan_->LoadCache(f);
 	if (result) {
-		// WARNING: See comment in LoadCache if you are tempted to flip the second parameter to true.
 		result = pipelineManager_->LoadCache(f, false, shaderManagerVulkan_, draw_, drawEngine_.GetPipelineLayout());
 	}
 	fclose(f);
@@ -159,7 +159,6 @@ void GPU_Vulkan::SaveCache(std::string filename) {
 	if (!f)
 		return;
 	shaderManagerVulkan_->SaveCache(f);
-	// WARNING: See comment in LoadCache if you are tempted to flip the second parameter to true.
 	pipelineManager_->SaveCache(f, false, shaderManagerVulkan_, draw_);
 	INFO_LOG(G3D, "Saved Vulkan pipeline cache");
 	fclose(f);
@@ -170,10 +169,9 @@ GPU_Vulkan::~GPU_Vulkan() {
 	// Note: We save the cache in DeviceLost
 	DestroyDeviceObjects();
 	framebufferManagerVulkan_->DestroyAllFBOs();
-	depalShaderCache_.Clear();
-	depalShaderCache_.DeviceLost();
-	drawEngine_.DeviceLost();
 	vulkan2D_.Shutdown();
+	depalShaderCache_.Clear();
+	drawEngine_.DeviceLost();
 	delete textureCacheVulkan_;
 	delete pipelineManager_;
 	delete shaderManagerVulkan_;
@@ -197,23 +195,15 @@ void GPU_Vulkan::CheckGPUFeatures() {
 		features |= GPU_SUPPORTS_ACCURATE_DEPTH;
 		break;
 	case VULKAN_VENDOR_ARM:
-	{
-		// This check is probably not exactly accurate. But old drivers had problems with reverse-Z, just like AMD and Qualcomm.
-		bool driverTooOld = IsHashMaliDriverVersion(vulkan_->GetPhysicalDeviceProperties().properties)
-			|| VK_VERSION_MAJOR(vulkan_->GetPhysicalDeviceProperties().properties.driverVersion) < 14;
-		if (!PSP_CoreParameter().compat.flags().DisableAccurateDepth || driverTooOld) {
+		// Also required on older ARM Mali drivers, like the one on many Galaxy S7.
+		if (!PSP_CoreParameter().compat.flags().DisableAccurateDepth ||
+			  vulkan_->GetPhysicalDeviceProperties().properties.driverVersion <= VK_MAKE_VERSION(428, 811, 2674)) {
 			features |= GPU_SUPPORTS_ACCURATE_DEPTH;
 		}
-		// These GPUs (up to some certain hardware version?) has a bug where draws where gl_Position.w == .z
-		// corrupt the depth buffer. This is easily worked around by simply scaling Z down a tiny bit when this case
-		// is detected. See: https://github.com/hrydgard/ppsspp/issues/11937
-		features |= GPU_NEEDS_Z_EQUAL_W_HACK;
 		break;
-	}
 	default:
-		if (!PSP_CoreParameter().compat.flags().DisableAccurateDepth) {
+		if (!PSP_CoreParameter().compat.flags().DisableAccurateDepth)
 			features |= GPU_SUPPORTS_ACCURATE_DEPTH;
-		}
 		break;
 	}
 
@@ -228,10 +218,10 @@ void GPU_Vulkan::CheckGPUFeatures() {
 	features |= GPU_SUPPORTS_ANY_COPY_IMAGE;
 	features |= GPU_SUPPORTS_OES_TEXTURE_NPOT;
 	features |= GPU_SUPPORTS_LARGE_VIEWPORTS;
+	features |= GPU_SUPPORTS_16BIT_FORMATS;
 	features |= GPU_SUPPORTS_INSTANCE_RENDERING;
 	features |= GPU_SUPPORTS_VERTEX_TEXTURE_FETCH;
 	features |= GPU_SUPPORTS_TEXTURE_FLOAT;
-	features |= GPU_PREFER_CPU_DOWNLOAD;
 
 	if (vulkan_->GetDeviceFeatures().enabled.wideLines) {
 		features |= GPU_SUPPORTS_WIDE_LINES;
@@ -249,15 +239,6 @@ void GPU_Vulkan::CheckGPUFeatures() {
 	}
 	if (vulkan_->GetDeviceFeatures().enabled.samplerAnisotropy) {
 		features |= GPU_SUPPORTS_ANISOTROPY;
-	}
-
-	uint32_t fmt4444 = draw_->GetDataFormatSupport(Draw::DataFormat::B4G4R4A4_UNORM_PACK16);
-	uint32_t fmt1555 = draw_->GetDataFormatSupport(Draw::DataFormat::A1R5G5B5_UNORM_PACK16);
-	uint32_t fmt565 = draw_->GetDataFormatSupport(Draw::DataFormat::R5G6B5_UNORM_PACK16);
-	if ((fmt4444 & Draw::FMT_TEXTURE) && (fmt565 & Draw::FMT_TEXTURE) && (fmt1555 & Draw::FMT_TEXTURE)) {
-		features |= GPU_SUPPORTS_16BIT_FORMATS;
-	} else {
-		INFO_LOG(G3D, "Deficient texture format support: 4444: %d  1555: %d  565: %d", fmt4444, fmt1555, fmt565);
 	}
 
 	if (PSP_CoreParameter().compat.flags().ClearToRAM) {
@@ -292,8 +273,8 @@ void GPU_Vulkan::BeginHostFrame() {
 		if (vulkan_->GetDeviceFeatures().enabled.wideLines) {
 			drawEngine_.SetLineWidth(PSP_CoreParameter().renderWidth / 480.0f);
 		}
-		resized_ = false;
 	}
+	resized_ = false;
 
 	textureCacheVulkan_->StartFrame();
 
@@ -414,13 +395,20 @@ void GPU_Vulkan::BuildReportingInfo() {
 
 void GPU_Vulkan::Reinitialize() {
 	GPUCommon::Reinitialize();
+	textureCacheVulkan_->Clear(true);
 	depalShaderCache_.Clear();
+	framebufferManagerVulkan_->DestroyAllFBOs();
 }
 
 void GPU_Vulkan::InitClear() {
-	if (!framebufferManager_->UseBufferedRendering()) {
+	bool useNonBufferedRendering = g_Config.iRenderingMode == FB_NON_BUFFERED_MODE;
+	if (useNonBufferedRendering) {
 		// TODO?
 	}
+}
+
+void GPU_Vulkan::UpdateVsyncInterval(bool force) {
+	// TODO
 }
 
 void GPU_Vulkan::SetDisplayFramebuffer(u32 framebuf, u32 stride, GEBufferFormat format) {
@@ -428,13 +416,13 @@ void GPU_Vulkan::SetDisplayFramebuffer(u32 framebuf, u32 stride, GEBufferFormat 
 	framebufferManager_->SetDisplayFramebuffer(framebuf, stride, format);
 }
 
-void GPU_Vulkan::CopyDisplayToOutput(bool reallyDirty) {
+void GPU_Vulkan::CopyDisplayToOutput() {
 	// Flush anything left over.
 	drawEngine_.Flush();
 
 	shaderManagerVulkan_->DirtyLastShader();
 
-	framebufferManagerVulkan_->CopyDisplayToOutput(reallyDirty);
+	framebufferManagerVulkan_->CopyDisplayToOutput();
 
 	gstate_c.Dirty(DIRTY_TEXTURE_IMAGE);
 }
@@ -485,10 +473,6 @@ void GPU_Vulkan::InitDeviceObjects() {
 		hacks |= QUEUE_HACK_MGS2_ACID;
 	if (PSP_CoreParameter().compat.flags().SonicRivalsHack)
 		hacks |= QUEUE_HACK_SONIC;
-
-	// Always on.
-	hacks |= QUEUE_HACK_RENDERPASS_MERGE;
-
 	if (hacks) {
 		rm->GetQueueRunner()->EnableHacks(hacks);
 	}
@@ -612,11 +596,11 @@ void GPU_Vulkan::DoState(PointerWrap &p) {
 	// None of these are necessary when saving.
 	// In Freeze-Frame mode, we don't want to do any of this.
 	if (p.mode == p.MODE_READ && !PSP_CoreParameter().frozen) {
-		textureCache_->Clear(true);
+		textureCacheVulkan_->Clear(true);
 		depalShaderCache_.Clear();
 
 		gstate_c.Dirty(DIRTY_TEXTURE_IMAGE);
-		framebufferManager_->DestroyAllFBOs();
+		framebufferManagerVulkan_->DestroyAllFBOs();
 	}
 }
 
@@ -651,9 +635,4 @@ std::string GPU_Vulkan::DebugGetShaderString(std::string id, DebugShaderType typ
 	} else {
 		return std::string();
 	}
-}
-
-std::string GPU_Vulkan::GetGpuProfileString() {
-	VulkanRenderManager *rm = (VulkanRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
-	return rm->GetGpuProfileString();
 }

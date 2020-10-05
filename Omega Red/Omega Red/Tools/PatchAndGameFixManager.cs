@@ -53,8 +53,102 @@ namespace Omega_Red.Tools
                 
         private void sioSetGameSerial(string a_GameSerial)
         {
+            PCSX2LibNative.Instance.setSioSetGameSerialFunc(a_GameSerial);
         }
+        
+        public void loadGameSettings(Pcsx2Config dest, string a_disc_serial)
+        {
+            var l_GameData = GameIndex.Instance.convert(a_disc_serial);
+
+            loadGameSettings(dest, l_GameData);
+        }
+
+        // Load Game Settings found in database
+        // (game fixes, round modes, clamp modes, etc...)
+        // Returns number of gamefixes set
+        private int loadGameSettings(Pcsx2Config dest, GameIndex.GameData game)
+        {
+	        if( game == null ) return 0;
+
+	        int  gf  = 0;
+
+	        if (game.keyExists("eeRoundMode"))
+	        {
+		        var eeRM = game.getInt("eeRoundMode");
+		        if (eeRM >= 0)
+		        {
+                    //PatchesCon->WriteLn("(GameDB) Changing EE/FPU roundmode to %d [%s]", eeRM, EnumToString(eeRM));
+			        dest.Cpu.sseMXCSR.SetRoundMode(eeRM);
+			        ++gf;
+		        }
+	        }
+
+	        if (game.keyExists("vuRoundMode"))
+	        {
+		        var vuRM = game.getInt("vuRoundMode");
+		        if (vuRM >= 0)
+		        {
+                    //PatchesCon->WriteLn("(GameDB) Changing VU0/VU1 roundmode to %d [%s]", vuRM, EnumToString(vuRM));
+			        dest.Cpu.sseVUMXCSR.SetRoundMode(vuRM);
+			        ++gf;
+		        }
+	        }
+
+	        if (game.keyExists("eeClampMode")) {
+		        int clampMode = game.getInt("eeClampMode");
+                //PatchesCon->WriteLn("(GameDB) Changing EE/FPU clamp mode [mode=%d]", clampMode);
+		        dest.Cpu.Recompiler.fpuOverflow			= (clampMode >= 1);
+		        dest.Cpu.Recompiler.fpuExtraOverflow	= (clampMode >= 2);
+		        dest.Cpu.Recompiler.fpuFullMode			= (clampMode >= 3);
+		        gf++;
+	        }
+
+	        if (game.keyExists("vuClampMode")) {
+		        int clampMode = game.getInt("vuClampMode");
+                //PatchesCon->WriteLn("(GameDB) Changing VU0/VU1 clamp mode [mode=%d]", clampMode);
+		        dest.Cpu.Recompiler.vuOverflow			= (clampMode >= 1);
+		        dest.Cpu.Recompiler.vuExtraOverflow		= (clampMode >= 2);
+		        dest.Cpu.Recompiler.vuSignOverflow		= (clampMode >= 3);
+		        gf++;
+	        }
+
+
+	        if (game.keyExists("mvuFlagSpeedHack")) {
+		        bool vuFlagHack = game.getInt("mvuFlagSpeedHack") != 0;
+                //PatchesCon->WriteLn("(GameDB) Changing mVU flag speed hack [mode=%d]", vuFlagHack);
+		        dest.Speedhacks.vuFlagHack = vuFlagHack;
+		        gf++;
+	        }
+
+            
+
+            foreach (var l_enumName in Enum.GetNames(typeof(Pcsx2Config.GamefixOptions.GamefixId)))
+	        {
+                Pcsx2Config.GamefixOptions.GamefixId l_GamefixId = Pcsx2Config.GamefixOptions.GamefixId.GamefixId_COUNT;
+
+		        if(Enum.TryParse<Pcsx2Config.GamefixOptions.GamefixId>(l_enumName, out l_GamefixId))
+                {
+                    var key = l_enumName.Replace("Fix_", "");
                     
+		            key += "Hack";
+
+                    if (game.keyExists(key))
+		            {
+			            bool enableIt = game.getBool(key);
+			            dest.Gamefixes.Set(l_GamefixId, enableIt);
+                        //PatchesCon->WriteLn(L"(GameDB) %s Gamefix: " + key, enableIt ? L"Enabled" : L"Disabled");
+			            gf++;
+
+			            // The LUT is only used for 1 game so we allocate it only when the gamefix is enabled (save 4MB)
+                        if (l_GamefixId == Pcsx2Config.GamefixOptions.GamefixId.Fix_GoemonTlbMiss && enableIt)
+                            PCSX2LibNative.Instance.VTLB_Alloc_PpmapFinc();// vtlb_Alloc_Ppmap();
+		            }
+                }
+	        }
+            
+	        return gf;
+        }
+                
 
         // This routine loads patches from the game database (but not the config/game fixes/hacks)
         // Returns number of patches loaded
@@ -97,6 +191,7 @@ namespace Omega_Red.Tools
                 if (patchString.StartsWith("/"))
                     continue;
 
+                PCSX2LibNative.Instance.inifile_commandFunc(patchString.Replace("\r", ""));
             }
         }
 
@@ -130,7 +225,9 @@ namespace Omega_Red.Tools
             //    fixup.GS.FrameLimitEnable = false;
             //    fixup.GS.VsyncEnable = VsyncMode::Off;
             //}
-            
+
+            var fixup = PCSX2Controller.Instance.m_Pcsx2Config;
+
             string gameCRC = null;
             string gameSerial = null;
             string gamePatch = null;
@@ -141,6 +238,82 @@ namespace Omega_Red.Tools
 	        string gameName = null;
             string gameCompat = null;
             string gameMemCardFilter = null;
+
+	        // The CRC can be known before the game actually starts (at the bios), so when
+	        // we have the CRC but we're still at the bios and the settings are changed
+	        // (e.g. the user presses TAB to speed up emulation), we don't want to apply the
+	        // settings as if the game is already running (title, loadeding patches, etc).
+	        bool ingame = (PCSX2LibNative.Instance.getElfCRCFunc() > 0 && (PCSX2LibNative.Instance.getGameLoadingFunc() || PCSX2LibNative.Instance.getGameStartedFunc()));
+            if (ingame && PCSX2Controller.Instance.IsoInfo != null)
+                gameCRC = PCSX2Controller.Instance.IsoInfo.ElfCRC.ToString("x");
+            //if (ingame && !DiscSerial.IsEmpty()) gameSerial = L" [" + DiscSerial + L"]";
+
+	        string newGameKey = ingame ? PCSX2Controller.Instance.IsoInfo.DiscSerial : PCSX2LibNative.Instance.getSysGetBiosDiscIDFunc();
+	        bool verbose =  newGameKey != curGameKey && ingame;
+	        //Console.WriteLn(L"------> patches verbose: %d   prev: '%s'   new: '%s'", (int)verbose, WX_STR(curGameKey), WX_STR(newGameKey));
+            //SetupPatchesCon(verbose);
+
+	        curGameKey = newGameKey;
+
+            PCSX2LibNative.Instance.ForgetLoadedPatchesFunc();// ForgetLoadedPatches();
+
+	        if (!string.IsNullOrEmpty(curGameKey))
+	        {
+                var l_GameData = GameIndex.Instance.convert(PCSX2Controller.Instance.IsoInfo.DiscSerial);
+
+		        if (l_GameData != null)
+		        {
+                    if(l_GameData.keyExists("MemCardFilter"))
+                    {
+                        gameMemCardFilter = l_GameData.getString("MemCardFilter");
+                    }
+                    
+                    if (fixup.EnablePatches)
+                    {
+                        loadPatchesFromGamesDB(gameCRC, l_GameData);
+
+                        loadGameSettings(fixup, curGameKey);
+                    }
+		        }
+	        }
+
+	        if (!string.IsNullOrEmpty(gameMemCardFilter))
+		        sioSetGameSerial(gameMemCardFilter);
+	        else
+		        sioSetGameSerial(curGameKey);
+
+	        if (string.IsNullOrEmpty(gameName) && string.IsNullOrEmpty(gameSerial) && string.IsNullOrEmpty(gameCRC))
+	        {
+		        // if all these conditions are met, it should mean that we're currently running BIOS code.
+		        // Chances are the BiosChecksum value is still zero or out of date, however -- because
+		        // the BIos isn't loaded until after initial calls to ApplySettings.
+
+		        gameName = "Booting PS2 BIOS... ";
+	        }
+
+	        //Till the end of this function, entry CRC will be 00000000
+            //if (!string.IsNullOrEmpty(gameCRC))
+            //{
+            //    //Console.WriteLn(Color_Gray, "Patches: No CRC found, using 00000000 instead.");
+            //    gameCRC = "00000000";
+            //}
+
+	        // regular cheat patches
+            //if (fixup.EnableCheats)
+            //    gameCheats.Printf(L" [%d Cheats]", LoadPatchesFromDir(gameCRC, GetCheatsFolder(), L"Cheats"));
+
+	        // wide screen patches
+            LoadPatches(gameCRC);
+
+	        // When we're booting, the bios loader will set a a title which would be more interesting than this
+	        // to most users - with region, version, etc, so don't overwrite it with patch info. That's OK. Those
+	        // users which want to know the status of the patches at the bios can check the console content.
+            //string consoleTitle = gameName + gameSerial;
+            //consoleTitle += L" [" + gameCRC.MakeUpper() + L"]" + gameCompat + gameFixes + gamePatch + gameCheats + gameWsHacks;
+            //if (ingame)
+            //    Console.SetTitle(consoleTitle);
+
+	        gsUpdateFrequency(fixup);
         }
 
         public void LoadPatches(string gameCRC)
@@ -164,7 +337,28 @@ namespace Omega_Red.Tools
                 //}
             }
         }
-        
+
+        void gsUpdateFrequency(Pcsx2Config config)
+        {
+            //switch (g_LimiterMode)
+            //{
+            //case LimiterModeType::Limit_Nominal:
+            //    config.GS.LimitScalar = g_Conf->Framerate.NominalScalar;
+            //    break;
+            //case LimiterModeType::Limit_Slomo:
+            //    config.GS.LimitScalar = g_Conf->Framerate.SlomoScalar;
+            //    break;
+            //case LimiterModeType::Limit_Turbo:
+            //    config.GS.LimitScalar = g_Conf->Framerate.TurboScalar;
+            //    break;
+            //default:
+            //    pxAssert("Unknown framelimiter mode!");
+            //}
+            //UpdateVSyncRate();
+
+            PCSX2LibNative.Instance.gsUpdateFrequencyCallFunc();
+        }
+
         int LoadPatchesFromZip(string gameCRC)
         {
             int lresult = 0;

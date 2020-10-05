@@ -14,10 +14,20 @@
 
 #pragma once
 
-#ifdef PCSX2LIB_EXPORTS
-#define PCSX2_EXPORT __declspec(dllexport)
+
+
+#ifndef __ANDROID__
+	#ifdef PCSX2LIB_EXPORTS
+		#define PCSX2_EXPORT __declspec(dllexport)
+	#else
+		#define PCSX2_EXPORT __declspec(dllimport)
+    #endif
+
+	#define STDAPICALLTYPE          __stdcall
 #else
-#define PCSX2_EXPORT __declspec(dllimport)
+	#define PCSX2_EXPORT
+
+	#define STDAPICALLTYPE          __attribute__((stdcall))
+
 #endif
 
-#define STDAPICALLTYPE          __stdcall

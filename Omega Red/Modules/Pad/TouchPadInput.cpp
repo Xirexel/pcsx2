@@ -1,12 +1,14 @@
 
 #include "stdafx.h"
-#include "Global.h"
+#include "LilyPad/Global.h"
+#ifndef __ANDROID__
 #include <VersionHelpers.h>
 #include <xinput.h>
-#include "VKey.h"
-#include "InputManager.h"
-#include "XInputEnum.h"
-#include "Config.h"
+#endif
+#include "LilyPad/VKey.h"
+#include "LilyPad/InputManager.h"
+#include "LilyPad/XInputEnum.h"
+#include "LilyPad/Config.h"
 
 //// Extra enum
 //#define XINPUT_GAMEPAD_GUIDE 0x0400
@@ -57,6 +59,8 @@
 //_XInputSetState pXInputSetState = 0;
 
 
+
+
 struct TOUCH_PAD_GAMEPAD {
 	WORD  wButtons;
 	BYTE  bLeftTrigger;
@@ -73,10 +77,7 @@ struct TOUCH_PAD_STATE {
 };
 
 
-
-typedef DWORD(STDAPICALLTYPE *VibrationCallback)(
-    DWORD VibrationCombo);
-
+static int s_activeCount = 0;
 
 // Completely unncessary, really.
 __forceinline int ShortToAxis(int v)
@@ -96,7 +97,7 @@ class TouchPadInput : public Device
 	// When there's no change, no need to do anything.
 	XINPUT_VIBRATION xInputVibration;
 
-	GetTouchPadCallback m_getTouchPad = nullptr;
+	void* m_TouchPadHandler = nullptr;
 
 public:
 	int index;
@@ -155,12 +156,12 @@ public:
 	{
 		if (active)
 			Deactivate();
-
+		s_activeCount++;
 		active = 1;
 		AllocState();
 
-		if (initInfo->m_getTouchPad != nullptr)
-            m_getTouchPad = initInfo->m_getTouchPad;
+		if (initInfo->m_TouchPadHandler != nullptr)
+			m_TouchPadHandler = initInfo->m_TouchPadHandler;
 
 		return 1;
 	}
@@ -171,9 +172,9 @@ public:
 			return 0;
 		XINPUT_STATE state;
 
-		if (m_getTouchPad != nullptr)
+		if (m_TouchPadHandler != nullptr)
 		{
-            state = *((_XINPUT_STATE *)m_getTouchPad(index));
+			state = *((_XINPUT_STATE*)m_TouchPadHandler);
 
 			auto buttons = state.Gamepad.wButtons;
 			for (int i = 0; i < 15; i++) {
@@ -268,13 +269,6 @@ public:
 			//if (ERROR_SUCCESS == pXInputSetState(index, &newv)) {
 			//	xInputVibration = newv;
 			//}
-
-			DWORD l_VibrationCombo = (WORD)newVibration[0] | (((WORD)newVibration[1]) << 16);
-
-			if (ptrVibrationCallback != nullptr)
-                ((VibrationCallback)ptrVibrationCallback)(l_VibrationCombo);
-
-			xInputVibration = newv;
 		}
 	}
 

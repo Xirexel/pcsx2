@@ -24,7 +24,7 @@
 #include "InputDevice.h"
 #include "dinput.h"
 
-class DinputDevice final :
+class DinputDevice :
 	public InputDevice
 {
 public:
@@ -32,7 +32,8 @@ public:
 	//getDevices(), enumerates all devices if not done yet
 	DinputDevice(int devnum);
 	~DinputDevice();
-	virtual int UpdateState() override;
+	virtual int UpdateState();
+	virtual bool IsPad() { return true; }
 	static size_t getNumPads();
 	static void CheckDevices() {
 		needsCheck_ = true;

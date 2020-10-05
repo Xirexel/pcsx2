@@ -251,7 +251,7 @@ JittedVertexDecoder VertexDecoderJitCache::Compile(const VertexDecoder &dec, int
 		if (!CompileStep(dec, i)) {
 			EndWrite();
 			// Reset the code ptr and return zero to indicate that we failed.
-			ResetCodePtr(GetOffset(start));
+			SetCodePtr(const_cast<u8 *>(start));
 			return 0;
 		}
 	}

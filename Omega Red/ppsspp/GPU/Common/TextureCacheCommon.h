@@ -187,7 +187,7 @@ public:
 
 	void SetTexture(bool force = false);
 	void ApplyTexture();
-	bool SetOffsetTexture(u32 yOffset);
+	bool SetOffsetTexture(u32 offset);
 	void Invalidate(u32 addr, int size, GPUInvalidationType type);
 	void InvalidateAll(GPUInvalidationType type);
 	void ClearNextFrame();

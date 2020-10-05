@@ -357,7 +357,7 @@ namespace MediaStream
         {
             do
             {
-
+#if EXTEND_CM
                 if (!m_VideoMixerNodes.ContainsKey(a_SymbolicLink))
                     break;
 
@@ -365,7 +365,7 @@ namespace MediaStream
 
                 if (lVideoMixerControl != null)
                     lVideoMixerControl.setPosition(m_VideoMixerNodes[a_SymbolicLink], aLeft, aRight, aTop, aBottom);
-
+#endif
             } while (false);
         }
 
@@ -373,7 +373,7 @@ namespace MediaStream
         {
             do
             {
-
+#if EXTEND_CM
                 if (!m_VideoMixerNodes.ContainsKey(a_SymbolicLink))
                     break;
 
@@ -381,7 +381,7 @@ namespace MediaStream
 
                 if (lVideoMixerControl != null)
                     lVideoMixerControl.setOpacity(m_VideoMixerNodes[a_SymbolicLink], a_value);
-
+#endif
             } while (false);
         }
 
@@ -389,6 +389,7 @@ namespace MediaStream
         {
             do
             {
+#if BROADCAST
                 if (!m_AudioMixerNodes.ContainsKey(a_SymbolicLink))
                     break;
 
@@ -396,6 +397,7 @@ namespace MediaStream
 
                 if (lAudioMixerControl != null)
                     lAudioMixerControl.setRelativeVolume(m_AudioMixerNodes[a_SymbolicLink], a_value);
+#endif
             } while (false);
         }
 
@@ -459,7 +461,7 @@ namespace MediaStream
             Action<Action<IntPtr, uint>> a_RegisterAction,
             Action<bool> a_isConnected)
         {
-            string l_resultMessage = "";
+            string l_FileExtention = "Error";
 
             object l_VideoMediaSource = null;
 
@@ -540,6 +542,7 @@ namespace MediaStream
 
                 uint lAudioSourceIndexMediaType = 0;
 
+#if EXTEND_CM
                 if (l_AudioCaptureProcessor != null)
                 {
                     l_ISourceControl.createSourceFromCaptureProcessor(
@@ -557,6 +560,7 @@ namespace MediaStream
 
                 }
                 else
+#endif
                 {
                     lAudioLoopBack = "CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack";
 
@@ -730,7 +734,7 @@ namespace MediaStream
 
                     if (string.IsNullOrWhiteSpace(lVideoCompressedMediaTypeXmlstring))
                         break;
-
+#if EXTEND_CM
                     if (m_VideoMixerInputMaxCount > 1)
                     {
                         IMixerNodeFactory lMixerNodeFactory = null;
@@ -754,7 +758,7 @@ namespace MediaStream
                             m_VideoTopologyInputMixerNodes.Add(lVideoTopologyInputMixerNodes[i]);
                         }
                     }
-
+#endif
                     object l_VideoSourceNode = null;
 
                     if (!l_ISourceControl.createSourceNodeFromExternalSourceWithDownStreamConnection(
@@ -792,6 +796,7 @@ namespace MediaStream
 
                     lSourceMediaNodeList.Add(l_AudioSourceTuple.Item1);
                 }
+#if EXTEND_CM
                 else
                 {
                     if (l_AudioMediaSource != null)
@@ -853,7 +858,10 @@ namespace MediaStream
 
                         lSourceMediaNodeList.Add(l_AudioSourceNode);
                     }
-                }   
+                }                
+#endif
+
+
 
 
                 XmlDocument l_streamMediaTypesXml = new XmlDocument();
@@ -909,32 +917,10 @@ namespace MediaStream
                     break;
 
                 startServer(l_streamMediaTypesXml.InnerXml, a_isConnected);
-
-                if(m_StreamingClient == null || m_StreamingClient.Handler == -1)
-                {
-
-                    foreach (var item in m_VideoTopologyInputMixerNodes)
-                    {
-                        Marshal.ReleaseComObject(item);
-                    }
-
-                    m_VideoTopologyInputMixerNodes.Clear();
-
-                    foreach (var item in m_AudioTopologyInputMixerNodes)
-                    {
-                        Marshal.ReleaseComObject(item);
-                    }
-
-                    m_AudioTopologyInputMixerNodes.Clear();
-
-                    break;
-                }
                 
                 m_ISession.registerUpdateStateDelegate(UpdateStateDelegate);
 
                 m_ISession.startSession(0, Guid.Empty);
-
-                l_resultMessage = "StreamingIsStarted";
 
             } while (false);
 
@@ -961,7 +947,7 @@ namespace MediaStream
             if (l_VideoMediaSource != null)
                 Marshal.ReleaseComObject(l_VideoMediaSource);
 
-            return l_resultMessage;
+            return l_FileExtention;
         }
 
         private void UpdateStateDelegate(uint aCallbackEventCode, uint aSessionDescriptor)
@@ -989,14 +975,6 @@ namespace MediaStream
                 case SessionCallbackEventCode.ItIsEnded:
                     break;
                 case SessionCallbackEventCode.ItIsClosed:
-                    {
-                        if (m_StreamingClient != null)
-                            m_StreamingClient.disconnect();
-
-                        m_StreamingClient = null;
-
-                        m_ISession = null;
-                    }
                     break;
                 case SessionCallbackEventCode.VideoCaptureDeviceRemoved:
                     break;
@@ -1005,7 +983,7 @@ namespace MediaStream
             }
         }
 
-        public void stop(bool a_is_explicitly)
+        public void stop()
         {
             if (m_ISession == null)
                 return;
@@ -1013,6 +991,8 @@ namespace MediaStream
             m_ISession.stopSession();
 
             m_ISession.closeSession();
+
+            m_ISession = null;
 
             foreach (var item in m_VideoTopologyInputMixerNodes)
             {
@@ -1028,17 +1008,10 @@ namespace MediaStream
 
             m_AudioTopologyInputMixerNodes.Clear();
 
-            if (a_is_explicitly)
-            {
-                Thread.Sleep(500);
+            if (m_StreamingClient != null)
+                m_StreamingClient.disconnect();
 
-                if (m_StreamingClient != null)
-                    m_StreamingClient.disconnect();
-
-                m_ISession = null;
-
-                m_StreamingClient = null;
-            }
+            m_StreamingClient = null;
         }
 
         private Guid setContainerFormat(XmlNode aXmlNode)

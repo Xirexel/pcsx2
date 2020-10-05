@@ -1,12 +1,16 @@
 
+#ifdef __ANDROID__
+#include "PadInclude.h"
+#else
 #include "stdafx.h"
+#endif
 #include "Pad.h"
 
 extern PCSX2Lib::API::PAD_API g_API;
 
 HINSTANCE hInst;
 
-PCSX2_EXPORT_C_(PCSX2Lib::API::PAD_API*) getAPI()
+PCSX2_EXPORT_C_(void*) getAPI()
 {
 	return &g_API;
 }

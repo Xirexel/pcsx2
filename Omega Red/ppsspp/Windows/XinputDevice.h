@@ -2,21 +2,19 @@
 
 #include "InputDevice.h"
 #include "Xinput.h"
-#include "Core/HLE/sceCtrl.h"
 
-class XinputDevice final : public InputDevice {
+
+class XinputDevice : public InputDevice {
 public:
 	XinputDevice();
 	~XinputDevice();
-	virtual int UpdateState() override;
+	virtual int UpdateState();
+	virtual bool IsPad() { return true; }
 
 private:
-	void UpdatePad(int pad, const XINPUT_STATE &state, XINPUT_VIBRATION &vibration);
+	void UpdatePad(int pad, const XINPUT_STATE &state);
 	void ApplyButtons(int pad, const XINPUT_STATE &state);
-	void ApplyVibration(int pad, XINPUT_VIBRATION &vibration);
 	int check_delay[4]{};
 	XINPUT_STATE prevState[4]{};
-	XINPUT_VIBRATION prevVibration[4]{};
-	int prevVibrationTime = 0;
 	u32 prevButtons[4]{};
 };

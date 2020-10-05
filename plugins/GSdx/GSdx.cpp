@@ -23,7 +23,6 @@
 #include "GSdx.h"
 #include "GS.h"
 #include "PSX/GPU.h"
-#include <fstream>
 
 static void* s_hModule;
 
@@ -118,9 +117,8 @@ bool GSdxApp::LoadResource(int id, std::vector<char>& buff, const char* type)
 
 	return true;
 }
-#endif
 
-size_t GSdxApp::GetIniString(const char* lpAppName, const char* lpKeyName, const char* lpDefault, char* lpReturnedString, size_t nSize, const char* lpFileName)
+size_t GSdxApp::GetPrivateProfileString(const char* lpAppName, const char* lpKeyName, const char* lpDefault, char* lpReturnedString, size_t nSize, const char* lpFileName)
 {
 	BuildConfigurationMap(lpFileName);
 
@@ -136,7 +134,7 @@ size_t GSdxApp::GetIniString(const char* lpAppName, const char* lpKeyName, const
     return 0;
 }
 
-bool GSdxApp::WriteIniString(const char* lpAppName, const char* lpKeyName, const char* pString, const char* lpFileName)
+bool GSdxApp::WritePrivateProfileString(const char* lpAppName, const char* lpKeyName, const char* pString, const char* lpFileName)
 {
 	BuildConfigurationMap(lpFileName);
 
@@ -145,14 +143,9 @@ bool GSdxApp::WriteIniString(const char* lpAppName, const char* lpKeyName, const
 	m_configuration_map[key] = value;
 
 	// Save config to a file
-	FILE* f = px_fopen(lpFileName, "w");
+	FILE* f = fopen(lpFileName, "w");
 
 	if (f == NULL) return false; // FIXME print a nice message
-
-	// Maintain compatibility with GSDumpGUI/old Windows ini.
-#ifdef _WIN32
-	fprintf(f, "[Settings]\n");
-#endif
 
 	for (const auto& entry : m_configuration_map) {
 		// Do not save the inifile key which is not an option
@@ -167,7 +160,7 @@ bool GSdxApp::WriteIniString(const char* lpAppName, const char* lpKeyName, const
 	return false;
 }
 
-int GSdxApp::GetIniInt(const char* lpAppName, const char* lpKeyName, int nDefault, const char* lpFileName)
+int GSdxApp::GetPrivateProfileInt(const char* lpAppName, const char* lpKeyName, int nDefault, const char* lpFileName)
 {
 	BuildConfigurationMap(lpFileName);
 
@@ -179,6 +172,7 @@ int GSdxApp::GetIniInt(const char* lpAppName, const char* lpKeyName, int nDefaul
 	} else
 		return atoi(value.c_str());
 }
+#endif
 
 GSdxApp theApp;
 
@@ -247,6 +241,8 @@ void GSdxApp::Init()
 	m_gs_upscale_multiplier.push_back(GSSetting(5, "5x Native", "~1620p 3K"));
 	m_gs_upscale_multiplier.push_back(GSSetting(6, "6x Native", "~2160p 4K"));
 	m_gs_upscale_multiplier.push_back(GSSetting(8, "8x Native", "~2880p 5K"));
+	m_gs_upscale_multiplier.push_back(GSSetting(10, "10x Native", "~3160p 6K"));
+	m_gs_upscale_multiplier.push_back(GSSetting(12, "12x Native", "~4320p 8K"));
 #ifndef __unix__
 	m_gs_upscale_multiplier.push_back(GSSetting(0, "Custom", "Not Recommended"));
 #endif
@@ -266,9 +262,9 @@ void GSdxApp::Init()
 	m_gs_trifilter.push_back(GSSetting(static_cast<uint32>(TriFiltering::PS2), "Trilinear", ""));
 	m_gs_trifilter.push_back(GSSetting(static_cast<uint32>(TriFiltering::Forced), "Trilinear", "Ultra/Slow"));
 
-	m_gs_generic_list.push_back(GSSetting(-1, "Automatic", "Default"));
-	m_gs_generic_list.push_back(GSSetting(0, "Force-Disabled", ""));
-	m_gs_generic_list.push_back(GSSetting(1, "Force-Enabled", ""));
+	m_gs_gl_ext.push_back(GSSetting(-1, "Automatic", "Default"));
+	m_gs_gl_ext.push_back(GSSetting(0,  "Force-Disabled", ""));
+	m_gs_gl_ext.push_back(GSSetting(1,  "Force-Enabled", ""));
 
 	m_gs_hack.push_back(GSSetting(0, "Off", "Default"));
 	m_gs_hack.push_back(GSSetting(1, "Half", ""));
@@ -351,14 +347,19 @@ void GSdxApp::Init()
 	// D3D Blending option
 	m_default_configuration["accurate_blending_unit_d3d11"]               = "1";
 
+	// OpenCL device. Windows only for now.
+	m_default_configuration["ocldev"]                                     = "";
+
 	// PSX option. Not supported on linux.
 	m_default_configuration["dithering"]                                  = "1";
+	m_default_configuration["ModeRefreshRate"]                            = "0";
 	m_default_configuration["scale_x"]                                    = "0";
 	m_default_configuration["scale_y"]                                    = "0";
 	m_default_configuration["windowed"]                                   = "1";
 #else
 	m_default_configuration["linux_replay"]                               = "1";
 #endif
+
 	m_default_configuration["aa1"]                                        = "0";
 	m_default_configuration["accurate_date"]                              = "1";
 	m_default_configuration["accurate_blending_unit"]                     = "1";
@@ -390,7 +391,6 @@ void GSdxApp::Init()
 	m_default_configuration["ModeHeight"]                                 = "480";
 	m_default_configuration["ModeWidth"]                                  = "640";
 	m_default_configuration["NTSC_Saturation"]                            = "1";
-	m_default_configuration["ocldev"]                                     = "";
 #ifdef _WIN32
 	m_default_configuration["osd_fontname"]                               = "C:\\Windows\\Fonts\\tahoma.ttf";
 #else
@@ -454,7 +454,6 @@ void GSdxApp::Init()
 	m_default_configuration["UserHacks_Disable_Safe_Features"]            = "0";
 	m_default_configuration["UserHacks_DisablePartialInvalidation"]       = "0";
 	m_default_configuration["UserHacks_CPU_FB_Conversion"]                = "0";
-	m_default_configuration["UserHacks_Half_Bottom_Override"]             = "-1";
 	m_default_configuration["UserHacks_HalfPixelOffset"]                  = "0";
 	m_default_configuration["UserHacks_merge_pp_sprite"]                  = "0";
 	m_default_configuration["UserHacks_round_sprite_offset"]              = "0";
@@ -467,8 +466,10 @@ void GSdxApp::Init()
 	m_default_configuration["UserHacks_WildHack"]                         = "0";
 	m_default_configuration["wrap_gs_mem"]                                = "0";
 	m_default_configuration["vsync"]                                      = "0";
+	m_default_configuration["disable_ts_half_bottom"]                     = "0";
 }
 
+#if defined(__unix__)
 void GSdxApp::ReloadConfig()
 {
 	if (m_configuration_map.empty()) return;
@@ -490,39 +491,23 @@ void GSdxApp::BuildConfigurationMap(const char* lpFileName)
 	m_configuration_map["inifile"] = inifile_value;
 
 	// Load config from file
-#ifdef _WIN32
-	std::ifstream file(convert_utf8_to_utf16(lpFileName));
-#else
-	std::ifstream file(lpFileName);
-#endif
-	if (!file.is_open())
-		return;
+	char value[256];
+	char key[256];
+	FILE* f = fopen(lpFileName, "r");
 
-	std::string line;
-	while (std::getline(file, line)) {
-		const auto separator = line.find('=');
-		if (separator == std::string::npos)
-			continue;
+	if (f == NULL) return; // FIXME print a nice message
 
-		std::string key = line.substr(0, separator);
-		// Trim trailing whitespace
-		key.erase(key.find_last_not_of(" \r\t") + 1);
-
-		if (key.empty())
-			continue;
-
-		// Only keep options that have a default value so older, no longer used
-		// ini options can be purged.
-		if (m_default_configuration.find(key) == m_default_configuration.end())
-			continue;
-
-		std::string value = line.substr(separator + 1);
-		// Trim leading whitespace
-		value.erase(0, value.find_first_not_of(" \r\t"));
-
-		m_configuration_map[key] = value;
+	while( fscanf(f, "%255s = %255s\n", key, value) != EOF ) {
+		std::string key_s(key);
+		std::string value_s(value);
+		// Only keep option that have a default value (allow to purge old option of the GSdx.ini)
+		if (m_default_configuration.find(key_s) != m_default_configuration.end())
+			m_configuration_map[key_s] = value_s;
 	}
+
+	fclose(f);
 }
+#endif
 
 void* GSdxApp::GetModuleHandlePtr()
 {
@@ -554,10 +539,10 @@ std::string GSdxApp::GetConfigS(const char* entry)
 	auto def = m_default_configuration.find(entry);
 
 	if (def != m_default_configuration.end()) {
-		GetIniString(m_section.c_str(), entry, def->second.c_str(), buff, countof(buff), m_ini.c_str());
+		GetPrivateProfileString(m_section.c_str(), entry, def->second.c_str(), buff, countof(buff), m_ini.c_str());
 	} else {
 		fprintf(stderr, "Option %s doesn't have a default value\n", entry);
-		GetIniString(m_section.c_str(), entry, "", buff, countof(buff), m_ini.c_str());
+		GetPrivateProfileString(m_section.c_str(), entry, "", buff, countof(buff), m_ini.c_str());
 	}
 
 	return {buff};
@@ -565,7 +550,7 @@ std::string GSdxApp::GetConfigS(const char* entry)
 
 void GSdxApp::SetConfig(const char* entry, const char* value)
 {
-	WriteIniString(m_section.c_str(), entry, value, m_ini.c_str());
+	WritePrivateProfileString(m_section.c_str(), entry, value, m_ini.c_str());
 }
 
 int GSdxApp::GetConfigI(const char* entry)
@@ -573,10 +558,10 @@ int GSdxApp::GetConfigI(const char* entry)
 	auto def = m_default_configuration.find(entry);
 
 	if (def != m_default_configuration.end()) {
-		return GetIniInt(m_section.c_str(), entry, std::stoi(def->second), m_ini.c_str());
+		return GetPrivateProfileInt(m_section.c_str(), entry, std::stoi(def->second), m_ini.c_str());
 	} else {
 		fprintf(stderr, "Option %s doesn't have a default value\n", entry);
-		return GetIniInt(m_section.c_str(), entry, 0, m_ini.c_str());
+		return GetPrivateProfileInt(m_section.c_str(), entry, 0, m_ini.c_str());
 	}
 }
 

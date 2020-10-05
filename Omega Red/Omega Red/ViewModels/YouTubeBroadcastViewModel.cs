@@ -42,6 +42,8 @@ namespace Omega_Red.ViewModels
                 if (lYouTubeBroadcastInfo != null)
                 {
                     Settings.Default.YouTubeBroadcastSelectedId = lYouTubeBroadcastInfo.Id;
+
+                    Settings.Default.Save();
                 }
 
                 IsSyncEnabled = true;

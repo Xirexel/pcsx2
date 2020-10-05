@@ -120,7 +120,6 @@ endif()
 #---------------------------------------
 #			dev9ghzdrk
 #---------------------------------------
-if(NOT DISABLE_DEV9GHZDRK)
 if(GTKn_FOUND AND PCAP_FOUND AND LIBXML2_FOUND)
     set(dev9ghzdrk TRUE)
     list(APPEND CMAKE_MODULE_PATH
@@ -129,7 +128,6 @@ if(GTKn_FOUND AND PCAP_FOUND AND LIBXML2_FOUND)
 else()
     set(dev9ghzdrk FALSE)
     print_dep("Skip build of dev9ghzdrk: missing dependencies" "${msg_dep_dev}")
-endif()
 endif()
 #---------------------------------------
 

@@ -366,7 +366,10 @@ namespace Omega_Red.SocialNetworks.Google
                     updateBroadcast(a_broadcast);
                 }
                 
+
                 Settings.Default.YouTubeBroadcastSelectedId = a_broadcast.Id;
+
+                Settings.Default.Save();
 
             } while (false);
 
@@ -391,7 +394,7 @@ namespace Omega_Red.SocialNetworks.Google
 
                     l_liveBroadcast.Snippet.Title = a_broadcast.Title;
 
-                    //l_liveBroadcast.Snippet.ScheduledStartTime = DateTime.Now;
+                    l_liveBroadcast.Snippet.ScheduledStartTime = DateTime.Now;
 
 
 
@@ -562,9 +565,9 @@ namespace Omega_Red.SocialNetworks.Google
                             {
                                 if (l_item.Status.StreamStatus == "active")
                                 {
-                                    //var ltransition = m_YoutubeService.LiveBroadcasts.Transition(LiveBroadcastsResource.TransitionRequest.BroadcastStatusEnum.Live, m_currentLiveBroadcast.Id, "snippet,status");
+                                    var ltransition = m_YoutubeService.LiveBroadcasts.Transition(LiveBroadcastsResource.TransitionRequest.BroadcastStatusEnum.Live, m_currentLiveBroadcast.Id, "snippet,status");
 
-                                    //var lbroadcast = ltransition.Execute();
+                                    var lbroadcast = ltransition.Execute();
 
                                     return;
                                 }

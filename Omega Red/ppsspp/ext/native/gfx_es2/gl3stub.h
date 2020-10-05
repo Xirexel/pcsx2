@@ -11,8 +11,6 @@
  * - Added gl3stubInit() declaration
  */
 
-#include "ppsspp_config.h"
-
 #if defined(USING_GLES2)
 
 #ifdef __cplusplus
@@ -47,7 +45,7 @@ extern "C" {
  * otherwise. */
 GLboolean gl3stubInit();
 
-#if !PPSSPP_PLATFORM(IOS)
+#if !defined(IOS)
     
 /*-------------------------------------------------------------------------
  * Data type definitions

@@ -107,9 +107,6 @@ void convert5551_dx9(u16* data, u32* out, int width, int l, int u);
 
 // "Complete" set of color conversion functions between the usual formats.
 
-// TODO: Need to revisit the naming convention of these. Seems totally backwards
-// now that we've standardized on Draw::DataFormat.
-
 typedef void (*Convert16bppTo16bppFunc)(u16 *dst, const u16 *src, u32 numPixels);
 typedef void (*Convert16bppTo32bppFunc)(u32 *dst, const u16 *src, u32 numPixels);
 typedef void (*Convert32bppTo16bppFunc)(u16 *dst, const u32 *src, u32 numPixels);
@@ -126,11 +123,11 @@ void ConvertBGRA8888ToRGBA5551(u16 *dst, const u32 *src, u32 numPixels);
 void ConvertBGRA8888ToRGB565(u16 *dst, const u32 *src, u32 numPixels);
 void ConvertBGRA8888ToRGBA4444(u16 *dst, const u32 *src, u32 numPixels);
 
-void ConvertRGB565ToRGBA8888(u32 *dst, const u16 *src, u32 numPixels);
+void ConvertRGBA565ToRGBA8888(u32 *dst, const u16 *src, u32 numPixels);
 void ConvertRGBA5551ToRGBA8888(u32 *dst, const u16 *src, u32 numPixels);
 void ConvertRGBA4444ToRGBA8888(u32 *dst, const u16 *src, u32 numPixels);
 
-void ConvertBGR565ToRGBA8888(u32 *dst, const u16 *src, u32 numPixels);
+void ConvertABGR565ToRGBA8888(u32 *dst, const u16 *src, u32 numPixels);
 void ConvertABGR1555ToRGBA8888(u32 *dst, const u16 *src, u32 numPixels);
 void ConvertABGR4444ToRGBA8888(u32 *dst, const u16 *src, u32 numPixels);
 

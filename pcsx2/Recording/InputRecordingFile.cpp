@@ -23,7 +23,6 @@
 
 #include "InputRecordingFile.h"
 
-#ifndef DISABLE_RECORDING
 long InputRecordingFile::GetBlockSeekPoint(const long & frame)
 {
 	if (savestate.fromSavestate)
@@ -397,4 +396,3 @@ const wxString & InputRecordingFile::GetFilename()
 {
 	return filename;
 }
-#endif

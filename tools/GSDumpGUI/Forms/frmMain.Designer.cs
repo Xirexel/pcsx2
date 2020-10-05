@@ -13,12 +13,9 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            if (disposing && (components != null))
             {
-                DisposeExtra();
-
-                if (components != null)
-                    components.Dispose();
+                components.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -98,9 +95,7 @@
             this.txtGSDXDirectory.Size = new System.Drawing.Size(243, 20);
             this.txtGSDXDirectory.TabIndex = 0;
             this.txtGSDXDirectory.TabStop = false;
-            this.txtGSDXDirectory.Enter += new System.EventHandler(this.txtGSDXDirectory_Enter);
             this.txtGSDXDirectory.Leave += new System.EventHandler(this.txtGSDXDirectory_Leave);
-            this.txtGSDXDirectory.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtGSDXDirectory_KeyDown);
             // 
             // lblDirectory
             // 
@@ -149,9 +144,7 @@
             this.txtDumpsDirectory.Size = new System.Drawing.Size(243, 20);
             this.txtDumpsDirectory.TabIndex = 3;
             this.txtDumpsDirectory.TabStop = false;
-            this.txtDumpsDirectory.Enter += new System.EventHandler(this.txtDumpsDirectory_Enter);
             this.txtDumpsDirectory.Leave += new System.EventHandler(this.txtDumpsDirectory_Leave);
-            this.txtDumpsDirectory.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtDumpsDirectory_KeyDown);
             // 
             // lstGSDX
             // 

@@ -60,7 +60,7 @@ std::string VertexShaderDesc(const VShaderID &id) {
 	return desc.str();
 }
 
-void ComputeVertexShaderID(VShaderID *id_out, u32 vertType, bool useHWTransform, bool useHWTessellation) {
+void ComputeVertexShaderID(VShaderID *id_out, u32 vertType, bool useHWTransform) {
 	bool isModeThrough = (vertType & GE_VTYPE_THROUGH) != 0;
 	bool doTexture = gstate.isTextureMapEnabled() && !gstate.isModeClear();
 	bool doTextureTransform = gstate.getUVGenMode() == GE_TEXMAP_TEXTURE_MATRIX;
@@ -73,6 +73,10 @@ void ComputeVertexShaderID(VShaderID *id_out, u32 vertType, bool useHWTransform,
 
 	bool doBezier = gstate_c.bezier;
 	bool doSpline = gstate_c.spline;
+	// These are the original vertType's values (normalized will always have colors, etc.)
+	bool hasColorTess = (gstate.vertType & GE_VTYPE_COL_MASK) != 0 && (doBezier || doSpline);
+	bool hasTexcoordTess = (gstate.vertType & GE_VTYPE_TC_MASK) != 0 && (doBezier || doSpline);
+	bool hasNormalTess = (gstate.vertType & GE_VTYPE_NRM_MASK) != 0 && (doBezier || doSpline);
 
 	bool enableFog = gstate.isFogEnabled() && !isModeThrough && !gstate.isModeClear();
 	bool lmode = gstate.isUsingSecondaryColor() && gstate.isLightingEnabled() && !isModeThrough;
@@ -131,15 +135,12 @@ void ComputeVertexShaderID(VShaderID *id_out, u32 vertType, bool useHWTransform,
 		id.SetBit(VS_BIT_NORM_REVERSE, gstate.areNormalsReversed());
 		id.SetBit(VS_BIT_HAS_TEXCOORD, hasTexcoord);
 
-		if (useHWTessellation) {
+		if (g_Config.bHardwareTessellation) {
 			id.SetBit(VS_BIT_BEZIER, doBezier);
 			id.SetBit(VS_BIT_SPLINE, doSpline);
-			if (doBezier || doSpline) {
-				// These are the original vertType's values (normalized will always have colors, etc.)
-				id.SetBit(VS_BIT_HAS_COLOR_TESS, (gstate.vertType & GE_VTYPE_COL_MASK) != 0);
-				id.SetBit(VS_BIT_HAS_TEXCOORD_TESS, (gstate.vertType & GE_VTYPE_TC_MASK) != 0);
-				id.SetBit(VS_BIT_HAS_NORMAL_TESS, (gstate.vertType & GE_VTYPE_NRM_MASK) != 0 || gstate.isLightingEnabled());
-			}
+			id.SetBit(VS_BIT_HAS_COLOR_TESS, hasColorTess);
+			id.SetBit(VS_BIT_HAS_TEXCOORD_TESS, hasTexcoordTess);
+			id.SetBit(VS_BIT_HAS_NORMAL_TESS, hasNormalTess);
 			id.SetBit(VS_BIT_NORM_REVERSE_TESS, gstate.isPatchNormalsReversed());
 		}
 	}

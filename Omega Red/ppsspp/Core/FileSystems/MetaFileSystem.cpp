@@ -176,9 +176,8 @@ IFileSystem *MetaFileSystem::GetHandleOwner(u32 handle)
 	return 0;
 }
 
-int MetaFileSystem::MapFilePath(const std::string &_inpath, std::string &outpath, MountPoint **system)
+bool MetaFileSystem::MapFilePath(const std::string &_inpath, std::string &outpath, MountPoint **system)
 {
-	int error = -1;
 	std::lock_guard<std::recursive_mutex> guard(lock);
 	std::string realpath;
 
@@ -217,7 +216,7 @@ int MetaFileSystem::MapFilePath(const std::string &_inpath, std::string &outpath
 		//Attempt to emulate SCE_KERNEL_ERROR_NOCWD / 8002032C: may break things requiring fixes elsewhere
 		if (inpath.find(':') == std::string::npos /* means path is relative */) 
 		{
-			error = SCE_KERNEL_ERROR_NOCWD;
+			lastOpenError = SCE_KERNEL_ERROR_NOCWD;
 			WARN_LOG(FILESYS, "Path is relative, but current directory not set for thread %i. returning 8002032C(SCE_KERNEL_ERROR_NOCWD) instead.", currentThread);
 		}
 	}
@@ -226,7 +225,7 @@ int MetaFileSystem::MapFilePath(const std::string &_inpath, std::string &outpath
 		currentDirectory = &(it->second);
 	}
 
-	if (RealPath(*currentDirectory, inpath, realpath))
+	if ( RealPath(*currentDirectory, inpath, realpath) )
 	{
 		std::string prefix = realpath;
 		size_t prefixPos = realpath.find(':');
@@ -243,13 +242,13 @@ int MetaFileSystem::MapFilePath(const std::string &_inpath, std::string &outpath
 
 				VERBOSE_LOG(FILESYS, "MapFilePath: mapped \"%s\" to prefix: \"%s\", path: \"%s\"", inpath.c_str(), fileSystems[i].prefix.c_str(), outpath.c_str());
 
-				return error == SCE_KERNEL_ERROR_NOCWD ? error : 0;
+				return true;
 			}
 		}
 	}
 
 	DEBUG_LOG(FILESYS, "MapFilePath: failed mapping \"%s\", returning false", inpath.c_str());
-	return error;
+	return false;
 }
 
 std::string MetaFileSystem::NormalizePrefix(std::string prefix) const {
@@ -270,7 +269,8 @@ std::string MetaFileSystem::NormalizePrefix(std::string prefix) const {
 	return prefix;
 }
 
-void MetaFileSystem::Mount(std::string prefix, IFileSystem *system) {
+void MetaFileSystem::Mount(std::string prefix, IFileSystem *system)
+{
 	std::lock_guard<std::recursive_mutex> guard(lock);
 	MountPoint x;
 	x.prefix = prefix;
@@ -278,7 +278,8 @@ void MetaFileSystem::Mount(std::string prefix, IFileSystem *system) {
 	fileSystems.push_back(x);
 }
 
-void MetaFileSystem::Unmount(std::string prefix, IFileSystem *system) {
+void MetaFileSystem::Unmount(std::string prefix, IFileSystem *system)
+{
 	std::lock_guard<std::recursive_mutex> guard(lock);
 	MountPoint x;
 	x.prefix = prefix;
@@ -286,25 +287,12 @@ void MetaFileSystem::Unmount(std::string prefix, IFileSystem *system) {
 	fileSystems.erase(std::remove(fileSystems.begin(), fileSystems.end(), x), fileSystems.end());
 }
 
-void MetaFileSystem::Remount(std::string prefix, IFileSystem *newSystem) {
-	std::lock_guard<std::recursive_mutex> guard(lock);
-	IFileSystem *oldSystem = nullptr;
-	for (auto &it : fileSystems) {
-		if (it.prefix == prefix) {
-			oldSystem = it.system;
-			it.system = newSystem;
+void MetaFileSystem::Remount(IFileSystem *oldSystem, IFileSystem *newSystem) {
+	for (auto it = fileSystems.begin(); it != fileSystems.end(); ++it) {
+		if (it->system == oldSystem) {
+			it->system = newSystem;
 		}
 	}
-
-	bool delOldSystem = true;
-	for (auto &it : fileSystems) {
-		if (it.system == oldSystem) {
-			delOldSystem = false;
-		}
-	}
-
-	if (delOldSystem)
-		delete oldSystem;
 }
 
 IFileSystem *MetaFileSystem::GetSystemFromFilename(const std::string &filename) {
@@ -344,16 +332,34 @@ void MetaFileSystem::Shutdown()
 	startingDirectory = "";
 }
 
-int MetaFileSystem::OpenFile(std::string filename, FileAccess access, const char *devicename)
+u32 MetaFileSystem::OpenWithError(int &error, std::string filename, FileAccess access, const char *devicename)
 {
 	std::lock_guard<std::recursive_mutex> guard(lock);
+	u32 h = OpenFile(filename, access, devicename);
+	error = lastOpenError;
+	return h;
+}
+
+u32 MetaFileSystem::OpenFile(std::string filename, FileAccess access, const char *devicename)
+{
+	std::lock_guard<std::recursive_mutex> guard(lock);
+	lastOpenError = 0;
 	std::string of;
 	MountPoint *mount;
-	int error = MapFilePath(filename, of, &mount);
-	if (error == 0)
-		return mount->system->OpenFile(of, access, mount->prefix.c_str());
+	if (MapFilePath(filename, of, &mount))
+	{
+		s32 res = mount->system->OpenFile(of, access, mount->prefix.c_str());
+		if (res < 0)
+		{
+			lastOpenError = res;
+			return 0;
+		}
+		return res;
+	}
 	else
-		return error == -1 ? SCE_KERNEL_ERROR_ERRNO_FILE_NOT_FOUND : error;
+	{
+		return 0;
+	}
 }
 
 PSPFileInfo MetaFileSystem::GetFileInfo(std::string filename)
@@ -361,8 +367,7 @@ PSPFileInfo MetaFileSystem::GetFileInfo(std::string filename)
 	std::lock_guard<std::recursive_mutex> guard(lock);
 	std::string of;
 	IFileSystem *system;
-	int error = MapFilePath(filename, of, &system);
-	if (error == 0)
+	if (MapFilePath(filename, of, &system))
 	{
 		return system->GetFileInfo(of);
 	}
@@ -378,8 +383,7 @@ bool MetaFileSystem::GetHostPath(const std::string &inpath, std::string &outpath
 	std::lock_guard<std::recursive_mutex> guard(lock);
 	std::string of;
 	IFileSystem *system;
-	int error = MapFilePath(inpath, of, &system);
-	if (error == 0) {
+	if (MapFilePath(inpath, of, &system)) {
 		return system->GetHostPath(of, outpath);
 	} else {
 		return false;
@@ -391,8 +395,7 @@ std::vector<PSPFileInfo> MetaFileSystem::GetDirListing(std::string path)
 	std::lock_guard<std::recursive_mutex> guard(lock);
 	std::string of;
 	IFileSystem *system;
-	int error = MapFilePath(path, of, &system);
-	if (error == 0)
+	if (MapFilePath(path, of, &system))
 	{
 		return system->GetDirListing(of);
 	}
@@ -420,8 +423,7 @@ int MetaFileSystem::ChDir(const std::string &dir)
 	
 	std::string of;
 	MountPoint *mountPoint;
-	int error = MapFilePath(dir, of, &mountPoint);
-	if (error == 0)
+	if (MapFilePath(dir, of, &mountPoint))
 	{
 		currentDir[curThread] = mountPoint->prefix + of;
 		return 0;
@@ -450,8 +452,7 @@ bool MetaFileSystem::MkDir(const std::string &dirname)
 	std::lock_guard<std::recursive_mutex> guard(lock);
 	std::string of;
 	IFileSystem *system;
-	int error = MapFilePath(dirname, of, &system);
-	if (error == 0)
+	if (MapFilePath(dirname, of, &system))
 	{
 		return system->MkDir(of);
 	}
@@ -466,8 +467,7 @@ bool MetaFileSystem::RmDir(const std::string &dirname)
 	std::lock_guard<std::recursive_mutex> guard(lock);
 	std::string of;
 	IFileSystem *system;
-	int error = MapFilePath(dirname, of, &system);
-	if (error == 0)
+	if (MapFilePath(dirname, of, &system))
 	{
 		return system->RmDir(of);
 	}
@@ -484,14 +484,12 @@ int MetaFileSystem::RenameFile(const std::string &from, const std::string &to)
 	std::string rf;
 	IFileSystem *osystem;
 	IFileSystem *rsystem = NULL;
-	int error = MapFilePath(from, of, &osystem);
-	if (error == 0)
+	if (MapFilePath(from, of, &osystem))
 	{
 		// If it's a relative path, it seems to always use from's filesystem.
 		if (to.find(":/") != to.npos)
 		{
-			error = MapFilePath(to, rf, &rsystem);
-			if (error < 0)
+			if (!MapFilePath(to, rf, &rsystem))
 				return -1;
 		}
 		else
@@ -516,8 +514,7 @@ bool MetaFileSystem::RemoveFile(const std::string &filename)
 	std::lock_guard<std::recursive_mutex> guard(lock);
 	std::string of;
 	IFileSystem *system;
-	int error = MapFilePath(filename, of, &system);
-	if (error == 0)
+	if (MapFilePath(filename, of, &system))
 	{
 		return system->RemoveFile(of);
 	}
@@ -604,9 +601,10 @@ size_t MetaFileSystem::SeekFile(u32 handle, s32 position, FileMove type)
 }
 
 int MetaFileSystem::ReadEntireFile(const std::string &filename, std::vector<u8> &data) {
-	int handle = OpenFile(filename, FILEACCESS_READ);
-	if (handle < 0)
-		return handle;
+	int error = 0;
+	u32 handle = OpenWithError(error, filename, FILEACCESS_READ);
+	if (handle == 0)
+		return error;
 
 	size_t dataSize = (size_t)GetFileInfo(filename).size;
 	data.resize(dataSize);
@@ -624,8 +622,7 @@ u64 MetaFileSystem::FreeSpace(const std::string &path)
 	std::lock_guard<std::recursive_mutex> guard(lock);
 	std::string of;
 	IFileSystem *system;
-	int error = MapFilePath(path, of, &system);
-	if (error == 0)
+	if (MapFilePath(path, of, &system))
 		return system->FreeSpace(of);
 	else
 		return 0;

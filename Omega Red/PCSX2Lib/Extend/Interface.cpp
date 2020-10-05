@@ -242,25 +242,8 @@ PCSX2_EXPORT void STDAPICALLTYPE setPAD(PCSX2Lib::API::PAD_API *a_API)
 
 PCSX2_EXPORT void STDAPICALLTYPE setGS(PCSX2Lib::API::GS_API *a_API)
 {
-    if (a_API == nullptr) {
-
-        GScallbackopen = nullptr;
-        GSvsync = nullptr;
-        GSgifTransfer = nullptr;
-        GSirqCallback = nullptr;
-        GSsetBaseMem = nullptr;
-        GSsetGameCRC = nullptr;
-        GSsetFrameSkip = nullptr;
-        GSsetVsync = nullptr;
-        GSreset = nullptr;
-        GSinitReadFIFO = nullptr;
-        GSreadFIFO = nullptr;
-        GSinitReadFIFO2 = nullptr;
-        GSreadFIFO2 = nullptr;
-        GSgifSoftReset = nullptr;
-    
-		return;
-	}
+    if (a_API == nullptr)
+        return;
 
 
     GScallbackopen = a_API->GScallbackopen;
@@ -1152,6 +1135,26 @@ PCSX2_EXPORT void STDAPICALLTYPE DetectCpuAndUserModeFunc()
             .SetDiagMsg(L"Critical Failure: SSE2 Extensions not available.")
             .SetUserMsg(_("SSE2 extensions are not available.  PCSX2 requires a cpu that supports the SSE2 instruction set."));
     }
+
+#elif __ANDROID__
+#ifdef __i386__
+	x86caps.Identify();
+	x86caps.CountCores();
+	x86caps.SIMD_EstablishMXCSRmask();
+
+	if (!x86caps.hasStreamingSIMD2Extensions) {
+		// This code will probably never run if the binary was correctly compiled for SSE2
+		// SSE2 is required for any decent speed and is supported by more than decade old x86 CPUs
+		throw Exception::HardwareDeficiency()
+			.SetDiagMsg(L"Critical Failure: SSE2 Extensions not available.")
+			.SetUserMsg(_("SSE2 extensions are not available.  PCSX2 requires a cpu that supports the SSE2 instruction set."));
+	}
+#else
+	throw Exception::HardwareDeficiency()
+			.SetDiagMsg(L"CPU is not supportes!!!!")
+			.SetUserMsg(L"CPU is not supportes!!!!);
+#endif
+
 #endif
 }
 
@@ -1169,9 +1172,7 @@ PCSX2_EXPORT void STDAPICALLTYPE SysThreadBase_ResumeFunc()
 
 PCSX2_EXPORT void STDAPICALLTYPE SysThreadBase_SuspendFunc()
 {
-    //GetCoreThread().Suspend(true);
-
-	GetCoreThread().Pause();
+    GetCoreThread().Suspend(true);
 }
 
 PCSX2_EXPORT void STDAPICALLTYPE SysThreadBase_ResetFunc()
@@ -1252,13 +1253,6 @@ PCSX2_EXPORT bool STDAPICALLTYPE MTGS_IsSelfFunc()
 PCSX2_EXPORT void STDAPICALLTYPE MTGS_SuspendFunc()
 {
     GetMTGS().Suspend();
-}
-
-extern void MTGS_ResetQuick();
-
-PCSX2_EXPORT void STDAPICALLTYPE MTGS_ResetFunc()
-{
-    MTGS_ResetQuick();
 }
 
 PCSX2_EXPORT void STDAPICALLTYPE MTGS_CancelFunc()

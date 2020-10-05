@@ -21,6 +21,7 @@
 #include "Common/CommonTypes.h"
 #include "Common/ChunkFile.h"
 #include "Common/FixedSizeQueue.h"
+#include "Common/Atomics.h"
 
 #ifdef _M_SSE
 #include <emmintrin.h>
@@ -46,15 +47,21 @@
 #include "Core/Util/AudioFormat.h"
 
 StereoResampler resampler;
+AudioDebugStats g_AudioDebugStats;
 
 // Should be used to lock anything related to the outAudioQueue.
 // atomic locks are used on the lock. TODO: make this lock-free
 std::atomic_flag atomicLock_;
 
+enum latency {
+	LOW_LATENCY = 0,
+	MEDIUM_LATENCY = 1,
+	HIGH_LATENCY = 2,
+};
+
 int eventAudioUpdate = -1;
 int eventHostAudioUpdate = -1;
 int mixFrequency = 44100;
-int srcFrequency = 0;
 
 const int hwSampleRate = 44100;
 
@@ -98,14 +105,30 @@ static void __AudioCPUMHzChange() {
 
 
 void __AudioInit() {
-	resampler.ResetStatCounters();
+	memset(&g_AudioDebugStats, 0, sizeof(g_AudioDebugStats));
 	mixFrequency = 44100;
-	srcFrequency = 0;
 
-	chanQueueMaxSizeFactor = 2;
-	chanQueueMinSizeFactor = 1;
-	hwBlockSize = 64;
-	hostAttemptBlockSize = 512;
+	switch (g_Config.iAudioLatency) {
+	case LOW_LATENCY:
+		chanQueueMaxSizeFactor = 1;
+		chanQueueMinSizeFactor = 1;
+		hwBlockSize = 16;
+		hostAttemptBlockSize = 256;
+		break;
+	case MEDIUM_LATENCY:
+		chanQueueMaxSizeFactor = 2;
+		chanQueueMinSizeFactor = 1;
+		hwBlockSize = 64;
+		hostAttemptBlockSize = 512;
+		break;
+	case HIGH_LATENCY:
+		chanQueueMaxSizeFactor = 4;
+		chanQueueMinSizeFactor = 2;
+		hwBlockSize = 64;
+		hostAttemptBlockSize = 512;
+		break;
+
+	}
 
 	__AudioCPUMHzChange();
 
@@ -126,7 +149,7 @@ void __AudioInit() {
 }
 
 void __AudioDoState(PointerWrap &p) {
-	auto s = p.Section("sceAudio", 1, 2);
+	auto s = p.Section("sceAudio", 1);
 	if (!s)
 		return;
 
@@ -136,13 +159,6 @@ void __AudioDoState(PointerWrap &p) {
 	CoreTiming::RestoreRegisterEvent(eventHostAudioUpdate, "AudioUpdateHost", &hleHostAudioUpdate);
 
 	p.Do(mixFrequency);
-	if (s >= 2) {
-		p.Do(srcFrequency);
-	} else {
-		// Assume that it was actually the SRC channel frequency.
-		srcFrequency = mixFrequency;
-		mixFrequency = 44100;
-	}
 
 	// TODO: This never happens because maxVer=1.
 	if (s >= 2) {
@@ -160,7 +176,6 @@ void __AudioDoState(PointerWrap &p) {
 	if (chanCount != ARRAY_SIZE(chans))
 	{
 		ERROR_LOG(SCEAUDIO, "Savestate failure: different number of audio channels.");
-		p.SetError(p.ERROR_FAILURE);
 		return;
 	}
 	for (int i = 0; i < chanCount; ++i)
@@ -314,10 +329,6 @@ void __AudioSetOutputFrequency(int freq) {
 	mixFrequency = freq;
 }
 
-void __AudioSetSRCFrequency(int freq) {
-	srcFrequency = freq;
-}
-
 // Mix samples from the various audio channels into a single sample queue.
 // This single sample queue is where __AudioMix should read from. If the sample queue is full, we should
 // just sleep the main emulator thread a little.
@@ -326,7 +337,6 @@ void __AudioUpdate(bool resetRecording) {
 	// to the CPU. Much better to throttle the frame rate on frame display and just throw away audio
 	// if the buffer somehow gets full.
 	bool firstChannel = true;
-	std::vector<int16_t> srcBuffer;
 
 	for (u32 i = 0; i < PSP_AUDIO_CHANNEL_MAX + 1; i++)	{
 		if (!chans[i].reserved)
@@ -338,54 +348,14 @@ void __AudioUpdate(bool resetRecording) {
 			continue;
 		}
 
-		bool needsResample = i == PSP_AUDIO_CHANNEL_SRC && srcFrequency != 0 && srcFrequency != mixFrequency;
-		size_t sz = needsResample ? (hwBlockSize * 2 * srcFrequency) / mixFrequency : hwBlockSize * 2;
-		if (sz > chans[i].sampleQueue.size()) {
-			ERROR_LOG(SCEAUDIO, "Channel %i buffer underrun at %i of %i", i, (int)chans[i].sampleQueue.size() / 2, (int)sz / 2);
+		if (hwBlockSize * 2 > (int)chans[i].sampleQueue.size()) {
+			ERROR_LOG(SCEAUDIO, "Channel %i buffer underrun at %i of %i", i, (int)chans[i].sampleQueue.size() / 2, hwBlockSize);
 		}
 
 		const s16 *buf1 = 0, *buf2 = 0;
 		size_t sz1, sz2;
 
-		chans[i].sampleQueue.popPointers(sz, &buf1, &sz1, &buf2, &sz2);
-
-		if (needsResample) {
-			auto read = [&](size_t i) {
-				if (i < sz1)
-					return buf1[i];
-				if (i < sz1 + sz2)
-					return buf2[i - sz1];
-				if (buf2)
-					return buf2[sz2 - 1];
-				return buf1[sz1 - 1];
-			};
-
-			srcBuffer.resize(hwBlockSize * 2);
-
-			// TODO: This is terrible, since it's doing it by small chunk and discarding frac.
-			const uint32_t ratio = (uint32_t)(65536.0 * srcFrequency / (double)mixFrequency);
-			uint32_t frac = 0;
-			size_t readIndex = 0;
-			for (size_t outIndex = 0; readIndex < sz && outIndex < srcBuffer.size(); outIndex += 2) {
-				size_t readIndex2 = readIndex + 2;
-				int16_t l1 = read(readIndex);
-				int16_t r1 = read(readIndex + 1);
-				int16_t l2 = read(readIndex2);
-				int16_t r2 = read(readIndex2 + 1);
-				int sampleL = ((l1 << 16) + (l2 - l1) * (uint16_t)frac) >> 16;
-				int sampleR = ((r1 << 16) + (r2 - r1) * (uint16_t)frac) >> 16;
-				srcBuffer[outIndex] = sampleL;
-				srcBuffer[outIndex + 1] = sampleR;
-				frac += ratio;
-				readIndex += 2 * (uint16_t)(frac >> 16);
-				frac &= 0xffff;
-			}
-
-			buf1 = srcBuffer.data();
-			sz1 = srcBuffer.size();
-			buf2 = nullptr;
-			sz2 = 0;
-		}
+		chans[i].sampleQueue.popPointers(hwBlockSize * 2, &buf1, &sz1, &buf2, &sz2);
 
 		if (firstChannel) {
 			for (size_t s = 0; s < sz1; s++)
@@ -457,8 +427,9 @@ int __AudioMix(short *outstereo, int numFrames, int sampleRate) {
 	return resampler.Mix(outstereo, numFrames, false, sampleRate);
 }
 
-void __AudioGetDebugStats(char *buf, size_t bufSize) {
-	resampler.GetAudioDebugStats(buf, bufSize);
+const AudioDebugStats *__AudioGetDebugStats() {
+	resampler.GetAudioDebugStats(&g_AudioDebugStats);
+	return &g_AudioDebugStats;
 }
 
 void __PushExternalAudio(const s32 *audio, int numSamples) {

@@ -42,24 +42,6 @@ namespace Omega_Red
 
     struct Win32NativeMethods
     {
-        public static uint MAKELONG(uint a, uint b)
-        {
-            return (a & 0xffff) | (b << 16);
-        }
-
-
-
-        public const int MAX_PATH = 260;
-
-        public class CLSCTX
-        {
-            public const uint INPROC_SERVER = 1;
-        }
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        public static extern IntPtr SetDllDirectory(
-            [MarshalAs(UnmanagedType.LPWStr)] string lpPathName);
-        
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         public static extern IntPtr LoadLibrary(
             [MarshalAs(UnmanagedType.LPWStr)] string lpFileName);
@@ -72,21 +54,11 @@ namespace Omega_Red
             IntPtr hModule,
             [MarshalAs(UnmanagedType.LPStr)] string lpProcName);
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        public static extern IntPtr GetModuleHandleW([MarshalAs(UnmanagedType.LPWStr)] string lpModuleName);
-
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate uint DllGetClassObjectDelegate(
             [MarshalAs(UnmanagedType.LPStruct)] Guid rclsid,
             [MarshalAs(UnmanagedType.LPStruct)] Guid riid,
             [MarshalAs(UnmanagedType.IUnknown, IidParameterIndex = 1)] out object pUnknown);
-
-        [DllImport("ole32.Dll")]
-        public static extern int CoCreateInstance(ref Guid clsid,
-           [MarshalAs(UnmanagedType.IUnknown)] object inner,
-           uint context,
-           ref Guid uuid,
-           [MarshalAs(UnmanagedType.IUnknown)] out object rReturnedComObject);
     }
 
     class Native

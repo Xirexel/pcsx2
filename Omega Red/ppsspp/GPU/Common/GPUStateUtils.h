@@ -51,6 +51,7 @@ StencilValueType ReplaceAlphaWithStencilType();
 ReplaceAlphaType ReplaceAlphaWithStencil(ReplaceBlendType replaceBlend);
 ReplaceBlendType ReplaceBlendWithShader(bool allowShaderBlend, GEBufferFormat bufferFormat);
 
+bool CanUseHardwareTransform(int prim);
 LogicOpReplaceType ReplaceLogicOpType();
 
 

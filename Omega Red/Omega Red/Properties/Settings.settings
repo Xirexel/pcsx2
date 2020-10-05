@@ -20,6 +20,9 @@
     <Setting Name="DisplayMode" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="PadIndex" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
     <Setting Name="ControlMode" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
@@ -39,7 +42,7 @@
       <Value Profile="(Default)">English</Value>
     </Setting>
     <Setting Name="ColourSchema" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Black</Value>
+      <Value Profile="(Default)">Blue</Value>
     </Setting>
     <Setting Name="MediaOutputType" Type="System.String" Scope="User">
       <Value Profile="(Default)">Capture</Value>
@@ -85,36 +88,6 @@
     </Setting>
     <Setting Name="MediaSourceInfoCollection" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="RecordingFileSizeMode" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="RecordingVideoBitRate" Type="System.UInt32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="RecordingAudioBitRate" Type="System.UInt32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="PadControlConfigCollection" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="IsVisualVibrationEnabled" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="TexturePacksFolder" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="TexturePackMode" Type="System.String" Scope="User">
-      <Value Profile="(Default)">None</Value>
-    </Setting>
-    <Setting Name="SkipFrameMode" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1</Value>
-    </Setting>
-    <Setting Name="ShowFrameRate" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="ResolutionMode" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
     </Setting>
   </Settings>
 </SettingsFile>

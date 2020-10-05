@@ -29,9 +29,8 @@
 #include "GPU/Common/ShaderId.h"
 #include "GPU/Common/GPUStateUtils.h"
 #include "GPU/Debugger/Debugger.h"
-#include "GPU/GPUCommon.h"
-#include "GPU/GPUInterface.h"
 #include "GPU/GPUState.h"
+#include "GPU/GPUInterface.h"
 
 #if defined(_M_SSE)
 #include <emmintrin.h>
@@ -789,7 +788,7 @@ bool TextureCacheCommon::AttachFramebuffer(TexCacheEntry *entry, u32 address, Vi
 		}
 	} else {
 		// Apply to buffered mode only.
-		if (!framebufferManager_->UseBufferedRendering())
+		if (!(g_Config.iRenderingMode == FB_BUFFERED_MODE))
 			return false;
 
 		const bool clutFormat =
@@ -869,7 +868,8 @@ void TextureCacheCommon::SetTextureFramebuffer(TexCacheEntry *entry, VirtualFram
 	_dbg_assert_msg_(G3D, framebuffer != nullptr, "Framebuffer must not be null.");
 
 	framebuffer->usageFlags |= FB_USAGE_TEXTURE;
-	if (framebufferManager_->UseBufferedRendering()) {
+	bool useBufferedRendering = g_Config.iRenderingMode != FB_NON_BUFFERED_MODE;
+	if (useBufferedRendering) {
 		const u64 cachekey = entry->CacheKey();
 		const auto &fbInfo = fbTexInfo_[cachekey];
 
@@ -909,22 +909,17 @@ void TextureCacheCommon::SetTextureFramebuffer(TexCacheEntry *entry, VirtualFram
 	nextNeedsRebuild_ = false;
 }
 
-bool TextureCacheCommon::SetOffsetTexture(u32 yOffset) {
-	if (!framebufferManager_->UseBufferedRendering()) {
+bool TextureCacheCommon::SetOffsetTexture(u32 offset) {
+	if (g_Config.iRenderingMode != FB_BUFFERED_MODE) {
 		return false;
 	}
-
 	u32 texaddr = gstate.getTextureAddress(0);
-	GETextureFormat fmt = gstate.getTextureFormat();
-	const u32 bpp = fmt == GE_TFMT_8888 ? 4 : 2;
-	const u32 texaddrOffset = yOffset * gstate.getTextureWidth(0) * bpp;
-
-	if (!Memory::IsValidAddress(texaddr) || !Memory::IsValidAddress(texaddr + texaddrOffset)) {
+	if (!Memory::IsValidAddress(texaddr) || !Memory::IsValidAddress(texaddr + offset)) {
 		return false;
 	}
 
 	const u16 dim = gstate.getTextureDimension(0);
-	u64 cachekey = TexCacheEntry::CacheKey(texaddr, fmt, dim, 0);
+	u64 cachekey = TexCacheEntry::CacheKey(texaddr, gstate.getTextureFormat(), dim, 0);
 	TexCache::iterator iter = cache_.find(cachekey);
 	if (iter == cache_.end()) {
 		return false;
@@ -934,7 +929,7 @@ bool TextureCacheCommon::SetOffsetTexture(u32 yOffset) {
 	bool success = false;
 	for (size_t i = 0, n = fbCache_.size(); i < n; ++i) {
 		auto framebuffer = fbCache_[i];
-		if (AttachFramebuffer(entry, framebuffer->fb_address, framebuffer, texaddrOffset)) {
+		if (AttachFramebuffer(entry, framebuffer->fb_address, framebuffer, offset)) {
 			success = true;
 		}
 	}
@@ -1178,7 +1173,7 @@ static inline void ConvertFormatToRGBA8888(GETextureFormat format, u32 *dst, con
 		ConvertRGBA5551ToRGBA8888(dst, src, numPixels);
 		break;
 	case GE_TFMT_5650:
-		ConvertRGB565ToRGBA8888(dst, src, numPixels);
+		ConvertRGBA565ToRGBA8888(dst, src, numPixels);
 		break;
 	default:
 		_dbg_assert_msg_(G3D, false, "Incorrect texture format.");
@@ -1224,6 +1219,7 @@ void TextureCacheCommon::DecodeTextureLevel(u8 *out, int outPitch, GETextureForm
 		case GE_CMODE_16BIT_ABGR5551:
 		case GE_CMODE_16BIT_ABGR4444:
 		{
+			const u16 *clut = GetCurrentClut<u16>() + clutSharingOffset;
 			if (clutAlphaLinear_ && mipmapShareClut && !expandTo32bit) {
 				// Here, reverseColors means the CLUT is already reversed.
 				if (reverseColors) {
@@ -1236,7 +1232,6 @@ void TextureCacheCommon::DecodeTextureLevel(u8 *out, int outPitch, GETextureForm
 					}
 				}
 			} else {
-				const u16 *clut = GetCurrentClut<u16>() + clutSharingOffset;
 				if (expandTo32bit && !reverseColors) {
 					// We simply expand the CLUT to 32-bit, then we deindex as usual. Probably the fastest way.
 					ConvertFormatToRGBA8888(clutformat, expandClut_, clut, 16);
@@ -1298,7 +1293,7 @@ void TextureCacheCommon::DecodeTextureLevel(u8 *out, int outPitch, GETextureForm
 					memcpy(out + outPitch * y, texptr + bufw * sizeof(u16) * y, w * sizeof(u16));
 				}
 			}
-		} else if (h >= 8 && bufw <= w && !expandTo32bit) {
+		} else if (h >= 8 && !expandTo32bit) {
 			// Note: this is always safe since h must be a power of 2, so a multiple of 8.
 			UnswizzleFromMem((u32 *)out, outPitch, texptr, bufw, h, 2);
 			if (reverseColors) {
@@ -1337,7 +1332,7 @@ void TextureCacheCommon::DecodeTextureLevel(u8 *out, int outPitch, GETextureForm
 					memcpy(out + outPitch * y, texptr + bufw * sizeof(u32) * y, w * sizeof(u32));
 				}
 			}
-		} else if (h >= 8 && bufw <= w) {
+		} else if (h >= 8) {
 			UnswizzleFromMem((u32 *)out, outPitch, texptr, bufw, h, 4);
 			if (reverseColors) {
 				ReverseColors(out, out, format, h * outPitch / 4, useBGRA);

@@ -62,11 +62,9 @@ namespace Omega_Red.Managers
 
                 Settings.Default.YouTubeBroadcastSelectedId = "";
 
-            } while (false);
-        }
+                Settings.Default.Save();
 
-        public void registerItem(object a_Item)
-        {
+            } while (false);
         }
     }
 }

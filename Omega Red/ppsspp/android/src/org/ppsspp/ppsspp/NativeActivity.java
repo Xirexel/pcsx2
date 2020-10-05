@@ -28,7 +28,9 @@ import android.os.PowerManager;
 import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.text.InputType;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.InputDevice;
@@ -36,8 +38,10 @@ import android.view.InputEvent;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.Surface;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.View.OnSystemUiVisibilityChangeListener;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
@@ -48,10 +52,8 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-public abstract class NativeActivity extends Activity {
+public abstract class NativeActivity extends Activity implements SurfaceHolder.Callback {
 	// Remember to loadLibrary your JNI .so in a static {} block
 
 	// Adjust these as necessary
@@ -73,7 +75,6 @@ public abstract class NativeActivity extends Activity {
 	protected NativeRenderer nativeRenderer;
 
 	private String shortcutParam = "";
-	private static String overrideShortcutParam = null;
 
 	public static String runCommand;
 	public static String commandParameter;
@@ -83,8 +84,6 @@ public abstract class NativeActivity extends Activity {
 	private int optimalSampleRate;
 
 	private boolean sustainedPerfSupported;
-
-	private View navigationCallbackView = null;
 
 	// audioFocusChangeListener to listen to changes in audio state
 	private AudioFocusChangeListener audioFocusChangeListener;
@@ -107,10 +106,13 @@ public abstract class NativeActivity extends Activity {
 	private InputDeviceState inputPlayerC;
 	private String inputPlayerADesc;
 
-	private PowerSaveModeReceiver mPowerSaveModeReceiver = null;
-	private SizeManager sizeManager = null;
 	private static LocationHelper mLocationHelper;
 	private static CameraHelper mCameraHelper;
+
+	private float densityDpi;
+	private float refreshRate;
+	private int pixelWidth;
+	private int pixelHeight;
 
 	private static final String[] permissionsForStorage = {
 		Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -301,16 +303,15 @@ public abstract class NativeActivity extends Activity {
 
 		String model = Build.MANUFACTURER + ":" + Build.MODEL;
 		String languageRegion = Locale.getDefault().getLanguage() + "_" + Locale.getDefault().getCountry();
-		String shortcut = overrideShortcutParam == null ? shortcutParam : overrideShortcutParam;
-		overrideShortcutParam = null;
 
 		NativeApp.audioConfig(optimalFramesPerBuffer, optimalSampleRate);
-		NativeApp.init(model, deviceType, languageRegion, apkFilePath, dataDir, externalStorageDir, libraryDir, cacheDir, shortcut, Build.VERSION.SDK_INT, Build.BOARD);
+		NativeApp.init(model, deviceType, languageRegion, apkFilePath, dataDir, externalStorageDir, libraryDir, cacheDir, shortcutParam, Build.VERSION.SDK_INT, Build.BOARD);
 
 		// Allow C++ to tell us to use JavaGL or not.
 		javaGL = "true".equalsIgnoreCase(NativeApp.queryConfig("androidJavaGL"));
 
 		sendInitialGrants();
+		PowerSaveModeReceiver.initAndSend(this);
 
 		// OK, config should be initialized, we can query for screen rotation.
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
@@ -402,26 +403,19 @@ public abstract class NativeActivity extends Activity {
 	@SuppressLint("InlinedApi")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void updateSystemUiVisibility() {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-			setupSystemUiCallback();
-		}
-
-		// Compute our _desired_ systemUiVisibility
 		int flags = 0;
 		if (useLowProfileButtons()) {
 			flags |= View.SYSTEM_UI_FLAG_LOW_PROFILE;
 		}
 		if (useImmersive()) {
-			flags |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN;
+			flags |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 		}
-
-		View decorView = getWindow().peekDecorView();
-		if (decorView != null) {
-			decorView.setSystemUiVisibility(flags);
+		if (getWindow().getDecorView() != null) {
+			getWindow().getDecorView().setSystemUiVisibility(flags);
 		} else {
-			Log.e(TAG, "updateSystemUiVisibility: decor view not yet created, ignoring for now");
+			Log.e(TAG, "updateSystemUiVisibility: decor view not yet created, ignoring");
 		}
-		sizeManager.checkDisplayMeasurements();
+		updateDisplayMeasurements();
 	}
 
 	// Need API 11 to check for existence of a vibrator? Zany.
@@ -451,10 +445,36 @@ public abstract class NativeActivity extends Activity {
 	// Tells the render loop thread to exit, so we can restart it.
 	public native void exitEGLRenderLoop();
 
+	public void getDesiredBackbufferSize(Point sz) {
+		NativeApp.computeDesiredBackbufferDimensions();
+		sz.x = NativeApp.getDesiredBackbufferWidth();
+		sz.y = NativeApp.getDesiredBackbufferHeight();
+	}
+
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+	public void updateDisplayMeasurements() {
+		Display display = getWindowManager().getDefaultDisplay();
+
+		DisplayMetrics metrics = new DisplayMetrics();
+		if (useImmersive() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || !isInMultiWindowMode()) {
+				display.getRealMetrics(metrics);
+			} else {
+				// multi-window mode
+				display.getMetrics(metrics);
+			}
+		} else {
+			display.getMetrics(metrics);
+		}
+		densityDpi = metrics.densityDpi;
+		refreshRate = display.getRefreshRate();
+
+		NativeApp.setDisplayParameters(metrics.widthPixels, metrics.heightPixels, (int) densityDpi, refreshRate);
+	}
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		sizeManager = new SizeManager(this);
 		TextRenderer.init(this);
 		shuttingDown = false;
 		registerCallbacks();
@@ -462,15 +482,11 @@ public abstract class NativeActivity extends Activity {
 		// This calls NativeApp.setDisplayParameters. Make sure that's done early in order
 		// to be able to set defaults when loading config for the first time. Like figuring out
 		// whether to start at 1x or 2x.
-		sizeManager.updateDisplayMeasurements();
+		updateDisplayMeasurements();
 
 		if (!initialized) {
 			Initialize();
 			initialized = true;
-		}
-
-		if (mPowerSaveModeReceiver == null) {
-			mPowerSaveModeReceiver = new PowerSaveModeReceiver(this);
 		}
 
 		// OK, config should be initialized, we can query for screen rotation.
@@ -486,7 +502,7 @@ public abstract class NativeActivity extends Activity {
 			mGLSurfaceView = new NativeGLView(this);
 			nativeRenderer = new NativeRenderer(this);
 			mGLSurfaceView.setEGLContextClientVersion(2);
-			sizeManager.setSurfaceView(mGLSurfaceView);
+			mGLSurfaceView.getHolder().addCallback(NativeActivity.this);
 
 			// Setup the GLSurface and ask android for the correct
 			// Number of bits for r, g, b, a, depth and stencil components
@@ -503,33 +519,65 @@ public abstract class NativeActivity extends Activity {
 			// http://grokbase.com/t/gg/android-developers/11bj40jm4w/fall-back
 
 			// Needed to avoid banding on Ouya?
-			if (Build.MANUFACTURER.equals("OUYA")) {
+			if (Build.MANUFACTURER == "OUYA") {
 				mGLSurfaceView.getHolder().setFormat(PixelFormat.RGBX_8888);
 				mGLSurfaceView.setEGLConfigChooser(new NativeEGLConfigChooser());
 			} else {
 				// Tried to mess around with config choosers (NativeEGLConfigChooser) here but fail completely on Xperia Play.
-
-				// Then I tried to require 8888/16/8 but that backfired too, does not work on Mali 450 which is
-				// used in popular TVs and boxes like Mi Box. So we'll just get what we get, I guess...
-
-				// if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && !Build.MANUFACTURER.equals("Amazon")) {
-					// mGLSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 8);
-				// }
+				// On the other hand, I think from ICS we should be safe to at least require 8888 and stencil...
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+					mGLSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 8);
+				}
 			}
 			mGLSurfaceView.setRenderer(nativeRenderer);
 			setContentView(mGLSurfaceView);
 		} else {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
 				updateSystemUiVisibility();
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+					setupSystemUiCallback();
+				}
 			}
 
 			mSurfaceView = new NativeSurfaceView(NativeActivity.this);
-			sizeManager.setSurfaceView(mSurfaceView);
+			mSurfaceView.getHolder().addCallback(NativeActivity.this);
 			Log.i(TAG, "setcontentview before");
 			setContentView(mSurfaceView);
 			Log.i(TAG, "setcontentview after");
 			ensureRenderLoop();
 		}
+	}
+
+	private Point desiredSize = new Point();
+	private int badOrientationCount = 0;
+
+	@Override
+	public void surfaceCreated(SurfaceHolder holder) {
+		pixelWidth = holder.getSurfaceFrame().width();
+		pixelHeight = holder.getSurfaceFrame().height();
+
+		// Workaround for terrible bug when locking and unlocking the screen in landscape mode on Nexus 5X.
+		int requestedOr = getRequestedOrientation();
+		boolean requestedPortrait = requestedOr == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT || requestedOr == ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+		boolean detectedPortrait = pixelHeight > pixelWidth;
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT && badOrientationCount < 3 && requestedPortrait != detectedPortrait && requestedOr != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+			Log.e(TAG, "Bad orientation detected (w=" + pixelWidth + " h=" + pixelHeight + "! Recreating activity.");
+			badOrientationCount++;
+			recreate();
+			return;
+		} else if (requestedPortrait == detectedPortrait) {
+			Log.i(TAG, "Correct orientation detected, resetting orientation counter.");
+			badOrientationCount = 0;
+		} else {
+			Log.i(TAG, "Bad orientation detected but ignored" + (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT ? " (sdk version)" : ""));
+		}
+
+		Log.d(TAG, "Surface created. pixelWidth=" + pixelWidth + ", pixelHeight=" + pixelHeight + " holder: " + holder.toString() + " or: " + requestedOr);
+		getDesiredBackbufferSize(desiredSize);
+
+		// Note that desiredSize might be 0,0 here - but that's fine when calling setFixedSize! It means auto.
+		Log.d(TAG, "Setting fixed size " + desiredSize.x + " x " + desiredSize.y);
+		holder.setFixedSize(desiredSize.x, desiredSize.y);
 	}
 
 	@Override
@@ -538,8 +586,18 @@ public abstract class NativeActivity extends Activity {
 		updateSustainedPerformanceMode();
 	}
 
-	public void notifySurface(Surface surface) {
-		mSurface = surface;
+	@Override
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+		Log.v(TAG, "surfaceChanged: isCreating:" + holder.isCreating() + " holder: " + holder.toString());
+		if (holder.isCreating() && desiredSize.x > 0 && desiredSize.y > 0) {
+			// We have called setFixedSize which will trigger another surfaceChanged after the initial
+			// one. This one is the original one and we don't care about it.
+			Log.w(TAG, "holder.isCreating = true, ignoring. width=" + width + " height=" + height + " desWidth=" + desiredSize.x + " desHeight=" + desiredSize.y);
+			return;
+		}
+		Log.w(TAG, "Surface changed. Resolution: " + width + "x" + height + " Format: " + format);
+		NativeApp.backbufferResize(width, height, format);
+		mSurface = holder.getSurface();
 		if (!javaGL) {
 			// If we got a surface, this starts the thread. If not, it doesn't.
 			if (mSurface == null) {
@@ -549,6 +607,17 @@ public abstract class NativeActivity extends Activity {
 			}
 		}
 		updateSustainedPerformanceMode();
+	}
+
+	@Override
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		mSurface = null;
+		Log.w(TAG, "Surface destroyed.");
+		if (!javaGL) {
+			joinRenderLoopThread();
+		}
+		// Autosize the next created surface.
+		holder.setSizeFromLayout();
 	}
 
 	// Invariants: After this, mRenderLoopThread will be set, and the thread will be running.
@@ -593,13 +662,14 @@ public abstract class NativeActivity extends Activity {
 
 	@TargetApi(Build.VERSION_CODES.KITKAT)
 	void setupSystemUiCallback() {
-		final View decorView = getWindow().peekDecorView();
-		if (decorView == null || decorView == navigationCallbackView) {
-			return;
-		}
-
-		sizeManager.setupSystemUiCallback(decorView);
-		navigationCallbackView = decorView;
+		getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(new OnSystemUiVisibilityChangeListener() {
+			@Override
+			public void onSystemUiVisibilityChange(int visibility) {
+				if (visibility == 0) {
+					updateSystemUiVisibility();
+				}
+			}
+		});
 	}
 
 	@Override
@@ -633,11 +703,6 @@ public abstract class NativeActivity extends Activity {
 			mSurfaceView.onDestroy();
 			mSurfaceView = null;
 		}
-		sizeManager.setSurfaceView(null);
-		if (mPowerSaveModeReceiver != null) {
-			mPowerSaveModeReceiver.destroy(this);
-			mPowerSaveModeReceiver = null;
-		}
 		// TODO: Can we ensure that the GL thread has stopped rendering here?
 		// I've seen crashes that seem to indicate that sometimes it hasn't...
 		NativeApp.audioShutdown();
@@ -646,7 +711,6 @@ public abstract class NativeActivity extends Activity {
 			NativeApp.shutdown();
 			initialized = false;
 		}
-		navigationCallbackView = null;
 	}
 
 	@Override
@@ -666,9 +730,6 @@ public abstract class NativeActivity extends Activity {
 			} else {
 				Log.e(TAG, "mGLSurfaceView really shouldn't be null in onPause");
 			}
-		}
-		if (mCameraHelper != null) {
-			mCameraHelper.pause();
 		}
 		Log.i(TAG, "onPause completed");
 	}
@@ -709,9 +770,6 @@ public abstract class NativeActivity extends Activity {
 				mSurfaceView.onResume();
 			}
 		}
-		if (mCameraHelper != null) {
-			mCameraHelper.resume();
-		}
 
 		gainAudioFocus(this.audioManager, this.audioFocusChangeListener);
 		NativeApp.resume();
@@ -723,16 +781,6 @@ public abstract class NativeActivity extends Activity {
 	}
 
 	@Override
-	public void onAttachedToWindow() {
-		Log.i(TAG, "onAttachedToWindow");
-		super.onAttachedToWindow();
-
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-			setupSystemUiCallback();
-		}
-	}
-
-	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		Log.i(TAG, "onConfigurationChanged");
 		super.onConfigurationChanged(newConfig);
@@ -740,7 +788,7 @@ public abstract class NativeActivity extends Activity {
 			updateSystemUiVisibility();
 		}
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-			sizeManager.updateDpi((float)newConfig.densityDpi);
+			densityDpi = (float) newConfig.densityDpi;
 		}
 	}
 
@@ -749,7 +797,7 @@ public abstract class NativeActivity extends Activity {
 		// onConfigurationChanged not called on multi-window change
 		Log.i(TAG, "onMultiWindowModeChanged: isInMultiWindowMode = " + isInMultiWindowMode);
 		super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig);
-		sizeManager.checkDisplayMeasurements();
+		updateDisplayMeasurements();
 	}
 
 	// keep this static so we can call this even if we don't
@@ -1033,8 +1081,8 @@ public abstract class NativeActivity extends Activity {
 		return bld;
 	}
 
-	// The return value is sent to C++ via seqID.
-	public void inputBox(final String seqID, final String title, String defaultText, String defaultAction) {
+	// The return value is sent elsewhere. TODO in java, in SendMessage in C++.
+	public void inputBox(final String title, String defaultText, String defaultAction) {
 		final FrameLayout fl = new FrameLayout(this);
 		final EditText input = new EditText(this);
 		input.setGravity(Gravity.CENTER);
@@ -1066,22 +1114,15 @@ public abstract class NativeActivity extends Activity {
 			.setPositiveButton(defaultAction, new DialogInterface.OnClickListener() {
 				@Override
 				public void onClick(DialogInterface d, int which) {
-					NativeApp.sendInputBox(seqID, true, input.getText().toString());
+					NativeApp.sendMessage("inputbox_completed", title + ":" + input.getText().toString());
 					d.dismiss();
 				}
 			})
 			.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
 				@Override
 				public void onClick(DialogInterface d, int which) {
-					NativeApp.sendInputBox(seqID, false, "");
+					NativeApp.sendMessage("inputbox_failed", "");
 					d.cancel();
-				}
-			})
-			.setOnDismissListener(new DialogInterface.OnDismissListener() {
-				@Override
-				public void onDismiss(DialogInterface d) {
-					NativeApp.sendInputBox(seqID, false, "");
-					updateSystemUiVisibility();
 				}
 			})
 			.create();
@@ -1142,8 +1183,7 @@ public abstract class NativeActivity extends Activity {
 				sendIntent.setType("text/plain");
 				sendIntent.putExtra(Intent.EXTRA_TEXT, params);
 				sendIntent.setAction(Intent.ACTION_SEND);
-				Intent shareIntent = Intent.createChooser(sendIntent, null);
-				startActivity(shareIntent);
+				startActivity(sendIntent);
 				return true;
 			} catch (Exception e) { // For example, android.content.ActivityNotFoundException
 				Log.e(TAG, e.toString());
@@ -1168,7 +1208,7 @@ public abstract class NativeActivity extends Activity {
 			// http://developer.android.com/guide/publishing/publishing.html#marketintent
 			return false;
 		} else if (command.equals("toast")) {
-			Toast toast = Toast.makeText(this, params, Toast.LENGTH_LONG);
+			Toast toast = Toast.makeText(this, params, Toast.LENGTH_SHORT);
 			toast.show();
 			Log.i(TAG, params);
 			return true;
@@ -1183,17 +1223,15 @@ public abstract class NativeActivity extends Activity {
 			inputMethodManager.toggleSoftInputFromWindow(surfView.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
 			return true;
 		} else if (command.equals("inputbox")) {
-			String seqID = "";
 			String title = "Input";
 			String defString = "";
-			String[] param = params.split(":@:", 3);
-			seqID = param[0];
-			if (param.length > 1 && param[1].length() > 0)
-				title = param[1];
-			if (param.length > 2)
-				defString = param[2];
-			Log.i(TAG, "Launching inputbox: #" + seqID + " " + title + " " + defString);
-			inputBox(seqID, title, defString, "OK");
+			String[] param = params.split(":");
+			if (param[0].length() > 0)
+				title = param[0];
+			if (param.length > 1)
+				defString = param[1];
+			Log.i(TAG, "Launching inputbox: " + title + " " + defString);
+			inputBox(title, defString, "OK");
 			return true;
 		} else if (command.equals("vibrate")) {
 			int milliseconds = -1;
@@ -1255,9 +1293,6 @@ public abstract class NativeActivity extends Activity {
 			recreate();
 		} else if (command.equals("graphics_restart")) {
 			Log.i(TAG, "graphics_restart");
-			if (params != null && !params.equals("")) {
-				overrideShortcutParam = params;
-			}
 			shuttingDown = true;
 			recreate();
 		} else if (command.equals("ask_permission") && params.equals("storage")) {
@@ -1275,14 +1310,7 @@ public abstract class NativeActivity extends Activity {
 				mLocationHelper.stopLocationUpdates();
 			}
 		} else if (command.equals("camera_command")) {
-			if (params.startsWith("startVideo")) {
-				Pattern pattern = Pattern.compile("startVideo_(\\d+)x(\\d+)");
-				Matcher matcher = pattern.matcher(params);
-				if (!matcher.matches())
-					return false;
-				int width = Integer.parseInt(matcher.group(1));
-				int height = Integer.parseInt(matcher.group(2));
-				mCameraHelper.setCameraSize(width, height);
+			if (params.equals("startVideo")) {
 				if (mCameraHelper != null && !askForPermissions(permissionsForCamera, REQUEST_CODE_CAMERA_PERMISSION)) {
 					mCameraHelper.startCamera();
 				}
@@ -1294,7 +1322,6 @@ public abstract class NativeActivity extends Activity {
 			if (params.equals("ingame")) {
 				// Keep the screen bright - very annoying if it goes dark when tilting away
 				window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-				updateSustainedPerformanceMode();
 			} else {
 				// Only keep the screen bright ingame.
 				window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);

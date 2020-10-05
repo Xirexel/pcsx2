@@ -60,17 +60,17 @@ public:
 	Buffer *CreateBuffer(size_t size, uint32_t usageFlags) override;
 	Pipeline *CreateGraphicsPipeline(const PipelineDesc &desc) override;
 	Texture *CreateTexture(const TextureDesc &desc) override;
-	ShaderModule *CreateShaderModule(ShaderStage stage, ShaderLanguage language, const uint8_t *data, size_t dataSize, const std::string &tag) override;
+	ShaderModule *CreateShaderModule(ShaderStage stage, ShaderLanguage language, const uint8_t *data, size_t dataSize) override;
 	Framebuffer *CreateFramebuffer(const FramebufferDesc &desc) override;
 
 	void UpdateBuffer(Buffer *buffer, const uint8_t *data, size_t offset, size_t size, UpdateBufferFlags flags) override;
 
-	void CopyFramebufferImage(Framebuffer *src, int level, int x, int y, int z, Framebuffer *dst, int dstLevel, int dstX, int dstY, int dstZ, int width, int height, int depth, int channelBits, const char *tag) override;
-	bool BlitFramebuffer(Framebuffer *src, int srcX1, int srcY1, int srcX2, int srcY2, Framebuffer *dst, int dstX1, int dstY1, int dstX2, int dstY2, int channelBits, FBBlitFilter filter, const char *tag) override;
-	bool CopyFramebufferToMemorySync(Framebuffer *src, int channelBits, int x, int y, int w, int h, Draw::DataFormat format, void *pixels, int pixelStride, const char *tag);
+	void CopyFramebufferImage(Framebuffer *src, int level, int x, int y, int z, Framebuffer *dst, int dstLevel, int dstX, int dstY, int dstZ, int width, int height, int depth, int channelBits) override;
+	bool BlitFramebuffer(Framebuffer *src, int srcX1, int srcY1, int srcX2, int srcY2, Framebuffer *dst, int dstX1, int dstY1, int dstX2, int dstY2, int channelBits, FBBlitFilter filter) override;
+	bool CopyFramebufferToMemorySync(Framebuffer *src, int channelBits, int x, int y, int w, int h, Draw::DataFormat format, void *pixels, int pixelStride);
 
 	// These functions should be self explanatory.
-	void BindFramebufferAsRenderTarget(Framebuffer *fbo, const RenderPassInfo &rp, const char *tag) override;
+	void BindFramebufferAsRenderTarget(Framebuffer *fbo, const RenderPassInfo &rp) override;
 	// color must be 0, for now.
 	void BindFramebufferAsTexture(Framebuffer *fbo, int binding, FBChannel channelBit, int attachment) override;
 
@@ -131,36 +131,32 @@ public:
 		}
 	}
 
-	uint64_t GetNativeObject(NativeObject obj) override {
+	uintptr_t GetNativeObject(NativeObject obj) override {
 		switch (obj) {
 		case NativeObject::DEVICE:
-			return (uint64_t)(uintptr_t)device_;
+			return (uintptr_t)device_;
 		case NativeObject::CONTEXT:
-			return (uint64_t)(uintptr_t)context_;
+			return (uintptr_t)context_;
 		case NativeObject::DEVICE_EX:
-			return (uint64_t)(uintptr_t)device1_;
+			return (uintptr_t)device1_;
 		case NativeObject::CONTEXT_EX:
-			return (uint64_t)(uintptr_t)context1_;
+			return (uintptr_t)context1_;
 		case NativeObject::BACKBUFFER_COLOR_TEX:
-			return (uint64_t)(uintptr_t)bbRenderTargetTex_;
+			return (uintptr_t)bbRenderTargetTex_;
 		case NativeObject::BACKBUFFER_DEPTH_TEX:
-			return (uint64_t)(uintptr_t)bbDepthStencilTex_;
+			return (uintptr_t)bbDepthStencilTex_;
 		case NativeObject::BACKBUFFER_COLOR_VIEW:
-			return (uint64_t)(uintptr_t)bbRenderTargetView_;
+			return (uintptr_t)bbRenderTargetView_;
 		case NativeObject::BACKBUFFER_DEPTH_VIEW:
-			return (uint64_t)(uintptr_t)bbDepthStencilView_;
+			return (uintptr_t)bbDepthStencilView_;
 		case NativeObject::FEATURE_LEVEL:
-			return (uint64_t)(uintptr_t)featureLevel_;
+			return (uintptr_t)featureLevel_;
 		default:
 			return 0;
 		}
 	}
 
 	void HandleEvent(Event ev, int width, int height, void *param1, void *param2) override;
-
-	int GetCurrentStepId() const override {
-		return stepId_;
-	}
 
 private:
 	void ApplyCurrentState();
@@ -170,7 +166,6 @@ private:
 	ID3D11DeviceContext *context_;
 	ID3D11Device1 *device1_;
 	ID3D11DeviceContext1 *context1_;
-	int stepId_ = -1;
 
 	ID3D11Texture2D *bbRenderTargetTex_ = nullptr; // NOT OWNED
 	ID3D11RenderTargetView *bbRenderTargetView_ = nullptr;
@@ -358,7 +353,6 @@ void D3D11DrawContext::HandleEvent(Event ev, int width, int height, void *param1
 		// Make sure that we don't eliminate the next time the render target is set.
 		curRenderTargetView_ = nullptr;
 		curDepthStencilView_ = nullptr;
-		stepId_ = 0;
 		break;
 	}
 }
@@ -366,7 +360,7 @@ void D3D11DrawContext::HandleEvent(Event ev, int width, int height, void *param1
 void D3D11DrawContext::SetViewports(int count, Viewport *viewports) {
 	D3D11_VIEWPORT vp[4];
 	for (int i = 0; i < count; i++) {
-		DisplayRect<float> rc{ viewports[i].TopLeftX , viewports[i].TopLeftY, viewports[i].Width, viewports[i].Height };
+		FRect rc{ viewports[i].TopLeftX , viewports[i].TopLeftY, viewports[i].Width, viewports[i].Height };
 		if (curRenderTargetView_ == bbRenderTargetView_)  // Only the backbuffer is actually rotated wrong!
 			RotateRectToDisplay(rc, curRTWidth_, curRTHeight_);
 		vp[i].TopLeftX = rc.x;
@@ -380,7 +374,7 @@ void D3D11DrawContext::SetViewports(int count, Viewport *viewports) {
 }
 
 void D3D11DrawContext::SetScissorRect(int left, int top, int width, int height) {
-	DisplayRect<float> frc{ (float)left, (float)top, (float)width, (float)height };
+	FRect frc{ (float)left, (float)top, (float)width, (float)height };
 	if (curRenderTargetView_ == bbRenderTargetView_)  // Only the backbuffer is actually rotated wrong!
 		RotateRectToDisplay(frc, curRTWidth_, curRTHeight_);
 	D3D11_RECT rc{};
@@ -695,18 +689,16 @@ public:
 	~D3D11Texture() {
 		if (tex)
 			tex->Release();
-		if (stagingTex)
-			stagingTex->Release();
 		if (view)
 			view->Release();
 	}
 
 	ID3D11Texture2D *tex = nullptr;
-	ID3D11Texture2D *stagingTex = nullptr;
 	ID3D11ShaderResourceView *view = nullptr;
 };
 
 Texture *D3D11DrawContext::CreateTexture(const TextureDesc &desc) {
+
 	if (!(GetDataFormatSupport(desc.format) & FMT_TEXTURE)) {
 		// D3D11 does not support this format as a texture format.
 		return nullptr;
@@ -728,45 +720,25 @@ Texture *D3D11DrawContext::CreateTexture(const TextureDesc &desc) {
 	descColor.Format = dataFormatToD3D11(desc.format);
 	descColor.SampleDesc.Count = 1;
 	descColor.SampleDesc.Quality = 0;
-
-	if (desc.initDataCallback) {
-		descColor.Usage = D3D11_USAGE_STAGING;
-		descColor.BindFlags = 0;
-		descColor.MiscFlags = 0;
-		descColor.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-		HRESULT hr = device_->CreateTexture2D(&descColor, nullptr, &tex->stagingTex);
-		if (!SUCCEEDED(hr)) {
-			delete tex;
-			return nullptr;
-		}
-	}
-
 	descColor.Usage = D3D11_USAGE_DEFAULT;
 	descColor.BindFlags = generateMips ? (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET) : D3D11_BIND_SHADER_RESOURCE;
 	descColor.MiscFlags = generateMips ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0;
 	descColor.CPUAccessFlags = 0;
 
-	D3D11_SUBRESOURCE_DATA *initDataParam = nullptr;
 	D3D11_SUBRESOURCE_DATA initData[12]{};
-	std::vector<uint8_t> initDataBuffer[12];
-	if (desc.initData.size() && !generateMips && !desc.initDataCallback) {
+	if (desc.initData.size() && !generateMips) {
 		int w = desc.width;
 		int h = desc.height;
-		int d = desc.depth;
 		for (int i = 0; i < (int)desc.initData.size(); i++) {
-			uint32_t byteStride = w * (uint32_t)DataFormatSizeInBytes(desc.format);
 			initData[i].pSysMem = desc.initData[i];
-			initData[i].SysMemPitch = (UINT)byteStride;
-			initData[i].SysMemSlicePitch = (UINT)(h * byteStride);
-			w = (w + 1) / 2;
-			h = (h + 1) / 2;
-			d = (d + 1) / 2;
+			initData[i].SysMemPitch = (UINT)(w * DataFormatSizeInBytes(desc.format));
+			initData[i].SysMemSlicePitch = (UINT)(w * h * DataFormatSizeInBytes(desc.format));
+			w /= 2;
+			h /= 2;
 		}
-		initDataParam = initData;
 	}
 
-	HRESULT hr = device_->CreateTexture2D(&descColor, initDataParam, &tex->tex);
+	HRESULT hr = device_->CreateTexture2D(&descColor, (desc.initData.size() && !generateMips) ? initData : nullptr, &tex->tex);
 	if (!SUCCEEDED(hr)) {
 		delete tex;
 		return nullptr;
@@ -776,73 +748,15 @@ Texture *D3D11DrawContext::CreateTexture(const TextureDesc &desc) {
 		delete tex;
 		return nullptr;
 	}
-
-	auto populateLevelCallback = [&](int level, int w, int h, int d) {
-		D3D11_MAPPED_SUBRESOURCE mapped;
-		hr = context_->Map(tex->stagingTex, level, D3D11_MAP_WRITE, 0, &mapped);
-		if (!SUCCEEDED(hr)) {
-			return false;
-		}
-
-		if (!desc.initDataCallback((uint8_t *)mapped.pData, desc.initData[level], w, h, d, mapped.RowPitch, mapped.DepthPitch)) {
-			for (int s = 0; s < d; ++s) {
-				for (int y = 0; y < h; ++y) {
-					void *dest = (uint8_t *)mapped.pData + mapped.DepthPitch * s + mapped.RowPitch * y;
-					uint32_t byteStride = w * (uint32_t)DataFormatSizeInBytes(desc.format);
-					const void *src = desc.initData[level] + byteStride * (y + h * d);
-					memcpy(dest, src, byteStride);
-				}
-			}
-		}
-		context_->Unmap(tex->stagingTex, level);
-		return true;
-	};
-
 	if (generateMips && desc.initData.size() >= 1) {
-		if (desc.initDataCallback) {
-			if (!populateLevelCallback(0, desc.width, desc.height, desc.depth)) {
-				delete tex;
-				return nullptr;
-			}
-
-			context_->CopyResource(tex->stagingTex, tex->stagingTex);
-			tex->stagingTex->Release();
-			tex->stagingTex = nullptr;
-		} else {
-			uint32_t byteStride = desc.width * (uint32_t)DataFormatSizeInBytes(desc.format);
-			context_->UpdateSubresource(tex->tex, 0, nullptr, desc.initData[0], byteStride, 0);
-		}
+		context_->UpdateSubresource(tex->tex, 0, nullptr, desc.initData[0], desc.width * (int)DataFormatSizeInBytes(desc.format), 0);
 		context_->GenerateMips(tex->view);
-	} else if (desc.initDataCallback) {
-		int w = desc.width;
-		int h = desc.height;
-		int d = desc.depth;
-		for (int i = 0; i < (int)desc.initData.size(); i++) {
-			if (!populateLevelCallback(i, desc.width, desc.height, desc.depth)) {
-				if (i == 0) {
-					delete tex;
-					return nullptr;
-				} else {
-					break;
-				}
-			}
-
-			w = (w + 1) / 2;
-			h = (h + 1) / 2;
-			d = (d + 1) / 2;
-		}
-
-		context_->CopyResource(tex->tex, tex->stagingTex);
-		tex->stagingTex->Release();
-		tex->stagingTex = nullptr;
 	}
 	return tex;
 }
 
 class D3D11ShaderModule : public ShaderModule {
 public:
-	D3D11ShaderModule(const std::string &tag) : tag_(tag) {
-	}
 	~D3D11ShaderModule() {
 		if (vs)
 			vs->Release();
@@ -855,14 +769,13 @@ public:
 
 	std::vector<uint8_t> byteCode_;
 	ShaderStage stage;
-	std::string tag_;
 
 	ID3D11VertexShader *vs = nullptr;
 	ID3D11PixelShader *ps = nullptr;
 	ID3D11GeometryShader *gs = nullptr;
 };
 
-ShaderModule *D3D11DrawContext::CreateShaderModule(ShaderStage stage, ShaderLanguage language, const uint8_t *data, size_t dataSize, const std::string &tag) {
+ShaderModule *D3D11DrawContext::CreateShaderModule(ShaderStage stage, ShaderLanguage language, const uint8_t *data, size_t dataSize) {
 	if (language != ShaderLanguage::HLSL_D3D11) {
 		ELOG("Unsupported shader language");
 		return nullptr;
@@ -901,8 +814,7 @@ ShaderModule *D3D11DrawContext::CreateShaderModule(ShaderStage stage, ShaderLang
 
 	ID3DBlob *compiledCode = nullptr;
 	ID3DBlob *errorMsgs = nullptr;
-	int flags = D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY;
-	HRESULT result = ptr_D3DCompile(data, dataSize, nullptr, nullptr, nullptr, "main", target, flags, 0, &compiledCode, &errorMsgs);
+	HRESULT result = ptr_D3DCompile(data, dataSize, nullptr, nullptr, nullptr, "main", target, 0, 0, &compiledCode, &errorMsgs);
 	if (compiledCode) {
 		compiled = std::string((const char *)compiledCode->GetBufferPointer(), compiledCode->GetBufferSize());
 		compiledCode->Release();
@@ -920,7 +832,7 @@ ShaderModule *D3D11DrawContext::CreateShaderModule(ShaderStage stage, ShaderLang
 	// OK, we can now proceed
 	data = (const uint8_t *)compiled.c_str();
 	dataSize = compiled.size();
-	D3D11ShaderModule *module = new D3D11ShaderModule(tag);
+	D3D11ShaderModule *module = new D3D11ShaderModule();
 	module->stage = stage;
 	module->byteCode_ = std::vector<uint8_t>(data, data + dataSize);
 	switch (stage) {
@@ -1072,12 +984,11 @@ void D3D11DrawContext::ApplyCurrentState() {
 	int numVBs = (int)curPipeline_->input->strides.size();
 	context_->IASetVertexBuffers(0, 1, nextVertexBuffers_, (UINT *)curPipeline_->input->strides.data(), (UINT *)nextVertexBufferOffsets_);
 	if (dirtyIndexBuffer_) {
-		context_->IASetIndexBuffer(nextIndexBuffer_, DXGI_FORMAT_R16_UINT, nextIndexBufferOffset_);
+		context_->IASetIndexBuffer(nextIndexBuffer_, DXGI_FORMAT_R32_UINT, nextIndexBufferOffset_);
 		dirtyIndexBuffer_ = false;
 	}
 	if (curPipeline_->dynamicUniforms) {
 		context_->VSSetConstantBuffers(0, 1, &curPipeline_->dynamicUniforms);
-		context_->PSSetConstantBuffers(0, 1, &curPipeline_->dynamicUniforms);
 	}
 }
 
@@ -1346,15 +1257,14 @@ void D3D11DrawContext::BeginFrame() {
 	}
 	if (curPipeline_) {
 		context_->IASetVertexBuffers(0, 1, nextVertexBuffers_, (UINT *)curPipeline_->input->strides.data(), (UINT *)nextVertexBufferOffsets_);
-		context_->IASetIndexBuffer(nextIndexBuffer_, DXGI_FORMAT_R16_UINT, nextIndexBufferOffset_);
+		context_->IASetIndexBuffer(nextIndexBuffer_, DXGI_FORMAT_R32_UINT, nextIndexBufferOffset_);
 		if (curPipeline_->dynamicUniforms) {
 			context_->VSSetConstantBuffers(0, 1, &curPipeline_->dynamicUniforms);
-			context_->PSSetConstantBuffers(0, 1, &curPipeline_->dynamicUniforms);
 		}
 	}
 }
 
-void D3D11DrawContext::CopyFramebufferImage(Framebuffer *srcfb, int level, int x, int y, int z, Framebuffer *dstfb, int dstLevel, int dstX, int dstY, int dstZ, int width, int height, int depth, int channelBit, const char *tag) {
+void D3D11DrawContext::CopyFramebufferImage(Framebuffer *srcfb, int level, int x, int y, int z, Framebuffer *dstfb, int dstLevel, int dstX, int dstY, int dstZ, int width, int height, int depth, int channelBit) {
 	D3D11Framebuffer *src = (D3D11Framebuffer *)srcfb;
 	D3D11Framebuffer *dst = (D3D11Framebuffer *)dstfb;
 
@@ -1400,17 +1310,15 @@ void D3D11DrawContext::CopyFramebufferImage(Framebuffer *srcfb, int level, int x
 		D3D11_BOX srcBox{ (UINT)x, (UINT)y, (UINT)z, (UINT)(x + width), (UINT)(y + height), (UINT)(z + depth) };
 		context_->CopySubresourceRegion(dstTex, dstLevel, dstX, dstY, dstZ, srcTex, level, &srcBox);
 	}
-	stepId_++;
 }
 
-bool D3D11DrawContext::BlitFramebuffer(Framebuffer *srcfb, int srcX1, int srcY1, int srcX2, int srcY2, Framebuffer *dstfb, int dstX1, int dstY1, int dstX2, int dstY2, int channelBits, FBBlitFilter filter, const char *tag) {
+bool D3D11DrawContext::BlitFramebuffer(Framebuffer *srcfb, int srcX1, int srcY1, int srcX2, int srcY2, Framebuffer *dstfb, int dstX1, int dstY1, int dstX2, int dstY2, int channelBits, FBBlitFilter filter) {
 	// Unfortunately D3D11 has no equivalent to this, gotta render a quad. Well, in some cases we can issue a copy instead.
 	Crash();
-	stepId_++;
 	return false;
 }
 
-bool D3D11DrawContext::CopyFramebufferToMemorySync(Framebuffer *src, int channelBits, int bx, int by, int bw, int bh, Draw::DataFormat format, void *pixels, int pixelStride, const char *tag) {
+bool D3D11DrawContext::CopyFramebufferToMemorySync(Framebuffer *src, int channelBits, int bx, int by, int bw, int bh, Draw::DataFormat format, void *pixels, int pixelStride) {
 	D3D11Framebuffer *fb = (D3D11Framebuffer *)src;
 
 	if (fb) {
@@ -1527,11 +1435,10 @@ bool D3D11DrawContext::CopyFramebufferToMemorySync(Framebuffer *src, int channel
 	if (!useGlobalPacktex) {
 		packTex->Release();
 	}
-	stepId_++;
 	return true;
 }
 
-void D3D11DrawContext::BindFramebufferAsRenderTarget(Framebuffer *fbo, const RenderPassInfo &rp, const char *tag) {
+void D3D11DrawContext::BindFramebufferAsRenderTarget(Framebuffer *fbo, const RenderPassInfo &rp) {
 	// TODO: deviceContext1 can actually discard. Useful on Windows Mobile.
 	if (fbo) {
 		D3D11Framebuffer *fb = (D3D11Framebuffer *)fbo;
@@ -1571,8 +1478,6 @@ void D3D11DrawContext::BindFramebufferAsRenderTarget(Framebuffer *fbo, const Ren
 	if (mask && curDepthStencilView_) {
 		context_->ClearDepthStencilView(curDepthStencilView_, mask, rp.clearDepth, rp.clearStencil);
 	}
-
-	stepId_++;
 }
 
 // color must be 0, for now.

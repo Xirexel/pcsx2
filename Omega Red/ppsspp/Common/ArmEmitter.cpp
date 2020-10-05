@@ -586,7 +586,7 @@ void ARMXEmitter::QuickCallFunction(ARMReg reg, const void *func) {
 	}
 }
 
-void ARMXEmitter::SetCodePointer(u8 *ptr, u8 *writePtr)
+void ARMXEmitter::SetCodePointer(u8 *ptr)
 {
 	code = ptr;
 	startcode = code;

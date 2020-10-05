@@ -16,7 +16,6 @@
 // https://github.com/hrydgard/ppsspp and http://www.ppsspp.org/.
 
 #include <cstdio>
-#include <atomic>
 #include <mutex>
 
 #include "Common/Log.h"
@@ -28,8 +27,6 @@
 #include "Core/MIPS/MIPSDebugInterface.h"
 #include "Core/MIPS/JitCommon/JitCommon.h"
 #include "Core/CoreTiming.h"
-
-std::atomic<bool> anyMemChecks_(false);
 
 static std::mutex breakPointsMutex_;
 std::vector<BreakPoint> CBreakPoints::breakPoints_;
@@ -65,7 +62,7 @@ BreakAction MemCheck::Action(u32 addr, bool write, int size, u32 pc) {
 	int mask = write ? MEMCHECK_WRITE : MEMCHECK_READ;
 	if (cond & mask) {
 		Log(addr, write, size, pc);
-		if ((result & BREAK_ACTION_PAUSE) && coreState != CORE_POWERUP) {
+		if (result & BREAK_ACTION_PAUSE) {
 			Core_EnableStepping(true);
 			host->SetDebugMode(true);
 		}
@@ -364,7 +361,7 @@ BreakAction CBreakPoints::ExecBreakPoint(u32 addr) {
 				NOTICE_LOG(JIT, "BKP PC=%08x: %s", addr, formatted.c_str());
 			}
 		}
-		if ((info.result & BREAK_ACTION_PAUSE) && coreState != CORE_POWERUP) {
+		if (info.result & BREAK_ACTION_PAUSE) {
 			Core_EnableStepping(true);
 			host->SetDebugMode(true);
 		}
@@ -391,7 +388,6 @@ void CBreakPoints::AddMemCheck(u32 start, u32 end, MemCheckCondition cond, Break
 		check.result = result;
 
 		memChecks_.push_back(check);
-		anyMemChecks_ = true;
 		guard.unlock();
 		Update();
 	}
@@ -399,7 +395,6 @@ void CBreakPoints::AddMemCheck(u32 start, u32 end, MemCheckCondition cond, Break
 	{
 		memChecks_[mc].cond = (MemCheckCondition)(memChecks_[mc].cond | cond);
 		memChecks_[mc].result = (BreakAction)(memChecks_[mc].result | result);
-		anyMemChecks_ = true;
 		guard.unlock();
 		Update();
 	}
@@ -415,7 +410,6 @@ void CBreakPoints::RemoveMemCheck(u32 start, u32 end)
 	if (mc != INVALID_MEMCHECK)
 	{
 		memChecks_.erase(memChecks_.begin() + mc);
-		anyMemChecks_ = !memChecks_.empty();
 		guard.unlock();
 		Update();
 	}
@@ -505,8 +499,6 @@ MemCheck *CBreakPoints::GetMemCheckLocked(u32 address, int size) {
 
 BreakAction CBreakPoints::ExecMemCheck(u32 address, bool write, int size, u32 pc)
 {
-	if (!anyMemChecks_)
-		return BREAK_ACTION_IGNORE;
 	std::unique_lock<std::mutex> guard(memCheckMutex_);
 	auto check = GetMemCheckLocked(address, size);
 	if (check) {

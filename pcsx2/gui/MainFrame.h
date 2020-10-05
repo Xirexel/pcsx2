@@ -102,7 +102,7 @@ protected:
 	bool			m_RestartEmuOnDelete;
 
 	wxStatusBar&	m_statusbar;
-	wxStaticBitmap*	m_background;
+	wxStaticBitmap	m_background;
 
 	wxMenuBar&		m_menubar;
 
@@ -130,7 +130,9 @@ protected:
 
 	PerPluginMenuInfo	m_PluginMenuPacks[PluginId_Count];
 
+#ifndef DISABLE_RECORDING
 	bool			m_capturingVideo;
+#endif
 
 	virtual void DispatchEvent( const PluginEventType& plugin_evt );
 	virtual void DispatchEvent( const CoreThreadStatus& status );

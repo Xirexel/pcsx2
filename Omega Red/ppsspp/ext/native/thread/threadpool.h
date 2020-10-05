@@ -12,41 +12,41 @@
 // Only handles a single item of work at a time.
 class WorkerThread {
 public:
-	WorkerThread() = default;
+	WorkerThread();
 	virtual ~WorkerThread();
 
-	void StartUp();
-
 	// submit a new work item
-	void Process(std::function<void()> work);
+	void Process(const std::function<void()>& work);
 	// wait for a submitted work item to be completed
 	void WaitForCompletion();
 
 protected:
-	std::thread thread; // the worker thread
+	WorkerThread(bool ignored) : active(true), started(false) {}
+	virtual void WorkFunc();
+
+	std::unique_ptr<std::thread> thread; // the worker thread
 	std::condition_variable signal; // used to signal new work
 	std::condition_variable done; // used to signal work completion
 	std::mutex mutex, doneMutex; // associated with each respective condition variable
-	bool active = true;
+	volatile bool active, started;
 	int jobsDone = 0;
 	int jobsTarget = 0;
 private:
-	virtual void WorkFunc();
-
 	std::function<void()> work_; // the work to be done by this thread
 
-	WorkerThread(const WorkerThread& other) = delete; // prevent copies
-	void operator =(const WorkerThread &other) = delete;
+	WorkerThread(const WorkerThread& other); // prevent copies
+	void operator =(const WorkerThread &other);
 };
 
-class LoopWorkerThread final : public WorkerThread {
+class LoopWorkerThread : public WorkerThread {
 public:
-	LoopWorkerThread() = default;
-	void Process(std::function<void(int, int)> work, int start, int end);
+	LoopWorkerThread();
+	void Process(const std::function<void(int, int)> &work, int start, int end);
+
+protected:
+	virtual void WorkFunc();
 
 private:
-	virtual void WorkFunc() override;
-
 	int start_;
 	int end_;
 	std::function<void(int, int)> work_; // the work to be done by this thread
@@ -65,13 +65,13 @@ public:
 
 private:
 	int numThreads_;
-	std::vector<std::unique_ptr<LoopWorkerThread>> workers;
+	std::vector<std::shared_ptr<LoopWorkerThread>> workers;
 	std::mutex mutex; // used to sequentialize loop execution
 
-	bool workersStarted = false;
+	bool workersStarted;
 	void StartWorkers();
 	
-	ThreadPool(const ThreadPool& other) = delete; // prevent copies
-	void operator =(const ThreadPool &other) = delete;
+	ThreadPool(const ThreadPool& other); // prevent copies
+	void operator =(const ThreadPool &other);
 };
 

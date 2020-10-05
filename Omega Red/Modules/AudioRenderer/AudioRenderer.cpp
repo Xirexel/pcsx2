@@ -1,7 +1,11 @@
-#include "src\PS2E-spu2.h"
+#include "src/PS2E-spu2.h"
 #include "AudioRenderer.h"
 #include "pugixml.hpp"
-#include "winconfig.h"
+#ifdef __ANDROID__
+	#include "androidconfig.h"
+#else
+	#include "winconfig.h"
+#endif
 #include <math.h>
 #include <sstream>
 
@@ -10,7 +14,7 @@
 
 AudioRenderer g_AudioRenderer;
 
-extern void DSSetVolume(LONG lVolume);
+extern void SetVolume(LONG lVolume);
 
 SetDataCallback g_setAudioData = nullptr;
 
@@ -66,7 +70,38 @@ void AudioRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Open")
 				{
-					SPU2open(nullptr);					
+
+					void* l_WindowHandle = nullptr;
+
+					auto l_Attribute = l_ChildNode.attribute(L"WindowHandle");
+
+					if (!l_Attribute.empty())
+					{
+						auto l_value = l_Attribute.as_llong();
+
+						if (l_value != 0)
+						{
+							try
+							{
+
+								l_WindowHandle = (void*)l_value;
+
+							}
+							catch (...)
+							{
+
+							}
+
+						}
+					}
+
+#ifdef __ANDROID__
+                        SPU2open(nullptr);
+#else
+                    if (l_WindowHandle != nullptr)
+                        SPU2open(l_WindowHandle);
+#endif
+				
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Close")
 				{
@@ -140,9 +175,9 @@ void AudioRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
                     if (!l_Attribute.empty()) {
 
                         if (!m_is_muted)
-                            DSSetVolume(((m_volume * -1) * (double)DSBVOLUME_MIN) + DSBVOLUME_MIN);
+                            SetVolume(((m_volume * -1) * (double)DSBVOLUME_MIN) + DSBVOLUME_MIN);
                         else
-                            DSSetVolume(DSBVOLUME_MIN);
+                            SetVolume(DSBVOLUME_MIN);
                     }
                 } else if (std::wstring(l_ChildNode.name()) == L"IsMuted") {
 
@@ -153,9 +188,9 @@ void AudioRenderer::execute(const wchar_t* a_command, wchar_t** a_result)
                     if (!l_Attribute.empty()) {
 
                         if (!m_is_muted)
-                            DSSetVolume(((m_volume * -1) * (double)DSBVOLUME_MIN) + DSBVOLUME_MIN);
+                            SetVolume(((m_volume * -1) * (double)DSBVOLUME_MIN) + DSBVOLUME_MIN);
                         else
-                            DSSetVolume(DSBVOLUME_MIN);
+                            SetVolume(DSBVOLUME_MIN);
                     }
                 }
 

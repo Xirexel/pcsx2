@@ -12,7 +12,6 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Omega_Red.Emulators;
 using Omega_Red.Tools;
 using System;
 using System.Collections.Generic;
@@ -26,22 +25,22 @@ using System.Windows.Threading;
 
 namespace Omega_Red.ViewModels
 {
-    [DataTemplateNameAttribute("VideoInfoItem")]
+    [DataTemplateNameAttribute("ScreenshotInfoItem")]
     class MediaRecorderInfoViewModel : BaseViewModel
     {
         public MediaRecorderInfoViewModel()
         {
-            Emul.Instance.ChangeStatusEvent += (Emul.StatusEnum obj) => {
+            PCSX2Controller.Instance.ChangeStatusEvent += (PCSX2Controller.StatusEnum obj) => {
 
                 switch (obj)
                 {
-                    case Emul.StatusEnum.Stopped:
+                    case PCSX2Controller.StatusEnum.Stopped:
                         //IsCheckedStatus = false;
                         break;
-                    case Emul.StatusEnum.Paused:
-                    case Emul.StatusEnum.NoneInitilized:
-                    case Emul.StatusEnum.Initilized:
-                    case Emul.StatusEnum.Started:
+                    case PCSX2Controller.StatusEnum.Paused:
+                    case PCSX2Controller.StatusEnum.NoneInitilized:
+                    case PCSX2Controller.StatusEnum.Initilized:
+                    case PCSX2Controller.StatusEnum.Started:
                     default:
                         break;
                 }
@@ -109,11 +108,6 @@ namespace Omega_Red.ViewModels
                 mLockVisibility = value;
                 RaisePropertyChangedEvent("LockVisibility");
             }
-        }
-               
-        public Visibility VisibilityVideoRecordingState
-        {
-            get { return Visibility.Visible; }
         }
 
         protected override Managers.IManager Manager

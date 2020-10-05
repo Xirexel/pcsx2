@@ -90,36 +90,13 @@
                     <viewModels:BiosInfoViewModel/>
                 </Expander.DataContext>
                 <Expander.Header>
-                    <Grid HorizontalAlignment="Left">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="auto"/>
-                            <ColumnDefinition />
-                            <ColumnDefinition Width="auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock
+                    <TextBlock
                         TextAlignment="Left"
                         Text="{DynamicResource BIOSTitle}" 
                         FontSize="{DynamicResource TitleFontSize}" 
                         FontWeight="{DynamicResource TitleFontWeight}"
                         Foreground="{DynamicResource MainForegroundBrush}"
                         />
-                        <TextBlock
-                        Grid.Column="1"
-                        TextAlignment="Left"
-                        Text="{Binding CurrentContainerFile}" 
-                        FontSize="{DynamicResource TitleFontSize}" 
-                        FontWeight="{DynamicResource TitleFontWeight}"
-                        Foreground="{DynamicResource MainForegroundBrush}"
-                        />
-                        <TextBlock
-                        Grid.Column="2"
-                        TextAlignment="Left"
-                        Text="{Binding CurrentBiosZone}" 
-                        FontSize="{DynamicResource TitleFontSize}" 
-                        FontWeight="{DynamicResource TitleFontWeight}"
-                        Foreground="{DynamicResource MainForegroundBrush}"
-                        />
-                    </Grid>
                 </Expander.Header>
                 <Expander.Content>
                     <views:ListPanel/>
@@ -147,24 +124,13 @@
                     <viewModels:IsoInfoViewModel/>
                 </Expander.DataContext>
                 <Expander.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
+                    <TextBlock
                         TextAlignment="Left"
                         Text="{DynamicResource ISOTitle}" 
                         FontSize="{DynamicResource TitleFontSize}" 
                         FontWeight="{DynamicResource TitleFontWeight}"
                         Foreground="{DynamicResource MainForegroundBrush}"
                         />
-                        <TextBlock
-                        TextAlignment="Left"
-                        Text="{Binding CurrentGameTitle}" 
-                        FontSize="{DynamicResource TitleFontSize}" 
-                        FontWeight="{DynamicResource TitleFontWeight}"
-                        Foreground="{DynamicResource MainForegroundBrush}"
-                        />
-
-                    </StackPanel>
-                    
                 </Expander.Header>
                 <Expander.Content>
                     <views:ListPanel/>

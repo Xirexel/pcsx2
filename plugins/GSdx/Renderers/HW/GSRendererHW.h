@@ -34,9 +34,9 @@ private:
 	int m_custom_height;
 	bool m_reset;
 	int m_upscale_multiplier;
-	int m_userhacks_ts_half_bottom;
 
 	bool m_large_framebuffer;
+	bool m_disable_ts_half_bottom;
 	bool m_userhacks_align_sprite_X;
 	bool m_userhacks_enabled_gs_mem_clear;
 	bool m_userHacks_merge_sprite;
@@ -52,7 +52,6 @@ private:
 	void OI_GsMemClear(); // always on
 	void OI_DoubleHalfClear(GSTexture* rt, GSTexture* ds); // always on
 
-	bool OI_BigMuthaTruckers(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_FFXII(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_FFX(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_MetalSlug6(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);

@@ -254,9 +254,7 @@ struct TArraySizes {
     void addInnerSize() { addInnerSize((unsigned)UnsizedArraySize); }
     void addInnerSize(int s) { addInnerSize((unsigned)s, nullptr); }
     void addInnerSize(int s, TIntermTyped* n) { sizes.push_back((unsigned)s, n); }
-    void addInnerSize(TArraySize pair) {
-        sizes.push_back(pair.size, pair.node);
-    }
+    void addInnerSize(TArraySize pair) { sizes.push_back(pair.size, pair.node); }
     void addInnerSizes(const TArraySizes& s) { sizes.push_back(s.sizes); }
     void changeOuterSize(int s) { sizes.changeFront((unsigned)s); }
     int getImplicitSize() const { return implicitArraySize; }
@@ -320,8 +318,8 @@ struct TArraySizes {
     void setVariablyIndexed() { variablyIndexed = true; }
     bool isVariablyIndexed() const { return variablyIndexed; }
 
-    bool operator==(const TArraySizes& rhs) const { return sizes == rhs.sizes; }
-    bool operator!=(const TArraySizes& rhs) const { return sizes != rhs.sizes; }
+    bool operator==(const TArraySizes& rhs) { return sizes == rhs.sizes; }
+    bool operator!=(const TArraySizes& rhs) { return sizes != rhs.sizes; }
 
 protected:
     TSmallArrayVector sizes;

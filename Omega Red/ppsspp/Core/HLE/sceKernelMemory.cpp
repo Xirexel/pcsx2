@@ -213,6 +213,10 @@ struct SceKernelVplHeader {
 		do {
 			auto b = prev->next;
 			if (b->sizeInBlocks > allocBlocks) {
+				if (nextFreeBlock_ == b) {
+					nextFreeBlock_ = prev;
+				}
+				prev = b;
 				b = SplitBlock(b, allocBlocks);
 			}
 
@@ -285,13 +289,16 @@ struct SceKernelVplHeader {
 	void UnlinkFreeBlock(PSPPointer<SceKernelVplBlock> b, PSPPointer<SceKernelVplBlock> prev) {
 		allocatedInBlocks_ += b->sizeInBlocks;
 		prev->next = b->next;
-		nextFreeBlock_ = prev;
+		if (nextFreeBlock_ == b) {
+			nextFreeBlock_ = prev;
+		}
 		b->next = SentinelPtr();
 	}
 
 	PSPPointer<SceKernelVplBlock> SplitBlock(PSPPointer<SceKernelVplBlock> b, u32 allocBlocks) {
-		u32 prev = b.ptr;
+		u32 prev = b->next.ptr;
 		b->sizeInBlocks -= allocBlocks;
+		b->next = b + b->sizeInBlocks;
 
 		b += b->sizeInBlocks;
 		b->sizeInBlocks = allocBlocks;
@@ -969,7 +976,7 @@ static u32 sceKernelTotalFreeMemSize()
 	return retVal;
 }
 
-int sceKernelAllocPartitionMemory(int partition, const char *name, int type, u32 size, u32 addr)
+static int sceKernelAllocPartitionMemory(int partition, const char *name, int type, u32 size, u32 addr)
 {
 	if (name == NULL)
 	{
@@ -1019,14 +1026,14 @@ int sceKernelAllocPartitionMemory(int partition, const char *name, int type, u32
 	return uid;
 }
 
-int sceKernelFreePartitionMemory(SceUID id)
+static int sceKernelFreePartitionMemory(SceUID id)
 {
 	DEBUG_LOG(SCEKERNEL,"sceKernelFreePartitionMemory(%d)",id);
 
 	return kernelObjects.Destroy<PartitionMemoryBlock>(id);
 }
 
-u32 sceKernelGetBlockHeadAddr(SceUID id)
+static u32 sceKernelGetBlockHeadAddr(SceUID id)
 {
 	u32 error;
 	PartitionMemoryBlock *block = kernelObjects.Get<PartitionMemoryBlock>(id, error);
@@ -2286,6 +2293,16 @@ const HLEFunction SysMemUserForUser[] = {
 	{0XFE707FDF, &WrapU_CUUU<AllocMemoryBlock>,                   "SysMemUserForUser_FE707FDF",            'x', "sxxx" },  // AllocMemoryBlock
 	{0XD8DE5C1E, &WrapU_V<SysMemUserForUser_D8DE5C1E>,            "SysMemUserForUser_D8DE5C1E",            'x', ""     },
 };
+
+const HLEFunction SysMemForKernel[] = {
+	{0x636C953B, nullptr,                                         "SysMemForKernel_636c953b",              '?', ""        },
+	{0xC9805775, nullptr,                                         "SysMemForKernel_c9805775",              '?', ""        },
+	{0x1C1FBFE7, nullptr,                                         "SysMemForKernel_1c1fbfe7",              '?', ""        },
+};
+
+void Register_SysMemForKernel() {
+	RegisterModule("SysMemForKernel", ARRAY_SIZE(SysMemForKernel), SysMemForKernel);
+}
 
 void Register_SysMemUserForUser() {
 	RegisterModule("SysMemUserForUser", ARRAY_SIZE(SysMemUserForUser), SysMemUserForUser);

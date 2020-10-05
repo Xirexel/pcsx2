@@ -15,7 +15,6 @@
 // Official git repository and contact information can be found at
 // https://github.com/hrydgard/ppsspp and http://www.ppsspp.org/.
 
-#include "Common/ColorConv.h"
 #include "Common/Vulkan/VulkanContext.h"
 #include "GPU/GPUState.h"
 #include "GPU/Common/DepalettizeShaderCommon.h"
@@ -38,8 +37,8 @@ void main() {
 
 static const VkComponentMapping VULKAN_4444_SWIZZLE = { VK_COMPONENT_SWIZZLE_A, VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B };
 static const VkComponentMapping VULKAN_1555_SWIZZLE = { VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_A };
-static const VkComponentMapping VULKAN_565_SWIZZLE = { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY };
-static const VkComponentMapping VULKAN_8888_SWIZZLE = { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY };
+static const VkComponentMapping VULKAN_565_SWIZZLE = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
+static const VkComponentMapping VULKAN_8888_SWIZZLE = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 
 static VkFormat GetClutDestFormat(GEPaletteFormat format, VkComponentMapping *componentMapping) {
 	switch (format) {
@@ -70,11 +69,8 @@ DepalShaderCacheVulkan::~DepalShaderCacheVulkan() {
 
 void DepalShaderCacheVulkan::DeviceLost() {
 	Clear();
-	if (vshader_) {
-		vulkan2D_->PurgeVertexShader(vshader_);
+	if (vshader_)
 		vulkan_->Delete().QueueDeleteShaderModule(vshader_);
-		vshader_ = VK_NULL_HANDLE;
-	}
 	draw_ = nullptr;
 	vulkan_ = nullptr;
 }
@@ -111,7 +107,6 @@ DepalShaderVulkan *DepalShaderCacheVulkan::GetDepalettizeShader(uint32_t clutMod
 	VkPipeline pipeline = vulkan2D_->GetPipeline(rp, vshader_, fshader);
 	// Can delete the shader module now that the pipeline has been created.
 	// Maybe don't even need to queue it..
-	vulkan2D_->PurgeFragmentShader(fshader, true);
 	vulkan_->Delete().QueueDeleteShaderModule(fshader);
 
 	DepalShaderVulkan *depal = new DepalShaderVulkan();
@@ -121,7 +116,7 @@ DepalShaderVulkan *DepalShaderCacheVulkan::GetDepalettizeShader(uint32_t clutMod
 	return depal;
 }
 
-VulkanTexture *DepalShaderCacheVulkan::GetClutTexture(GEPaletteFormat clutFormat, u32 clutHash, u32 *rawClut, bool expandTo32bit) {
+VulkanTexture *DepalShaderCacheVulkan::GetClutTexture(GEPaletteFormat clutFormat, u32 clutHash, u32 *rawClut) {
 	u32 clutId = GetClutID(clutFormat, clutHash);
 	auto oldtex = texCache_.find(clutId);
 	if (oldtex != texCache_.end()) {
@@ -132,36 +127,7 @@ VulkanTexture *DepalShaderCacheVulkan::GetClutTexture(GEPaletteFormat clutFormat
 
 	VkComponentMapping componentMapping;
 	VkFormat destFormat = GetClutDestFormat(clutFormat, &componentMapping);
-
 	int texturePixels = clutFormat == GE_CMODE_32BIT_ABGR8888 ? 256 : 512;
-	int bpp = clutFormat == GE_CMODE_32BIT_ABGR8888 ? 4 : 2;
-	VkFormat dstFmt;
-	uint32_t *expanded = nullptr;
-	if (expandTo32bit && clutFormat != GE_CMODE_32BIT_ABGR8888) {
-		expanded = new uint32_t[texturePixels];
-		switch (clutFormat) {
-		case GE_CMODE_16BIT_ABGR4444:
-			ConvertRGBA4444ToRGBA8888(expanded, (const uint16_t *)rawClut, texturePixels);
-			break;
-		case GE_CMODE_16BIT_ABGR5551:
-			ConvertRGBA5551ToRGBA8888(expanded, (const uint16_t *)rawClut, texturePixels);
-			break;
-		case GE_CMODE_16BIT_BGR5650:
-			ConvertRGB565ToRGBA8888(expanded, (const uint16_t *)rawClut, texturePixels);
-			break;
-		default:
-			break;
-		}
-		rawClut = expanded;
-		dstFmt = VK_FORMAT_R8G8B8A8_UNORM;
-		bpp = 4;
-		componentMapping.r = VkComponentSwizzle::VK_COMPONENT_SWIZZLE_IDENTITY;
-		componentMapping.g = VkComponentSwizzle::VK_COMPONENT_SWIZZLE_IDENTITY;
-		componentMapping.b = VkComponentSwizzle::VK_COMPONENT_SWIZZLE_IDENTITY;
-		componentMapping.a = VkComponentSwizzle::VK_COMPONENT_SWIZZLE_IDENTITY;
-	} else {
-		dstFmt = GetClutDestFormat(clutFormat, &componentMapping);
-	}
 
 	VulkanTexture *vktex = new VulkanTexture(vulkan_);
 	vktex->SetTag("DepalClut");
@@ -182,11 +148,6 @@ VulkanTexture *DepalShaderCacheVulkan::GetClutTexture(GEPaletteFormat clutFormat
 	tex->texture = vktex;
 	tex->lastFrame = gpuStats.numFlips;
 	texCache_[clutId] = tex;
-
-	if (expandTo32bit) {
-		delete[] expanded;
-	}
-
 	return tex->texture;
 }
 

@@ -96,7 +96,7 @@ PPSSPP_UWPMain::PPSSPP_UWPMain(App ^app, const std::shared_ptr<DX::DeviceResourc
 	if (g_Config.memStickDirectory.back() != '/')
 		g_Config.memStickDirectory += "/";
 
-	// On Win32 it makes more sense to initialize the system directories here
+	// On Win32 it makes more sense to initialize the system directories here 
 	// because the next place it was called was in the EmuThread, and it's too late by then.
 	InitSysDirectories();
 
@@ -170,6 +170,12 @@ bool PPSSPP_UWPMain::Render() {
 	time_update();
 	auto context = m_deviceResources->GetD3DDeviceContext();
 
+	auto bounds = Windows::UI::ViewManagement::ApplicationView::GetForCurrentView()->VisibleBounds;
+
+	int boundTop = bounds.Top;
+	int boundLeft = bounds.Left;
+	int boundedWidth = bounds.Width;
+	int boundedHeight = bounds.Height;
 
 	switch (m_deviceResources->ComputeDisplayRotation()) {
 	case DXGI_MODE_ROTATION_IDENTITY: g_display_rotation = DisplayRotation::ROTATE_0; break;
@@ -192,6 +198,8 @@ bool PPSSPP_UWPMain::Render() {
 	}
 
 	g_dpi = m_deviceResources->GetActualDpi();
+	pixel_xres = (g_dpi / 96.0f) * boundedWidth;
+	pixel_yres = (g_dpi / 96.0f) * boundedHeight;
 
 	if (System_GetPropertyInt(SYSPROP_DEVICE_TYPE) == DEVICE_TYPE_MOBILE) {
 		// Boost DPI a bit to look better.
@@ -328,7 +336,7 @@ void UWPGraphicsContext::Shutdown() {
 }
 
 void UWPGraphicsContext::SwapInterval(int interval) {
-
+	
 }
 
 std::string System_GetProperty(SystemProperty prop) {
@@ -357,6 +365,8 @@ int System_GetPropertyInt(SystemProperty prop) {
 	switch (prop) {
 	case SYSPROP_AUDIO_SAMPLE_RATE:
 		return winAudioBackend ? winAudioBackend->GetSampleRate() : -1;
+	case SYSPROP_DISPLAY_REFRESH_RATE:
+		return 60000;
 	case SYSPROP_DEVICE_TYPE:
 	{
 		auto ver = Windows::System::Profile::AnalyticsInfo::VersionInfo;
@@ -368,20 +378,6 @@ int System_GetPropertyInt(SystemProperty prop) {
 			return DEVICE_TYPE_DESKTOP;
 		}
 	}
-	default:
-		return -1;
-	}
-}
-
-float System_GetPropertyFloat(SystemProperty prop) {
-	switch (prop) {
-	case SYSPROP_DISPLAY_REFRESH_RATE:
-		return 60.f;
-	case SYSPROP_DISPLAY_SAFE_INSET_LEFT:
-	case SYSPROP_DISPLAY_SAFE_INSET_RIGHT:
-	case SYSPROP_DISPLAY_SAFE_INSET_TOP:
-	case SYSPROP_DISPLAY_SAFE_INSET_BOTTOM:
-		return 0.0f;
 	default:
 		return -1;
 	}
@@ -478,15 +474,18 @@ PermissionStatus System_GetPermissionStatus(SystemPermission permission) {
 	return PERMISSION_STATUS_GRANTED;
 }
 
-void System_InputBoxGetString(const std::string &title, const std::string &defaultValue, std::function<void(bool, const std::string &)> cb) {
-	// TODO
-	cb(false, "");
+bool System_InputBoxGetString(const char *title, const char *defaultValue, char *outValue, size_t outLength) {
+	return false;
+}
+
+bool System_InputBoxGetWString(const wchar_t *title, const std::wstring &defaultvalue, std::wstring &outvalue) {
+	return false;
 }
 
 std::string GetCPUBrandString() {
 	Platform::String^ cpu_id = nullptr;
 	Platform::String^ cpu_name = nullptr;
-
+	
 	// GUID_DEVICE_PROCESSOR: {97FADB10-4E33-40AE-359C-8BEF029DBDD0}
 	Platform::String^ if_filter = L"System.Devices.InterfaceClassGuid:=\"{97FADB10-4E33-40AE-359C-8BEF029DBDD0}\"";
 

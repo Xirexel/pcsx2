@@ -21,9 +21,6 @@
     <Filter Include="Header Files\Threading">
       <UniqueIdentifier>{a3d21581-efe9-4749-a801-0ae50cbed855}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Extend">
-      <UniqueIdentifier>{cf5063ab-cda9-4a53-9b50-cdec70473669}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\common\src\Utilities\AlignedMalloc.cpp">
@@ -74,11 +71,11 @@
     <ClCompile Include="..\..\..\common\src\Utilities\Windows\WinThreads.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\common\src\Utilities\Windows\WinMisc.cpp">
+    <ClCompile Include="..\..\..\common\src\Utilities\Windows\WinHostSys.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="Extend\WinHostSys.cpp">
-      <Filter>Source Files\Extend</Filter>
+    <ClCompile Include="..\..\..\common\src\Utilities\Windows\WinMisc.cpp">
+      <Filter>Source Files\Windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

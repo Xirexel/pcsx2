@@ -204,6 +204,14 @@ struct PluginConf
 
 #if defined(__unix__)
 
+#ifdef __ANDROID__
+
+static void SysMessage(const char *fmt, ...){}
+
+static void __forceinline PluginNullConfigure(std::string desc, int &log){}
+
+#else
+
 static void SysMessage(const char *fmt, ...)
 {
     va_list list;
@@ -255,6 +263,8 @@ static void __forceinline PluginNullConfigure(std::string desc, int &log)
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
 }
+#endif
+
 
 #define ENTRY_POINT /* We don't need no stinkin' entry point! */
 

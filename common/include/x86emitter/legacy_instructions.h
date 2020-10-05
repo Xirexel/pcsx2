@@ -15,8 +15,8 @@
 
 #pragma once
 
-//#define SPAM_DEPRECATION_WARNINGS
-#if defined(__linux__) && defined(__clang__) && defined(SPAM_DEPRECATION_WARNINGS)
+#if defined(__linux__) && defined(__clang__)
+#define ATTR_DEP [[deprecated]]
 #define ATTR_DEP [[deprecated]]
 #else
 #define ATTR_DEP

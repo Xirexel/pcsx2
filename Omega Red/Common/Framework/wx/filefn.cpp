@@ -14,9 +14,30 @@
 
 
 #include "filefn.h"
-
+#ifdef __ANDROID__
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
+#endif		
 
 wxString wxGetCwd()
 {
 	return L"";
+}
+
+int wxOpen(const wxString &path, int flags, int mode)
+{
+	return wxCRT_Open(path.c_str(), flags, mode);
+}
+
+int wxCRT_Open(const char *filename, int oflag, int mode)
+{
+    int fd = 0;
+#ifdef __ANDROID__
+    fd = open(filename, oflag);
+#endif		
+    return fd;
 }

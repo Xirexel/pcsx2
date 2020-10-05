@@ -5,7 +5,6 @@
 
 using namespace metal;
 
-static inline __attribute__((always_inline))
 void out_test_0(thread const int& cond, thread int& i)
 {
     if (cond == 0)
@@ -18,7 +17,6 @@ void out_test_0(thread const int& cond, thread int& i)
     }
 }
 
-static inline __attribute__((always_inline))
 void out_test_1(thread const int& cond, thread int& i)
 {
     switch (cond)
@@ -36,7 +34,6 @@ void out_test_1(thread const int& cond, thread int& i)
     }
 }
 
-static inline __attribute__((always_inline))
 void inout_test_0(thread const int& cond, thread int& i)
 {
     if (cond == 0)
@@ -45,7 +42,6 @@ void inout_test_0(thread const int& cond, thread int& i)
     }
 }
 
-static inline __attribute__((always_inline))
 void inout_test_1(thread const int& cond, thread int& i)
 {
     switch (cond)

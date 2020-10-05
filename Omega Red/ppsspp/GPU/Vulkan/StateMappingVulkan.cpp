@@ -131,7 +131,7 @@ void DrawEngineVulkan::ResetShaderBlending() {
 void DrawEngineVulkan::ConvertStateToVulkanKey(FramebufferManagerVulkan &fbManager, ShaderManagerVulkan *shaderManager, int prim, VulkanPipelineRasterStateKey &key, VulkanDynamicState &dynState) {
 	key.topology = primToVulkan[prim];
 
-	bool useBufferedRendering = framebufferManager_->UseBufferedRendering();
+	bool useBufferedRendering = g_Config.iRenderingMode != FB_NON_BUFFERED_MODE;
 
 	if (gstate_c.IsDirty(DIRTY_BLEND_STATE)) {
 		gstate_c.SetAllowShaderBlend(!g_Config.bDisableSlowFramebufEffects);
@@ -172,8 +172,6 @@ void DrawEngineVulkan::ConvertStateToVulkanKey(FramebufferManagerVulkan &fbManag
 					// Until next time, force it off.
 					ResetShaderBlending();
 					gstate_c.SetAllowShaderBlend(false);
-					// Make sure we recompute the fragment shader ID to one that doesn't try to use shader blending.
-					gstate_c.Dirty(DIRTY_FRAGMENTSHADER_STATE);
 				}
 			} else if (blendState.resetShaderBlending) {
 				ResetShaderBlending();
@@ -239,7 +237,7 @@ void DrawEngineVulkan::ConvertStateToVulkanKey(FramebufferManagerVulkan &fbManag
 			key.colorWriteMask = (rmask ? VK_COLOR_COMPONENT_R_BIT : 0) | (gmask ? VK_COLOR_COMPONENT_G_BIT : 0) | (bmask ? VK_COLOR_COMPONENT_B_BIT : 0) | (amask ? VK_COLOR_COMPONENT_A_BIT : 0);
 
 			// Workaround proposed in #10421, for bug where the color write mask is not applied correctly on Adreno.
-			if ((gstate.pmskc & 0x00FFFFFF) == 0x00FFFFFF && g_Config.bVendorBugChecksEnabled && draw_->GetBugs().Has(Draw::Bugs::COLORWRITEMASK_BROKEN_WITH_DEPTHTEST)) {
+			if ((gstate.pmskc & 0x00FFFFFF) == 0x00FFFFFF && vulkan_->GetPhysicalDeviceProperties().properties.vendorID == VULKAN_VENDOR_QUALCOMM) {
 				key.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 				if (!key.blendEnable) {
 					key.blendEnable = true;
@@ -415,6 +413,8 @@ void DrawEngineVulkan::ApplyDrawStateLate(VulkanRenderManager *renderManager, bo
 		renderManager->SetStencilParams(dynState_.stencilWriteMask, dynState_.stencilCompareMask, applyStencilRef ? stencilRef : dynState_.stencilRef);
 	}
 	if (gstate_c.IsDirty(DIRTY_BLEND_STATE) && useBlendConstant) {
-		renderManager->SetBlendFactor(dynState_.blendColor);
+		float bc[4];
+		Uint8x4ToFloat4(bc, dynState_.blendColor);
+		renderManager->SetBlendFactor(bc);
 	}
 }

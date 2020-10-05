@@ -38,14 +38,19 @@
 
 #include "GPU/ge_constants.h"
 #include "GPU/GPUState.h"
-#include "GPU/Common/TextureCacheCommon.h"
-#include "GPU/Common/TextureDecoder.h"
 #include "GPU/Vulkan/TextureCacheVulkan.h"
 #include "GPU/Vulkan/FramebufferVulkan.h"
 #include "GPU/Vulkan/FragmentShaderGeneratorVulkan.h"
 #include "GPU/Vulkan/DepalettizeShaderVulkan.h"
 #include "GPU/Vulkan/ShaderManagerVulkan.h"
 #include "GPU/Vulkan/DrawEngineVulkan.h"
+#include "GPU/Common/TextureDecoder.h"
+
+#ifdef _M_SSE
+#include <emmintrin.h>
+#endif
+
+#define TEXCACHE_MAX_TEXELS_SCALED (256*256)  // Per frame
 
 #define TEXCACHE_MIN_SLAB_SIZE (8 * 1024 * 1024)
 #define TEXCACHE_MAX_SLAB_SIZE (32 * 1024 * 1024)
@@ -61,450 +66,6 @@ static const VkComponentMapping VULKAN_4444_SWIZZLE = { VK_COMPONENT_SWIZZLE_A, 
 static const VkComponentMapping VULKAN_1555_SWIZZLE = { VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_A };
 static const VkComponentMapping VULKAN_565_SWIZZLE = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 static const VkComponentMapping VULKAN_8888_SWIZZLE = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
-
-// 4xBRZ shader - Copyright (C) 2014-2016 DeSmuME team (GPL2+)
-// Hyllian's xBR-vertex code and texel mapping
-// Copyright (C) 2011/2016 Hyllian - sergiogdb@gmail.com
-// TODO: Handles alpha badly for PSP.
-const char *shader4xbrz = R"(
-vec4 premultiply_alpha(vec4 c) { float a = clamp(c.a, 0.0, 1.0); return vec4(c.rgb * a, a); }
-vec4 postdivide_alpha(vec4 c) { return c.a < 0.001? vec4(0.0,0.0,0.0,0.0) : vec4(c.rgb / c.a, c.a); }
-
-#define BLEND_ALPHA 1
-#define BLEND_NONE 0
-#define BLEND_NORMAL 1
-#define BLEND_DOMINANT 2
-#define LUMINANCE_WEIGHT 1.0
-#define EQUAL_COLOR_TOLERANCE 30.0/255.0
-#define STEEP_DIRECTION_THRESHOLD 2.2
-#define DOMINANT_DIRECTION_THRESHOLD 3.6
-
-float reduce(vec4 color) {
-	return dot(color.rgb, vec3(65536.0, 256.0, 1.0));
-}
-
-float DistYCbCr(vec4 pixA, vec4 pixB) {
-	const vec3 w = vec3(0.2627, 0.6780, 0.0593);
-	const float scaleB = 0.5 / (1.0 - w.b);
-	const float scaleR = 0.5 / (1.0 - w.r);
-	vec4 diff = pixA - pixB;
-	float Y = dot(diff.rgb, w);
-	float Cb = scaleB * (diff.b - Y);
-	float Cr = scaleR * (diff.r - Y);
-
-	return sqrt( ((LUMINANCE_WEIGHT * Y) * (LUMINANCE_WEIGHT * Y)) + (Cb * Cb) + (Cr * Cr) + (diff.a * diff.a));
-}
-
-bool IsPixEqual(const vec4 pixA, const vec4 pixB) {
-	return (DistYCbCr(pixA, pixB) < EQUAL_COLOR_TOLERANCE);
-}
-
-bool IsBlendingNeeded(const ivec4 blend) {
-	ivec4 diff = blend - ivec4(BLEND_NONE);
-	return diff.x != 0 || diff.y != 0 || diff.z != 0 || diff.w != 0;
-}
-
-vec4 applyScalingf(uvec2 origxy, uvec2 xy) {
-	float dx = 1.0 / params.width;
-	float dy = 1.0 / params.height;
-
-	//    A1 B1 C1
-	// A0 A  B  C C4
-	// D0 D  E  F F4
-	// G0 G  H  I I4
-	//    G5 H5 I5
-
-	uvec4 t1 = uvec4(origxy.x - 1, origxy.x, origxy.x + 1, origxy.y - 2); // A1 B1 C1
-	uvec4 t2 = uvec4(origxy.x - 1, origxy.x, origxy.x + 1, origxy.y - 1); // A B C
-	uvec4 t3 = uvec4(origxy.x - 1, origxy.x, origxy.x + 1, origxy.y + 0); // D E F
-	uvec4 t4 = uvec4(origxy.x - 1, origxy.x, origxy.x + 1, origxy.y + 1); // G H I
-	uvec4 t5 = uvec4(origxy.x - 1, origxy.x, origxy.x + 1, origxy.y + 2); // G5 H5 I5
-	uvec4 t6 = uvec4(origxy.x - 2, origxy.y - 1, origxy.y, origxy.y + 1); // A0 D0 G0
-	uvec4 t7 = uvec4(origxy.x + 2, origxy.y - 1, origxy.y, origxy.y + 1); // C4 F4 I4
-
-	vec2 f = fract(vec2(float(xy.x) / float(params.scale), float(xy.y) / float(params.scale)));
-
-	//---------------------------------------
-	// Input Pixel Mapping:    |21|22|23|
-	//                       19|06|07|08|09
-	//                       18|05|00|01|10
-	//                       17|04|03|02|11
-	//                         |15|14|13|
-
-	vec4 src[25];
-
-	src[21] = premultiply_alpha(readColorf(t1.xw));
-	src[22] = premultiply_alpha(readColorf(t1.yw));
-	src[23] = premultiply_alpha(readColorf(t1.zw));
-	src[ 6] = premultiply_alpha(readColorf(t2.xw));
-	src[ 7] = premultiply_alpha(readColorf(t2.yw));
-	src[ 8] = premultiply_alpha(readColorf(t2.zw));
-	src[ 5] = premultiply_alpha(readColorf(t3.xw));
-	src[ 0] = premultiply_alpha(readColorf(t3.yw));
-	src[ 1] = premultiply_alpha(readColorf(t3.zw));
-	src[ 4] = premultiply_alpha(readColorf(t4.xw));
-	src[ 3] = premultiply_alpha(readColorf(t4.yw));
-	src[ 2] = premultiply_alpha(readColorf(t4.zw));
-	src[15] = premultiply_alpha(readColorf(t5.xw));
-	src[14] = premultiply_alpha(readColorf(t5.yw));
-	src[13] = premultiply_alpha(readColorf(t5.zw));
-	src[19] = premultiply_alpha(readColorf(t6.xy));
-	src[18] = premultiply_alpha(readColorf(t6.xz));
-	src[17] = premultiply_alpha(readColorf(t6.xw));
-	src[ 9] = premultiply_alpha(readColorf(t7.xy));
-	src[10] = premultiply_alpha(readColorf(t7.xz));
-	src[11] = premultiply_alpha(readColorf(t7.xw));
-
-	float v[9];
-	v[0] = reduce(src[0]);
-	v[1] = reduce(src[1]);
-	v[2] = reduce(src[2]);
-	v[3] = reduce(src[3]);
-	v[4] = reduce(src[4]);
-	v[5] = reduce(src[5]);
-	v[6] = reduce(src[6]);
-	v[7] = reduce(src[7]);
-	v[8] = reduce(src[8]);
-
-	ivec4 blendResult = ivec4(BLEND_NONE);
-
-	// Preprocess corners
-	// Pixel Tap Mapping: --|--|--|--|--
-	//                    --|--|07|08|--
-	//                    --|05|00|01|10
-	//                    --|04|03|02|11
-	//                    --|--|14|13|--
-	// Corner (1, 1)
-	if ( ((v[0] == v[1] && v[3] == v[2]) || (v[0] == v[3] && v[1] == v[2])) == false) {
-		float dist_03_01 = DistYCbCr(src[ 4], src[ 0]) + DistYCbCr(src[ 0], src[ 8]) + DistYCbCr(src[14], src[ 2]) + DistYCbCr(src[ 2], src[10]) + (4.0 * DistYCbCr(src[ 3], src[ 1]));
-		float dist_00_02 = DistYCbCr(src[ 5], src[ 3]) + DistYCbCr(src[ 3], src[13]) + DistYCbCr(src[ 7], src[ 1]) + DistYCbCr(src[ 1], src[11]) + (4.0 * DistYCbCr(src[ 0], src[ 2]));
-		bool dominantGradient = (DOMINANT_DIRECTION_THRESHOLD * dist_03_01) < dist_00_02;
-		blendResult[2] = ((dist_03_01 < dist_00_02) && (v[0] != v[1]) && (v[0] != v[3])) ? ((dominantGradient) ? BLEND_DOMINANT : BLEND_NORMAL) : BLEND_NONE;
-	}
-
-	// Pixel Tap Mapping: --|--|--|--|--
-	//                    --|06|07|--|--
-	//                    18|05|00|01|--
-	//                    17|04|03|02|--
-	//                    --|15|14|--|--
-	// Corner (0, 1)
-	if ( ((v[5] == v[0] && v[4] == v[3]) || (v[5] == v[4] && v[0] == v[3])) == false) {
-		float dist_04_00 = DistYCbCr(src[17], src[ 5]) + DistYCbCr(src[ 5], src[ 7]) + DistYCbCr(src[15], src[ 3]) + DistYCbCr(src[ 3], src[ 1]) + (4.0 * DistYCbCr(src[ 4], src[ 0]));
-		float dist_05_03 = DistYCbCr(src[18], src[ 4]) + DistYCbCr(src[ 4], src[14]) + DistYCbCr(src[ 6], src[ 0]) + DistYCbCr(src[ 0], src[ 2]) + (4.0 * DistYCbCr(src[ 5], src[ 3]));
-		bool dominantGradient = (DOMINANT_DIRECTION_THRESHOLD * dist_05_03) < dist_04_00;
-		blendResult[3] = ((dist_04_00 > dist_05_03) && (v[0] != v[5]) && (v[0] != v[3])) ? ((dominantGradient) ? BLEND_DOMINANT : BLEND_NORMAL) : BLEND_NONE;
-	}
-
-	// Pixel Tap Mapping: --|--|22|23|--
-	//                    --|06|07|08|09
-	//                    --|05|00|01|10
-	//                    --|--|03|02|--
-	//                    --|--|--|--|--
-	// Corner (1, 0)
-	if ( ((v[7] == v[8] && v[0] == v[1]) || (v[7] == v[0] && v[8] == v[1])) == false) {
-		float dist_00_08 = DistYCbCr(src[ 5], src[ 7]) + DistYCbCr(src[ 7], src[23]) + DistYCbCr(src[ 3], src[ 1]) + DistYCbCr(src[ 1], src[ 9]) + (4.0 * DistYCbCr(src[ 0], src[ 8]));
-		float dist_07_01 = DistYCbCr(src[ 6], src[ 0]) + DistYCbCr(src[ 0], src[ 2]) + DistYCbCr(src[22], src[ 8]) + DistYCbCr(src[ 8], src[10]) + (4.0 * DistYCbCr(src[ 7], src[ 1]));
-		bool dominantGradient = (DOMINANT_DIRECTION_THRESHOLD * dist_07_01) < dist_00_08;
-		blendResult[1] = ((dist_00_08 > dist_07_01) && (v[0] != v[7]) && (v[0] != v[1])) ? ((dominantGradient) ? BLEND_DOMINANT : BLEND_NORMAL) : BLEND_NONE;
-	}
-
-	// Pixel Tap Mapping: --|21|22|--|--
-	//                    19|06|07|08|--
-	//                    18|05|00|01|--
-	//                    --|04|03|--|--
-	//                    --|--|--|--|--
-	// Corner (0, 0)
-	if ( ((v[6] == v[7] && v[5] == v[0]) || (v[6] == v[5] && v[7] == v[0])) == false) {
-		float dist_05_07 = DistYCbCr(src[18], src[ 6]) + DistYCbCr(src[ 6], src[22]) + DistYCbCr(src[ 4], src[ 0]) + DistYCbCr(src[ 0], src[ 8]) + (4.0 * DistYCbCr(src[ 5], src[ 7]));
-		float dist_06_00 = DistYCbCr(src[19], src[ 5]) + DistYCbCr(src[ 5], src[ 3]) + DistYCbCr(src[21], src[ 7]) + DistYCbCr(src[ 7], src[ 1]) + (4.0 * DistYCbCr(src[ 6], src[ 0]));
-		bool dominantGradient = (DOMINANT_DIRECTION_THRESHOLD * dist_05_07) < dist_06_00;
-		blendResult[0] = ((dist_05_07 < dist_06_00) && (v[0] != v[5]) && (v[0] != v[7])) ? ((dominantGradient) ? BLEND_DOMINANT : BLEND_NORMAL) : BLEND_NONE;
-	}
-
-	vec4 dst[16];
-	dst[ 0] = src[0];
-	dst[ 1] = src[0];
-	dst[ 2] = src[0];
-	dst[ 3] = src[0];
-	dst[ 4] = src[0];
-	dst[ 5] = src[0];
-	dst[ 6] = src[0];
-	dst[ 7] = src[0];
-	dst[ 8] = src[0];
-	dst[ 9] = src[0];
-	dst[10] = src[0];
-	dst[11] = src[0];
-	dst[12] = src[0];
-	dst[13] = src[0];
-	dst[14] = src[0];
-	dst[15] = src[0];
-
-	// Scale pixel
-	if (IsBlendingNeeded(blendResult) == true) {
-		float dist_01_04 = DistYCbCr(src[1], src[4]);
-		float dist_03_08 = DistYCbCr(src[3], src[8]);
-		bool haveShallowLine = (STEEP_DIRECTION_THRESHOLD * dist_01_04 <= dist_03_08) && (v[0] != v[4]) && (v[5] != v[4]);
-		bool haveSteepLine   = (STEEP_DIRECTION_THRESHOLD * dist_03_08 <= dist_01_04) && (v[0] != v[8]) && (v[7] != v[8]);
-		bool needBlend = (blendResult[2] != BLEND_NONE);
-		bool doLineBlend = (  blendResult[2] >= BLEND_DOMINANT ||
-			((blendResult[1] != BLEND_NONE && !IsPixEqual(src[0], src[4])) ||
-			(blendResult[3] != BLEND_NONE && !IsPixEqual(src[0], src[8])) ||
-			(IsPixEqual(src[4], src[3]) && IsPixEqual(src[3], src[2]) && IsPixEqual(src[2], src[1]) && IsPixEqual(src[1], src[8]) && IsPixEqual(src[0], src[2]) == false) ) == false );
-
-		vec4 blendPix = ( DistYCbCr(src[0], src[1]) <= DistYCbCr(src[0], src[3]) ) ? src[1] : src[3];
-		dst[ 2] = mix(dst[ 2], blendPix, (needBlend && doLineBlend) ? ((haveShallowLine) ? ((haveSteepLine) ? 1.0/3.0 : 0.25) : ((haveSteepLine) ? 0.25 : 0.00)) : 0.00);
-		dst[ 9] = mix(dst[ 9], blendPix, (needBlend && doLineBlend && haveSteepLine) ? 0.25 : 0.00);
-		dst[10] = mix(dst[10], blendPix, (needBlend && doLineBlend && haveSteepLine) ? 0.75 : 0.00);
-		dst[11] = mix(dst[11], blendPix, (needBlend) ? ((doLineBlend) ? ((haveSteepLine) ? 1.00 : ((haveShallowLine) ? 0.75 : 0.50)) : 0.08677704501) : 0.00);
-		dst[12] = mix(dst[12], blendPix, (needBlend) ? ((doLineBlend) ? 1.00 : 0.6848532563) : 0.00);
-		dst[13] = mix(dst[13], blendPix, (needBlend) ? ((doLineBlend) ? ((haveShallowLine) ? 1.00 : ((haveSteepLine) ? 0.75 : 0.50)) : 0.08677704501) : 0.00);
-		dst[14] = mix(dst[14], blendPix, (needBlend && doLineBlend && haveShallowLine) ? 0.75 : 0.00);
-		dst[15] = mix(dst[15], blendPix, (needBlend && doLineBlend && haveShallowLine) ? 0.25 : 0.00);
-
-		dist_01_04 = DistYCbCr(src[7], src[2]);
-		dist_03_08 = DistYCbCr(src[1], src[6]);
-		haveShallowLine = (STEEP_DIRECTION_THRESHOLD * dist_01_04 <= dist_03_08) && (v[0] != v[2]) && (v[3] != v[2]);
-		haveSteepLine   = (STEEP_DIRECTION_THRESHOLD * dist_03_08 <= dist_01_04) && (v[0] != v[6]) && (v[5] != v[6]);
-		needBlend = (blendResult[1] != BLEND_NONE);
-		doLineBlend = (  blendResult[1] >= BLEND_DOMINANT ||
-			!((blendResult[0] != BLEND_NONE && !IsPixEqual(src[0], src[2])) ||
-			(blendResult[2] != BLEND_NONE && !IsPixEqual(src[0], src[6])) ||
-			(IsPixEqual(src[2], src[1]) && IsPixEqual(src[1], src[8]) && IsPixEqual(src[8], src[7]) && IsPixEqual(src[7], src[6]) && !IsPixEqual(src[0], src[8])) ) );
-
-		blendPix = ( DistYCbCr(src[0], src[7]) <= DistYCbCr(src[0], src[1]) ) ? src[7] : src[1];
-		dst[ 1] = mix(dst[ 1], blendPix, (needBlend && doLineBlend) ? ((haveShallowLine) ? ((haveSteepLine) ? 1.0/3.0 : 0.25) : ((haveSteepLine) ? 0.25 : 0.00)) : 0.00);
-		dst[ 6] = mix(dst[ 6], blendPix, (needBlend && doLineBlend && haveSteepLine) ? 0.25 : 0.00);
-		dst[ 7] = mix(dst[ 7], blendPix, (needBlend && doLineBlend && haveSteepLine) ? 0.75 : 0.00);
-		dst[ 8] = mix(dst[ 8], blendPix, (needBlend) ? ((doLineBlend) ? ((haveSteepLine) ? 1.00 : ((haveShallowLine) ? 0.75 : 0.50)) : 0.08677704501) : 0.00);
-		dst[ 9] = mix(dst[ 9], blendPix, (needBlend) ? ((doLineBlend) ? 1.00 : 0.6848532563) : 0.00);
-		dst[10] = mix(dst[10], blendPix, (needBlend) ? ((doLineBlend) ? ((haveShallowLine) ? 1.00 : ((haveSteepLine) ? 0.75 : 0.50)) : 0.08677704501) : 0.00);
-		dst[11] = mix(dst[11], blendPix, (needBlend && doLineBlend && haveShallowLine) ? 0.75 : 0.00);
-		dst[12] = mix(dst[12], blendPix, (needBlend && doLineBlend && haveShallowLine) ? 0.25 : 0.00);
-
-		dist_01_04 = DistYCbCr(src[5], src[8]);
-		dist_03_08 = DistYCbCr(src[7], src[4]);
-		haveShallowLine = (STEEP_DIRECTION_THRESHOLD * dist_01_04 <= dist_03_08) && (v[0] != v[8]) && (v[1] != v[8]);
-		haveSteepLine   = (STEEP_DIRECTION_THRESHOLD * dist_03_08 <= dist_01_04) && (v[0] != v[4]) && (v[3] != v[4]);
-		needBlend = (blendResult[0] != BLEND_NONE);
-		doLineBlend = (  blendResult[0] >= BLEND_DOMINANT ||
-			!((blendResult[3] != BLEND_NONE && !IsPixEqual(src[0], src[8])) ||
-			(blendResult[1] != BLEND_NONE && !IsPixEqual(src[0], src[4])) ||
-			(IsPixEqual(src[8], src[7]) && IsPixEqual(src[7], src[6]) && IsPixEqual(src[6], src[5]) && IsPixEqual(src[5], src[4]) && !IsPixEqual(src[0], src[6])) ) );
-
-		blendPix = ( DistYCbCr(src[0], src[5]) <= DistYCbCr(src[0], src[7]) ) ? src[5] : src[7];
-		dst[ 0] = mix(dst[ 0], blendPix, (needBlend && doLineBlend) ? ((haveShallowLine) ? ((haveSteepLine) ? 1.0/3.0 : 0.25) : ((haveSteepLine) ? 0.25 : 0.00)) : 0.00);
-		dst[15] = mix(dst[15], blendPix, (needBlend && doLineBlend && haveSteepLine) ? 0.25 : 0.00);
-		dst[ 4] = mix(dst[ 4], blendPix, (needBlend && doLineBlend && haveSteepLine) ? 0.75 : 0.00);
-		dst[ 5] = mix(dst[ 5], blendPix, (needBlend) ? ((doLineBlend) ? ((haveSteepLine) ? 1.00 : ((haveShallowLine) ? 0.75 : 0.50)) : 0.08677704501) : 0.00);
-		dst[ 6] = mix(dst[ 6], blendPix, (needBlend) ? ((doLineBlend) ? 1.00 : 0.6848532563) : 0.00);
-		dst[ 7] = mix(dst[ 7], blendPix, (needBlend) ? ((doLineBlend) ? ((haveShallowLine) ? 1.00 : ((haveSteepLine) ? 0.75 : 0.50)) : 0.08677704501) : 0.00);
-		dst[ 8] = mix(dst[ 8], blendPix, (needBlend && doLineBlend && haveShallowLine) ? 0.75 : 0.00);
-		dst[ 9] = mix(dst[ 9], blendPix, (needBlend && doLineBlend && haveShallowLine) ? 0.25 : 0.00);
-
-		dist_01_04 = DistYCbCr(src[3], src[6]);
-		dist_03_08 = DistYCbCr(src[5], src[2]);
-		haveShallowLine = (STEEP_DIRECTION_THRESHOLD * dist_01_04 <= dist_03_08) && (v[0] != v[6]) && (v[7] != v[6]);
-		haveSteepLine   = (STEEP_DIRECTION_THRESHOLD * dist_03_08 <= dist_01_04) && (v[0] != v[2]) && (v[1] != v[2]);
-		needBlend = (blendResult[3] != BLEND_NONE);
-		doLineBlend = (  blendResult[3] >= BLEND_DOMINANT ||
-			!((blendResult[2] != BLEND_NONE && !IsPixEqual(src[0], src[6])) ||
-			(blendResult[0] != BLEND_NONE && !IsPixEqual(src[0], src[2])) ||
-			(IsPixEqual(src[6], src[5]) && IsPixEqual(src[5], src[4]) && IsPixEqual(src[4], src[3]) && IsPixEqual(src[3], src[2]) && !IsPixEqual(src[0], src[4])) ) );
-
-		blendPix = ( DistYCbCr(src[0], src[3]) <= DistYCbCr(src[0], src[5]) ) ? src[3] : src[5];
-		dst[ 3] = mix(dst[ 3], blendPix, (needBlend && doLineBlend) ? ((haveShallowLine) ? ((haveSteepLine) ? 1.0/3.0 : 0.25) : ((haveSteepLine) ? 0.25 : 0.00)) : 0.00);
-		dst[12] = mix(dst[12], blendPix, (needBlend && doLineBlend && haveSteepLine) ? 0.25 : 0.00);
-		dst[13] = mix(dst[13], blendPix, (needBlend && doLineBlend && haveSteepLine) ? 0.75 : 0.00);
-		dst[14] = mix(dst[14], blendPix, (needBlend) ? ((doLineBlend) ? ((haveSteepLine) ? 1.00 : ((haveShallowLine) ? 0.75 : 0.50)) : 0.08677704501) : 0.00);
-		dst[15] = mix(dst[15], blendPix, (needBlend) ? ((doLineBlend) ? 1.00 : 0.6848532563) : 0.00);
-		dst[ 4] = mix(dst[ 4], blendPix, (needBlend) ? ((doLineBlend) ? ((haveShallowLine) ? 1.00 : ((haveSteepLine) ? 0.75 : 0.50)) : 0.08677704501) : 0.00);
-		dst[ 5] = mix(dst[ 5], blendPix, (needBlend && doLineBlend && haveShallowLine) ? 0.75 : 0.00);
-		dst[ 6] = mix(dst[ 6], blendPix, (needBlend && doLineBlend && haveShallowLine) ? 0.25 : 0.00);
-	}
-
-	// select output pixel
-	vec4 res = mix(mix(mix(mix(dst[ 6], dst[ 7], step(0.25, f.x)),
-					mix(dst[ 8], dst[ 9], step(0.75, f.x)),
-					step(0.50, f.x)),
-				mix(mix(dst[ 5], dst[ 0], step(0.25, f.x)),
-					mix(dst[ 1], dst[10], step(0.75, f.x)),
-					step(0.50, f.x)),
-				step(0.25, f.y)),
-		mix(mix(mix(dst[ 4], dst[ 3], step(0.25, f.x)),
-					mix(dst[ 2], dst[11], step(0.75, f.x)),
-					step(0.50, f.x)),
-				mix(mix(dst[15], dst[14], step(0.25, f.x)),
-					mix(dst[13], dst[12], step(0.75, f.x)),
-					step(0.50, f.x)),
-				step(0.75, f.y)),
-		step(0.50, f.y));
-
-	return postdivide_alpha(res);
-}
-
-uint applyScalingu(uvec2 origxy, uvec2 xy) {
-	return packUnorm4x8(applyScalingf(origxy, xy));
-}
-)";
-
-const char *copyShader = R"(
-#version 450
-#extension GL_ARB_separate_shader_objects : enable
-
-// No idea what's optimal here...
-#define WORKGROUP_SIZE 16
-layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = 1) in;
-
-layout(std430, binding = 1) buffer Buf1 {
-	uint data[];
-} buf1;
-
-layout(std430, binding = 2) buffer Buf2 {
-	uint data[];
-} buf2;
-
-layout(push_constant) uniform Params {
-	int width;
-	int height;
-	int scale;
-	int fmt;
-} params;
-
-uint readColoru(uvec2 p) {
-	// Note that if the pixels are packed, we can do multiple stores
-	// and only launch this compute shader for every N pixels,
-	// by slicing the width in half and multiplying x by 2, for example.
-	if (params.fmt == 0) {
-		return buf1.data[p.y * params.width + p.x];
-	} else {
-		uint offset = p.y * params.width + p.x;
-		uint data = buf1.data[offset / 2];
-		if ((offset & 1) != 0) {
-			data = data >> 16;
-		}
-		if (params.fmt == 6) {
-			uint r = ((data << 3) & 0xF8) | ((data >> 2) & 0x07);
-			uint g = ((data >> 3) & 0xFC) | ((data >> 9) & 0x03);
-			uint b = ((data >> 8) & 0xF8) | ((data >> 13) & 0x07);
-			return 0xFF000000 | (b << 16) | (g << 8) | r;
-		} else if (params.fmt == 5) {
-			uint r = ((data << 3) & 0xF8) | ((data >> 2) & 0x07);
-			uint g = ((data >> 2) & 0xF8) | ((data >> 7) & 0x07);
-			uint b = ((data >> 7) & 0xF8) | ((data >> 12) & 0x07);
-			uint a = ((data >> 15) & 0x01) == 0 ? 0x00 : 0xFF;
-			return (a << 24) | (b << 16) | (g << 8) | r;
-		} else if (params.fmt == 4) {
-			uint r = (data & 0x0F) | ((data << 4) & 0x0F);
-			uint g = (data & 0xF0) | ((data >> 4) & 0x0F);
-			uint b = ((data >> 8) & 0x0F) | ((data >> 4) & 0xF0);
-			uint a = ((data >> 12) & 0x0F) | ((data >> 8) & 0xF0);
-			return (a << 24) | (b << 16) | (g << 8) | r;
-		}
-	}
-}
-
-vec4 readColorf(uvec2 p) {
-	return unpackUnorm4x8(readColoru(p));
-}
-
-%s
-
-void main() {
-	uvec2 xy = gl_GlobalInvocationID.xy;
-	// Kill off any out-of-image threads to avoid stray writes.
-	// Should only happen on the tiniest mipmaps as PSP textures are power-of-2,
-	// and we use a 16x16 workgroup size.
-	if (xy.x >= params.width || xy.y >= params.height)
-		return;
-
-	uvec2 origxy = xy / params.scale;
-	if (params.scale == 1) {
-		buf2.data[xy.y * params.width + xy.x] = readColoru(origxy);
-	} else {
-		buf2.data[xy.y * params.width + xy.x] = applyScalingu(origxy, xy);
-	}
-}
-)";
-
-const char *uploadShader = R"(
-#version 450
-#extension GL_ARB_separate_shader_objects : enable
-
-// No idea what's optimal here...
-#define WORKGROUP_SIZE 16
-layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = 1) in;
-
-uniform layout(binding = 0, rgba8) writeonly image2D img;
-
-layout(std430, binding = 1) buffer Buf {
-	uint data[];
-} buf;
-
-layout(push_constant) uniform Params {
-	int width;
-	int height;
-	int scale;
-	int fmt;
-} params;
-
-uint readColoru(uvec2 p) {
-	// Note that if the pixels are packed, we can do multiple stores
-	// and only launch this compute shader for every N pixels,
-	// by slicing the width in half and multiplying x by 2, for example.
-	if (params.fmt == 0) {
-		return buf.data[p.y * params.width + p.x];
-	} else {
-		uint offset = p.y * params.width + p.x;
-		uint data = buf.data[offset / 2];
-		if ((offset & 1) != 0) {
-			data = data >> 16;
-		}
-		if (params.fmt == 6) {
-			uint r = ((data << 3) & 0xF8) | ((data >> 2) & 0x07);
-			uint g = ((data >> 3) & 0xFC) | ((data >> 9) & 0x03);
-			uint b = ((data >> 8) & 0xF8) | ((data >> 13) & 0x07);
-			return 0xFF000000 | (b << 16) | (g << 8) | r;
-		} else if (params.fmt == 5) {
-			uint r = ((data << 3) & 0xF8) | ((data >> 2) & 0x07);
-			uint g = ((data >> 2) & 0xF8) | ((data >> 7) & 0x07);
-			uint b = ((data >> 7) & 0xF8) | ((data >> 12) & 0x07);
-			uint a = ((data >> 15) & 0x01) == 0 ? 0x00 : 0xFF;
-			return (a << 24) | (b << 16) | (g << 8) | r;
-		} else if (params.fmt == 4) {
-			uint r = (data & 0x0F) | ((data << 4) & 0x0F);
-			uint g = (data & 0xF0) | ((data >> 4) & 0x0F);
-			uint b = ((data >> 8) & 0x0F) | ((data >> 4) & 0xF0);
-			uint a = ((data >> 12) & 0x0F) | ((data >> 8) & 0xF0);
-			return (a << 24) | (b << 16) | (g << 8) | r;
-		}
-	}
-}
-
-vec4 readColorf(uvec2 p) {
-	// Unpack the color (we could look it up in a CLUT here if we wanted...)
-	// It's a bit silly that we need to unpack to float and then have imageStore repack,
-	// but the alternative is to store to a buffer, and then launch a vkCmdCopyBufferToImage instead.
-	return unpackUnorm4x8(readColoru(p));
-}
-
-%s
-
-void main() {
-	uvec2 xy = gl_GlobalInvocationID.xy;
-	// Kill off any out-of-image threads to avoid stray writes.
-	// Should only happen on the tiniest mipmaps as PSP textures are power-of-2,
-	// and we use a 16x16 workgroup size.
-	if (xy.x >= params.width || xy.y >= params.height)
-		return;
-
-	uvec2 origxy = xy / params.scale;
-	if (params.scale == 1) {
-		imageStore(img, ivec2(xy.x, xy.y), readColorf(origxy));
-	} else {
-		imageStore(img, ivec2(xy.x, xy.y), applyScalingf(origxy, xy));
-	}
-}
-)";
 
 SamplerCache::~SamplerCache() {
 	DeviceLost();
@@ -580,8 +141,7 @@ std::vector<std::string> SamplerCache::DebugGetSamplerIDs() const {
 TextureCacheVulkan::TextureCacheVulkan(Draw::DrawContext *draw, VulkanContext *vulkan)
 	: TextureCacheCommon(draw),
 		vulkan_(vulkan),
-		samplerCache_(vulkan),
-		computeShaderManager_(vulkan) {
+		samplerCache_(vulkan) {
 	timesInvalidatedAllThisFrame_ = 0;
 	DeviceRestore(vulkan, draw);
 	SetupTextureDecoder();
@@ -620,13 +180,6 @@ void TextureCacheVulkan::DeviceLost() {
 	if (samplerNearest_)
 		vulkan_->Delete().QueueDeleteSampler(samplerNearest_);
 
-	if (uploadCS_ != VK_NULL_HANDLE)
-		vulkan_->Delete().QueueDeleteShaderModule(uploadCS_);
-	if (copyCS_ != VK_NULL_HANDLE)
-		vulkan_->Delete().QueueDeleteShaderModule(copyCS_);
-
-	computeShaderManager_.DeviceLost();
-
 	nextTexture_ = nullptr;
 }
 
@@ -647,19 +200,6 @@ void TextureCacheVulkan::DeviceRestore(VulkanContext *vulkan, Draw::DrawContext 
 	samp.minFilter = VK_FILTER_NEAREST;
 	samp.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
 	vkCreateSampler(vulkan_->GetDevice(), &samp, nullptr, &samplerNearest_);
-
-	std::string error;
-	std::string fullUploadShader = StringFromFormat(uploadShader, shader4xbrz);
-	std::string fullCopyShader = StringFromFormat(copyShader, shader4xbrz);
-
-	if (g_Config.bTexHardwareScaling) {
-		uploadCS_ = CompileShaderModule(vulkan_, VK_SHADER_STAGE_COMPUTE_BIT, fullUploadShader.c_str(), &error);
-		_dbg_assert_msg_(G3D, uploadCS_ != VK_NULL_HANDLE, "failed to compile upload shader");
-		copyCS_ = CompileShaderModule(vulkan_, VK_SHADER_STAGE_COMPUTE_BIT, fullCopyShader.c_str(), &error);
-		_dbg_assert_msg_(G3D, copyCS_!= VK_NULL_HANDLE, "failed to compile copy shader");
-	}
-
-	computeShaderManager_.DeviceRestore(vulkan);
 }
 
 void TextureCacheVulkan::ReleaseTexture(TexCacheEntry *entry, bool delete_them) {
@@ -732,12 +272,10 @@ void TextureCacheVulkan::StartFrame() {
 	}
 
 	allocator_->Begin();
-	computeShaderManager_.BeginFrame();
 }
 
 void TextureCacheVulkan::EndFrame() {
 	allocator_->End();
-	computeShaderManager_.EndFrame();
 
 	if (texelsScaledThisFrame_) {
 		// INFO_LOG(G3D, "Scaled %i texels", texelsScaledThisFrame_);
@@ -807,13 +345,12 @@ void TextureCacheVulkan::ApplyTextureFramebuffer(TexCacheEntry *entry, VirtualFr
 	uint32_t clutMode = gstate.clutformat & 0xFFFFFF;
 
 	bool useShaderDepal = framebufferManager_->GetCurrentRenderVFB() != framebuffer;
-	bool expand32 = !gstate_c.Supports(GPU_SUPPORTS_16BIT_FORMATS);
 
 	if ((entry->status & TexCacheEntry::STATUS_DEPALETTIZE) && !g_Config.bDisableSlowFramebufEffects) {
 		if (useShaderDepal) {
 			depalShaderCache_->SetPushBuffer(drawEngine_->GetPushBufferForTextureData());
 			const GEPaletteFormat clutFormat = gstate.getClutPaletteFormat();
-			VulkanTexture *clutTexture = depalShaderCache_->GetClutTexture(clutFormat, clutHash_, clutBuf_, expand32);
+			VulkanTexture *clutTexture = depalShaderCache_->GetClutTexture(clutFormat, clutHash_, clutBuf_);
 			drawEngine_->SetDepalTexture(clutTexture ? clutTexture->GetImageView() : VK_NULL_HANDLE);
 			// Only point filtering enabled.
 			samplerKey.magFilt = false;
@@ -840,10 +377,10 @@ void TextureCacheVulkan::ApplyTextureFramebuffer(TexCacheEntry *entry, VirtualFr
 	if (depalShader) {
 		depalShaderCache_->SetPushBuffer(drawEngine_->GetPushBufferForTextureData());
 		const GEPaletteFormat clutFormat = gstate.getClutPaletteFormat();
-		VulkanTexture *clutTexture = depalShaderCache_->GetClutTexture(clutFormat, clutHash_, clutBuf_, expand32);
+		VulkanTexture *clutTexture = depalShaderCache_->GetClutTexture(clutFormat, clutHash_, clutBuf_);
 
 		Draw::Framebuffer *depalFBO = framebufferManager_->GetTempFBO(TempFBO::DEPAL, framebuffer->renderWidth, framebuffer->renderHeight, Draw::FBO_8888);
-		draw_->BindFramebufferAsRenderTarget(depalFBO, { Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE }, "Depal");
+		draw_->BindFramebufferAsRenderTarget(depalFBO, { Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE });
 
 		Vulkan2D::Vertex verts[4] = {
 			{ -1, -1, 0.0f, 0, 0 },
@@ -917,7 +454,7 @@ void TextureCacheVulkan::ApplyTextureFramebuffer(TexCacheEntry *entry, VirtualFr
 		TexCacheEntry::TexStatus alphaStatus = CheckAlpha(clutBuf_, getClutDestFormatVulkan(clutFormat), clutTotalColors, clutTotalColors, 1);
 		gstate_c.SetTextureFullAlpha(alphaStatus == TexCacheEntry::STATUS_ALPHA_FULL);
 
-		framebufferManager_->RebindFramebuffer("RebindFramebuffer - ApplyTextureFramebuffer");
+		framebufferManager_->RebindFramebuffer();
 		draw_->BindFramebufferAsTexture(depalFBO, 0, Draw::FB_COLOR_BIT, 0);
 		imageView_ = (VkImageView)draw_->GetNativeObject(Draw::NativeObject::BOUND_TEXTURE0_IMAGEVIEW);
 
@@ -928,6 +465,7 @@ void TextureCacheVulkan::ApplyTextureFramebuffer(TexCacheEntry *entry, VirtualFr
 	} else {
 		entry->status &= ~TexCacheEntry::STATUS_DEPALETTIZE;
 
+		framebufferManager_->RebindFramebuffer();  // TODO: This line should usually not be needed.
 		imageView_ = framebufferManagerVulkan_->BindFramebufferAsColorTexture(0, framebuffer, BINDFBCOLOR_MAY_COPY_WITH_UV | BINDFBCOLOR_APPLY_TEX_OFFSET);
 		drawEngine_->SetDepalTexture(VK_NULL_HANDLE);
 		gstate_c.SetUseShaderDepal(false);
@@ -1032,14 +570,14 @@ void TextureCacheVulkan::BuildTexture(TexCacheEntry *const entry) {
 	// Don't scale the PPGe texture.
 	if (entry->addr > 0x05000000 && entry->addr < PSP_GetKernelMemoryEnd())
 		scaleFactor = 1;
-	if ((entry->status & TexCacheEntry::STATUS_CHANGE_FREQUENT) != 0 && scaleFactor != 1 && !g_Config.bTexHardwareScaling) {
+	if ((entry->status & TexCacheEntry::STATUS_CHANGE_FREQUENT) != 0 && scaleFactor != 1) {
 		// Remember for later that we /wanted/ to scale this texture.
 		entry->status |= TexCacheEntry::STATUS_TO_SCALE;
 		scaleFactor = 1;
 	}
 
 	if (scaleFactor != 1) {
-		if (texelsScaledThisFrame_ >= TEXCACHE_MAX_TEXELS_SCALED && !g_Config.bTexHardwareScaling) {
+		if (texelsScaledThisFrame_ >= TEXCACHE_MAX_TEXELS_SCALED) {
 			entry->status |= TexCacheEntry::STATUS_TO_SCALE;
 			scaleFactor = 1;
 		} else {
@@ -1058,9 +596,6 @@ void TextureCacheVulkan::BuildTexture(TexCacheEntry *const entry) {
 	if (replaced.Valid()) {
 		actualFmt = ToVulkanFormat(replaced.Format(0));
 	}
-
-	bool computeUpload = false;
-	bool computeCopy = false;
 
 	{
 		delete entry->vkTex;
@@ -1086,29 +621,11 @@ void TextureCacheVulkan::BuildTexture(TexCacheEntry *const entry) {
 			break;
 		}
 
-		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-		// If we want to use the GE debugger, we should add VK_IMAGE_USAGE_TRANSFER_SRC_BIT too...
-
-		// Compute experiment
-		if (actualFmt == VULKAN_8888_FORMAT && scaleFactor > 1 && g_Config.bTexHardwareScaling) {
-			// Enable the experiment you want.
-			if (uploadCS_ != VK_NULL_HANDLE)
-				computeUpload = true;
-			else if (copyCS_ != VK_NULL_HANDLE)
-				computeCopy = true;
-		}
-
-		if (computeUpload) {
-			usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-			imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-		}
-
 		char texName[128]{};
 		snprintf(texName, sizeof(texName), "Texture%08x", entry->addr);
 		image->SetTag(texName);
 
-		bool allocSuccess = image->CreateDirect(cmdInit, allocator_, w * scaleFactor, h * scaleFactor, maxLevel + 1, actualFmt, imageLayout, usage, mapping);
+		bool allocSuccess = image->CreateDirect(cmdInit, allocator_, w * scaleFactor, h * scaleFactor, maxLevel + 1, actualFmt, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, mapping);
 		if (!allocSuccess && !lowMemoryMode_) {
 			WARN_LOG_REPORT(G3D, "Texture cache ran out of GPU memory; switching to low memory mode");
 			lowMemoryMode_ = true;
@@ -1117,7 +634,7 @@ void TextureCacheVulkan::BuildTexture(TexCacheEntry *const entry) {
 			// TODO: We should stall the GPU here and wipe things out of memory.
 			// As is, it will almost definitely fail the second time, but next frame it may recover.
 
-			auto err = GetI18NCategory("Error");
+			I18NCategory *err = GetI18NCategory("Error");
 			if (scaleFactor > 1) {
 				host->NotifyUserMessage(err->T("Warning: Video memory FULL, reducing upscaling and switching to slow caching mode"), 2.0f);
 			} else {
@@ -1160,9 +677,6 @@ void TextureCacheVulkan::BuildTexture(TexCacheEntry *const entry) {
 			if (replaced.Valid()) {
 				replaced.GetSize(i, mipWidth, mipHeight);
 			}
-			int srcBpp = dstFmt == VULKAN_8888_FORMAT ? 4 : 2;
-			int srcStride = mipWidth * srcBpp;
-			int srcSize = srcStride * mipHeight;
 			int bpp = actualFmt == VULKAN_8888_FORMAT ? 4 : 2;
 			int stride = (mipWidth * bpp + 15) & ~15;
 			int size = stride * mipHeight;
@@ -1170,85 +684,22 @@ void TextureCacheVulkan::BuildTexture(TexCacheEntry *const entry) {
 			VkBuffer texBuf;
 			// nvidia returns 1 but that can't be healthy... let's align by 16 as a minimum.
 			int pushAlignment = std::max(16, (int)vulkan_->GetPhysicalDeviceProperties().properties.limits.optimalBufferCopyOffsetAlignment);
-			void *data;
-			bool dataScaled = true;
+			void *data = drawEngine_->GetPushBufferForTextureData()->PushAligned(size, &bufferOffset, &texBuf, pushAlignment);
 			if (replaced.Valid()) {
-				data = drawEngine_->GetPushBufferForTextureData()->PushAligned(size, &bufferOffset, &texBuf, pushAlignment);
 				replaced.Load(i, data, stride);
-				entry->vkTex->UploadMip(cmdInit, i, mipWidth, mipHeight, texBuf, bufferOffset, stride / bpp);
 			} else {
-				auto dispatchCompute = [&](VkDescriptorSet descSet) {
-					struct Params { int x; int y; int s; int fmt; } params{ mipWidth, mipHeight, scaleFactor, 0 };
-					if (dstFmt == VULKAN_4444_FORMAT) {
-						params.fmt = 4;
-					} else if (dstFmt == VULKAN_1555_FORMAT) {
-						params.fmt = 5;
-					} else if (dstFmt == VULKAN_565_FORMAT) {
-						params.fmt = 6;
-					}
-					vkCmdBindDescriptorSets(cmdInit, VK_PIPELINE_BIND_POINT_COMPUTE, computeShaderManager_.GetPipelineLayout(), 0, 1, &descSet, 0, nullptr);
-					vkCmdPushConstants(cmdInit, computeShaderManager_.GetPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(params), &params);
-					vkCmdDispatch(cmdInit, (mipWidth + 15) / 16, (mipHeight + 15) / 16, 1);
-				};
-
 				if (fakeMipmap) {
-					data = drawEngine_->GetPushBufferForTextureData()->PushAligned(size, &bufferOffset, &texBuf, pushAlignment);
 					LoadTextureLevel(*entry, (uint8_t *)data, stride, level, scaleFactor, dstFmt);
 					entry->vkTex->UploadMip(cmdInit, 0, mipWidth, mipHeight, texBuf, bufferOffset, stride / bpp);
 					break;
 				} else {
-					if (computeUpload) {
-						data = drawEngine_->GetPushBufferForTextureData()->PushAligned(srcSize, &bufferOffset, &texBuf, pushAlignment);
-						dataScaled = false;
-						LoadTextureLevel(*entry, (uint8_t *)data, srcStride, i, 1, dstFmt);
-						// This format can be used with storage images.
-						VkImageView view = entry->vkTex->CreateViewForMip(i);
-						VkDescriptorSet descSet = computeShaderManager_.GetDescriptorSet(view, texBuf, bufferOffset, srcSize);
-						vkCmdBindPipeline(cmdInit, VK_PIPELINE_BIND_POINT_COMPUTE, computeShaderManager_.GetPipeline(uploadCS_));
-						dispatchCompute(descSet);
-						vulkan_->Delete().QueueDeleteImageView(view);
-					} else if (computeCopy) {
-						data = drawEngine_->GetPushBufferForTextureData()->PushAligned(srcSize, &bufferOffset, &texBuf, pushAlignment);
-						dataScaled = false;
-						LoadTextureLevel(*entry, (uint8_t *)data, srcStride, i, 1, dstFmt);
-						// Simple test of using a "copy shader" before the upload. This one could unswizzle or whatever
-						// and will work for any texture format including 16-bit as long as the shader is written to pack it into int32 size bits
-						// which is the smallest possible write.
-						VkBuffer localBuf;
-						uint32_t localOffset;
-						uint32_t localSize = size;
-						localOffset = (uint32_t)drawEngine_->GetPushBufferLocal()->Allocate(localSize, &localBuf);
-
-						VkDescriptorSet descSet = computeShaderManager_.GetDescriptorSet(VK_NULL_HANDLE, texBuf, bufferOffset, srcSize, localBuf, localOffset, localSize);
-						vkCmdBindPipeline(cmdInit, VK_PIPELINE_BIND_POINT_COMPUTE, computeShaderManager_.GetPipeline(copyCS_));
-						dispatchCompute(descSet);
-
-						// After the compute, before the copy, we need a memory barrier.
-						VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER };
-						barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-						barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-						barrier.buffer = localBuf;
-						barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-						barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-						barrier.offset = localOffset;
-						barrier.size = localSize;
-						vkCmdPipelineBarrier(cmdInit, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-							0, 0, nullptr, 1, &barrier, 0, nullptr);
-
-						entry->vkTex->UploadMip(cmdInit, i, mipWidth, mipHeight, localBuf, localOffset, stride / bpp);
-					} else {
-						data = drawEngine_->GetPushBufferForTextureData()->PushAligned(size, &bufferOffset, &texBuf, pushAlignment);
-						LoadTextureLevel(*entry, (uint8_t *)data, stride, i, scaleFactor, dstFmt);
-						entry->vkTex->UploadMip(cmdInit, i, mipWidth, mipHeight, texBuf, bufferOffset, stride / bpp);
-					}
+					LoadTextureLevel(*entry, (uint8_t *)data, stride, i, scaleFactor, dstFmt);
 				}
 				if (replacer_.Enabled()) {
-					// When hardware texture scaling is enabled, this saves the original.
-					int w = dataScaled ? mipWidth : mipWidth / scaleFactor;
-					int h = dataScaled ? mipHeight : mipHeight / scaleFactor;
-					replacer_.NotifyTextureDecoded(replacedInfo, data, stride, i, w, h);
+					replacer_.NotifyTextureDecoded(replacedInfo, data, stride, i, mipWidth, mipHeight);
 				}
 			}
+			entry->vkTex->UploadMip(cmdInit, i, mipWidth, mipHeight, texBuf, bufferOffset, stride / bpp);
 		}
 
 		if (maxLevel == 0) {
@@ -1259,16 +710,13 @@ void TextureCacheVulkan::BuildTexture(TexCacheEntry *const entry) {
 		if (replaced.Valid()) {
 			entry->SetAlphaStatus(TexCacheEntry::TexStatus(replaced.AlphaStatus()));
 		}
-		entry->vkTex->EndCreate(cmdInit, false, computeUpload ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		entry->vkTex->EndCreate(cmdInit);
 	}
 
 	gstate_c.SetTextureFullAlpha(entry->GetAlphaStatus() == TexCacheEntry::STATUS_ALPHA_FULL);
 }
 
 VkFormat TextureCacheVulkan::GetDestFormat(GETextureFormat format, GEPaletteFormat clutFormat) const {
-	if (!gstate_c.Supports(GPU_SUPPORTS_16BIT_FORMATS)) {
-		return VK_FORMAT_R8G8B8A8_UNORM;
-	}
 	switch (format) {
 	case GE_TFMT_CLUT4:
 	case GE_TFMT_CLUT8:
@@ -1334,8 +782,7 @@ void TextureCacheVulkan::LoadTextureLevel(TexCacheEntry &entry, uint8_t *writePt
 			decPitch = w * bpp;
 		}
 
-		bool expand32 = !gstate_c.Supports(GPU_SUPPORTS_16BIT_FORMATS);
-		DecodeTextureLevel((u8 *)pixelData, decPitch, tfmt, clutformat, texaddr, level, bufw, false, false, expand32);
+		DecodeTextureLevel((u8 *)pixelData, decPitch, tfmt, clutformat, texaddr, level, bufw, false, false, false);
 		gpuStats.numTexturesDecoded++;
 
 		// We check before scaling since scaling shouldn't invent alpha from a full alpha texture.
@@ -1350,9 +797,7 @@ void TextureCacheVulkan::LoadTextureLevel(TexCacheEntry &entry, uint8_t *writePt
 
 		if (scaleFactor > 1) {
 			u32 fmt = dstFmt;
-			// CPU scaling reads from the destination buffer so we want cached RAM.
-			uint8_t *rearrange = (uint8_t *)AllocateAlignedMemory(w * scaleFactor * h * scaleFactor * 4, 16);
-			scaler.ScaleAlways((u32 *)rearrange, pixelData, fmt, w, h, scaleFactor);
+			scaler.ScaleAlways((u32 *)writePtr, pixelData, fmt, w, h, scaleFactor);
 			pixelData = (u32 *)writePtr;
 			dstFmt = (VkFormat)fmt;
 
@@ -1362,14 +807,13 @@ void TextureCacheVulkan::LoadTextureLevel(TexCacheEntry &entry, uint8_t *writePt
 			decPitch = w * bpp;
 
 			if (decPitch != rowPitch) {
-				for (int y = 0; y < h; ++y) {
-					memcpy(writePtr + rowPitch * y, rearrange + decPitch * y, w * bpp);
+				// Rearrange in place to match the requested pitch.
+				// (it can only be larger than w * bpp, and a match is likely.)
+				for (int y = h - 1; y >= 0; --y) {
+					memcpy(writePtr + rowPitch * y, writePtr + decPitch * y, w * bpp);
 				}
 				decPitch = rowPitch;
-			} else {
-				memcpy(writePtr, rearrange, w * h * 4);
 			}
-			FreeAlignedMemory(rearrange);
 		}
 	}
 }
@@ -1387,12 +831,12 @@ bool TextureCacheVulkan::GetCurrentTextureDebug(GPUDebugBuffer &buffer, int leve
 	if (entry->framebuffer) {
 		VirtualFramebuffer *vfb = entry->framebuffer;
 		buffer.Allocate(vfb->bufferWidth, vfb->bufferHeight, GPU_DBG_FORMAT_8888, false);
-		bool retval = draw_->CopyFramebufferToMemorySync(vfb->fbo, Draw::FB_COLOR_BIT, 0, 0, vfb->bufferWidth, vfb->bufferHeight, Draw::DataFormat::R8G8B8A8_UNORM, buffer.GetData(), vfb->bufferWidth, "GetCurrentTextureDebug");
+		bool retval = draw_->CopyFramebufferToMemorySync(vfb->fbo, Draw::FB_COLOR_BIT, 0, 0, vfb->bufferWidth, vfb->bufferHeight, Draw::DataFormat::R8G8B8A8_UNORM, buffer.GetData(), vfb->bufferWidth);
 		// Vulkan requires us to re-apply all dynamic state for each command buffer, and the above will cause us to start a new cmdbuf.
 		// So let's dirty the things that are involved in Vulkan dynamic state. Readbacks are not frequent so this won't hurt other backends.
 		gstate_c.Dirty(DIRTY_VIEWPORTSCISSOR_STATE | DIRTY_BLEND_STATE | DIRTY_DEPTHSTENCIL_STATE);
 		// We may have blitted to a temp FBO.
-		framebufferManager_->RebindFramebuffer("RebindFramebuffer - GetCurrentTextureDebug");
+		framebufferManager_->RebindFramebuffer();
 		return retval;
 	}
 
@@ -1427,12 +871,12 @@ bool TextureCacheVulkan::GetCurrentTextureDebug(GPUDebugBuffer &buffer, int leve
 	int h = texture->GetHeight();
 	buffer.Allocate(w, h, bufferFormat);
 
-	renderManager->CopyImageToMemorySync(texture->GetImage(), level, 0, 0, w, h, drawFormat, (uint8_t *)buffer.GetData(), w, "GetCurrentTextureDebug");
+	renderManager->CopyImageToMemorySync(texture->GetImage(), level, 0, 0, w, h, drawFormat, (uint8_t *)buffer.GetData(), w);
 
 	// Vulkan requires us to re-apply all dynamic state for each command buffer, and the above will cause us to start a new cmdbuf.
 	// So let's dirty the things that are involved in Vulkan dynamic state. Readbacks are not frequent so this won't hurt other backends.
 	gstate_c.Dirty(DIRTY_VIEWPORTSCISSOR_STATE | DIRTY_BLEND_STATE | DIRTY_DEPTHSTENCIL_STATE);
-	framebufferManager_->RebindFramebuffer("RebindFramebuffer - GetCurrentTextureDebug");
+	framebufferManager_->RebindFramebuffer();
 	return true;
 }
 

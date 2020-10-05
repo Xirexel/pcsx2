@@ -86,18 +86,18 @@ void TextureCacheGLES::Clear(bool delete_them) {
 	TextureCacheCommon::Clear(delete_them);
 }
 
-Draw::DataFormat getClutDestFormat(GEPaletteFormat format) {
+GLenum getClutDestFormat(GEPaletteFormat format) {
 	switch (format) {
 	case GE_CMODE_16BIT_ABGR4444:
-		return Draw::DataFormat::R4G4B4A4_UNORM_PACK16;
+		return GL_UNSIGNED_SHORT_4_4_4_4;
 	case GE_CMODE_16BIT_ABGR5551:
-		return Draw::DataFormat::R5G5B5A1_UNORM_PACK16;
+		return GL_UNSIGNED_SHORT_5_5_5_1;
 	case GE_CMODE_16BIT_BGR5650:
-		return Draw::DataFormat::R5G6B5_UNORM_PACK16;
+		return GL_UNSIGNED_SHORT_5_6_5;
 	case GE_CMODE_32BIT_ABGR8888:
-		return Draw::DataFormat::R8G8B8A8_UNORM;
+		return GL_UNSIGNED_BYTE;
 	}
-	return Draw::DataFormat::UNDEFINED;;
+	return 0;
 }
 
 static const GLuint MinFiltGL[8] = {
@@ -188,18 +188,18 @@ void TextureCacheGLES::SetFramebufferSamplingParams(u16 bufferWidth, u16 bufferH
 	render_->SetTextureSampler(TEX_SLOT_PSP_TEXTURE, sClamp ? GL_CLAMP_TO_EDGE : GL_REPEAT, tClamp ? GL_CLAMP_TO_EDGE : GL_REPEAT, MagFiltGL[magFilt], MinFiltGL[minFilt], aniso);
 }
 
-static void ConvertColors(void *dstBuf, const void *srcBuf, Draw::DataFormat dstFmt, int numPixels) {
+static void ConvertColors(void *dstBuf, const void *srcBuf, GLuint dstFmt, int numPixels) {
 	const u32 *src = (const u32 *)srcBuf;
 	u32 *dst = (u32 *)dstBuf;
 	switch (dstFmt) {
-	case Draw::DataFormat::R4G4B4A4_UNORM_PACK16:
+	case GL_UNSIGNED_SHORT_4_4_4_4:
 		ConvertRGBA4444ToABGR4444((u16 *)dst, (const u16 *)src, numPixels);
 		break;
 	// Final Fantasy 2 uses this heavily in animated textures.
-	case Draw::DataFormat::R5G5B5A1_UNORM_PACK16:
+	case GL_UNSIGNED_SHORT_5_5_5_1:
 		ConvertRGBA5551ToABGR1555((u16 *)dst, (const u16 *)src, numPixels);
 		break;
-	case Draw::DataFormat::R5G6B5_UNORM_PACK16:
+	case GL_UNSIGNED_SHORT_5_6_5:
 		ConvertRGB565ToBGR565((u16 *)dst, (const u16 *)src, numPixels);
 		break;
 	default:
@@ -219,7 +219,7 @@ void TextureCacheGLES::StartFrame() {
 		lowMemoryMode_ = true;
 		decimationCounter_ = 0;
 
-		auto err = GetI18NCategory("Error");
+		I18NCategory *err = GetI18NCategory("Error");
 		if (standardScaleFactor_ > 1) {
 			host->NotifyUserMessage(err->T("Warning: Video memory FULL, reducing upscaling and switching to slow caching mode"), 2.0f);
 		} else {
@@ -476,7 +476,7 @@ void TextureCacheGLES::ApplyTextureFramebuffer(TexCacheEntry *entry, VirtualFram
 		const GEPaletteFormat clutFormat = gstate.getClutPaletteFormat();
 		GLRTexture *clutTexture = depalShaderCache_->GetClutTexture(clutFormat, clutHash_, clutBuf_);
 		Draw::Framebuffer *depalFBO = framebufferManagerGL_->GetTempFBO(TempFBO::DEPAL, framebuffer->renderWidth, framebuffer->renderHeight, Draw::FBO_8888);
-		draw_->BindFramebufferAsRenderTarget(depalFBO, { Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE }, "Depal");
+		draw_->BindFramebufferAsRenderTarget(depalFBO, { Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE });
 
 		render_->SetScissor(GLRect2D{ 0, 0, (int)framebuffer->renderWidth, (int)framebuffer->renderHeight });
 		render_->SetViewport(GLRViewport{ 0.0f, 0.0f, (float)framebuffer->renderWidth, (float)framebuffer->renderHeight, 0.0f, 1.0f });
@@ -505,7 +505,7 @@ void TextureCacheGLES::ApplyTextureFramebuffer(TexCacheEntry *entry, VirtualFram
 		gstate_c.SetTextureFullAlpha(gstate.getTextureFormat() == GE_TFMT_5650);
 	}
 
-	framebufferManagerGL_->RebindFramebuffer("ApplyTextureFramebuffer");
+	framebufferManagerGL_->RebindFramebuffer();
 	SetFramebufferSamplingParams(framebuffer->bufferWidth, framebuffer->bufferHeight, false);
 
 	InvalidateLastTexture();
@@ -514,22 +514,22 @@ void TextureCacheGLES::ApplyTextureFramebuffer(TexCacheEntry *entry, VirtualFram
 	gstate_c.Dirty(DIRTY_BLEND_STATE | DIRTY_DEPTHSTENCIL_STATE | DIRTY_RASTER_STATE | DIRTY_VIEWPORTSCISSOR_STATE);
 }
 
-ReplacedTextureFormat FromDataFormat(Draw::DataFormat fmt) {
+ReplacedTextureFormat FromGLESFormat(GLenum fmt) {
 	// TODO: 16-bit formats are incorrect, since swizzled.
 	switch (fmt) {
-	case Draw::DataFormat::R5G6B5_UNORM_PACK16: return ReplacedTextureFormat::F_0565_ABGR;
-	case Draw::DataFormat::R5G5B5A1_UNORM_PACK16: return ReplacedTextureFormat::F_1555_ABGR;
-	case Draw::DataFormat::R4G4B4A4_UNORM_PACK16: return ReplacedTextureFormat::F_4444_ABGR;
-	case Draw::DataFormat::R8G8B8A8_UNORM: default: return ReplacedTextureFormat::F_8888;
+	case GL_UNSIGNED_SHORT_5_6_5: return ReplacedTextureFormat::F_0565_ABGR;
+	case GL_UNSIGNED_SHORT_5_5_5_1: return ReplacedTextureFormat::F_1555_ABGR;
+	case GL_UNSIGNED_SHORT_4_4_4_4: return ReplacedTextureFormat::F_4444_ABGR;
+	case GL_UNSIGNED_BYTE: default: return ReplacedTextureFormat::F_8888;
 	}
 }
 
-Draw::DataFormat ToDataFormat(ReplacedTextureFormat fmt) {
+GLenum ToGLESFormat(ReplacedTextureFormat fmt) {
 	switch (fmt) {
-	case ReplacedTextureFormat::F_5650: return Draw::DataFormat::R5G6B5_UNORM_PACK16;
-	case ReplacedTextureFormat::F_5551: return Draw::DataFormat::R5G5B5A1_UNORM_PACK16;
-	case ReplacedTextureFormat::F_4444: return Draw::DataFormat::R4G4B4A4_UNORM_PACK16;
-	case ReplacedTextureFormat::F_8888: default: return Draw::DataFormat::R8G8B8A8_UNORM;
+	case ReplacedTextureFormat::F_5650: return GL_UNSIGNED_SHORT_5_6_5;
+	case ReplacedTextureFormat::F_5551: return GL_UNSIGNED_SHORT_5_5_5_1;
+	case ReplacedTextureFormat::F_4444: return GL_UNSIGNED_SHORT_4_4_4_4;
+	case ReplacedTextureFormat::F_8888: default: return GL_UNSIGNED_BYTE;
 	}
 }
 
@@ -592,7 +592,7 @@ void TextureCacheGLES::BuildTexture(TexCacheEntry *const entry) {
 	}
 
 	// If GLES3 is available, we can preallocate the storage, which makes texture loading more efficient.
-	Draw::DataFormat dstFmt = GetDestFormat(GETextureFormat(entry->format), gstate.getClutPaletteFormat());
+	GLenum dstFmt = GetDestFormat(GETextureFormat(entry->format), gstate.getClutPaletteFormat());
 
 	int scaleFactor = standardScaleFactor_;
 
@@ -700,7 +700,7 @@ void TextureCacheGLES::BuildTexture(TexCacheEntry *const entry) {
 	UpdateSamplingParams(*entry, true);
 }
 
-Draw::DataFormat TextureCacheGLES::GetDestFormat(GETextureFormat format, GEPaletteFormat clutFormat) const {
+GLenum TextureCacheGLES::GetDestFormat(GETextureFormat format, GEPaletteFormat clutFormat) const {
 	switch (format) {
 	case GE_TFMT_CLUT4:
 	case GE_TFMT_CLUT8:
@@ -708,30 +708,30 @@ Draw::DataFormat TextureCacheGLES::GetDestFormat(GETextureFormat format, GEPalet
 	case GE_TFMT_CLUT32:
 		return getClutDestFormat(clutFormat);
 	case GE_TFMT_4444:
-		return Draw::DataFormat::R4G4B4A4_UNORM_PACK16;
+		return GL_UNSIGNED_SHORT_4_4_4_4;
 	case GE_TFMT_5551:
-		return Draw::DataFormat::R5G5B5A1_UNORM_PACK16;
+		return GL_UNSIGNED_SHORT_5_5_5_1;
 	case GE_TFMT_5650:
-		return Draw::DataFormat::R5G6B5_UNORM_PACK16;
+		return GL_UNSIGNED_SHORT_5_6_5;
 	case GE_TFMT_8888:
 	case GE_TFMT_DXT1:
 	case GE_TFMT_DXT3:
 	case GE_TFMT_DXT5:
 	default:
-		return Draw::DataFormat::R8G8B8A8_UNORM;
+		return GL_UNSIGNED_BYTE;
 	}
 }
 
-TexCacheEntry::TexStatus TextureCacheGLES::CheckAlpha(const uint8_t *pixelData, Draw::DataFormat dstFmt, int stride, int w, int h) {
+TexCacheEntry::TexStatus TextureCacheGLES::CheckAlpha(const uint8_t *pixelData, GLenum dstFmt, int stride, int w, int h) {
 	CheckAlphaResult res;
 	switch (dstFmt) {
-	case Draw::DataFormat::R4G4B4A4_UNORM_PACK16:
+	case GL_UNSIGNED_SHORT_4_4_4_4:
 		res = CheckAlphaABGR4444Basic((const uint32_t *)pixelData, stride, w, h);
 		break;
-	case Draw::DataFormat::R5G5B5A1_UNORM_PACK16:
+	case GL_UNSIGNED_SHORT_5_5_5_1:
 		res = CheckAlphaABGR1555Basic((const uint32_t *)pixelData, stride, w, h);
 		break;
-	case Draw::DataFormat::R5G6B5_UNORM_PACK16:
+	case GL_UNSIGNED_SHORT_5_6_5:
 		// Never has any alpha.
 		res = CHECKALPHA_FULL;
 		break;
@@ -743,7 +743,7 @@ TexCacheEntry::TexStatus TextureCacheGLES::CheckAlpha(const uint8_t *pixelData, 
 	return (TexCacheEntry::TexStatus)res;
 }
 
-void TextureCacheGLES::LoadTextureLevel(TexCacheEntry &entry, ReplacedTexture &replaced, int level, int scaleFactor, Draw::DataFormat dstFmt) {
+void TextureCacheGLES::LoadTextureLevel(TexCacheEntry &entry, ReplacedTexture &replaced, int level, int scaleFactor, GLenum dstFmt) {
 	int w = gstate.getTextureWidth(level);
 	int h = gstate.getTextureHeight(level);
 	uint8_t *pixelData;
@@ -760,7 +760,7 @@ void TextureCacheGLES::LoadTextureLevel(TexCacheEntry &entry, ReplacedTexture &r
 		replaced.Load(level, rearrange, decPitch);
 		pixelData = rearrange;
 
-		dstFmt = ToDataFormat(replaced.Format(level));
+		dstFmt = ToGLESFormat(replaced.Format(level));
 	} else {
 		PROFILE_THIS_SCOPE("decodetex");
 
@@ -768,7 +768,7 @@ void TextureCacheGLES::LoadTextureLevel(TexCacheEntry &entry, ReplacedTexture &r
 		u32 texaddr = gstate.getTextureAddress(level);
 		int bufw = GetTextureBufw(level, texaddr, GETextureFormat(entry.format));
 
-		int pixelSize = dstFmt == Draw::DataFormat::R8G8B8A8_UNORM ? 4 : 2;
+		int pixelSize = dstFmt == GL_UNSIGNED_BYTE ? 4 : 2;
 		// We leave GL_UNPACK_ALIGNMENT at 4, so this must be at least 4.
 		decPitch = std::max(w * pixelSize, 4);
 
@@ -785,9 +785,7 @@ void TextureCacheGLES::LoadTextureLevel(TexCacheEntry &entry, ReplacedTexture &r
 
 		if (scaleFactor > 1) {
 			uint8_t *rearrange = (uint8_t *)AllocateAlignedMemory(w * scaleFactor * h * scaleFactor * 4, 16);
-			u32 dFmt = (u32)dstFmt;
-			scaler.ScaleAlways((u32 *)rearrange, (u32 *)pixelData, dFmt, w, h, scaleFactor);
-			dstFmt = (Draw::DataFormat)dFmt;
+			scaler.ScaleAlways((u32 *)rearrange, (u32 *)pixelData, dstFmt, w, h, scaleFactor);
 			FreeAlignedMemory(pixelData);
 			pixelData = rearrange;
 			decPitch = w * 4;
@@ -801,17 +799,21 @@ void TextureCacheGLES::LoadTextureLevel(TexCacheEntry &entry, ReplacedTexture &r
 			replacedInfo.isVideo = videos_.find(entry.addr & 0x3FFFFFFF) != videos_.end();
 			replacedInfo.isFinal = (entry.status & TexCacheEntry::STATUS_TO_SCALE) == 0;
 			replacedInfo.scaleFactor = scaleFactor;
-			replacedInfo.fmt = FromDataFormat(dstFmt);
+			replacedInfo.fmt = FromGLESFormat(dstFmt);
 
 			replacer_.NotifyTextureDecoded(replacedInfo, pixelData, decPitch, level, w, h);
 		}
 	}
-	
+
+	GLuint components = dstFmt == GL_UNSIGNED_SHORT_5_6_5 ? GL_RGB : GL_RGBA;
+
+	GLuint components2 = components;
+
 	PROFILE_THIS_SCOPE("loadtex");
 	if (IsFakeMipmapChange())
-		render_->TextureImage(entry.textureName, 0, w, h, dstFmt, pixelData, GLRAllocType::ALIGNED);
+		render_->TextureImage(entry.textureName, 0, w, h, components, components2, dstFmt, pixelData, GLRAllocType::ALIGNED);
 	else
-		render_->TextureImage(entry.textureName, level, w, h, dstFmt, pixelData, GLRAllocType::ALIGNED);
+		render_->TextureImage(entry.textureName, level, w, h, components, components2, dstFmt, pixelData, GLRAllocType::ALIGNED);
 }
 
 bool TextureCacheGLES::GetCurrentTextureDebug(GPUDebugBuffer &buffer, int level) {
@@ -833,19 +835,19 @@ bool TextureCacheGLES::GetCurrentTextureDebug(GPUDebugBuffer &buffer, int level)
 	// Apply texture may need to rebuild the texture if we're about to render, or bind a framebuffer.
 	TexCacheEntry *entry = nextTexture_;
 	// We might need a render pass to set the sampling params, unfortunately.  Otherwise BuildTexture may crash.
-	framebufferManagerGL_->RebindFramebuffer("RebindFramebuffer - GetCurrentTextureDebug");
+	framebufferManagerGL_->RebindFramebuffer();
 	ApplyTexture();
 
 	// TODO: Centralize?
 	if (entry->framebuffer) {
 		VirtualFramebuffer *vfb = entry->framebuffer;
 		buffer.Allocate(vfb->bufferWidth, vfb->bufferHeight, GPU_DBG_FORMAT_8888, false);
-		bool retval = draw_->CopyFramebufferToMemorySync(vfb->fbo, Draw::FB_COLOR_BIT, 0, 0, vfb->bufferWidth, vfb->bufferHeight, Draw::DataFormat::R8G8B8A8_UNORM, buffer.GetData(), vfb->bufferWidth, "GetCurrentTextureDebug");
+		bool retval = draw_->CopyFramebufferToMemorySync(vfb->fbo, Draw::FB_COLOR_BIT, 0, 0, vfb->bufferWidth, vfb->bufferHeight, Draw::DataFormat::R8G8B8A8_UNORM, buffer.GetData(), vfb->bufferWidth);
 		// Vulkan requires us to re-apply all dynamic state for each command buffer, and the above will cause us to start a new cmdbuf.
 		// So let's dirty the things that are involved in Vulkan dynamic state. Readbacks are not frequent so this won't hurt other backends.
 		gstate_c.Dirty(DIRTY_VIEWPORTSCISSOR_STATE | DIRTY_BLEND_STATE | DIRTY_DEPTHSTENCIL_STATE);
 		// We may have blitted to a temp FBO.
-		framebufferManager_->RebindFramebuffer("RebindFramebuffer - GetCurrentTextureDebug");
+		framebufferManager_->RebindFramebuffer();
 		return retval;
 	}
 
@@ -861,9 +863,9 @@ bool TextureCacheGLES::GetCurrentTextureDebug(GPUDebugBuffer &buffer, int level)
 	}
 
 	buffer.Allocate(w, h, GE_FORMAT_8888, false);
-	renderManager->CopyImageToMemorySync(entry->textureName, level, 0, 0, w, h, Draw::DataFormat::R8G8B8A8_UNORM, (uint8_t *)buffer.GetData(), w, "GetCurrentTextureDebug");
+	renderManager->CopyImageToMemorySync(entry->textureName, level, 0, 0, w, h, Draw::DataFormat::R8G8B8A8_UNORM, (uint8_t *)buffer.GetData(), w);
 	gstate_c.Dirty(DIRTY_TEXTURE_IMAGE | DIRTY_TEXTURE_PARAMS);
-	framebufferManager_->RebindFramebuffer("RebindFramebuffer - GetCurrentTextureDebug");
+	framebufferManager_->RebindFramebuffer();
 
 	return true;
 #else

@@ -28,7 +28,9 @@ typedef int64_t __int64;
 
 #define MAX_PATH (256) // random value
 
+#ifndef __ANDROID__
 #include <X11/keysym.h>
+#endif
 
 #define VK_SHIFT XK_Shift_L
 #define VK_LSHIFT XK_Shift_L
@@ -85,10 +87,12 @@ static inline unsigned int timeGetTime()
 #include "Utilities/StringHelpers.h"
 #include "Utilities/Path.h"
 
+#ifndef __ANDROID__
 #include <X11/Xutil.h>
 
 extern Display *GSdsp;
 extern Window GSwin;
+#endif
 
 #endif
 

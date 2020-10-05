@@ -4,7 +4,7 @@
 #include "AudioRenderer.h"
 extern PCSX2Lib::API::SPU2_API g_API;
 
-PCSX2_EXPORT_C_(PCSX2Lib::API::SPU2_API*) getAPI()
+PCSX2_EXPORT_C_(void*) getAPI()
 {
 	return &g_API;
 }

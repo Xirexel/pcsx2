@@ -68,7 +68,7 @@ void main() {
 }
 )";
 
-bool FramebufferManagerGLES::NotifyStencilUpload(u32 addr, int size, StencilUpload flags) {
+bool FramebufferManagerGLES::NotifyStencilUpload(u32 addr, int size, bool skipZero) {
 	addr &= 0x3FFFFFFF;
 	if (!MayIntersectFramebuffer(addr)) {
 		return false;
@@ -114,7 +114,7 @@ bool FramebufferManagerGLES::NotifyStencilUpload(u32 addr, int size, StencilUplo
 	}
 
 	if (usedBits == 0) {
-		if (flags == StencilUpload::STENCIL_IS_ZERO) {
+		if (skipZero) {
 			// Common when creating buffers, it's already 0.  We're done.
 			return false;
 		}
@@ -122,7 +122,7 @@ bool FramebufferManagerGLES::NotifyStencilUpload(u32 addr, int size, StencilUplo
 
 		// Let's not bother with the shader if it's just zero.
 		if (dstBuffer->fbo) {
-			draw_->BindFramebufferAsRenderTarget(dstBuffer->fbo, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::CLEAR }, "NotifyStencilUpload_Clear");
+			draw_->BindFramebufferAsRenderTarget(dstBuffer->fbo, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::CLEAR });
 		}
 		render_->Clear(0, 0, 0, GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT, 0x8, 0, 0, 0, 0);
 		gstate_c.Dirty(DIRTY_BLEND_STATE | DIRTY_VIEWPORTSCISSOR_STATE);
@@ -169,20 +169,16 @@ bool FramebufferManagerGLES::NotifyStencilUpload(u32 addr, int size, StencilUplo
 	Draw::Framebuffer *blitFBO = nullptr;
 	if (useBlit) {
 		blitFBO = GetTempFBO(TempFBO::STENCIL, w, h, Draw::FBO_8888);
-		draw_->BindFramebufferAsRenderTarget(blitFBO, { Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE }, "NotifyStencilUpload_Blit");
+		draw_->BindFramebufferAsRenderTarget(blitFBO, { Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE });
 	} else if (dstBuffer->fbo) {
-		draw_->BindFramebufferAsRenderTarget(dstBuffer->fbo, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::DONT_CARE }, "NotifyStencilUpload_NoBlit");
+		draw_->BindFramebufferAsRenderTarget(dstBuffer->fbo, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::DONT_CARE });
 	}
 	render_->SetViewport({ 0, 0, (float)w, (float)h, 0.0f, 1.0f });
 
 	float u1 = 1.0f;
 	float v1 = 1.0f;
+	MakePixelTexture(src, dstBuffer->format, dstBuffer->fb_stride, dstBuffer->width, dstBuffer->height, u1, v1);
 	textureCacheGL_->ForgetLastTexture();
-	Draw::Texture *tex = MakePixelTexture(src, dstBuffer->format, dstBuffer->fb_stride, dstBuffer->width, dstBuffer->height, u1, v1);
-	if (!tex)
-		return false;
-
-	draw_->BindTextures(TEX_SLOT_PSP_TEXTURE, 1, &tex);
 
 	// We must bind the program after starting the render pass, and set the color mask after clearing.
 	render_->SetScissor({ 0, 0, w, h });
@@ -212,11 +208,10 @@ bool FramebufferManagerGLES::NotifyStencilUpload(u32 addr, int size, StencilUplo
 	}
 
 	if (useBlit) {
-		draw_->BlitFramebuffer(blitFBO, 0, 0, w, h, dstBuffer->fbo, 0, 0, dstBuffer->renderWidth, dstBuffer->renderHeight, Draw::FB_STENCIL_BIT, Draw::FB_BLIT_NEAREST, "NotifyStencilUpload_Blit");
+		draw_->BlitFramebuffer(blitFBO, 0, 0, w, h, dstBuffer->fbo, 0, 0, dstBuffer->renderWidth, dstBuffer->renderHeight, Draw::FB_STENCIL_BIT, Draw::FB_BLIT_NEAREST);
 	}
 
-	tex->Release();
 	gstate_c.Dirty(DIRTY_BLEND_STATE | DIRTY_RASTER_STATE | DIRTY_DEPTHSTENCIL_STATE | DIRTY_VIEWPORTSCISSOR_STATE);
-	RebindFramebuffer("RebindFramebuffer - Stencil");
+	RebindFramebuffer();
 	return true;
 }

@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include <assert.h>
+
 #ifndef __pxFUNCTION__
 #if defined(__GNUG__)
 #define __pxFUNCTION__ __PRETTY_FUNCTION__
@@ -185,7 +187,11 @@ extern pxDoAssertFnType *pxDoAssert;
 #define IndexBoundsAssumeDev(objname, idx, sze) pxAssumeDev((uint)(idx) < (uint)(sze), \
                                                             pxsFmt(L"Array index out of bounds accessing object '%s' (index=%d, size=%d)", objname, (idx), (sze)))
 
+
+extern void pxOnAssert(const DiagnosticOrigin &origin, const wxChar *msg = NULL);
+extern void pxOnAssert(const DiagnosticOrigin &origin, const char *msg);
 extern void pxOnAssert(const DiagnosticOrigin &origin, const wxString &msg);
+extern void pxOnAssert(const DiagnosticOrigin &origin, const FastFormatUnicode &msg);
 
 // --------------------------------------------------------------------------------------
 // jNO_DEFAULT -- disables the default case in a switch, which improves switch optimization

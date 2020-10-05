@@ -6,7 +6,6 @@
 #include "profiler/profiler.h"
 
 #include "Common/ColorConv.h"
-#include "Common/GraphicsContext.h"
 #include "Core/Reporting.h"
 #include "GPU/GeDisasm.h"
 #include "GPU/GPU.h"
@@ -189,10 +188,10 @@ const CommonCommandTableEntry commonCommandTable[] = {
 	// Viewport.
 	{ GE_CMD_OFFSETX, FLAG_FLUSHBEFOREONCHANGE, DIRTY_VIEWPORTSCISSOR_STATE | DIRTY_CULLRANGE },
 	{ GE_CMD_OFFSETY, FLAG_FLUSHBEFOREONCHANGE, DIRTY_VIEWPORTSCISSOR_STATE | DIRTY_CULLRANGE },
-	{ GE_CMD_VIEWPORTXSCALE, FLAG_FLUSHBEFOREONCHANGE,  DIRTY_FRAMEBUF | DIRTY_TEXTURE_PARAMS | DIRTY_CULLRANGE | DIRTY_PROJMATRIX | DIRTY_VIEWPORTSCISSOR_STATE },
-	{ GE_CMD_VIEWPORTYSCALE, FLAG_FLUSHBEFOREONCHANGE,  DIRTY_FRAMEBUF | DIRTY_TEXTURE_PARAMS | DIRTY_CULLRANGE | DIRTY_PROJMATRIX | DIRTY_VIEWPORTSCISSOR_STATE },
-	{ GE_CMD_VIEWPORTXCENTER, FLAG_FLUSHBEFOREONCHANGE, DIRTY_FRAMEBUF | DIRTY_TEXTURE_PARAMS | DIRTY_CULLRANGE | DIRTY_PROJMATRIX | DIRTY_VIEWPORTSCISSOR_STATE },
-	{ GE_CMD_VIEWPORTYCENTER, FLAG_FLUSHBEFOREONCHANGE, DIRTY_FRAMEBUF | DIRTY_TEXTURE_PARAMS | DIRTY_CULLRANGE | DIRTY_PROJMATRIX | DIRTY_VIEWPORTSCISSOR_STATE },
+	{ GE_CMD_VIEWPORTXSCALE, FLAG_FLUSHBEFOREONCHANGE,  DIRTY_FRAMEBUF | DIRTY_TEXTURE_PARAMS | DIRTY_CULLRANGE | DIRTY_VIEWPORTSCISSOR_STATE },
+	{ GE_CMD_VIEWPORTYSCALE, FLAG_FLUSHBEFOREONCHANGE,  DIRTY_FRAMEBUF | DIRTY_TEXTURE_PARAMS | DIRTY_CULLRANGE | DIRTY_VIEWPORTSCISSOR_STATE },
+	{ GE_CMD_VIEWPORTXCENTER, FLAG_FLUSHBEFOREONCHANGE, DIRTY_FRAMEBUF | DIRTY_TEXTURE_PARAMS | DIRTY_CULLRANGE | DIRTY_VIEWPORTSCISSOR_STATE },
+	{ GE_CMD_VIEWPORTYCENTER, FLAG_FLUSHBEFOREONCHANGE, DIRTY_FRAMEBUF | DIRTY_TEXTURE_PARAMS | DIRTY_CULLRANGE | DIRTY_VIEWPORTSCISSOR_STATE },
 	{ GE_CMD_VIEWPORTZSCALE, FLAG_FLUSHBEFOREONCHANGE,  DIRTY_FRAMEBUF | DIRTY_TEXTURE_PARAMS | DIRTY_CULLRANGE | DIRTY_DEPTHRANGE | DIRTY_PROJMATRIX | DIRTY_VIEWPORTSCISSOR_STATE },
 	{ GE_CMD_VIEWPORTZCENTER, FLAG_FLUSHBEFOREONCHANGE, DIRTY_FRAMEBUF | DIRTY_TEXTURE_PARAMS | DIRTY_CULLRANGE | DIRTY_DEPTHRANGE | DIRTY_PROJMATRIX | DIRTY_VIEWPORTSCISSOR_STATE },
 	{ GE_CMD_DEPTHCLAMPENABLE, FLAG_FLUSHBEFOREONCHANGE, DIRTY_VIEWPORTSCISSOR_STATE | DIRTY_CULLRANGE | DIRTY_RASTER_STATE },
@@ -409,7 +408,6 @@ GPUCommon::GPUCommon(GraphicsContext *gfxCtx, Draw::DrawContext *draw) :
 	}
 
 	UpdateCmdInfo();
-	UpdateVsyncInterval(true);
 }
 
 GPUCommon::~GPUCommon() {
@@ -434,7 +432,6 @@ void GPUCommon::UpdateCmdInfo() {
 }
 
 void GPUCommon::BeginHostFrame() {
-	UpdateVsyncInterval(resized_);
 	ReapplyGfxState();
 
 	// TODO: Assume config may have changed - maybe move to resize.
@@ -459,36 +456,6 @@ void GPUCommon::Reinitialize() {
 	busyTicks = 0;
 	timeSpentStepping_ = 0.0;
 	interruptsEnabled_ = true;
-
-	if (textureCache_)
-		textureCache_->Clear(true);
-	if (framebufferManager_)
-		framebufferManager_->DestroyAllFBOs();
-}
-
-void GPUCommon::UpdateVsyncInterval(bool force) {
-#ifdef _WIN32
-	int desiredVSyncInterval = g_Config.bVSync ? 1 : 0;
-	if (PSP_CoreParameter().unthrottle) {
-		desiredVSyncInterval = 0;
-	}
-	if (PSP_CoreParameter().fpsLimit != FPSLimit::NORMAL) {
-		int limit = PSP_CoreParameter().fpsLimit == FPSLimit::CUSTOM1 ? g_Config.iFpsLimit1 : g_Config.iFpsLimit2;
-		// For an alternative speed that is a clean factor of 60, the user probably still wants vsync.
-		if (limit == 0 || (limit >= 0 && limit != 15 && limit != 30 && limit != 60)) {
-			desiredVSyncInterval = 0;
-		}
-	}
-
-	if (desiredVSyncInterval != lastVsync_ || force) {
-		// Disabled EXT_swap_control_tear for now, it never seems to settle at the correct timing
-		// so it just keeps tearing. Not what I hoped for... (gl_extensions.EXT_swap_control_tear)
-		// See http://developer.download.nvidia.com/opengl/specs/WGL_EXT_swap_control_tear.txt
-		if (gfxCtx_)
-			gfxCtx_->SwapInterval(desiredVSyncInterval);
-		lastVsync_ = desiredVSyncInterval;
-	}
-#endif
 }
 
 int GPUCommon::EstimatePerVertexCost() {
@@ -679,14 +646,9 @@ u32 GPUCommon::EnqueueList(u32 listpc, u32 stall, int subIntrBase, PSPPointer<Ps
 		return SCE_KERNEL_ERROR_INVALID_POINTER;
 	}
 
-	// If args->size is below 16, it's the old struct without stack info.
-	if (args.IsValid() && args->size >= 16 && args->numStacks >= 256) {
-		return hleLogError(G3D, SCE_KERNEL_ERROR_INVALID_SIZE, "invalid stack depth %d", args->numStacks);
-	}
-
 	int id = -1;
 	u64 currentTicks = CoreTiming::GetTicks();
-	u32_le stackAddr = args.IsValid() && args->size >= 16 ? args->stackAddr : 0;
+	u32_le stackAddr = args.IsValid() ? args->stackAddr : 0;
 	// Check compatibility
 	if (sceKernelGetCompiledSdkVersion() > 0x01FFFFFF) {
 		//numStacks = 0;
@@ -758,8 +720,6 @@ u32 GPUCommon::EnqueueList(u32 listpc, u32 stall, int subIntrBase, PSPPointer<Ps
 			if (currentList->state != PSP_GE_DL_STATE_PAUSED)
 				return SCE_KERNEL_ERROR_INVALID_VALUE;
 			currentList->state = PSP_GE_DL_STATE_QUEUED;
-			// Make sure we clear the signal so we don't try to pause it again.
-			currentList->signal = PSP_GE_SIGNAL_NONE;
 		}
 
 		dl.state = PSP_GE_DL_STATE_PAUSED;
@@ -826,7 +786,8 @@ u32 GPUCommon::Continue() {
 
 	if (currentList->state == PSP_GE_DL_STATE_PAUSED)
 	{
-		if (!isbreak) {
+		if (!isbreak)
+		{
 			// TODO: Supposedly this returns SCE_KERNEL_ERROR_BUSY in some case, previously it had
 			// currentList->signal == PSP_GE_SIGNAL_HANDLER_PAUSE, but it doesn't reproduce.
 
@@ -838,10 +799,9 @@ u32 GPUCommon::Continue() {
 
 			// We have a list now, so it's not complete.
 			drawCompleteTicks = (u64)-1;
-		} else {
-			currentList->state = PSP_GE_DL_STATE_QUEUED;
-			currentList->signal = PSP_GE_SIGNAL_NONE;
 		}
+		else
+			currentList->state = PSP_GE_DL_STATE_QUEUED;
 	}
 	else if (currentList->state == PSP_GE_DL_STATE_RUNNING)
 	{
@@ -1126,9 +1086,6 @@ void GPUCommon::ReapplyGfxState() {
 	// The commands are embedded in the command memory so we can just reexecute the words. Convenient.
 	// To be safe we pass 0xFFFFFFFF as the diff.
 
-	// TODO: Consider whether any of this should really be done. We might be able to get all the way
-	// by simplying dirtying the appropriate gstate_c dirty flags.
-
 	for (int i = GE_CMD_VERTEXTYPE; i < GE_CMD_BONEMATRIXNUMBER; i++) {
 		if (i != GE_CMD_ORIGIN && i != GE_CMD_OFFSETADDR) {
 			ExecuteOp(gstate.cmdmem[i], 0xFFFFFFFF);
@@ -1143,17 +1100,8 @@ void GPUCommon::ReapplyGfxState() {
 
 	// There are a few here in the middle that we shouldn't execute...
 
-	// 0x42 to 0xEA
 	for (int i = GE_CMD_VIEWPORTXSCALE; i < GE_CMD_TRANSFERSTART; i++) {
-		switch (i) {
-		case GE_CMD_LOADCLUT:
-		case GE_CMD_TEXSYNC:
-		case GE_CMD_TEXFLUSH:
-			break;
-		default:
-			ExecuteOp(gstate.cmdmem[i], 0xFFFFFFFF);
-			break;
-		}
+		ExecuteOp(gstate.cmdmem[i], 0xFFFFFFFF);
 	}
 
 	// Let's just skip the transfer size stuff, it's just values.
@@ -1563,9 +1511,11 @@ void GPUCommon::Execute_Prim(u32 op, u32 diff) {
 
 	// Discard AA lines as we can't do anything that makes sense with these anyway. The SW plugin might, though.
 	if (gstate.isAntiAliasEnabled()) {
-		// Heuristic derived from discussions in #6483 and #12588.
-		// Discard AA lines in Persona 3 Portable, DOA Paradise and Summon Night 5, while still keeping AA lines in Echochrome.
-		if ((prim == GE_PRIM_LINE_STRIP || prim == GE_PRIM_LINES) && gstate.getTextureFunction() == GE_TEXFUNC_REPLACE)
+		// Discard AA lines in DOA
+		if (prim == GE_PRIM_LINE_STRIP)
+			return;
+		// Discard AA lines in Summon Night 5
+		if ((prim == GE_PRIM_LINES) && gstate.isSkinningEnabled())
 			return;
 	}
 
@@ -1825,7 +1775,7 @@ void GPUCommon::Execute_Bezier(u32 op, u32 diff) {
 
 	SetDrawType(DRAW_BEZIER, PatchPrimToPrim(surface.primType));
 
-	if (drawEngineCommon_->CanUseHardwareTessellation(surface.primType)) {
+	if (CanUseHardwareTessellation(surface.primType)) {
 		gstate_c.Dirty(DIRTY_VERTEXSHADER_STATE);
 		gstate_c.bezier = true;
 		if (gstate_c.spline_num_points_u != surface.num_points_u) {
@@ -1891,7 +1841,7 @@ void GPUCommon::Execute_Spline(u32 op, u32 diff) {
 
 	SetDrawType(DRAW_SPLINE, PatchPrimToPrim(surface.primType));
 
-	if (drawEngineCommon_->CanUseHardwareTessellation(surface.primType)) {
+	if (CanUseHardwareTessellation(surface.primType)) {
 		gstate_c.Dirty(DIRTY_VERTEXSHADER_STATE);
 		gstate_c.spline = true;
 		if (gstate_c.spline_num_points_u != surface.num_points_u) {
@@ -2454,7 +2404,7 @@ void GPUCommon::DoState(PointerWrap &p) {
 			DisplayList_v1 oldDL;
 			p.Do(oldDL);
 			// On 32-bit, they're the same, on 64-bit oldDL is bigger.
-			memcpy(&dls[i], &oldDL, sizeof(DisplayList_v1));
+			memcpy(&dls[i], &oldDL, sizeof(DisplayList));
 			// Fix the other fields.  Let's hope context wasn't important, it was a pointer.
 			dls[i].context = 0;
 			dls[i].offsetAddr = oldDL.offsetAddr;
@@ -2496,14 +2446,6 @@ void GPUCommon::InterruptEnd(int listid) {
 		}
 		dl.waitTicks = 0;
 		__GeTriggerWait(GPU_SYNC_LIST, listid);
-
-		// Make sure the list isn't still queued since it's now completed.
-		if (!dlQueue.empty()) {
-			if (listid == dlQueue.front())
-				PopDLQueue();
-			else
-				dlQueue.remove(listid);
-		}
 	}
 
 	ProcessDLQueue();

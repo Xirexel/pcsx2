@@ -70,7 +70,7 @@ VS_OUT main(VS_IN In) {
 )";
 
 // TODO : If SV_StencilRef is available (D3D11.3) then this can be done in a single pass.
-bool FramebufferManagerD3D11::NotifyStencilUpload(u32 addr, int size, StencilUpload flags) {
+bool FramebufferManagerD3D11::NotifyStencilUpload(u32 addr, int size, bool skipZero) {
 	addr &= 0x3FFFFFFF;
 	if (!MayIntersectFramebuffer(addr)) {
 		return false;
@@ -117,7 +117,7 @@ bool FramebufferManagerD3D11::NotifyStencilUpload(u32 addr, int size, StencilUpl
 	}
 
 	if (usedBits == 0) {
-		if (flags == StencilUpload::STENCIL_IS_ZERO) {
+		if (skipZero) {
 			// Common when creating buffers, it's already 0.  We're done.
 			return false;
 		}
@@ -160,13 +160,9 @@ bool FramebufferManagerD3D11::NotifyStencilUpload(u32 addr, int size, StencilUpl
 	u16 h = dstBuffer->renderHeight;
 	float u1 = 1.0f;
 	float v1 = 1.0f;
-	Draw::Texture *tex = MakePixelTexture(src, dstBuffer->format, dstBuffer->fb_stride, dstBuffer->bufferWidth, dstBuffer->bufferHeight, u1, v1);
-	if (!tex)
-		return false;
+	MakePixelTexture(src, dstBuffer->format, dstBuffer->fb_stride, dstBuffer->bufferWidth, dstBuffer->bufferHeight, u1, v1);
 	if (dstBuffer->fbo) {
-		// Typically, STENCIL_IS_ZERO means it's already bound.
-		Draw::RPAction stencilAction = flags == StencilUpload::STENCIL_IS_ZERO ? Draw::RPAction::KEEP : Draw::RPAction::CLEAR;
-		draw_->BindFramebufferAsRenderTarget(dstBuffer->fbo, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, stencilAction }, "Stencil");
+		draw_->BindFramebufferAsRenderTarget(dstBuffer->fbo, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::CLEAR });
 	} else {
 		// something is wrong...
 	}
@@ -193,7 +189,7 @@ bool FramebufferManagerD3D11::NotifyStencilUpload(u32 addr, int size, StencilUpl
 	context_->IASetInputLayout(stencilUploadInputLayout_);
 	context_->PSSetShader(stencilUploadPS_, nullptr, 0);
 	context_->VSSetShader(stencilUploadVS_, nullptr, 0);
-	draw_->BindTextures(0, 1, &tex);
+	context_->PSSetShaderResources(0, 1, &drawPixelsTexView_);
 	context_->RSSetState(stockD3D11.rasterStateNoCull);
 	context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	context_->IASetVertexBuffers(0, 1, &quadBuffer_, &quadStride_, &quadOffset_);
@@ -241,8 +237,6 @@ bool FramebufferManagerD3D11::NotifyStencilUpload(u32 addr, int size, StencilUpl
 		context_->PSSetConstantBuffers(0, 1, &stencilValueBuffer_);
 		context_->Draw(4, 0);
 	}
-
-	tex->Release();
-	RebindFramebuffer("RebindFramebuffer stencil");
+	RebindFramebuffer();
 	return true;
 }

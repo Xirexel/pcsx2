@@ -19,7 +19,6 @@
 #include <vector>
 
 
-#ifndef DISABLE_RECORDING
 static const int PadDataNormalButtonCount = 16;
 enum PadData_NormalButton
 {
@@ -86,4 +85,3 @@ private:
 	int GetAnalogVector(int port, PadData_AnalogVector vector) const;
 	int GetAnalogVectorByte(PadData_AnalogVector vector) const;
 };
-#endif

@@ -108,6 +108,8 @@ namespace Omega_Red.SocialNetworks.Google
             {
                 Settings.Default.GoogleAccountIsChecked = a_status;
 
+                Settings.Default.Save();
+
                 if (a_status)
                     tryAuthorize();
 
@@ -161,9 +163,6 @@ namespace Omega_Red.SocialNetworks.Google
             }
             
             lresult = mCredential != null;
-
-            if(lresult)
-                lresult = await mCredential.RefreshTokenAsync(CancellationToken.None);
 
             return lresult;
         }

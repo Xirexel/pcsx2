@@ -1,5 +1,9 @@
 
+#ifdef __ANDROID__
+#include "PadInclude.h"
+#else
 #include "stdafx.h"
+#endif
 #include "Pad.h"
 
 uint8 CALLBACK PADstartPoll(int32 pad)

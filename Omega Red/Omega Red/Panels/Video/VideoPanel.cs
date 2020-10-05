@@ -13,13 +13,11 @@
 */
 
 using Omega_Red.Panels.Video.Interop;
-using Omega_Red.Properties;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
@@ -32,8 +30,8 @@ namespace Omega_Red.Panels
     {
         enum D3DFMT
         {
-            D3DFMT_A8R8G8B8 = 21,
-            D3DFMT_X8R8G8B8 = 22
+            D3DFMT_A8R8G8B8             = 21,
+            D3DFMT_X8R8G8B8             = 22
         }
 
         private const int Format = (int)D3DFMT.D3DFMT_A8R8G8B8;
@@ -110,9 +108,9 @@ namespace Omega_Red.Panels
                     aHeight,
                     1,
                     1,  //D3DUSAGE_RENDERTARGET
-                    Format,
+                    Format, 
                     0  //D3DPOOL_DEFAULT
-                    );
+                    );                
             }
 
             private static Direct3DDevice9Ex CreateDevice(IntPtr handle)
@@ -133,7 +131,7 @@ namespace Omega_Red.Panels
                         {
                         }
 
-                        present.BackBufferFormat = Format;
+                        present.BackBufferFormat = Format; 
                         present.BackBufferHeight = 1;
                         present.BackBufferWidth = 1;
                         present.Windowed = 1; // TRUE
@@ -144,7 +142,7 @@ namespace Omega_Red.Panels
                         direct3DDevice9Ex = d3d9.CreateDeviceEx(
                             0, // D3DADAPTER_DEFAULT
                             1, // D3DDEVTYPE_HAL
-                            handle,
+                            handle,                        
                             0x40 | 0x10,// D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_PUREDEVICE
                             present,
                             null);
@@ -161,7 +159,7 @@ namespace Omega_Red.Panels
 
                 Unlock();
 
-                if (texture != null)
+                if(texture != null)
                     texture.Dispose();
 
                 texture = null;
@@ -175,76 +173,37 @@ namespace Omega_Red.Panels
         public IntPtr SharedHandle { get { return sharedHandle; } }
 
         public string SymbolicLink { get; private set; }
-        
+
         public VideoPanel()
         {
+            VideoWidth = WIDTH;
+
+            VideoHeight = HEIGHT;
+
             SymbolicLink = "";
 
-            Managers.ConfigManager.Instance.DisplayFrameEvent += (a_displayFrame) => { m_displayFrame = a_displayFrame; };
-                       
-            var image = new System.Windows.Controls.Image();
-            image.Stretch = System.Windows.Media.Stretch.Uniform;
+            var lTuple = D3D9Image.createD3D9Image(VideoWidth, VideoHeight);
 
-            Grid l_grid = new Grid();
-            l_grid.Children.Add(image);
+            if (lTuple != null)
+            {
+                this.imageSource = lTuple.Item1;
 
-            m_frameRateCalcTimer = new Timer((state) => {
+                this.sharedHandle = lTuple.Item2;
+            }
 
-                m_lock.EnterReadLock();
-
-                try
-                {
-                    var tempFrameCount = m_frameCount;
-
-                    if(Application.Current != null)
-                        Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, (ThreadStart)delegate ()
-                        {
-                            if (Settings.Default.ShowFrameRate)
-                                Managers.ConfigManager.Instance.setFrameRate(tempFrameCount.ToString());
-                            else
-                                Managers.ConfigManager.Instance.setFrameRate("");
-                        });
-
-                    m_frameCount = 0;
-                }
-                finally
-                {
-                    m_lock.ExitReadLock();
-                }
-
-            }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
-
-            this.AddChild(l_grid);
-
-
-            // To greatly reduce flickering we're only going to AddDirtyRect
-            // when WPF is rendering.
-            System.Windows.Media.CompositionTarget.Rendering += this.CompositionTargetRendering;
-
-            
-            Managers.ConfigManager.Instance.ResolutionEvent += (a_resolution) => {
-
-                VideoWidth = (a_resolution * 16)/9;
-
-                VideoHeight = a_resolution;
-
-                var lTuple = D3D9Image.createD3D9Image(VideoWidth, VideoHeight);
-
-                if (lTuple != null)
-                {
-                    this.imageSource = lTuple.Item1;
-
-                    this.sharedHandle = lTuple.Item2;
-                }
-
+            if (this.imageSource != null)
+            {
+                var image = new System.Windows.Controls.Image();
+                image.Stretch = System.Windows.Media.Stretch.Uniform;
                 image.Source = this.imageSource;
-            };
+                this.AddChild(image);
 
-            App.Current.Exit += (sender, e)=>{
-                m_frameRateCalcTimer.Dispose();
-            };
+                // To greatly reduce flickering we're only going to AddDirtyRect
+                // when WPF is rendering.
+                System.Windows.Media.CompositionTarget.Rendering += this.CompositionTargetRendering;
+            }
         }
-        
+
         public VideoPanel(uint aWidth, uint aHeight, string a_SymbolicLink)
         {
             VideoWidth = aWidth;
@@ -252,7 +211,7 @@ namespace Omega_Red.Panels
             VideoHeight = aHeight;
 
             SymbolicLink = a_SymbolicLink;
-            
+
             var lTuple = D3D9Image.createD3D9Image(aWidth, aHeight);
 
             if (lTuple != null)
@@ -267,15 +226,13 @@ namespace Omega_Red.Panels
                 var image = new System.Windows.Controls.Image();
                 image.Stretch = System.Windows.Media.Stretch.Uniform;
                 image.Source = this.imageSource;
-
                 this.AddChild(image);
-
 
                 // To greatly reduce flickering we're only going to AddDirtyRect
                 // when WPF is rendering.
                 System.Windows.Media.CompositionTarget.Rendering += this.CompositionTargetRendering;
             }
-        }
+        }        
 
         ~VideoPanel()
         {
@@ -283,85 +240,63 @@ namespace Omega_Red.Panels
         }
 
         public byte[] takeScreenshot()
-        {
+        {            
             byte[] l_result = null;
 
             var l_D3D9Image = imageSource as D3D9Image;
 
-            if (l_D3D9Image != null)
+            if(l_D3D9Image != null)
             {
                 var l_bitmap = l_D3D9Image.getBackBuffer();
 
-                if(l_bitmap != null)
+                JpegBitmapEncoder l_encoder = new JpegBitmapEncoder();
+
+                l_encoder.QualityLevel = 75;
+
+                Array lPixels = Array.CreateInstance(typeof(Byte), l_bitmap.PixelWidth * 4 * l_bitmap.PixelHeight);
+
+                l_bitmap.CopyPixels(lPixels, l_bitmap.PixelWidth * 4, 0);
+                
+                l_bitmap = BitmapSource.Create(
+                    l_bitmap.PixelWidth,
+                    l_bitmap.PixelHeight,
+                    l_bitmap.DpiX,
+                    l_bitmap.DpiY,
+                    PixelFormats.Bgr32,
+                    null,
+                    lPixels,
+                    l_bitmap.PixelWidth * 4
+                    );
+                    
+                l_encoder.Frames.Add(BitmapFrame.Create(l_bitmap));
+
+                using (var outputStream = new MemoryStream())
                 {
-                    JpegBitmapEncoder l_encoder = new JpegBitmapEncoder();
+                    l_encoder.Save(outputStream);
 
-                    l_encoder.QualityLevel = 75;
-
-                    Array lPixels = Array.CreateInstance(typeof(Byte), l_bitmap.PixelWidth * 4 * l_bitmap.PixelHeight);
-
-                    l_bitmap.CopyPixels(lPixels, l_bitmap.PixelWidth * 4, 0);
-
-                    l_bitmap = BitmapSource.Create(
-                        l_bitmap.PixelWidth,
-                        l_bitmap.PixelHeight,
-                        l_bitmap.DpiX,
-                        l_bitmap.DpiY,
-                        PixelFormats.Bgr32,
-                        null,
-                        lPixels,
-                        l_bitmap.PixelWidth * 4
-                        );
-
-                    l_encoder.Frames.Add(BitmapFrame.Create(l_bitmap));
-
-                    using (var outputStream = new MemoryStream())
-                    {
-                        l_encoder.Save(outputStream);
-
-                        l_result = outputStream.ToArray();
-                    }
+                    l_result = outputStream.ToArray();
                 }
             }
 
             return l_result;
         }
-        
-        private readonly ReaderWriterLockSlim m_lock = new ReaderWriterLockSlim();
-        private int m_frameCount;
-        private readonly Timer m_frameRateCalcTimer;
-        
-        private int m_displayFrameCount = 0;
 
-        private int m_displayFrame = 1;
+        int lf = 0;
 
         private void CompositionTargetRendering(object sender, EventArgs e)
         {
-            ++m_displayFrameCount;
+            lf++;
 
-            m_displayFrameCount = m_displayFrameCount % m_displayFrame;
+            lf = lf % 2;
 
-            if (m_displayFrameCount == 0)
+            if (lf != 0)
+                return;
+
+            if (this.imageSource != null && this.imageSource.IsFrontBufferAvailable)
             {
-                if(Settings.Default.ShowFrameRate)
-                {
-                    m_lock.EnterWriteLock();
-                    try
-                    {
-                        m_frameCount++;
-                    }
-                    finally
-                    {
-                        m_lock.ExitWriteLock();
-                    }
-                }
-
-                if (this.imageSource != null && this.imageSource.IsFrontBufferAvailable)
-                {
-                    this.imageSource.Lock();
-                    this.imageSource.AddDirtyRect(new Int32Rect(0, 0, this.imageSource.PixelWidth, this.imageSource.PixelHeight));
-                    this.imageSource.Unlock();
-                }
+                this.imageSource.Lock();
+                this.imageSource.AddDirtyRect(new Int32Rect(0, 0, this.imageSource.PixelWidth, this.imageSource.PixelHeight));
+                this.imageSource.Unlock();
             }
         }
 

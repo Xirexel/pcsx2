@@ -23,4 +23,6 @@ public:
 	size_t Read(uint8_t*, size_t);
 
 	void Seek(int a_seek);	
+
+	void Flush();
 };

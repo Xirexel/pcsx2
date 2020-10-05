@@ -6,7 +6,6 @@
 #include "Common/Vulkan/VulkanContext.h"
 #include "math/dataconv.h"
 #include "thin3d/DataFormat.h"
-#include "util/tiny_set.h"
 
 class VKRFramebuffer;
 struct VKRImage;
@@ -14,8 +13,6 @@ struct VKRImage;
 enum {
 	QUEUE_HACK_MGS2_ACID = 1,
 	QUEUE_HACK_SONIC = 2,
-	// Killzone PR = 4.
-	QUEUE_HACK_RENDERPASS_MERGE = 8,
 };
 
 enum class VKRRenderCommand : uint8_t {
@@ -46,7 +43,6 @@ struct VkRenderData {
 			VkBuffer vbuffer;
 			VkDeviceSize voffset;
 			uint32_t count;
-			uint32_t offset;
 		} draw;
 		struct {
 			VkPipelineLayout pipelineLayout;
@@ -79,7 +75,7 @@ struct VkRenderData {
 			uint8_t stencilRef;
 		} stencil;
 		struct {
-			uint32_t color;
+			float color[4];
 		} blendColor;
 		struct {
 			VkPipelineLayout pipelineLayout;
@@ -111,23 +107,11 @@ struct TransitionRequest {
 	VkImageLayout targetLayout;
 };
 
-struct QueueProfileContext {
-	VkQueryPool queryPool;
-	std::vector<std::string> timestampDescriptions;
-	std::string profileSummary;
-	double cpuStartTime;
-	double cpuEndTime;
-};
-
 struct VKRStep {
 	VKRStep(VKRStepType _type) : stepType(_type) {}
-	~VKRStep() {}
-
 	VKRStepType stepType;
 	std::vector<VkRenderData> commands;
 	std::vector<TransitionRequest> preTransitions;
-	TinySet<VKRFramebuffer *, 8> dependencies;
-	const char *tag;
 	union {
 		struct {
 			VKRFramebuffer *framebuffer;
@@ -179,10 +163,8 @@ public:
 	}
 
 	// RunSteps can modify steps but will leave it in a valid state.
-	void RunSteps(VkCommandBuffer cmd, std::vector<VKRStep *> &steps, QueueProfileContext *profile);
+	void RunSteps(VkCommandBuffer cmd, std::vector<VKRStep *> &steps);
 	void LogSteps(const std::vector<VKRStep *> &steps);
-
-	std::string StepToString(const VKRStep &step) const;
 
 	void CreateDeviceObjects();
 	void DestroyDeviceObjects();
@@ -258,7 +240,6 @@ private:
 
 	void ApplyMGSHack(std::vector<VKRStep *> &steps);
 	void ApplySonicHack(std::vector<VKRStep *> &steps);
-	void ApplyRenderPassMerge(std::vector<VKRStep *> &steps);
 
 	static void SetupTransitionToTransferSrc(VKRImage &img, VkImageMemoryBarrier &barrier, VkPipelineStageFlags &stage, VkImageAspectFlags aspect);
 	static void SetupTransitionToTransferDst(VKRImage &img, VkImageMemoryBarrier &barrier, VkPipelineStageFlags &stage, VkImageAspectFlags aspect);

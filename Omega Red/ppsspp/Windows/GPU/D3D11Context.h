@@ -40,37 +40,36 @@ public:
 
 	void Resize() override;
 
-    Draw::DrawContext *GetDrawContext() override { return draw_; }
+	Draw::DrawContext *GetDrawContext() override { return draw_; }
 
 private:
-    HRESULT CreateTheDevice(IDXGIAdapter *adapter);
+	HRESULT CreateTheDevice(IDXGIAdapter *adapter);
 
-    void LostBackbuffer();
-    void GotBackbuffer();
+	void LostBackbuffer();
+	void GotBackbuffer();
 
-    Draw::DrawContext *draw_ = nullptr;
-    IDXGISwapChain *swapChain_ = nullptr;
-    ID3D11Device *device_ = nullptr;
-    ID3D11Device1 *device1_ = nullptr;
-    ID3D11DeviceContext *context_ = nullptr;
-    ID3D11DeviceContext1 *context1_ = nullptr;
+	Draw::DrawContext *draw_ = nullptr;
+	//IDXGISwapChain *swapChain_ = nullptr;
+	ID3D11Device *device_ = nullptr;
+	ID3D11Device1 *device1_ = nullptr;
+	ID3D11DeviceContext *context_ = nullptr;
+	ID3D11DeviceContext1 *context1_ = nullptr;
 
-    ID3D11Texture2D *bbRenderTargetTex_ = nullptr;
-    ID3D11RenderTargetView *bbRenderTargetView_ = nullptr;
+	//ID3D11Texture2D *bbRenderTargetTex_ = nullptr;
+	ID3D11RenderTargetView *bbRenderTargetView_ = nullptr;
 
 #ifdef _DEBUG
-    ID3D11Debug *d3dDebug_ = nullptr;
-    ID3D11InfoQueue *d3dInfoQueue_ = nullptr;
+	ID3D11Debug *d3dDebug_ = nullptr;
+	ID3D11InfoQueue *d3dInfoQueue_ = nullptr;
 #endif
 
-    D3D_FEATURE_LEVEL featureLevel_ = D3D_FEATURE_LEVEL_11_0;
-    int adapterId;
-    HDC hDC;    // Private GDI Device Context
-    HWND hWnd_; // Holds Our Window Handle
-    HMODULE hD3D11;
-    int width;
-    int height;
-    int swapInterval_ = 0;
+	D3D_FEATURE_LEVEL featureLevel_ = D3D_FEATURE_LEVEL_11_0;
+	int adapterId;
+	HDC hDC;     // Private GDI Device Context
+	HWND hWnd_;   // Holds Our Window Handle
+	HMODULE hD3D11;
+	int width;
+	int height;
 
 	
 

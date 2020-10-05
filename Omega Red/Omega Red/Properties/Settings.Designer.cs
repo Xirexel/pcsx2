@@ -97,6 +97,18 @@ namespace Omega_Red.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int PadIndex {
+            get {
+                return ((int)(this["PadIndex"]));
+            }
+            set {
+                this["PadIndex"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string ControlMode {
             get {
@@ -169,7 +181,7 @@ namespace Omega_Red.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Black")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Blue")]
         public string ColourSchema {
             get {
                 return ((string)(this["ColourSchema"]));
@@ -356,126 +368,6 @@ namespace Omega_Red.Properties {
             }
             set {
                 this["MediaSourceInfoCollection"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public int RecordingFileSizeMode {
-            get {
-                return ((int)(this["RecordingFileSizeMode"]));
-            }
-            set {
-                this["RecordingFileSizeMode"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public uint RecordingVideoBitRate {
-            get {
-                return ((uint)(this["RecordingVideoBitRate"]));
-            }
-            set {
-                this["RecordingVideoBitRate"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public uint RecordingAudioBitRate {
-            get {
-                return ((uint)(this["RecordingAudioBitRate"]));
-            }
-            set {
-                this["RecordingAudioBitRate"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string PadControlConfigCollection {
-            get {
-                return ((string)(this["PadControlConfigCollection"]));
-            }
-            set {
-                this["PadControlConfigCollection"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool IsVisualVibrationEnabled {
-            get {
-                return ((bool)(this["IsVisualVibrationEnabled"]));
-            }
-            set {
-                this["IsVisualVibrationEnabled"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string TexturePacksFolder {
-            get {
-                return ((string)(this["TexturePacksFolder"]));
-            }
-            set {
-                this["TexturePacksFolder"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("None")]
-        public string TexturePackMode {
-            get {
-                return ((string)(this["TexturePackMode"]));
-            }
-            set {
-                this["TexturePackMode"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1")]
-        public int SkipFrameMode {
-            get {
-                return ((int)(this["SkipFrameMode"]));
-            }
-            set {
-                this["SkipFrameMode"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool ShowFrameRate {
-            get {
-                return ((bool)(this["ShowFrameRate"]));
-            }
-            set {
-                this["ShowFrameRate"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public int ResolutionMode {
-            get {
-                return ((int)(this["ResolutionMode"]));
-            }
-            set {
-                this["ResolutionMode"] = value;
             }
         }
     }

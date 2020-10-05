@@ -3,6 +3,9 @@
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="ABI.h" />
+    <ClInclude Include="Atomics.h" />
+    <ClInclude Include="Atomic_GCC.h" />
+    <ClInclude Include="Atomic_Win32.h" />
     <ClInclude Include="ChunkFile.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="CommonFuncs.h" />
@@ -69,11 +72,8 @@
     </ClInclude>
     <ClInclude Include="OSVersion.h" />
     <ClInclude Include="Hashmaps.h" />
+    <ClInclude Include="Vulkan\VulkanDebug.h" />
     <ClInclude Include="BitScan.h" />
-    <ClInclude Include="MakeUnique.h" />
-    <ClInclude Include="Vulkan\VulkanDebug.h">
-      <Filter>Vulkan</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -134,9 +134,7 @@
     <ClCompile Include="MemArenaAndroid.cpp" />
     <ClCompile Include="MemArenaDarwin.cpp" />
     <ClCompile Include="OSVersion.cpp" />
-    <ClCompile Include="Vulkan\VulkanDebug.cpp">
-      <Filter>Vulkan</Filter>
-    </ClCompile>
+    <ClCompile Include="Vulkan\VulkanDebug.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Crypto">

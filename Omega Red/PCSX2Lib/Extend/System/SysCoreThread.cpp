@@ -267,9 +267,11 @@ void SysCoreThread::DoCpuExecute()
 	Cpu->Execute();
 }
 
+#ifdef _MSC_VER
 static HANDLE mmcssHandle = NULL;
 
 static DWORD mmcssTaskIndex = 0;
+#endif
 
 void SysCoreThread::ExecuteTaskInThread()
 {

@@ -93,7 +93,8 @@ void FramebufferManagerGLES::PackDepthbuffer(VirtualFramebuffer *vfb, int x, int
 
 	DEBUG_LOG(FRAMEBUF, "Reading depthbuffer to mem at %08x for vfb=%08x", z_address, vfb->fb_address);
 
-	const bool useColorPath = gl_extensions.IsGLES;
+	// TODO: On desktop, we can just directly download, but for now testing.
+	const bool useColorPath = true; // gl_extensions.IsGLES;
 	bool format16Bit = false;
 
 	if (useColorPath) {
@@ -126,7 +127,7 @@ void FramebufferManagerGLES::PackDepthbuffer(VirtualFramebuffer *vfb, int x, int
 
 		shaderManagerGL_->DirtyLastShader();
 		auto *blitFBO = GetTempFBO(TempFBO::COPY, vfb->renderWidth, vfb->renderHeight, Draw::FBO_8888);
-		draw_->BindFramebufferAsRenderTarget(blitFBO, { Draw::RPAction::CLEAR, Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE }, "PackDepthbuffer");
+		draw_->BindFramebufferAsRenderTarget(blitFBO, { Draw::RPAction::CLEAR, Draw::RPAction::DONT_CARE, Draw::RPAction::DONT_CARE });
 		render_->SetViewport({ 0, 0, (float)vfb->renderWidth, (float)vfb->renderHeight, 0.0f, 1.0f });
 		textureCacheGL_->ForgetLastTexture();
 
@@ -154,11 +155,11 @@ void FramebufferManagerGLES::PackDepthbuffer(VirtualFramebuffer *vfb, int x, int
 		float v1 = 1.0f;
 		DrawActiveTexture(x, y, w, h, vfb->renderWidth, vfb->renderHeight, 0.0f, 0.0f, u1, v1, ROTATION_LOCKED_HORIZONTAL, DRAWTEX_NEAREST);
 
-		draw_->CopyFramebufferToMemorySync(blitFBO, Draw::FB_COLOR_BIT, 0, y, packWidth, h, Draw::DataFormat::R8G8B8A8_UNORM, convBuf_, vfb->z_stride, "PackDepthbuffer");
+		draw_->CopyFramebufferToMemorySync(blitFBO, Draw::FB_COLOR_BIT, 0, y, packWidth, h, Draw::DataFormat::R8G8B8A8_UNORM, convBuf_, vfb->z_stride);
 		// TODO: Use 4444 so we can copy lines directly?
 		format16Bit = true;
 	} else {
-		draw_->CopyFramebufferToMemorySync(vfb->fbo, Draw::FB_DEPTH_BIT, 0, y, packWidth, h, Draw::DataFormat::D32F, convBuf_, vfb->z_stride, "PackDepthbuffer");
+		draw_->CopyFramebufferToMemorySync(vfb->fbo, Draw::FB_DEPTH_BIT, 0, y, packWidth, h, Draw::DataFormat::D32F, convBuf_, vfb->z_stride);
 		format16Bit = false;
 	}
 

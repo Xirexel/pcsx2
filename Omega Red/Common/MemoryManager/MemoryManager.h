@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 #ifdef _WIN64
 #if defined(_MSC_VER)
 #define APEXCALL __cdecl //	32-bit on Visual Studio

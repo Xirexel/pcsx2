@@ -7,14 +7,12 @@
 
 #include "base/logging.h"
 #include "Common/Vulkan/VulkanLoader.h"
-#include "Common/Vulkan/VulkanDebug.h"
 
 enum {
 	VULKAN_FLAG_VALIDATE = 1,
 	VULKAN_FLAG_PRESENT_MAILBOX = 2,
 	VULKAN_FLAG_PRESENT_IMMEDIATE = 4,
 	VULKAN_FLAG_PRESENT_FIFO_RELAXED = 8,
-	VULKAN_FLAG_PRESENT_FIFO = 16,
 };
 
 enum {
@@ -35,9 +33,6 @@ enum WindowSystem {
 #endif
 #ifdef __ANDROID__
 	WINDOWSYSTEM_ANDROID,
-#endif
-#ifdef VK_USE_PLATFORM_METAL_EXT
-	WINDOWSYSTEM_METAL_EXT,
 #endif
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 	WINDOWSYSTEM_XLIB,
@@ -138,7 +133,6 @@ public:
 	VkDevice GetDevice() const { return device_; }
 	VkInstance GetInstance() const { return instance_; }
 	uint32_t GetFlags() const { return flags_; }
-	void UpdateFlags(uint32_t flags) { flags_ = flags; }
 
 	VulkanDeleteList &Delete() { return globalDeleteList_; }
 
@@ -170,13 +164,17 @@ public:
 
 	bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirements_mask, uint32_t *typeIndex);
 
-	VkPhysicalDevice GetPhysicalDevice(int n) const {
+	VkResult InitDebugUtilsCallback(PFN_vkDebugUtilsMessengerCallbackEXT callback, int bits, void *userdata);
+	void DestroyDebugUtilsCallback();
+
+	// Legacy reporting
+	VkResult InitDebugMsgCallback(PFN_vkDebugReportCallbackEXT dbgFunc, int bits, void *userdata);
+	void DestroyDebugMsgCallback();
+
+	VkPhysicalDevice GetPhysicalDevice(int n = 0) const {
 		return physical_devices_[n];
 	}
-	VkPhysicalDevice GetCurrentPhysicalDevice() const {
-		return physical_devices_[physical_device_];
-	}
-	int GetCurrentPhysicalDeviceIndex() const {
+	int GetCurrentPhysicalDevice() const {
 		return physical_device_;
 	}
 	int GetNumPhysicalDevices() const {
@@ -199,12 +197,8 @@ public:
 
 	const PhysicalDeviceProps &GetPhysicalDeviceProperties(int i = -1) const {
 		if (i < 0)
-			i = GetCurrentPhysicalDeviceIndex();
+			i = GetCurrentPhysicalDevice();
 		return physicalDeviceProperties_[i];
-	}
-
-	const VkQueueFamilyProperties &GetQueueFamilyProperties(int family) const {
-		return queueFamilyProperties_[family];
 	}
 
 	VkResult GetInstanceLayerExtensionList(const char *layerName, std::vector<VkExtensionProperties> &extensions);
@@ -248,8 +242,6 @@ public:
 	int GetInflightFrames() const {
 		return inflightFrames_;
 	}
-	// Don't call while a frame is in progress.
-	void UpdateInflightFrames(int n);
 
 	int GetCurFrame() const {
 		return curFrame_;
@@ -273,8 +265,6 @@ public:
 	void GetImageMemoryRequirements(VkImage image, VkMemoryRequirements *mem_reqs, bool *dedicatedAllocation);
 
 private:
-	VkResult InitDebugUtilsCallback();
-
 	// A layer can expose extensions, keep track of those extensions here.
 	struct LayerProperties {
 		VkLayerProperties properties;
@@ -313,8 +303,8 @@ private:
 	int physical_device_ = -1;
 
 	uint32_t graphics_queue_family_index_ = -1;
-	std::vector<PhysicalDeviceProps> physicalDeviceProperties_;
-	std::vector<VkQueueFamilyProperties> queueFamilyProperties_;
+	std::vector<PhysicalDeviceProps> physicalDeviceProperties_{};
+	std::vector<VkQueueFamilyProperties> queue_props;
 	VkPhysicalDeviceMemoryProperties memory_properties{};
 
 	// Custom collection of things that are good to know
@@ -338,6 +328,7 @@ private:
 	// the next time the frame comes around again.
 	VulkanDeleteList globalDeleteList_;
 
+	std::vector<VkDebugReportCallbackEXT> msg_callbacks;
 	std::vector<VkDebugUtilsMessengerEXT> utils_callbacks;
 
 	VkSwapchainKHR swapchain_ = VK_NULL_HANDLE;
@@ -364,9 +355,3 @@ void finalize_glslang();
 bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<uint32_t> &spirv, std::string *errorMessage = nullptr);
 
 const char *VulkanResultToString(VkResult res);
-std::string FormatDriverVersion(const VkPhysicalDeviceProperties &props);
-
-// Simple heuristic.
-bool IsHashMaliDriverVersion(const VkPhysicalDeviceProperties &props);
-
-extern VulkanLogOptions g_LogOptions;

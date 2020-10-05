@@ -19,7 +19,6 @@
 
 #include <map>
 #include <mutex>
-#include <thread>
 
 #include "Common/CommonTypes.h"
 #include "Core/Loaders.h"
@@ -76,7 +75,6 @@ private:
 
 	std::map<s64, BlockInfo> blocks_;
 	std::recursive_mutex blocksMutex_;
-	bool aheadThreadRunning_ = false;
-	std::thread aheadThread_;
+	bool aheadThread_ = false;
 	std::once_flag preparedFlag_;
 };

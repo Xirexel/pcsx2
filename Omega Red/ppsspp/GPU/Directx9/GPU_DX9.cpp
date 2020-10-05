@@ -58,6 +58,8 @@ GPU_DX9::GPU_DX9(GraphicsContext *gfxCtx, Draw::DrawContext *draw)
 		drawEngine_(draw) {
 	device_ = (LPDIRECT3DDEVICE9)draw->GetNativeObject(Draw::NativeObject::DEVICE);
 	deviceEx_ = (LPDIRECT3DDEVICE9EX)draw->GetNativeObject(Draw::NativeObject::DEVICE_EX);
+	lastVsync_ = g_Config.bVSync ? 1 : 0;
+	dxstate.SetVSyncInterval(g_Config.bVSync);
 
 	shaderManagerDX9_ = new ShaderManagerDX9(draw, device_);
 	framebufferManagerDX9_ = new FramebufferManagerDX9(draw);
@@ -97,8 +99,9 @@ GPU_DX9::GPU_DX9(GraphicsContext *gfxCtx, Draw::DrawContext *draw)
 
 	if (g_Config.bHardwareTessellation) {
 		// Disable hardware tessellation bacause DX9 is still unsupported.
+		g_Config.bHardwareTessellation = false;
 		ERROR_LOG(G3D, "Hardware Tessellation is unsupported, falling back to software tessellation");
-		auto gr = GetI18NCategory("Graphics");
+		I18NCategory *gr = GetI18NCategory("Graphics");
 		host->NotifyUserMessage(gr->T("Turn off Hardware Tessellation - unsupported"), 2.5f, 0xFF3030FF);
 	}
 }
@@ -167,12 +170,12 @@ void GPU_DX9::CheckGPUFeatures() {
 	features |= GPU_SUPPORTS_TEXTURE_LOD_CONTROL;
 	features |= GPU_PREFER_CPU_DOWNLOAD;
 
-	// Accurate depth is required because the Direct3D API does not support inverse Z.
-	// So we cannot incorrectly use the viewport transform as the depth range on Direct3D.
-	// TODO: Breaks text in PaRappa for some reason?
-	features |= GPU_SUPPORTS_ACCURATE_DEPTH;
-
 	auto vendor = draw_->GetDeviceCaps().vendor;
+	// Accurate depth is required on AMD/nVidia (for reverse Z) so we ignore the compat flag to disable it on those. See #9545
+	if (!PSP_CoreParameter().compat.flags().DisableAccurateDepth || vendor == Draw::GPUVendor::VENDOR_AMD || vendor == Draw::GPUVendor::VENDOR_NVIDIA) {
+		features |= GPU_SUPPORTS_ACCURATE_DEPTH;
+	}
+
 	if (!PSP_CoreParameter().compat.flags().DepthRangeHack) {
 		// VS range culling (killing triangles in the vertex shader using NaN) causes problems on Intel.
 		// Also causes problems on old NVIDIA.
@@ -255,7 +258,8 @@ void GPU_DX9::DeviceRestore() {
 }
 
 void GPU_DX9::InitClear() {
-	if (!framebufferManager_->UseBufferedRendering()) {
+	bool useNonBufferedRendering = g_Config.iRenderingMode == FB_NON_BUFFERED_MODE;
+	if (useNonBufferedRendering) {
 		dxstate.depthWrite.set(true);
 		dxstate.colorMask.set(true, true, true, true);
 		device_->Clear(0, NULL, D3DCLEAR_STENCIL|D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.f, 0);
@@ -281,8 +285,17 @@ void GPU_DX9::ReapplyGfxState() {
 }
 
 void GPU_DX9::BeginFrame() {
+	// Turn off vsync when unthrottled
+	int desiredVSyncInterval = g_Config.bVSync ? 1 : 0;
+	if (PSP_CoreParameter().unthrottle || PSP_CoreParameter().fpsLimit != FPSLimit::NORMAL)
+		desiredVSyncInterval = 0;
+	if (desiredVSyncInterval != lastVsync_) {
+		dxstate.SetVSyncInterval(desiredVSyncInterval);
+		lastVsync_ = desiredVSyncInterval;
+	}
+
 	textureCacheDX9_->StartFrame();
-	drawEngine_.BeginFrame();
+	drawEngine_.DecimateTrackedVertexArrays();
 	depalShaderCache_.Decimate();
 	// fragmentTestCache_.Decimate();
 
@@ -297,13 +310,13 @@ void GPU_DX9::SetDisplayFramebuffer(u32 framebuf, u32 stride, GEBufferFormat for
 	framebufferManagerDX9_->SetDisplayFramebuffer(framebuf, stride, format);
 }
 
-void GPU_DX9::CopyDisplayToOutput(bool reallyDirty) {
+void GPU_DX9::CopyDisplayToOutput() {
 	dxstate.depthWrite.set(true);
 	dxstate.colorMask.set(true, true, true, true);
 
 	drawEngine_.Flush();
 
-	framebufferManagerDX9_->CopyDisplayToOutput(reallyDirty);
+	framebufferManagerDX9_->CopyDisplayToOutput();
 	framebufferManagerDX9_->EndFrame();
 
 	// shaderManager_->EndFrame();
@@ -396,12 +409,11 @@ void GPU_DX9::DoState(PointerWrap &p) {
 	// TODO: Some of these things may not be necessary.
 	// None of these are necessary when saving.
 	if (p.mode == p.MODE_READ && !PSP_CoreParameter().frozen) {
-		textureCache_->Clear(true);
-		depalShaderCache_.Clear();
+		textureCacheDX9_->Clear(true);
 		drawEngine_.ClearTrackedVertexArrays();
 
 		gstate_c.Dirty(DIRTY_TEXTURE_IMAGE);
-		framebufferManager_->DestroyAllFBOs();
+		framebufferManagerDX9_->DestroyAllFBOs();
 	}
 }
 

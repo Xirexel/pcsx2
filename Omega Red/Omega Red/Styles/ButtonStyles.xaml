@@ -44,89 +44,12 @@
                     <Grid>
                         <Path Fill="{TemplateBinding Background}" 
                               Stroke="{DynamicResource StandardBorderBrush}" 
-                              StrokeThickness="{DynamicResource ButtonBorderThickness}">
-                            <Path.Data>
-                                <CombinedGeometry GeometryCombineMode="Intersect">
-                                    <CombinedGeometry.Geometry1>
-                                        <PathGeometry>
-                                            M 2,0 A 10,4 0 1 1 35,0 L 35,40 L 30,50 L 10,50 L 2,40 Z
-                                        </PathGeometry>
-                                    </CombinedGeometry.Geometry1>
-                                    <CombinedGeometry.Geometry2>
-                                        <PathGeometry>
-                                            M 0,0 A 20,4 0 1 1 40,0 L 40,40 L 40,50 A 5,3 0 1 0 0,50 L 0,40 Z
-                                        </PathGeometry>
-                                    </CombinedGeometry.Geometry2>
-                                </CombinedGeometry>
-                            </Path.Data>
-                        </Path>
-
-                        <!--Data="M 0,0 A 20,4 0 1 1 40,0 L 40,40 L 30,50 A 5,1 0 1 0 10,50 L 0,40 Z"-->
-
-                        <!--<Path Fill="{TemplateBinding Background}" 
-                              Stroke="{DynamicResource StandardBorderBrush}" 
                               StrokeThickness="{DynamicResource ButtonBorderThickness}"                         
-                          Data="M 0,0 A 20,4 0 1 1 40,0 L 40,40 L 30,50 L 10,50 L 0,40 Z"/>-->
+                          Data="M 0,0 L 40,0 L 40,40 L 20, 60 L 0,40 Z"/>
                         <Path Fill="Transparent" 
                               Stroke="{TemplateBinding BorderBrush}" 
-                              StrokeThickness="{DynamicResource PadBorderThickness}">
-                            <Path.Data>
-                                <CombinedGeometry GeometryCombineMode="Intersect">
-                                    <CombinedGeometry.Geometry1>
-                                        <PathGeometry>
-                                            M 8,3 A 10,1.2 0 1 1 29,3 L 29,40 L 30,50 L 10,50 L 8,40 Z
-                                        </PathGeometry>
-                                    </CombinedGeometry.Geometry1>
-                                    <CombinedGeometry.Geometry2>
-                                        <PathGeometry>
-                                            M 0,0 A 20,4 0 1 1 40,0 L 40,33 L 40,43 A 5,3 0 1 0 0,43 L 0,33 Z
-                                        </PathGeometry>
-                                    </CombinedGeometry.Geometry2>
-                                </CombinedGeometry>
-                            </Path.Data>
-                        </Path>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Visibility"  Value="Hidden" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background"  Value="{DynamicResource PressedD_PadButtonBrush}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="D_PadCornerButtonStyle" TargetType="{x:Type Button}">
-        <Setter Property="OverridesDefaultStyle" Value="True"/>
-        <Setter Property="Padding" Value="5"/>
-        <Setter Property="Opacity" Value="0.35"/>
-        <Setter Property="Background" Value="{DynamicResource UnpressedD_PadButtonBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource PadBorderBrush}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Grid>
-                        <Path Fill="{TemplateBinding Background}" 
-                              Stroke="{DynamicResource StandardBorderBrush}" 
-                              StrokeThickness="{DynamicResource ButtonBorderThickness}">
-                            <Path.Data>
-                                <PathGeometry>
-                                    M 0,40 A 0.3,1 45 1 1 40,0 L 40,40 Z
-                                </PathGeometry>
-                            </Path.Data>
-                        </Path>
-                        <Path Fill="Transparent" 
-                              Stroke="{TemplateBinding BorderBrush}" 
-                              StrokeThickness="{DynamicResource PadBorderThickness}">
-                            <Path.Data>
-                                <PathGeometry>
-                                    M 8, 33.5 A 0.3,1.75 45 1 1 33.5,8 L 33.5,33.5 Z
-                                </PathGeometry>
-                            </Path.Data>
-                        </Path>
+                              StrokeThickness="{DynamicResource PadBorderThickness}"                         
+                          Data="M 10,10 L 30,10 L 30,35 L 20,45 L 10,35 Z"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
@@ -251,9 +174,8 @@
             </Setter.Value>
         </Setter>
     </Style>
-
+    
     <Style x:Key="RemoveBtn" TargetType="Button">
-        <Setter Property="Focusable" Value="True"/>
         <Setter Property="Margin" Value="5,0" />
         <Setter Property="Padding" Value="6" />
         <Setter Property="Width" Value="30" />
@@ -405,9 +327,8 @@
             </Setter.Value>
         </Setter>
     </Style>
-
+    
     <Style x:Key="DriveBtn" TargetType="Button">
-        <Setter Property="Focusable" Value="True"/>
         <Setter Property="Margin" Value="5,0" />
         <Setter Property="Padding" Value="6" />
         <Setter Property="Width" Value="30" />

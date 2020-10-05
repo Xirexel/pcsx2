@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2016-2018 Google, Inc.
+// Copyright (C) 2016 Google, Inc.
 // Copyright (C) 2016 LunarG, Inc.
 //
 // All rights reserved.
@@ -382,16 +382,6 @@ bool HlslGrammar::acceptDeclaration(TIntermNode*& nodeList)
     if (forbidDeclarators)
         return true;
 
-    // Check if there are invalid in/out qualifiers
-    switch (declaredType.getQualifier().storage) {
-    case EvqIn:
-    case EvqOut:
-    case EvqInOut:
-        parseContext.error(token.loc, "in/out qualifiers are only valid on parameters", token.string->c_str(), "");
-    default:
-        break;
-    }
-
     // declarator_list
     //    : declarator
     //         : identifier
@@ -707,9 +697,7 @@ bool HlslGrammar::acceptQualifier(TQualifier& qualifier)
             qualifier.noContraction = true;
             break;
         case EHTokIn:
-            if (qualifier.storage != EvqUniform) {
-                qualifier.storage = (qualifier.storage == EvqOut) ? EvqInOut : EvqIn;
-            }
+            qualifier.storage = (qualifier.storage == EvqOut) ? EvqInOut : EvqIn;
             break;
         case EHTokOut:
             qualifier.storage = (qualifier.storage == EvqIn) ? EvqInOut : EvqOut;
@@ -1175,49 +1163,6 @@ bool HlslGrammar::acceptSubpassInputType(TType& type)
     return true;
 }
 
-// sampler_type for DX9 compatibility 
-//      : SAMPLER
-//      | SAMPLER1D
-//      | SAMPLER2D
-//      | SAMPLER3D
-//      | SAMPLERCUBE
-bool HlslGrammar::acceptSamplerTypeDX9(TType &type)
-{
-    // read sampler type
-    const EHlslTokenClass samplerType = peek();
-
-    TSamplerDim dim = EsdNone;
-    TType txType(EbtFloat, EvqUniform, 4); // default type is float4
-
-    bool isShadow = false;
-
-    switch (samplerType)
-    {
-    case EHTokSampler:		dim = Esd2D;	break;
-    case EHTokSampler1d:	dim = Esd1D;	break;
-    case EHTokSampler2d:	dim = Esd2D;	break;
-    case EHTokSampler3d:	dim = Esd3D;	break;
-    case EHTokSamplerCube:	dim = EsdCube;	break;
-    default:
-        return false; // not a dx9 sampler declaration
-    }
-
-    advanceToken(); // consume the sampler type keyword
-
-    TArraySizes *arraySizes = nullptr; // TODO: array
-
-    TSampler sampler;
-    sampler.set(txType.getBasicType(), dim, false, isShadow, false);
-
-    if (!parseContext.setTextureReturnType(sampler, txType, token.loc))
-        return false;
-
-    type.shallowCopy(TType(sampler, EvqUniform, arraySizes));
-    type.getQualifier().layoutFormat = ElfNone;
-
-    return true;
-}
-
 // sampler_type
 //      : SAMPLER
 //      | SAMPLER1D
@@ -1500,13 +1445,7 @@ bool HlslGrammar::acceptType(TType& type, TIntermNode*& nodeList)
     case EHTokSampler2d:              // ...
     case EHTokSampler3d:              // ...
     case EHTokSamplerCube:            // ...
-        if (parseContext.hlslDX9Compatible())
-            return acceptSamplerTypeDX9(type);
-        else
-            return acceptSamplerType(type);
-        break;
-
-    case EHTokSamplerState:           // fall through
+    case EHTokSamplerState:           // ...
     case EHTokSamplerComparisonState: // ...
         return acceptSamplerType(type);
         break;
@@ -2528,8 +2467,6 @@ bool HlslGrammar::acceptMemberFunctionDefinition(TIntermNode*& nodeList, const T
 //
 bool HlslGrammar::acceptFunctionParameters(TFunction& function)
 {
-    parseContext.beginParameterParsing(function);
-
     // LEFT_PAREN
     if (! acceptTokenClass(EHTokLeftParen))
         return false;
@@ -3232,11 +3169,6 @@ bool HlslGrammar::acceptConstructor(TIntermTyped*& node)
             // It's possible this is a type keyword used as an identifier.  Put the token back
             // for later use.
             recedeToken();
-            return false;
-        }
-
-        if (arguments == nullptr) {
-            expected("one or more arguments");
             return false;
         }
 

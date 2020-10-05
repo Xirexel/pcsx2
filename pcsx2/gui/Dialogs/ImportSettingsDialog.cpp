@@ -15,7 +15,6 @@
 
 #include "PrecompiledHeader.h"
 #include "System.h"
-#include "MSWstuff.h"
 
 #include "ModalPopups.h"
 
@@ -24,7 +23,7 @@ using namespace pxSizerFlags;
 Dialogs::ImportSettingsDialog::ImportSettingsDialog( wxWindow* parent )
 	: wxDialogWithHelpers( parent, _("Import Existing Settings?") )
 {
-	SetMinWidth( MSW_GetDPIScale() * 440 );
+	SetMinWidth( 440 );
 
 	pxStaticText& heading( Text( pxsFmt(
 

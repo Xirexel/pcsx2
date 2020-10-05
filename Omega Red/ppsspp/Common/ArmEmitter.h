@@ -443,7 +443,7 @@ public:
 	}
 	virtual ~ARMXEmitter() {}
 
-	void SetCodePointer(u8 *ptr, u8 *writePtr);
+	void SetCodePointer(u8 *ptr);
 	const u8 *GetCodePointer() const;
 
 	void ReserveCodeSpace(u32 bytes);

@@ -14,14 +14,20 @@
 
 #pragma once
 
-
-#ifdef EXPORTS 
-#define PCSX2_EXPORT_C_(type)extern "C" type __stdcall
-#define PCSX2_EXPORT_C PCSX2_EXPORT_C_(void)
+#ifndef __ANDROID__
+	#ifdef EXPORTS
+		#define PCSX2_EXPORT_C_(type)extern "C" type __stdcall
+		#define PCSX2_EXPORT_C PCSX2_EXPORT_C_(void)
+	#else
+		#define PCSX2_EXPORT_C_(type)extern "C" type __stdcall
+		#define PCSX2_EXPORT_C PCSX2_EXPORT_C_(void)
+	#endif
 #else
-#define PCSX2_EXPORT_C_(type)extern "C" type __stdcall
-#define PCSX2_EXPORT_C PCSX2_EXPORT_C_(void)
+	#define PCSX2_EXPORT_C_(type) type __attribute__((stdcall))
+	#define PCSX2_EXPORT_C PCSX2_EXPORT_C_(void)
 #endif
+
+
 
 
 

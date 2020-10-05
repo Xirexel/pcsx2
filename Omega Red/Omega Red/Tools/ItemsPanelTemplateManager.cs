@@ -33,11 +33,11 @@ namespace Omega_Red.Tools
 
         protected void Instance_SwitchControlModeEvent(bool obj)
         {
-            //if (obj)
-            //{
-            //    ItemsPanelTemplateSelector = SelectTemplate("ButtonItemsPanel");
-            //}
-            //else
+            if (obj)
+            {
+                ItemsPanelTemplateSelector = SelectTemplate("ButtonItemsPanel");
+            }
+            else
             {
                 ItemsPanelTemplateSelector = SelectTemplate("TouchItemsPanel");
             }

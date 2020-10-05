@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "gfx/texture_atlas.h"
-
 #include "Common/Common.h"
 #include "Common/CommonTypes.h"
 #include "Common/Swap.h"
@@ -114,8 +112,8 @@ protected:
 	bool fadeIn;
 	u32 fadeValue;
 
-	ImageID okButtonImg;
-	ImageID cancelButtonImg;
+	int okButtonImg;
+	int cancelButtonImg;
 	int okButtonFlag;
 	int cancelButtonFlag;
 };

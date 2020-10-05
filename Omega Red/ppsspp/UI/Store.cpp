@@ -43,7 +43,7 @@ std::string ResolveUrl(std::string baseUrl, std::string url) {
 		return baseUrl;
 	} else if (url[0] == '/') {
 		return baseUrl + url.substr(1);
-	} else if (startsWith(url, "http://") || startsWith(url, "https://")) {
+	} else if (url.substr(0, 7) == "http://") {
 		return url;
 	} else {
 		// Huh.
@@ -240,11 +240,10 @@ void ProductView::CreateViews() {
 	Add(new TextView(entry_.name));
 	Add(new TextView(entry_.author));
 
-	auto st = GetI18NCategory("Store");
-	auto di = GetI18NCategory("Dialog");
+	I18NCategory *st = GetI18NCategory("Store");
+	I18NCategory *di = GetI18NCategory("Dialog");
 	wasInstalled_ = IsGameInstalled();
 	if (!wasInstalled_) {
-		launchButton_ = nullptr;
 		installButton_ = Add(new Button(st->T("Install")));
 		installButton_->OnClick.Handle(this, &ProductView::OnInstall);
 	} else {
@@ -285,16 +284,13 @@ void ProductView::Update() {
 }
 
 UI::EventReturn ProductView::OnInstall(UI::EventParams &e) {
-	std::string fileUrl;
+	std::string zipUrl;
 	if (entry_.downloadURL.empty()) {
 		// Construct the URL, easy to predict from our server
-		std::string shortName = entry_.file;
-		if (shortName.find('.') == std::string::npos)
-			shortName += ".zip";
-		fileUrl = storeBaseUrl + "files/" + shortName;
+		zipUrl = storeBaseUrl + "files/" + entry_.file + ".zip";
 	} else {
 		// Use the provided URL, for external hosting.
-		fileUrl = entry_.downloadURL;
+		zipUrl = entry_.downloadURL;
 	}
 	if (installButton_) {
 		installButton_->SetEnabled(false);
@@ -302,8 +298,8 @@ UI::EventReturn ProductView::OnInstall(UI::EventParams &e) {
 	if (cancelButton_) {
 		cancelButton_->SetVisibility(UI::V_VISIBLE);
 	}
-	INFO_LOG(SYSTEM, "Triggering install of '%s'", fileUrl.c_str());
-	g_GameManager.DownloadAndInstall(fileUrl);
+	INFO_LOG(SYSTEM, "Triggering install of %s", zipUrl.c_str());
+	g_GameManager.DownloadAndInstall(zipUrl);
 	return UI::EVENT_DONE;
 }
 
@@ -432,8 +428,8 @@ void StoreScreen::CreateViews() {
 
 	root_ = new LinearLayout(ORIENT_VERTICAL);
 	
-	auto di = GetI18NCategory("Dialog");
-	auto st = GetI18NCategory("Store");
+	I18NCategory *di = GetI18NCategory("Dialog");
+	I18NCategory *st = GetI18NCategory("Store");
 
 	// Top bar
 	LinearLayout *topBar = root_->Add(new LinearLayout(ORIENT_HORIZONTAL));

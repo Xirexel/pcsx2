@@ -6,20 +6,11 @@
 #import <GameController/GameController.h>
 #endif
 #import "iCade/iCadeReaderView.h"
-#import "CameraHelper.h"
-#import "LocationHelper.h"
 
-@interface ViewController : GLKViewController <iCadeEventDelegate,
-            LocationHandlerDelegate, CameraFrameDelegate>
+@interface ViewController : GLKViewController <iCadeEventDelegate>
 
-- (void)shareText:(NSString *)text;
 - (void)shutdown;
 
 @end
 
 extern __unsafe_unretained ViewController* sharedViewController;
-void setCameraSize(int width, int height);
-void startVideo();
-void stopVideo();
-void startLocation();
-void stopLocation();

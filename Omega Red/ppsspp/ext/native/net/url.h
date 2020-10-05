@@ -189,10 +189,6 @@ public:
 	std::string Protocol() const { return protocol_; }
 	std::string Resource() const { return resource_; }
 
-	Url Relative(const std::string &next) const;
-
-	std::string ToString() const;
-
 private:
 	void Split();
 	bool valid_;

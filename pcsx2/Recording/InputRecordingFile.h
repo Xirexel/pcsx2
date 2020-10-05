@@ -19,7 +19,6 @@
 #include "System.h"
 
 
-#ifndef DISABLE_RECORDING
 struct InputRecordingHeader
 {
 	u8 version = 1;
@@ -94,4 +93,3 @@ private:
 	unsigned long MaxFrame = 0;
 	unsigned long UndoCount = 0;
 };
-#endif

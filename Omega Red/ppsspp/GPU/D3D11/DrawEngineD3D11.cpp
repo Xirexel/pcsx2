@@ -307,8 +307,6 @@ void DrawEngineD3D11::BeginFrame() {
 		NOTICE_LOG(G3D, buffer);
 	}
 #endif
-
-	lastRenderStepId_ = -1;
 }
 
 VertexArrayInfoD3D11::~VertexArrayInfoD3D11() {
@@ -326,14 +324,6 @@ static uint32_t SwapRB(uint32_t c) {
 void DrawEngineD3D11::DoFlush() {
 	gpuStats.numFlushes++;
 	gpuStats.numTrackedVertexArrays = (int)vai_.size();
-
-	// In D3D, we're synchronous and state carries over so all we reset here on a new step is the viewport/scissor.
-	int curRenderStepId = draw_->GetCurrentStepId();
-	if (lastRenderStepId_ != curRenderStepId) {
-		// Dirty everything that has dynamic state that will need re-recording.
-		gstate_c.Dirty(DIRTY_VIEWPORTSCISSOR_STATE);
-		lastRenderStepId_ = curRenderStepId;
-	}
 
 	// This is not done on every drawcall, we collect vertex data
 	// until critical state changes. That's when we draw (flush).
@@ -524,11 +514,11 @@ rotateVBO:
 
 		D3D11VertexShader *vshader;
 		D3D11FragmentShader *fshader;
-		shaderManager_->GetShaders(prim, lastVType_, &vshader, &fshader, useHWTransform, useHWTessellation_);
+		shaderManager_->GetShaders(prim, lastVType_, &vshader, &fshader, useHWTransform);
 		ID3D11InputLayout *inputLayout = SetupDecFmtForDraw(vshader, dec_->GetDecVtxFmt(), dec_->VertexType());
 		context_->PSSetShader(fshader->GetShader(), nullptr, 0);
 		context_->VSSetShader(vshader->GetShader(), nullptr, 0);
-		shaderManager_->UpdateUniforms(framebufferManager_->UseBufferedRendering());
+		shaderManager_->UpdateUniforms();
 		shaderManager_->BindUniforms();
 
 		context_->IASetInputLayout(inputLayout);
@@ -580,7 +570,10 @@ rotateVBO:
 			prim = GE_PRIM_TRIANGLES;
 		VERBOSE_LOG(G3D, "Flush prim %i SW! %i verts in one go", prim, indexGen.VertexCount());
 
+		int numTrans = 0;
+		bool drawIndexed = false;
 		u16 *inds = decIndex;
+		TransformedVertex *drawBuffer = NULL;
 		SoftwareTransformResult result{};
 		SoftwareTransformParams params{};
 		params.decoded = decoded;
@@ -593,12 +586,10 @@ rotateVBO:
 		params.provokeFlatFirst = true;
 
 		int maxIndex = indexGen.MaxIndex();
-		SoftwareTransform swTransform(params);
-		swTransform.Decode(prim, dec_->VertexType(), dec_->GetDecVtxFmt(), maxIndex, &result);
-		if (result.action == SW_NOT_READY) {
-			swTransform.DetectOffsetTexture(maxIndex);
-			swTransform.BuildDrawingParams(prim, indexGen.VertexCount(), dec_->VertexType(), inds, maxIndex, &result);
-		}
+		SoftwareTransform(
+			prim, indexGen.VertexCount(),
+			dec_->VertexType(), inds, GE_VTYPE_IDX_16BIT, dec_->GetDecVtxFmt(),
+			maxIndex, drawBuffer, numTrans, drawIndexed, &params, &result);
 
 		if (result.action == SW_DRAW_PRIMITIVES) {
 			const int vertexSize = sizeof(transformed[0]);
@@ -607,10 +598,10 @@ rotateVBO:
 
 			D3D11VertexShader *vshader;
 			D3D11FragmentShader *fshader;
-			shaderManager_->GetShaders(prim, lastVType_, &vshader, &fshader, false, false);
+			shaderManager_->GetShaders(prim, lastVType_, &vshader, &fshader, false);
 			context_->PSSetShader(fshader->GetShader(), nullptr, 0);
 			context_->VSSetShader(vshader->GetShader(), nullptr, 0);
-			shaderManager_->UpdateUniforms(framebufferManager_->UseBufferedRendering());
+			shaderManager_->UpdateUniforms();
 			shaderManager_->BindUniforms();
 
 			// We really do need a vertex layout for each vertex shader (or at least check its ID bits for what inputs it uses)!
@@ -628,20 +619,20 @@ rotateVBO:
 			UINT vOffset = 0;
 			int vSize = maxIndex * stride;
 			uint8_t *vptr = pushVerts_->BeginPush(context_, &vOffset, vSize);
-			memcpy(vptr, result.drawBuffer, vSize);
+			memcpy(vptr, drawBuffer, vSize);
 			pushVerts_->EndPush(context_);
 			ID3D11Buffer *buf = pushVerts_->Buf();
 			context_->IASetVertexBuffers(0, 1, &buf, &stride, &vOffset);
-			if (result.drawIndexed) {
+			if (drawIndexed) {
 				UINT iOffset;
-				int iSize = sizeof(uint16_t) * result.drawNumTrans;
+				int iSize = sizeof(uint16_t) * numTrans;
 				uint8_t *iptr = pushInds_->BeginPush(context_, &iOffset, iSize);
 				memcpy(iptr, inds, iSize);
 				pushInds_->EndPush(context_);
 				context_->IASetIndexBuffer(pushInds_->Buf(), DXGI_FORMAT_R16_UINT, iOffset);
-				context_->DrawIndexed(result.drawNumTrans, 0, 0);
+				context_->DrawIndexed(numTrans, 0, 0);
 			} else {
-				context_->Draw(result.drawNumTrans, 0);
+				context_->Draw(numTrans, 0);
 			}
 		} else if (result.action == SW_CLEAR) {
 			u32 clearColor = result.color;

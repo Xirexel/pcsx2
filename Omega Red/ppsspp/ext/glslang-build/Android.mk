@@ -41,7 +41,6 @@ LOCAL_SRC_FILES := \
     ../glslang/hlsl/hlslGrammar.cpp \
     ../glslang/hlsl/hlslOpMap.cpp \
     ../glslang/hlsl/hlslParseables.cpp \
-    ../glslang/hlsl/hlslParseHelper.cpp \
     ../glslang/hlsl/hlslScanContext.cpp \
     ../glslang/hlsl/hlslTokenStream.cpp \
     ../glslang/SPIRV/disassemble.cpp \
@@ -55,10 +54,9 @@ LOCAL_SRC_FILES := \
     ../glslang/OGLCompilersDLL/InitializeDll.cpp
 
 
-LOCAL_CFLAGS := -O3 -fsigned-char -fno-strict-aliasing -Wall -Wno-multichar -D__STDC_CONSTANT_MACROS -DENABLE_HLSL
+LOCAL_CFLAGS := -O3 -fsigned-char -fno-strict-aliasing -Wall -Wno-multichar -D__STDC_CONSTANT_MACROS
 LOCAL_CPPFLAGS := -fno-exceptions -std=gnu++11 -fno-rtti -Wno-reorder
-# Note: LOCAL_PATH is the directory this file is in.
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/.. $(LOCAL_PATH)/../libzip $(LOCAL_PATH)/../glslang ..
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/ext $(LOCAL_PATH)/ext/libzip ..
 
 ifeq ($(findstring armeabi-v7a,$(TARGET_ARCH_ABI)),armeabi-v7a)
 LOCAL_CFLAGS := $(LOCAL_CFLAGS) -DARM -DARMEABI_V7A

@@ -150,6 +150,7 @@ public:
 	void DeviceRestore(Draw::DrawContext *draw);
 
 	void ClearTrackedVertexArrays() override;
+	void DecimateTrackedVertexArrays();
 
 	void BeginFrame();
 	void EndFrame();
@@ -180,12 +181,6 @@ public:
 	}
 
 	void ClearInputLayoutMap();
-
-	bool SupportsHWTessellation() const;
-
-protected:
-	bool UpdateUseHWTessellation(bool enable) override;
-	void DecimateTrackedVertexArrays();
 
 private:
 	void InitDeviceObjects();
@@ -228,8 +223,6 @@ private:
 	ViewportAndScissor vpAndScissor;
 
 	int bufferDecimationCounter_ = 0;
-
-	int lastRenderStepId_ = -1;
 
 	// Hardware tessellation
 	TessellationDataTransferGLES *tessDataTransferGLES;

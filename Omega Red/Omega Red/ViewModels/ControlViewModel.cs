@@ -27,8 +27,6 @@ namespace Omega_Red.ViewModels
     {
         private void exit()
         {
-            Managers.MediaRecorderManager.Instance.StartStop(false, true);
-
             if (App.Current.MainWindow != null)
                 App.Current.MainWindow.Close();
         }

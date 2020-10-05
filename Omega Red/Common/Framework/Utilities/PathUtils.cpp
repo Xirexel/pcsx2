@@ -19,9 +19,32 @@
 
 #include <fstream>
 
+#ifdef __ANDROID__
+
+#include <sys/stat.h>
+
+s64 fsize(const char *filename) {
+	struct stat st;
+
+	if (stat(filename, &st) == 0)
+		return st.st_size;
+
+	return -1;
+}
+
+#endif
+
 // Returns -1 if the file does not exist.
 s64 Path::GetFileSize(const wxString &path)
 {
+#ifdef __ANDROID__
+
+	s64 l_fileSize = fsize(path.c_str());
+
+	return l_fileSize;
+
+#else
+
 	std::ifstream l_file;
 
 	l_file.open(path.c_str());
@@ -34,12 +57,14 @@ s64 Path::GetFileSize(const wxString &path)
 	}
 
 	l_file.seekg(0, l_file.end);
-	
+
 	auto l_fileSize = l_file.tellg();
 
 	l_file.close();
-	
+
 	return l_fileSize;
+
+#endif
 }
 
 // Concatenates two pathnames together, inserting delimiters (backslash on win32)

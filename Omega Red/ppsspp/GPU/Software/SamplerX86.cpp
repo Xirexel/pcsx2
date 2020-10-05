@@ -79,7 +79,7 @@ NearestFunc SamplerJitCache::Compile(const SamplerID &id) {
 
 	if (!Jit_ReadTextureFormat(id)) {
 		EndWrite();
-		ResetCodePtr(GetOffset(start));
+		SetCodePtr(const_cast<u8 *>(start));
 		return nullptr;
 	}
 
@@ -106,7 +106,7 @@ LinearFunc SamplerJitCache::CompileLinear(const SamplerID &id) {
 
 	if (!Jit_ReadTextureFormat(id)) {
 		EndWrite();
-		ResetCodePtr(GetOffset(nearest));
+		SetCodePtr(const_cast<u8 *>(nearest));
 		return nullptr;
 	}
 

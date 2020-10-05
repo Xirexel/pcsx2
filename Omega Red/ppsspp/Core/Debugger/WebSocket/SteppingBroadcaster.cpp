@@ -56,7 +56,6 @@ void SteppingBroadcaster::Broadcast(net::WebSocketServer *ws) {
 		lastCounter_ = steppingCounter;
 		prevState_ = coreState;
 	} else {
-		lastCounter_ = -1;
 		prevState_ = CORE_POWERDOWN;
 	}
 }

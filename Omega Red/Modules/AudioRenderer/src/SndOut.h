@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "../MemoryManager/MemoryManager.h"
 // Number of stereo samples per SndOut block.
 // All drivers must work in units of this size when communicating with
 // SndOut.
@@ -630,7 +631,54 @@ public:
     // the sample output is determined by the SndOutVolumeShift, which is the number of bits
     // to shift right to get a 16 bit result.
     template <typename T>
-    static void ReadSamples(T *bData);
+    static void ReadSamples(T *bData)
+	{
+		int nSamples = SndOutPacketSize;
+
+		// Problem:
+		//  If the SPU2 gets even the least bit out of sync with the SndOut device,
+		//  the readpos of the circular buffer will overtake the writepos,
+		//  leading to a prolonged period of hopscotching read/write accesses (ie,
+		//  lots of staticy crap sound for several seconds).
+		//
+		// Fix:
+		//  If the read position overtakes the write position, abort the
+		//  transfer immediately and force the SndOut driver to wait until
+		//  the read buffer has filled up again before proceeding.
+		//  This will cause one brief hiccup that can never exceed the user's
+		//  set buffer length in duration.
+
+		int quietSamples;
+		if (CheckUnderrunStatus(nSamples, quietSamples)) {
+			pxAssume(nSamples <= SndOutPacketSize);
+
+			// WARNING: This code assumes there's only ONE reading process.
+			int b1 = m_size - m_rpos;
+
+			if (b1 > nSamples)
+				b1 = nSamples;
+
+			// First part
+			apex::MemoryManager::memcpy(bData, m_buffer + m_rpos, b1 * sizeof(T));
+
+			// First part
+			//for (int i = 0; i < b1; i++)
+			//    bData[i] = ((T*)m_buffer)[i + m_rpos];
+
+			// Second part
+			int b2 = nSamples - b1;
+			apex::MemoryManager::memcpy(bData + b1, m_buffer, b2 * sizeof(T));
+			//for (int i = 0; i < b2; i++)
+			//    bData[i + b1] = ((T *)m_buffer)[i];
+
+			_DropSamples_Internal(nSamples);
+		}
+
+		// If quietSamples != 0 it means we have an underrun...
+		// Let's just dull out some silence, because that's usually the least
+		// painful way of dealing with underruns:
+		std::fill_n(bData, quietSamples, T{});
+	}
 };
 
 class SndOutModule

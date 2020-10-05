@@ -17,13 +17,15 @@ class GLRenderManager;
 #if defined(USING_EGL)
 
 // TODO: Move these into the class.
-static EGLDisplay               g_eglDisplay    = EGL_NO_DISPLAY;
-static EGLContext               g_eglContext    = nullptr;
-static EGLSurface               g_eglSurface    = nullptr;
-static EGLNativeDisplayType     g_Display       = nullptr;
-static bool                     g_XDisplayOpen  = false;
-static EGLNativeWindowType      g_Window        = (EGLNativeWindowType)nullptr;
-static bool useEGLSwap = false;
+static EGLDisplay               g_eglDisplay    = NULL;
+static EGLContext               g_eglContext    = NULL;
+static EGLSurface               g_eglSurface    = NULL;
+#ifdef USING_FBDEV
+static EGLNativeDisplayType     g_Display       = NULL;
+#else
+static Display*                 g_Display       = NULL;
+#endif
+static NativeWindowType         g_Window        = (NativeWindowType)NULL;
 
 int CheckEGLErrors(const char *file, int line) {
 	EGLenum error;
@@ -57,82 +59,18 @@ int CheckEGLErrors(const char *file, int line) {
 		return 1; \
 	}
 
-static bool EGL_OpenInit() {
-	if ((g_eglDisplay = eglGetDisplay(g_Display)) == EGL_NO_DISPLAY) {
-		EGL_ERROR("Unable to create EGL display.", true);
-		return false;
-	}
-	if (eglInitialize(g_eglDisplay, NULL, NULL) != EGL_TRUE) {
-		EGL_ERROR("Unable to initialize EGL display.", true);
-		eglTerminate(g_eglDisplay);
-		g_eglDisplay = EGL_NO_DISPLAY;
-		return false;
-	}
-
-	return true;
-}
-
-static int8_t EGL_Open(SDL_Window *window) {
-#if defined(USING_FBDEV)
-	g_Display = (EGLNativeDisplayType)nullptr;
-	g_Window = (EGLNativeWindowType)nullptr;
-#elif defined(__APPLE__)
-	g_Display = (EGLNativeDisplayType)XOpenDisplay(nullptr);
-	g_XDisplayOpen = g_Display != nullptr;
-	if (!g_XDisplayOpen)
-		EGL_ERROR("Unable to get display!", false);
-	g_Window = (EGLNativeWindowType)nullptr;
+int8_t EGL_Open() {
+#ifdef USING_FBDEV
+	g_Display = ((EGLNativeDisplayType)0);
 #else
-	// Get the SDL window native handle
-	SDL_SysWMinfo sysInfo{};
-	SDL_VERSION(&sysInfo.version);
-	if (!SDL_GetWindowWMInfo(window, &sysInfo)) {
-		printf("ERROR: Unable to retrieve native window handle\n");
-		g_Display = (EGLNativeDisplayType)XOpenDisplay(nullptr);
-		g_XDisplayOpen = g_Display != nullptr;
-		if (!g_XDisplayOpen)
-			EGL_ERROR("Unable to get display!", false);
-		g_Window = (EGLNativeWindowType)nullptr;
-	} else {
-		switch (sysInfo.subsystem) {
-		case SDL_SYSWM_X11:
-			g_Display = (EGLNativeDisplayType)sysInfo.info.x11.display;
-			g_Window = (EGLNativeWindowType)sysInfo.info.x11.window;
-			break;
-#if defined(SDL_VIDEO_DRIVER_DIRECTFB)
-		case SDL_SYSWM_DIRECTFB:
-			g_Display = (EGLNativeDisplayType)EGL_DEFAULT_DISPLAY;
-			g_Window = (EGLNativeWindowType)sysInfo.info.dfb.surface;
-			break;
+	if ((g_Display = XOpenDisplay(NULL)) == NULL)
+		EGL_ERROR("Unable to get display!", false);
 #endif
-#if SDL_VERSION_ATLEAST(2, 0, 2) && defined(SDL_VIDEO_DRIVER_WAYLAND)
-		case SDL_SYSWM_WAYLAND:
-			g_Display = (EGLNativeDisplayType)sysInfo.info.wl.display;
-			g_Window = (EGLNativeWindowType)sysInfo.info.wl.shell_surface;
-			break;
-#endif
-#if SDL_VERSION_ATLEAST(2, 0, 5) && defined(SDL_VIDEO_DRIVER_VIVANTE)
-		case SDL_SYSWM_VIVANTE:
-			g_Display = (EGLNativeDisplayType)sysInfo.info.vivante.display;
-			g_Window = (EGLNativeWindowType)sysInfo.info.vivante.window;
-			break;
-#endif
-		}
-
-		if (!EGL_OpenInit()) {
-			// Let's try again with X11.
-			g_Display = (EGLNativeDisplayType)XOpenDisplay(nullptr);
-			g_XDisplayOpen = g_Display != nullptr;
-			if (!g_XDisplayOpen)
-				EGL_ERROR("Unable to get display!", false);
-			g_Window = (EGLNativeWindowType)nullptr;
-		}
-	}
-
-#endif
-	if (g_eglDisplay == EGL_NO_DISPLAY)
-		EGL_OpenInit();
-	return g_eglDisplay == EGL_NO_DISPLAY ? 1 : 0;
+	if ((g_eglDisplay = eglGetDisplay((NativeDisplayType)g_Display)) == EGL_NO_DISPLAY)
+		EGL_ERROR("Unable to create EGL display.", true);
+	if (eglInitialize(g_eglDisplay, NULL, NULL) != EGL_TRUE)
+		EGL_ERROR("Unable to initialize EGL display.", true);
+	return 0;
 }
 
 #ifndef EGL_OPENGL_ES3_BIT_KHR
@@ -255,6 +193,15 @@ int8_t EGL_Init(SDL_Window *window) {
 		return 1;
 	}
 
+#if !defined(USING_FBDEV) && !defined(__APPLE__)
+	// Get the SDL window handle
+	SDL_SysWMinfo sysInfo; //Will hold our Window information
+	SDL_VERSION(&sysInfo.version); //Set SDL version
+	SDL_GetWindowWMInfo(window, &sysInfo);
+	g_Window = (NativeWindowType)sysInfo.info.x11.window;
+#else
+	g_Window = (NativeWindowType)NULL;
+#endif
 	g_eglSurface = eglCreateWindowSurface(g_eglDisplay, eglConfig, g_Window, nullptr);
 	if (g_eglSurface == EGL_NO_SURFACE) {
 		EGL_ERROR("Unable to create EGL surface!", true);
@@ -270,7 +217,7 @@ int8_t EGL_Init(SDL_Window *window) {
 }
 
 void EGL_Close() {
-	if (g_eglDisplay != EGL_NO_DISPLAY) {
+	if (g_eglDisplay != NULL) {
 		eglMakeCurrent(g_eglDisplay, NULL, NULL, EGL_NO_CONTEXT);
 		if (g_eglContext != NULL) {
 			eglDestroyContext(g_eglDisplay, g_eglContext);
@@ -279,15 +226,13 @@ void EGL_Close() {
 			eglDestroySurface(g_eglDisplay, g_eglSurface);
 		}
 		eglTerminate(g_eglDisplay);
-		g_eglDisplay = EGL_NO_DISPLAY;
+		g_eglDisplay = NULL;
 	}
-	if (g_Display != nullptr) {
+	if (g_Display != NULL) {
 #if !defined(USING_FBDEV)
-		if (g_XDisplayOpen)
-			XCloseDisplay((Display *)g_Display);
+		XCloseDisplay(g_Display);
 #endif
-		g_XDisplayOpen = false;
-		g_Display = nullptr;
+		g_Display = NULL;
 	}
 	g_eglSurface = NULL;
 	g_eglContext = NULL;
@@ -329,7 +274,7 @@ int SDLGLGraphicsContext::Init(SDL_Window *&window, int x, int y, int mode, std:
 		SetGLCoreContext(true);
 #endif
 
-		window = SDL_CreateWindow("PPSSPP", x, y, pixel_xres, pixel_yres, mode);
+		window = SDL_CreateWindow("PPSSPP", x,y, pixel_xres, pixel_yres, mode);
 		if (!window) {
 			// Definitely don't shutdown here: we'll keep trying more GL versions.
 			fprintf(stderr, "SDL_CreateWindow failed for GL %d.%d: %s\n", ver.major, ver.minor, SDL_GetError());
@@ -354,7 +299,7 @@ int SDLGLGraphicsContext::Init(SDL_Window *&window, int x, int y, int mode, std:
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 		SetGLCoreContext(false);
 
-		window = SDL_CreateWindow("PPSSPP", x, y, pixel_xres, pixel_yres, mode);
+		window = SDL_CreateWindow("PPSSPP", x,y, pixel_xres, pixel_yres, mode);
 		if (window == nullptr) {
 			NativeShutdown();
 			fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
@@ -375,12 +320,9 @@ int SDLGLGraphicsContext::Init(SDL_Window *&window, int x, int y, int mode, std:
 	SDL_ShowWindow(window);
 
 #ifdef USING_EGL
-	if (EGL_Open(window) != 0) {
-		printf("EGL_Open() failed\n");
-	} else if (EGL_Init(window) != 0) {
+	if (EGL_Init(window) != 0) {
 		printf("EGL_Init() failed\n");
-	} else {
-		useEGLSwap = true;
+		return 1;
 	}
 #endif
 
@@ -415,10 +357,7 @@ int SDLGLGraphicsContext::Init(SDL_Window *&window, int x, int y, int mode, std:
 	assert(success);
 	renderManager_->SetSwapFunction([&]() {
 #ifdef USING_EGL
-		if (useEGLSwap)
-			eglSwapBuffers(g_eglDisplay, g_eglSurface);
-		else
-			SDL_GL_SwapWindow(window_);
+		eglSwapBuffers(g_eglDisplay, g_eglSurface);
 #else
 		SDL_GL_SwapWindow(window_);
 #endif
@@ -436,6 +375,7 @@ void SDLGLGraphicsContext::ShutdownFromRenderThread() {
 
 #ifdef USING_EGL
 	EGL_Close();
-#endif
+#else
 	SDL_GL_DeleteContext(glContext);
+#endif
 }

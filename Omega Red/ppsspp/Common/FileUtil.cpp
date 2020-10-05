@@ -136,9 +136,6 @@ static bool ResolvePathVista(const std::wstring &path, wchar_t *buf, DWORD bufSi
 #endif
 
 std::string ResolvePath(const std::string &path) {
-	if (startsWith(path, "http://") || startsWith(path, "https://")) {
-		return path;
-	}
 #ifdef _WIN32
 	static const int BUF_SIZE = 32768;
 	wchar_t *buf = new wchar_t[BUF_SIZE] {};
@@ -651,8 +648,10 @@ bool CreateEmptyFile(const std::string &filename)
 
 // Deletes the given directory and anything under it. Returns true on success.
 bool DeleteDirRecursively(const std::string &directory)
-{	
-	//Removed check, it prevents the UWP from deleting store downloads
+{
+#if PPSSPP_PLATFORM(UWP)
+	return false;
+#else
 	INFO_LOG(COMMON, "DeleteDirRecursively: %s", directory.c_str());
 
 #ifdef _WIN32
@@ -721,6 +720,7 @@ bool DeleteDirRecursively(const std::string &directory)
 	closedir(dirp);
 #endif
 	return File::DeleteDir(directory);
+#endif
 }
 
 
@@ -763,15 +763,43 @@ void CopyDir(const std::string &source_path, const std::string &dest_path)
 #endif
 }
 
-void openIniFile(const std::string& fileName) {
+void openIniFile(const std::string fileName) {
+	std::string iniFile;
 #if defined(_WIN32)
 #if PPSSPP_PLATFORM(UWP)
 	// Do nothing.
 #else
-	ShellExecuteW(nullptr, L"open", ConvertUTF8ToWString(fileName).c_str(), nullptr, nullptr, SW_SHOW);
+	iniFile = fileName;
+	// Can't rely on a .txt file extension to auto-open in the right editor,
+	// so let's find notepad
+	wchar_t notepad_path[MAX_PATH + 1];
+	GetSystemDirectory(notepad_path, MAX_PATH);
+	wcscat(notepad_path, L"\\notepad.exe");
+
+	wchar_t ini_path[MAX_PATH + 1] = { 0 };
+	wcsncpy(ini_path, ConvertUTF8ToWString(iniFile).c_str(), MAX_PATH);
+	// Flip any slashes...
+	for (size_t i = 0; i < wcslen(ini_path); i++) {
+		if (ini_path[i] == '/')
+			ini_path[i] = '\\';
+	}
+
+	// One for the space, one for the null.
+	wchar_t command_line[MAX_PATH * 2 + 1 + 1];
+	wsprintf(command_line, L"%s %s", notepad_path, ini_path);
+
+	STARTUPINFO si{};
+	si.cb = sizeof(si);
+	si.wShowWindow = SW_SHOW;
+	PROCESS_INFORMATION pi{};
+	UINT retval = CreateProcess(0, command_line, 0, 0, 0, 0, 0, 0, &si, &pi);
+	if (!retval) {
+		ERROR_LOG(COMMON, "Failed creating notepad process");
+	}
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
 #endif
 #elif !defined(MOBILE_DEVICE)
-	std::string iniFile;
 #if defined(__APPLE__)
 	iniFile = "open ";
 #else
@@ -792,23 +820,12 @@ const std::string &GetExeDirectory()
 
 	if (ExePath.empty()) {
 #ifdef _WIN32
-#ifdef UNICODE
-		std::wstring program_path;
-#else
-		std::string program_path;
-#endif
-		size_t sz;
-		do {
-			program_path.resize(program_path.size() + MAX_PATH);
-			// On failure, this will return the same value as passed in, but success will always be one lower.
-			sz = GetModuleFileName(nullptr, &program_path[0], (DWORD)program_path.size());
-		} while (sz >= program_path.size());
-
-		TCHAR *last_slash = _tcsrchr(&program_path[0], '\\');
-		if (last_slash != nullptr)
-			program_path.resize(last_slash - &program_path[0] + 1);
-		else
-			program_path.resize(sz);
+		TCHAR program_path[4096] = {0};
+		GetModuleFileName(NULL, program_path, ARRAY_SIZE(program_path) - 1);
+		program_path[ARRAY_SIZE(program_path) - 1] = '\0';
+		TCHAR *last_slash = _tcsrchr(program_path, '\\');
+		if (last_slash != NULL)
+			*(last_slash + 1) = '\0';
 #ifdef UNICODE
 		ExePath = ConvertWStringToUTF8(program_path);
 #else

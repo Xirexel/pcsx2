@@ -18,7 +18,6 @@
 #pragma once
 
 #include <mutex>
-#include <vector>
 
 #include "net/http_client.h"
 #include "net/resolve.h"
@@ -55,7 +54,6 @@ public:
 
 private:
 	void Prepare();
-	int SendHEAD(const Url &url, std::vector<std::string> &responseHeaders);
 
 	void Connect();
 

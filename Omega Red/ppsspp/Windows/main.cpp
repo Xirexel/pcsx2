@@ -18,7 +18,6 @@
 #include "stdafx.h"
 #include <algorithm>
 #include <cmath>
-#include <functional>
 
 #include "Common/CommonWindows.h"
 #include "Common/OSVersion.h"
@@ -96,8 +95,6 @@ static std::string langRegion;
 static std::string osName;
 static std::string gpuDriverVersion;
 
-static std::string restartArgs;
-
 HMENU g_hPopupMenus;
 int g_activeWindow = 0;
 
@@ -129,7 +126,7 @@ std::string GetVideoCardDriverVersion() {
 	}
 
 	IWbemLocator *pIWbemLocator = NULL;
-	hr = CoCreateInstance(__uuidof(WbemLocator), NULL, CLSCTX_INPROC_SERVER,
+	hr = CoCreateInstance(__uuidof(WbemLocator), NULL, CLSCTX_INPROC_SERVER, 
 		__uuidof(IWbemLocator), (LPVOID *)&pIWbemLocator);
 	if (FAILED(hr)) {
 		CoUninitialize();
@@ -146,9 +143,9 @@ std::string GetVideoCardDriverVersion() {
 		return retvalue;
 	}
 
-	hr = CoSetProxyBlanket(pIWbemServices, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE,
+	hr = CoSetProxyBlanket(pIWbemServices, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, 
 		NULL, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL,EOAC_DEFAULT);
-
+	
 	BSTR bstrWQL = SysAllocString(L"WQL");
 	BSTR bstrPath = SysAllocString(L"select * from Win32_VideoController");
 	IEnumWbemClassObject* pEnum;
@@ -235,26 +232,14 @@ int System_GetPropertyInt(SystemProperty prop) {
 	switch (prop) {
 	case SYSPROP_AUDIO_SAMPLE_RATE:
 		return winAudioBackend ? winAudioBackend->GetSampleRate() : -1;
+	case SYSPROP_DISPLAY_REFRESH_RATE:
+		return 60000;
 	case SYSPROP_DEVICE_TYPE:
 		return DEVICE_TYPE_DESKTOP;
+	case SYSPROP_DISPLAY_DPI:
+		return ScreenDPI();
 	case SYSPROP_DISPLAY_COUNT:
 		return GetSystemMetrics(SM_CMONITORS);
-	default:
-		return -1;
-	}
-}
-
-float System_GetPropertyFloat(SystemProperty prop) {
-	switch (prop) {
-	case SYSPROP_DISPLAY_REFRESH_RATE:
-		return 60.f;
-	case SYSPROP_DISPLAY_DPI:
-		return (float)ScreenDPI();
-	case SYSPROP_DISPLAY_SAFE_INSET_LEFT:
-	case SYSPROP_DISPLAY_SAFE_INSET_RIGHT:
-	case SYSPROP_DISPLAY_SAFE_INSET_TOP:
-	case SYSPROP_DISPLAY_SAFE_INSET_BOTTOM:
-		return 0.0f;
 	default:
 		return -1;
 	}
@@ -285,19 +270,12 @@ void System_SendMessage(const char *command, const char *parameter) {
 			PostMessage(MainWindow::GetHWND(), WM_CLOSE, 0, 0);
 		}
 	} else if (!strcmp(command, "graphics_restart")) {
-		restartArgs = parameter == nullptr ? "" : parameter;
 		if (IsDebuggerPresent()) {
 			PostMessage(MainWindow::GetHWND(), MainWindow::WM_USER_RESTART_EMUTHREAD, 0, 0);
 		} else {
 			g_Config.bRestartRequired = true;
 			PostMessage(MainWindow::GetHWND(), WM_CLOSE, 0, 0);
 		}
-	} else if (!strcmp(command, "graphics_failedBackend")) {
-		auto err = GetI18NCategory("Error");
-		const char *backendSwitchError = err->T("GenericBackendSwitchError", "PPSSPP crashed while initializing graphics. Try upgrading your graphics drivers.\n\nGraphics backend has been switched:");
-		std::wstring full_error = ConvertUTF8ToWString(StringFromFormat("%s %s", backendSwitchError, parameter));
-		std::wstring title = ConvertUTF8ToWString(err->T("GenericGraphicsError", "Graphics Error"));
-		MessageBox(MainWindow::GetHWND(), full_error.c_str(), title.c_str(), MB_OK);
 	} else if (!strcmp(command, "setclipboardtext")) {
 		if (OpenClipboard(MainWindow::GetDisplayHWND())) {
 			std::wstring data = ConvertUTF8ToWString(parameter);
@@ -312,7 +290,7 @@ void System_SendMessage(const char *command, const char *parameter) {
 	} else if (!strcmp(command, "browse_file")) {
 		MainWindow::BrowseAndBoot("");
 	} else if (!strcmp(command, "browse_folder")) {
-		auto mm = GetI18NCategory("MainMenu");
+		I18NCategory *mm = GetI18NCategory("MainMenu");
 		std::string folder = W32Util::BrowseForFolder(MainWindow::GetHWND(), mm->T("Choose folder"));
 		if (folder.size())
 			NativeMessageReceived("browse_folderSelect", folder.c_str());
@@ -352,12 +330,23 @@ void EnableCrashingOnCrashes() {
 	FreeLibrary(kernel32);
 }
 
-void System_InputBoxGetString(const std::string &title, const std::string &defaultValue, std::function<void(bool, const std::string &)> cb) {
+bool System_InputBoxGetString(const char *title, const char *defaultValue, char *outValue, size_t outLength)
+{
 	std::string out;
 	if (InputBox_GetString(MainWindow::GetHInstance(), MainWindow::GetHWND(), ConvertUTF8ToWString(title).c_str(), defaultValue, out)) {
-		NativeInputBoxReceived(cb, true, out);
+		strcpy(outValue, out.c_str());
+		return true;
 	} else {
-		NativeInputBoxReceived(cb, false, "");
+		return false;
+	}
+}
+
+bool System_InputBoxGetWString(const wchar_t *title, const std::wstring &defaultvalue, std::wstring &outvalue)
+{
+	if (InputBox_GetWString(MainWindow::GetHInstance(), MainWindow::GetHWND(), title, defaultvalue, outvalue)) {
+		return true;
+	} else {
+		return false;
 	}
 }
 
@@ -385,17 +374,17 @@ static std::string GetDefaultLangRegion() {
 static const int EXIT_CODE_VULKAN_WORKS = 42;
 
 static bool DetectVulkanInExternalProcess() {
-	std::wstring workingDirectory;
-	std::wstring moduleFilename;
-	W32Util::GetSelfExecuteParams(workingDirectory, moduleFilename);
-
+	wchar_t moduleFilename[MAX_PATH];
+	wchar_t workingDirectory[MAX_PATH];
+	GetCurrentDirectoryW(MAX_PATH, workingDirectory);
 	const wchar_t *cmdline = L"--vulkan-available-check";
+	GetModuleFileName(GetModuleHandle(NULL), moduleFilename, MAX_PATH);
 
 	SHELLEXECUTEINFO info{ sizeof(SHELLEXECUTEINFO) };
 	info.fMask = SEE_MASK_NOCLOSEPROCESS;
-	info.lpFile = moduleFilename.c_str();
+	info.lpFile = moduleFilename;
 	info.lpParameters = cmdline;
-	info.lpDirectory = workingDirectory.c_str();
+	info.lpDirectory = workingDirectory;
 	info.nShow = SW_HIDE;
 	if (ShellExecuteEx(&info) != TRUE) {
 		return false;
@@ -415,23 +404,16 @@ static bool DetectVulkanInExternalProcess() {
 	return exitCode == EXIT_CODE_VULKAN_WORKS;
 }
 
-std::vector<std::wstring> GetWideCmdLine() {
-	wchar_t **wargv;
-	int wargc = -1;
-	// This is used for the WM_USER_RESTART_EMUTHREAD path.
-	if (!restartArgs.empty()) {
-		std::wstring wargs = ConvertUTF8ToWString("PPSSPP " + restartArgs);
-		wargv = CommandLineToArgvW(wargs.c_str(), &wargc);
-		restartArgs.clear();
-	} else {
-		wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
-	}
-
-	std::vector<std::wstring> wideArgs(wargv, wargv + wargc);
-	LocalFree(wargv);
-
-	return wideArgs;
-}
+//std::vector<std::wstring> GetWideCmdLine() {
+//	wchar_t **wargv;
+//	int wargc = -1;
+//	wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
+//
+//	std::vector<std::wstring> wideArgs(wargv, wargv + wargc);
+//	LocalFree(wargv);
+//
+//	return wideArgs;
+//}
 
 static void WinMainInit() {
 	CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -457,12 +439,12 @@ static void WinMainInit() {
 }
 
 static void WinMainCleanup() {
+	if (g_Config.bRestartRequired) {
+		W32Util::ExitAndRestart();
+	}
+
 	net::Shutdown();
 	CoUninitialize();
-
-	if (g_Config.bRestartRequired) {
-		W32Util::ExitAndRestart(!restartArgs.empty(), restartArgs);
-	}
 }
 
 int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLine, int iCmdShow) {
@@ -489,7 +471,7 @@ int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLin
 	std::string controlsConfigFilename = "";
 	const std::wstring controlsOption = L"--controlconfig=";
 
-	std::vector<std::wstring> wideArgs = GetWideCmdLine();
+	std::vector<std::wstring> wideArgs; // = GetWideCmdLine();
 
 	for (size_t i = 1; i < wideArgs.size(); ++i) {
 		if (wideArgs[i][0] == L'\0')
@@ -509,9 +491,8 @@ int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLin
 
 	LogManager::Init();
 
-	// On Win32 it makes more sense to initialize the system directories here
+	// On Win32 it makes more sense to initialize the system directories here 
 	// because the next place it was called was in the EmuThread, and it's too late by then.
-	g_Config.internalDataDirectory = W32Util::UserDocumentsPath();
 	InitSysDirectories();
 
 	// Load config up here, because those changes below would be overwritten
@@ -591,7 +572,7 @@ int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLin
 
 #ifndef _DEBUG
 	// See #11719 - too many Vulkan drivers crash on basic init.
-	if (g_Config.IsBackendEnabled(GPUBackend::VULKAN, false)) {
+	if (g_Config.IsBackendEnabled(GPUBackend::VULKAN)) {
 		VulkanSetAvailable(DetectVulkanInExternalProcess());
 	}
 #endif
@@ -607,7 +588,7 @@ int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLin
 	//   - The -l switch is expected to show the log console, REGARDLESS of config settings.
 	//   - It should be possible to log to a file without showing the console.
 	LogManager::GetInstance()->GetConsoleListener()->Init(showLog, 150, 120, "PPSSPP Debug Console");
-
+	
 	if (debugLogLevel)
 		LogManager::GetInstance()->SetAllLogLevels(LogTypes::LDEBUG);
 
@@ -621,7 +602,7 @@ int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLin
 
 	HWND hwndMain = MainWindow::GetHWND();
 	HWND hwndDisplay = MainWindow::GetDisplayHWND();
-
+	
 	//initialize custom controls
 	CtrlDisAsmView::init();
 	CtrlMemView::init();
@@ -654,7 +635,7 @@ int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLin
 		{
 			//hack to enable/disable menu command accelerate keys
 			MainWindow::UpdateCommands();
-
+			 
 			//hack to make it possible to get to main window from floating windows with Esc
 			if (msg.hwnd != hwndMain && msg.wParam == VK_ESCAPE)
 				BringWindowToTop(hwndMain);
@@ -692,6 +673,8 @@ int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLin
 	MainThread_Stop();
 
 	VFSShutdown();
+
+	InputDevice::StopPolling();
 
 	MainWindow::DestroyDebugWindows();
 	DialogManager::DestroyAll();

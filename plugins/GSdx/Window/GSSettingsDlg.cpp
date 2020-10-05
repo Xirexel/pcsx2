@@ -553,7 +553,7 @@ bool GSShaderDlg::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 			theApp.SetConfig("ShadeBoost_Saturation", m_saturation);
 
 			// FXAA shader
-			theApp.SetConfig("fxaa", (int)IsDlgButtonChecked(m_hWnd, IDC_FXAA));
+			theApp.SetConfig("Fxaa", (int)IsDlgButtonChecked(m_hWnd, IDC_FXAA));
 
 			// Texture Filtering Of Display
 			theApp.SetConfig("linear_present", (int)IsDlgButtonChecked(m_hWnd, IDC_LINEAR_PRESENT));
@@ -640,13 +640,12 @@ void GSHacksDlg::OnInit()
 	CheckDlgButton(m_hWnd, IDC_MEMORY_WRAPPING, theApp.GetConfigB("wrap_gs_mem"));
 	CheckDlgButton(m_hWnd, IDC_MERGE_PP_SPRITE, theApp.GetConfigB("UserHacks_merge_pp_sprite"));
 
-	ComboBoxInit(IDC_HALF_SCREEN_TS, theApp.m_gs_generic_list, theApp.GetConfigI("UserHacks_Half_Bottom_Override"));
 	ComboBoxInit(IDC_TRI_FILTER, theApp.m_gs_trifilter, theApp.GetConfigI("UserHacks_TriFilter"));
 	ComboBoxInit(IDC_OFFSETHACK, theApp.m_gs_offset_hack, theApp.GetConfigI("UserHacks_HalfPixelOffset"));
 	ComboBoxInit(IDC_ROUND_SPRITE, theApp.m_gs_hack, theApp.GetConfigI("UserHacks_round_sprite_offset"));
-	ComboBoxInit(IDC_GEOMETRY_SHADER_OVERRIDE, theApp.m_gs_generic_list, theApp.GetConfigI("override_geometry_shader"));
-	ComboBoxInit(IDC_IMAGE_LOAD_STORE, theApp.m_gs_generic_list, theApp.GetConfigI("override_GL_ARB_shader_image_load_store"));
-	ComboBoxInit(IDC_SPARSE_TEXTURE, theApp.m_gs_generic_list, theApp.GetConfigI("override_GL_ARB_sparse_texture"));
+	ComboBoxInit(IDC_GEOMETRY_SHADER_OVERRIDE, theApp.m_gs_gl_ext, theApp.GetConfigI("override_geometry_shader"));
+	ComboBoxInit(IDC_IMAGE_LOAD_STORE, theApp.m_gs_gl_ext, theApp.GetConfigI("override_GL_ARB_shader_image_load_store"));
+	ComboBoxInit(IDC_SPARSE_TEXTURE, theApp.m_gs_gl_ext, theApp.GetConfigI("override_GL_ARB_sparse_texture"));
 
 	SendMessage(GetDlgItem(m_hWnd, IDC_SKIPDRAWOFFSET), UDM_SETRANGE, 0, MAKELPARAM(10000, 0));
 	SendMessage(GetDlgItem(m_hWnd, IDC_SKIPDRAWOFFSET), UDM_SETPOS, 0, MAKELPARAM(theApp.GetConfigI("UserHacks_SkipDraw_Offset"), 0));
@@ -666,10 +665,6 @@ void GSHacksDlg::OnInit()
 	EnableWindow(GetDlgItem(m_hWnd, IDC_AUTO_FLUSH_HW), hwhacks);
 	EnableWindow(GetDlgItem(m_hWnd, IDC_SAFE_FEATURES), hwhacks);
 	EnableWindow(GetDlgItem(m_hWnd, IDC_MEMORY_WRAPPING), hwhacks);
-
-	// Half-screen bottom hack:
-	EnableWindow(GetDlgItem(m_hWnd, IDC_HALF_SCREEN_TS), hwhacks);
-	EnableWindow(GetDlgItem(m_hWnd, IDC_HALF_SCREEN_TS_TEXT), hwhacks);
 
 	// Skipdraw hack:
 	EnableWindow(GetDlgItem(m_hWnd, IDC_SKIPDRAWHACK_TEXT), hwhacks);
@@ -731,7 +726,6 @@ void GSHacksDlg::OnInit()
 	AddTooltip(IDC_AUTO_FLUSH_HW);
 	AddTooltip(IDC_SAFE_FEATURES);
 	AddTooltip(IDC_MEMORY_WRAPPING);
-	AddTooltip(IDC_HALF_SCREEN_TS);
 	AddTooltip(IDC_TRI_FILTER);
 	AddTooltip(IDC_MERGE_PP_SPRITE);
 	AddTooltip(IDC_GEOMETRY_SHADER_OVERRIDE);
@@ -788,10 +782,6 @@ bool GSHacksDlg::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 		case IDOK:
 		{
 			INT_PTR data;
-			if (ComboBoxGetSelData(IDC_HALF_SCREEN_TS, data))
-			{
-				theApp.SetConfig("UserHacks_Half_Bottom_Override", (int)data);
-			}
 			if (ComboBoxGetSelData(IDC_TRI_FILTER, data))
 			{
 				theApp.SetConfig("UserHacks_TriFilter", (int)data);
@@ -828,7 +818,7 @@ bool GSHacksDlg::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 			theApp.SetConfig("UserHacks_WildHack", (int)IsDlgButtonChecked(m_hWnd, IDC_WILDHACK));
 			theApp.SetConfig("UserHacks_AlphaStencil", (int)IsDlgButtonChecked(m_hWnd, IDC_ALPHASTENCIL));
 			theApp.SetConfig("preload_frame_with_gs_data", (int)IsDlgButtonChecked(m_hWnd, IDC_PRELOAD_GS));
-			theApp.SetConfig("UserHacks_align_sprite_X", (int)IsDlgButtonChecked(m_hWnd, IDC_ALIGN_SPRITE));
+			theApp.SetConfig("Userhacks_align_sprite_X", (int)IsDlgButtonChecked(m_hWnd, IDC_ALIGN_SPRITE));
 			theApp.SetConfig("UserHacks_DisableDepthSupport", (int)IsDlgButtonChecked(m_hWnd, IDC_TC_DEPTH));
 			theApp.SetConfig("UserHacks_CPU_FB_Conversion", (int)IsDlgButtonChecked(m_hWnd, IDC_CPU_FB_CONVERSION));
 			theApp.SetConfig("UserHacks_DisablePartialInvalidation", (int)IsDlgButtonChecked(m_hWnd, IDC_FAST_TC_INV));

@@ -1,5 +1,9 @@
 #include "USBControl.h"
+#ifdef __ANDROID__
+#include "USB.h"
+#else
 #include "../USB.h"
+#endif
 #include "PCSX2Lib_API.h"
 #include "pugixml.hpp"
 

@@ -18,23 +18,18 @@
 #include "stdafx.h"
 #include <algorithm>
 #include <cmath>
-#include <functional>
 
 #include "Common/CommonWindows.h"
 #include "Common/OSVersion.h"
-#include "Common/Vulkan/VulkanLoader.h"
-#include "ppsspp_config.h"
 
 #include <Wbemidl.h>
 #include <shellapi.h>
-#include <ShlObj.h>
 #include <mmsystem.h>
 
-#include "base/NativeApp.h"
 #include "base/display.h"
 #include "file/vfs.h"
 #include "file/zip_read.h"
-#include "i18n/i18n.h"
+#include "base/NativeApp.h"
 #include "profiler/profiler.h"
 #include "thread/threadutil.h"
 #include "util/text/utf8.h"
@@ -59,9 +54,9 @@
 #include "Windows/Debugger/Debugger_Disasm.h"
 #include "Windows/Debugger/Debugger_MemoryDlg.h"
 #include "Windows/Debugger/Debugger_VFPUDlg.h"
+#include "Windows/GEDebugger/GEDebugger.h"
 
 #include "Windows/W32Util/DialogManager.h"
-#include "Windows/W32Util/ShellUtil.h"
 
 #include "Windows/Debugger/CtrlDisAsmView.h"
 #include "Windows/Debugger/CtrlMemView.h"
@@ -69,162 +64,26 @@
 #include "Windows/InputBox.h"
 
 #include "Windows/WindowsHost.h"
-#include "Windows/main.h"
+#include "Windows/dllmain.h"
 
+#include <d3d11.h>
+#include <d3d11_1.h>
 
+#include "./GPU/ComPtrCustom.h"
 
-GetTouchPadCallback g_getTouchPad;
-
-SetDataCallback g_setAudioData = nullptr;
-
-static std::wstring s_boot_file;
-
-
-// Nvidia OpenGL drivers >= v302 will check if the application exports a global
-// variable named NvOptimusEnablement to know if it should run the app in high
-// performance graphics mode or using the IGP.
-extern "C" {
-__declspec(dllexport) DWORD NvOptimusEnablement = 1;
-}
-
-// Also on AMD PowerExpress: https://community.amd.com/thread/169965
-extern "C" {
-__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
-#if PPSSPP_API(ANY_GL)
-CGEDebugger *geDebuggerWindow = 0;
-#endif
-
-CDisasm *disasmWindow[MAX_CPUCOUNT] = {0};
-CMemoryDlg *memoryWindow[MAX_CPUCOUNT] = {0};
 
 static std::string langRegion;
 static std::string osName;
 static std::string gpuDriverVersion;
 
-static std::string restartArgs;
-
-HMENU g_hPopupMenus;
-int g_activeWindow = 0;
-
-void OpenDirectory(const char *path)
-{
-    PIDLIST_ABSOLUTE pidl = ILCreateFromPath(ConvertUTF8ToWString(ReplaceAll(path, "/", "\\")).c_str());
-    if (pidl) {
-        SHOpenFolderAndSelectItems(pidl, 0, NULL, 0);
-        ILFree(pidl);
-    }
-}
-
-void LaunchBrowser(const char *url)
-{
-    ShellExecute(NULL, L"open", ConvertUTF8ToWString(url).c_str(), NULL, NULL, SW_SHOWNORMAL);
-}
-
-void Vibrate(int length_ms)
-{
-    // Ignore on PC
-}
-
-// Adapted mostly as-is from http://www.gamedev.net/topic/495075-how-to-retrieve-info-about-videocard/?view=findpost&p=4229170
-// so credit goes to that post's author, and in turn, the author of the site mentioned in that post (which seems to be down?).
-std::string GetVideoCardDriverVersion()
-{
-    std::string retvalue = "";
-
-    HRESULT hr;
-    hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    if (FAILED(hr)) {
-        return retvalue;
-    }
-
-    IWbemLocator *pIWbemLocator = NULL;
-    hr = CoCreateInstance(__uuidof(WbemLocator), NULL, CLSCTX_INPROC_SERVER,
-                          __uuidof(IWbemLocator), (LPVOID *)&pIWbemLocator);
-    if (FAILED(hr)) {
-        CoUninitialize();
-        return retvalue;
-    }
-
-    BSTR bstrServer = SysAllocString(L"\\\\.\\root\\cimv2");
-    IWbemServices *pIWbemServices;
-    hr = pIWbemLocator->ConnectServer(bstrServer, NULL, NULL, 0L, 0L, NULL, NULL, &pIWbemServices);
-    if (FAILED(hr)) {
-        pIWbemLocator->Release();
-        SysFreeString(bstrServer);
-        CoUninitialize();
-        return retvalue;
-    }
-
-    hr = CoSetProxyBlanket(pIWbemServices, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE,
-                           NULL, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_DEFAULT);
-
-    BSTR bstrWQL = SysAllocString(L"WQL");
-    BSTR bstrPath = SysAllocString(L"select * from Win32_VideoController");
-    IEnumWbemClassObject *pEnum;
-    hr = pIWbemServices->ExecQuery(bstrWQL, bstrPath, WBEM_FLAG_FORWARD_ONLY, NULL, &pEnum);
-
-    ULONG uReturned;
-    VARIANT var;
-    IWbemClassObject *pObj = NULL;
-    if (!FAILED(hr)) {
-        hr = pEnum->Next(WBEM_INFINITE, 1, &pObj, &uReturned);
-    }
-
-    if (!FAILED(hr) && uReturned) {
-        hr = pObj->Get(L"DriverVersion", 0, &var, NULL, NULL);
-        if (SUCCEEDED(hr)) {
-            char str[MAX_PATH];
-            WideCharToMultiByte(CP_ACP, 0, var.bstrVal, -1, str, sizeof(str), NULL, NULL);
-            retvalue = str;
-        }
-    }
-
-    pEnum->Release();
-    SysFreeString(bstrPath);
-    SysFreeString(bstrWQL);
-    pIWbemServices->Release();
-    pIWbemLocator->Release();
-    SysFreeString(bstrServer);
-    CoUninitialize();
-    return retvalue;
-}
-
-std::string System_GetProperty(SystemProperty prop)
-{
-    static bool hasCheckedGPUDriverVersion = false;
-    switch (prop) {
-        case SYSPROP_NAME:
-            return osName;
-        case SYSPROP_LANGREGION:
-            return langRegion;
-        case SYSPROP_CLIPBOARD_TEXT: {
-            std::string retval;
-            if (OpenClipboard(MainWindow::GetDisplayHWND())) {
-                HANDLE handle = GetClipboardData(CF_UNICODETEXT);
-                const wchar_t *wstr = (const wchar_t *)GlobalLock(handle);
-                if (wstr)
-                    retval = ConvertWStringToUTF8(wstr);
-                else
-                    retval = "";
-                GlobalUnlock(handle);
-                CloseClipboard();
-            }
-            return retval;
-        }
-        case SYSPROP_GPUDRIVER_VERSION:
-            if (!hasCheckedGPUDriverVersion) {
-                hasCheckedGPUDriverVersion = true;
-                gpuDriverVersion = GetVideoCardDriverVersion();
-            }
-            return gpuDriverVersion;
-        default:
-            return "";
-    }
-}
-
 // Ugly!
 extern WindowsAudioBackend *winAudioBackend;
+
+
+void *g_TouchPadHandler;
+
+SetDataCallback g_setAudioData = nullptr;
+
 
 #ifdef _WIN32
 #if PPSSPP_PLATFORM(UWP)
@@ -242,142 +101,6 @@ static int ScreenDPI()
 }
 #endif
 #endif
-
-int System_GetPropertyInt(SystemProperty prop)
-{
-    switch (prop) {
-        case SYSPROP_AUDIO_SAMPLE_RATE:
-            return winAudioBackend ? winAudioBackend->GetSampleRate() : -1;
-        case SYSPROP_DEVICE_TYPE:
-            return DEVICE_TYPE_DESKTOP;
-        case SYSPROP_DISPLAY_COUNT:
-            return GetSystemMetrics(SM_CMONITORS);
-        default:
-            return -1;
-    }
-}
-
-float System_GetPropertyFloat(SystemProperty prop)
-{
-    switch (prop) {
-        case SYSPROP_DISPLAY_REFRESH_RATE:
-            return 60.f;
-        case SYSPROP_DISPLAY_DPI:
-            return (float)ScreenDPI();
-        case SYSPROP_DISPLAY_SAFE_INSET_LEFT:
-        case SYSPROP_DISPLAY_SAFE_INSET_RIGHT:
-        case SYSPROP_DISPLAY_SAFE_INSET_TOP:
-        case SYSPROP_DISPLAY_SAFE_INSET_BOTTOM:
-            return 0.0f;
-        default:
-            return -1;
-    }
-}
-
-bool System_GetPropertyBool(SystemProperty prop)
-{
-    switch (prop) {
-        case SYSPROP_HAS_FILE_BROWSER:
-            return true;
-        case SYSPROP_HAS_IMAGE_BROWSER:
-            return true;
-        case SYSPROP_HAS_BACK_BUTTON:
-            return true;
-        case SYSPROP_APP_GOLD:
-#ifdef GOLD
-            return true;
-#else
-            return false;
-#endif
-        default:
-            return false;
-    }
-}
-
-void System_SendMessage(const char *command, const char *parameter)
-{
-    if (!strcmp(command, "finish")) {
-        if (!NativeIsRestarting()) {
-            PostMessage(MainWindow::GetHWND(), WM_CLOSE, 0, 0);
-        }
-    } else if (!strcmp(command, "graphics_restart")) {
-        restartArgs = parameter == nullptr ? "" : parameter;
-        if (IsDebuggerPresent()) {
-            PostMessage(MainWindow::GetHWND(), MainWindow::WM_USER_RESTART_EMUTHREAD, 0, 0);
-        } else {
-            g_Config.bRestartRequired = true;
-            PostMessage(MainWindow::GetHWND(), WM_CLOSE, 0, 0);
-        }
-    } else if (!strcmp(command, "graphics_failedBackend")) {
-        auto err = GetI18NCategory("Error");
-        const char *backendSwitchError = err->T("GenericBackendSwitchError", "PPSSPP crashed while initializing graphics. Try upgrading your graphics drivers.\n\nGraphics backend has been switched:");
-        std::wstring full_error = ConvertUTF8ToWString(StringFromFormat("%s %s", backendSwitchError, parameter));
-        std::wstring title = ConvertUTF8ToWString(err->T("GenericGraphicsError", "Graphics Error"));
-        MessageBox(MainWindow::GetHWND(), full_error.c_str(), title.c_str(), MB_OK);
-    } else if (!strcmp(command, "setclipboardtext")) {
-        if (OpenClipboard(MainWindow::GetDisplayHWND())) {
-            std::wstring data = ConvertUTF8ToWString(parameter);
-            HANDLE handle = GlobalAlloc(GMEM_MOVEABLE, (data.size() + 1) * sizeof(wchar_t));
-            wchar_t *wstr = (wchar_t *)GlobalLock(handle);
-            memcpy(wstr, data.c_str(), (data.size() + 1) * sizeof(wchar_t));
-            GlobalUnlock(wstr);
-            SetClipboardData(CF_UNICODETEXT, handle);
-            GlobalFree(handle);
-            CloseClipboard();
-        }
-    } else if (!strcmp(command, "browse_file")) {
-        MainWindow::BrowseAndBoot("");
-    } else if (!strcmp(command, "browse_folder")) {
-        auto mm = GetI18NCategory("MainMenu");
-        std::string folder = W32Util::BrowseForFolder(MainWindow::GetHWND(), mm->T("Choose folder"));
-        if (folder.size())
-            NativeMessageReceived("browse_folderSelect", folder.c_str());
-    } else if (!strcmp(command, "bgImage_browse")) {
-        MainWindow::BrowseBackground();
-    } else if (!strcmp(command, "toggle_fullscreen")) {
-        bool flag = !g_Config.bFullScreen;
-        if (strcmp(parameter, "0") == 0) {
-            flag = false;
-        } else if (strcmp(parameter, "1") == 0) {
-            flag = true;
-        }
-        MainWindow::SendToggleFullscreen(flag);
-    }
-}
-
-void System_AskForPermission(SystemPermission permission) {}
-PermissionStatus System_GetPermissionStatus(SystemPermission permission) { return PERMISSION_STATUS_GRANTED; }
-
-void EnableCrashingOnCrashes()
-{
-    typedef BOOL(WINAPI * tGetPolicy)(LPDWORD lpFlags);
-    typedef BOOL(WINAPI * tSetPolicy)(DWORD dwFlags);
-    const DWORD EXCEPTION_SWALLOWING = 0x1;
-
-    HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
-    tGetPolicy pGetPolicy = (tGetPolicy)GetProcAddress(kernel32,
-                                                       "GetProcessUserModeExceptionPolicy");
-    tSetPolicy pSetPolicy = (tSetPolicy)GetProcAddress(kernel32,
-                                                       "SetProcessUserModeExceptionPolicy");
-    if (pGetPolicy && pSetPolicy) {
-        DWORD dwFlags;
-        if (pGetPolicy(&dwFlags)) {
-            // Turn off the filter.
-            pSetPolicy(dwFlags & ~EXCEPTION_SWALLOWING);
-        }
-    }
-    FreeLibrary(kernel32);
-}
-
-void System_InputBoxGetString(const std::string &title, const std::string &defaultValue, std::function<void(bool, const std::string &)> cb)
-{
-    std::string out;
-    if (InputBox_GetString(MainWindow::GetHInstance(), MainWindow::GetHWND(), ConvertUTF8ToWString(title).c_str(), defaultValue, out)) {
-        NativeInputBoxReceived(cb, true, out);
-    } else {
-        NativeInputBoxReceived(cb, false, "");
-    }
-}
 
 static std::string GetDefaultLangRegion()
 {
@@ -401,69 +124,63 @@ static std::string GetDefaultLangRegion()
     }
 }
 
-static const int EXIT_CODE_VULKAN_WORKS = 42;
-
-static bool DetectVulkanInExternalProcess()
-{
-    std::wstring workingDirectory;
-    std::wstring moduleFilename;
-    W32Util::GetSelfExecuteParams(workingDirectory, moduleFilename);
-
-    const wchar_t *cmdline = L"--vulkan-available-check";
-
-    SHELLEXECUTEINFO info{sizeof(SHELLEXECUTEINFO)};
-    info.fMask = SEE_MASK_NOCLOSEPROCESS;
-    info.lpFile = moduleFilename.c_str();
-    info.lpParameters = cmdline;
-    info.lpDirectory = workingDirectory.c_str();
-    info.nShow = SW_HIDE;
-    if (ShellExecuteEx(&info) != TRUE) {
-        return false;
-    }
-    if (info.hProcess == nullptr) {
-        return false;
-    }
-
-    DWORD result = WaitForSingleObject(info.hProcess, 10000);
-    DWORD exitCode = 0;
-    if (result == WAIT_FAILED || GetExitCodeProcess(info.hProcess, &exitCode) == 0) {
-        CloseHandle(info.hProcess);
-        return false;
-    }
-    CloseHandle(info.hProcess);
-
-    return exitCode == EXIT_CODE_VULKAN_WORKS;
-}
+static std::wstring s_boot_file;
 
 std::vector<std::wstring> GetWideCmdLine()
 {
-    std::vector<std::wstring> wideArgs;
+    wchar_t **wargv;
+    int wargc = -1;
+    wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
 
-    if (!s_boot_file.empty()) {
+    std::vector<std::wstring> wideArgs(wargv, wargv + wargc);
+    LocalFree(wargv);
 
-        wideArgs.push_back(L"Empty_Stub");
+	if (!s_boot_file.empty()) {
 
-        std::wstring l_boot_file = s_boot_file;
+		std::wstring l_boot_file = s_boot_file;
 
-        auto lSplit = l_boot_file.find(L'|');
+		auto lSplit = l_boot_file.find(L'|');
 
-        while (lSplit != std::string::npos) {
+		while(lSplit != std::string::npos)
+        {
             wideArgs.push_back(l_boot_file.substr(0, lSplit));
 
-            l_boot_file = l_boot_file.substr(lSplit + 1, l_boot_file.size());
+			l_boot_file = l_boot_file.substr(lSplit + 1, l_boot_file.size());
 
-            lSplit = l_boot_file.find('|');
+			lSplit = l_boot_file.find('|');
         }
 
         wideArgs.push_back(l_boot_file);
-    }
+	}
 
     return wideArgs;
 }
 
-static void WinMainInit()
+extern "C" int __stdcall Launch(LPWSTR szCmdLine, IUnknown *a_PtrUnkDirectX11Device, HWND a_VideoPanelHandler, HWND a_CaptureHandler, void *a_TouchPadHandler, SetDataCallback a_setAudioData, LPWSTR szStickDirectory)
 {
-    CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    g_TouchPadHandler = a_TouchPadHandler;
+
+    s_boot_file = szCmdLine;
+
+	MainWindow::SetUnkDirectX11Device(a_PtrUnkDirectX11Device);
+
+    MainWindow::SetDisplayHWND(a_VideoPanelHandler);
+
+    MainWindow::SetCaptureHWND(a_CaptureHandler);
+
+	auto l = ConvertWStringToUTF8(szStickDirectory);
+
+    g_setAudioData = a_setAudioData;
+	
+	g_Config.memStickDirectory = l;
+
+	g_Config.flash0Directory = l;
+
+    PSP_CoreParameter().pixelWidth = 1280;
+    PSP_CoreParameter().pixelHeight = 720;
+
+    setCurrentThreadName("Main");
+
     net::Init(); // This needs to happen before we load the config. So on Windows we also run it in Main. It's fine to call multiple times.
 
     // Windows, API init stuff
@@ -472,61 +189,10 @@ static void WinMainInit()
     comm.dwICC = ICC_BAR_CLASSES | ICC_LISTVIEW_CLASSES | ICC_TAB_CLASSES;
     InitCommonControlsEx(&comm);
 
-    EnableCrashingOnCrashes();
 
-#ifdef _DEBUG
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
     PROFILE_INIT();
 
-#if defined(_M_X64) && defined(_MSC_VER) && _MSC_VER < 1900
-    // FMA3 support in the 2013 CRT is broken on Vista and Windows 7 RTM (fixed in SP1). Just disable it.
-    _set_FMA3_enable(0);
-#endif
-}
-
-static void WinMainCleanup()
-{
-    net::Shutdown();
-    CoUninitialize();
-
-    if (g_Config.bRestartRequired) {
-        W32Util::ExitAndRestart(!restartArgs.empty(), restartArgs);
-    }
-}
-
-extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND a_CaptureHandler, GetTouchPadCallback a_getTouchPad, SetDataCallback a_setAudioData, LPWSTR szStickDirectory)
-{
-    g_getTouchPad = a_getTouchPad;
-
-    s_boot_file = szCmdLine;
-
-    MainWindow::SetUnkDirectX11Device(nullptr);
-
-    MainWindow::SetDisplayHWND(a_VideoPanelHandler);
-
-    MainWindow::SetCaptureHWND(a_CaptureHandler);
-
-    auto l = ConvertWStringToUTF8(szStickDirectory);
-
-    g_setAudioData = a_setAudioData;
-
-    g_Config.memStickDirectory = l;
-
-    g_Config.flash0Directory = l;
-
-    //PSP_CoreParameter().pixelWidth = 1280;
-    //PSP_CoreParameter().pixelHeight = 720;
-
-    setCurrentThreadName("Main");
-
-    //WinMainInit();
-
-#ifndef _DEBUG
     bool showLog = false;
-#else
-    bool showLog = true;
-#endif
 
     const std::string &exePath = File::GetExeDirectory();
     VFSRegister("", new DirectoryAssetReader((exePath + "/assets/").c_str()));
@@ -541,29 +207,10 @@ extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND
     std::string controlsConfigFilename = "";
     const std::wstring controlsOption = L"--controlconfig=";
 
-    std::vector<std::wstring> wideArgs = GetWideCmdLine();
-
-    for (size_t i = 1; i < wideArgs.size(); ++i) {
-        if (wideArgs[i][0] == L'\0')
-            continue;
-        if (wideArgs[i][0] == L'-') {
-            if (wideArgs[i].find(configOption) != std::wstring::npos && wideArgs[i].size() > configOption.size()) {
-                const std::wstring tempWide = wideArgs[i].substr(configOption.size());
-                configFilename = ConvertWStringToUTF8(tempWide);
-            }
-
-            if (wideArgs[i].find(controlsOption) != std::wstring::npos && wideArgs[i].size() > controlsOption.size()) {
-                const std::wstring tempWide = wideArgs[i].substr(controlsOption.size());
-                controlsConfigFilename = ConvertWStringToUTF8(tempWide);
-            }
-        }
-    }
-
     LogManager::Init();
 
     // On Win32 it makes more sense to initialize the system directories here
     // because the next place it was called was in the EmuThread, and it's too late by then.
-    g_Config.internalDataDirectory = W32Util::UserDocumentsPath();
     InitSysDirectories();
 
     // Load config up here, because those changes below would be overwritten
@@ -573,8 +220,6 @@ extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND
     g_Config.SetDefaultPath(GetSysDirectory(DIRECTORY_SYSTEM));
     g_Config.Load(configFilename.c_str(), controlsConfigFilename.c_str());
 
-    g_Config.bFirstRun = false;
-
     bool debugLogLevel = false;
 
     g_Config.iGPUBackend = (int)GPUBackend::DIRECT3D11;
@@ -583,10 +228,13 @@ extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND
 
 
     g_Config.bSaveSettings = false;
-    g_Config.bGameSpecific = false;
+	g_Config.bGameSpecific = false;
     g_Config.bAutoSaveSymbolMap = false;
     g_Config.iAutoLoadSaveState = 0;
     g_Config.bSavedataUpgrade = false;
+
+
+
 
 
     timeBeginPeriod(1); // TODO: Evaluate if this makes sense to keep.
@@ -595,97 +243,28 @@ extern "C" int __stdcall Launch(LPWSTR szCmdLine, HWND a_VideoPanelHandler, HWND
 
     g_hPopupMenus = LoadMenu(NULL, (LPCWSTR)IDR_POPUPMENUS);
 
-    //MainWindow::Show(NULL);
+    MainWindow::Show(NULL);
 
-//    HWND hwndMain = MainWindow::GetHWND();
-//    HWND hwndDisplay = MainWindow::GetDisplayHWND();
-//
-//    //initialize custom controls
-//    CtrlDisAsmView::init();
-//    CtrlMemView::init();
-//    CtrlRegisterList::init();
-//#if PPSSPP_API(ANY_GL)
-//    CGEDebugger::Init();
-//#endif
-//    DialogManager::AddDlg(vfpudlg = new CVFPUDlg(_hInstance, hwndMain, currentDebugMIPS));
-//
-//    MainWindow::CreateDebugWindows();
-//
-//    const bool minimized = iCmdShow == SW_MINIMIZE || iCmdShow == SW_SHOWMINIMIZED || iCmdShow == SW_SHOWMINNOACTIVE;
-//    if (minimized) {
-//        MainWindow::Minimize();
-//    }
-//
-//    // Emu thread (and render thread, if any) is always running!
-//    // Only OpenGL uses an externally managed render thread (due to GL's single-threaded context design). Vulkan
-//    // manages its own render thread.
+    //initialize custom controls
+    //CtrlDisAsmView::init();
+    //CtrlMemView::init();
+    //CtrlRegisterList::init();
+    //CGEDebugger::Init();
+
+    // Emu thread (and render thread, if any) is always running!
+    // Only OpenGL uses an externally managed render thread (due to GL's single-threaded context design). Vulkan
+    // manages its own render thread.
     MainThread_Start(g_Config.iGPUBackend == (int)GPUBackend::OPENGL);
     InputDevice::BeginPolling();
 
-    //HACCEL hAccelTable = LoadAccelerators(_hInstance, (LPCTSTR)IDR_ACCELS);
-    //HACCEL hDebugAccelTable = LoadAccelerators(_hInstance, (LPCTSTR)IDR_DEBUGACCELS);
-
-    ////so.. we're at the message pump of the GUI thread
-    //for (MSG msg; GetMessage(&msg, NULL, 0, 0);) // for no quit
-    //{
-    //    if (msg.message == WM_KEYDOWN) {
-    //        //hack to enable/disable menu command accelerate keys
-    //        MainWindow::UpdateCommands();
-
-    //        //hack to make it possible to get to main window from floating windows with Esc
-    //        if (msg.hwnd != hwndMain && msg.wParam == VK_ESCAPE)
-    //            BringWindowToTop(hwndMain);
-    //    }
-
-    //    //Translate accelerators and dialog messages...
-    //    HWND wnd;
-    //    HACCEL accel;
-    //    switch (g_activeWindow) {
-    //        case WINDOW_MAINWINDOW:
-    //            wnd = hwndMain;
-    //            accel = hAccelTable;
-    //            break;
-    //        case WINDOW_CPUDEBUGGER:
-    //            wnd = disasmWindow[0] ? disasmWindow[0]->GetDlgHandle() : 0;
-    //            accel = hDebugAccelTable;
-    //            break;
-    //        case WINDOW_GEDEBUGGER:
-    //        default:
-    //            wnd = 0;
-    //            accel = 0;
-    //            break;
-    //    }
-
-    //    if (!TranslateAccelerator(wnd, accel, &msg)) {
-    //        if (!DialogManager::IsDialogMessage(&msg)) {
-    //            //and finally translate and dispatch
-    //            TranslateMessage(&msg);
-    //            DispatchMessage(&msg);
-    //        }
-    //    }
-    //}
-
-    //MainThread_Stop();
-
-    //VFSShutdown();
-
-    //MainWindow::DestroyDebugWindows();
-    //DialogManager::DestroyAll();
-
 	while (GetUIState() != UISTATE_INGAME) {
-        Sleep(200);
+		Sleep(200);
     }
 
-    timeEndPeriod(1);
-
-
-
-    //LogManager::Shutdown();
-    //WinMainCleanup();
-
+	PSP_CoreParameter().unthrottle = false;
+	
     return 0;
 }
-
 
 static std::mutex s_lock_mutex;
 
@@ -697,23 +276,23 @@ extern "C" void __stdcall Save(LPSTR a_filename)
 {
     std::unique_lock<std::mutex> l_lock(s_lock_mutex);
 
-    SaveState::Save(a_filename, -1, [](SaveState::Status status, const std::string &message, void *) {
+    SaveState::Save(a_filename, [](SaveState::Status status, const std::string &message, void *) {
         if (!message.empty()) {
         }
 
-        l_lock_condition.notify_one();
+		l_lock_condition.notify_one();
     });
 
-    l_lock_condition.wait_for(l_lock, 50 * 100ms);
+	l_lock_condition.wait_for(l_lock, 50 * 100ms);
 
-    Sleep(500);
+	Sleep(500);
 }
 
 extern "C" void __stdcall Load(LPSTR a_filename)
 {
     std::unique_lock<std::mutex> l_lock(s_lock_mutex);
 
-    SaveState::Load(a_filename, -1, [](SaveState::Status status, const std::string &message, void *) {
+    SaveState::Load(a_filename, [](SaveState::Status status, const std::string &message, void *) {
         if (!message.empty()) {
         }
 
@@ -722,6 +301,7 @@ extern "C" void __stdcall Load(LPSTR a_filename)
 
     l_lock_condition.wait_for(l_lock, 50 * 100ms);
 }
+
 
 
 
@@ -1104,9 +684,9 @@ extern "C" void __stdcall GetGameInfo(const char *a_filename, BSTR *a_result)
 
     if (info->fileType == IdentifiedFileType::PSP_ISO) {
 
-        std::string lout = info->GetTitle() + "#" + info->id;
+		std::string lout = info->GetTitle() + "#" + info->id;
 
-        OLECHAR *oleChar = NULL;
+		OLECHAR *oleChar = NULL;
         oleChar = (OLECHAR *)calloc(strlen(lout.c_str()) + 1, sizeof(OLECHAR));
         MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, lout.c_str(), -1, oleChar, strlen(lout.c_str()) + 1);
         *a_result = SysAllocString(oleChar);
@@ -1131,7 +711,7 @@ extern "C" void __stdcall Shutdown()
 
     net::Shutdown();
 
-    g_setAudioData = nullptr;
+	g_setAudioData = nullptr;
 }
 
 extern "C" void __stdcall Pause()
@@ -1154,4 +734,5 @@ extern "C" void __stdcall SetAudioVolume(float a_level)
 extern "C" void __stdcall SetLimitFrame(bool a_limit)
 {
     PSP_CoreParameter().unthrottle = !a_limit;
-}
+} 
+

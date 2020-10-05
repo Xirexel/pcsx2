@@ -71,7 +71,4 @@
 
 #include "Common/Log.h"
 
-
-typedef void(__stdcall *SetDataCallback)(void *, UINT32);
-
-typedef void *(__stdcall *GetTouchPadCallback)(UINT32);
+typedef void(__stdcall *SetDataCallback)(void*,  UINT32);

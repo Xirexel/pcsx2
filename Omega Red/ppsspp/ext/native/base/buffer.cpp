@@ -26,13 +26,9 @@ Buffer::Buffer() { }
 Buffer::~Buffer() { }
 
 char *Buffer::Append(ssize_t length) {
-	if (length > 0) {
-		size_t old_size = data_.size();
-		data_.resize(old_size + length);
-		return &data_[0] + old_size;
-	} else {
-		return nullptr;
-	}
+  size_t old_size = data_.size();
+  data_.resize(old_size + length);
+  return &data_[0] + old_size;
 }
 
 void Buffer::Append(const std::string &str) {
@@ -48,10 +44,8 @@ void Buffer::Append(const char *str) {
 
 void Buffer::Append(const Buffer &other) {
 	size_t len = other.size();
-	if (len > 0) {
-		char *dest = Append(len);
-		memcpy(dest, &other.data_[0], len);
-	}
+	char *dest = Append(len);
+	memcpy(dest, &other.data_[0], len);
 }
 
 void Buffer::AppendValue(int value) {
@@ -152,22 +146,11 @@ bool Buffer::FlushToFile(const char *filename) {
 	return true;
 }
 
-bool Buffer::FlushSocket(uintptr_t sock, double timeout, bool *cancelled) {
-	static constexpr float CANCEL_INTERVAL = 0.25f;
+bool Buffer::FlushSocket(uintptr_t sock, double timeout) {
 	for (size_t pos = 0, end = data_.size(); pos < end; ) {
-		bool ready = false;
-		double leftTimeout = timeout;
-		while (!ready && (leftTimeout >= 0 || cancelled)) {
-			if (cancelled && *cancelled)
-				return false;
-			ready = fd_util::WaitUntilReady(sock, CANCEL_INTERVAL, true);
-			if (!ready && leftTimeout >= 0.0) {
-				leftTimeout -= CANCEL_INTERVAL;
-				if (leftTimeout < 0) {
-					ELOG("FlushSocket timed out");
-					return false;
-				}
-			}
+		if (timeout >= 0.0 && !fd_util::WaitUntilReady(sock, timeout, true)) {
+			ELOG("FlushSocket timed out");
+			return false;
 		}
 		int sent = send(sock, &data_[pos], (int)(end - pos), MSG_NOSIGNAL);
 		if (sent < 0) {
@@ -192,7 +175,7 @@ bool Buffer::ReadAll(int fd, int hintSize) {
 	} else if (hintSize >= 1024 * 16) {
 		buf.resize(hintSize / 16);
 	} else {
-		buf.resize(4096);
+		buf.resize(1024);
 	}
 
 	while (true) {
@@ -210,7 +193,6 @@ bool Buffer::ReadAll(int fd, int hintSize) {
 }
 
 bool Buffer::ReadAllWithProgress(int fd, int knownSize, float *progress, bool *cancelled) {
-	static constexpr float CANCEL_INTERVAL = 0.25f;
 	std::vector<char> buf;
 	if (knownSize >= 65536 * 16) {
 		buf.resize(65536);
@@ -222,12 +204,8 @@ bool Buffer::ReadAllWithProgress(int fd, int knownSize, float *progress, bool *c
 
 	int total = 0;
 	while (true) {
-		bool ready = false;
-		while (!ready && cancelled) {
-			if (*cancelled)
-				return false;
-			ready = fd_util::WaitUntilReady(fd, CANCEL_INTERVAL, false);
-		}
+		if (cancelled && *cancelled)
+			return false;
 		int retval = recv(fd, &buf[0], (int)buf.size(), 0);
 		if (retval == 0) {
 			return true;
@@ -238,8 +216,7 @@ bool Buffer::ReadAllWithProgress(int fd, int knownSize, float *progress, bool *c
 		char *p = Append((size_t)retval);
 		memcpy(p, &buf[0], retval);
 		total += retval;
-		if (progress)
-			*progress = (float)total / (float)knownSize;
+		*progress = (float)total / (float)knownSize;
 	}
 	return true;
 }

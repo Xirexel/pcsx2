@@ -1,6 +1,10 @@
 #ifndef VULKAN_XLIB_XRANDR_H_
 #define VULKAN_XLIB_XRANDR_H_ 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
 ** Copyright (c) 2015-2019 The Khronos Group Inc.
 **
@@ -21,11 +25,6 @@
 ** This header is generated from the Khronos Vulkan XML API Registry.
 **
 */
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 

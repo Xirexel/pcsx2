@@ -37,28 +37,24 @@ const char* dialog_message(int ID, bool* updateText) {
 				" Rendering is smoother but it could generate a few glitches. If upscaling is enabled, this setting is recommended over 'Bilinear Forced'\n\n"
 				"Bilinear Forced:\nAlways enable interpolation. Rendering is smoother but it could generate some glitches.\n\n"
 				"Bilinear PS2:\nUse same mode as the PS2. It is the more accurate option.";
-		case IDC_HALF_SCREEN_TS:
-			return "Control the half-screen fix detection on texture shuffling.\n\n"
-				"Automatic:\nUses an algorithm to automatically enable or disable the detection.\n\n"
-				"Force-Disabled:\nDisables the detection. Will cause visual bugs in many games. It helps Xenosaga games.\n\n"
-				"Force-Enabled:\nAlways enables the detection. Use it when a game has half-screen issues.";
 		case IDC_TRI_FILTER:
 			return "Control the texture tri-filtering of the emulation.\n\n"
 				"None:\nNo extra trilinear filtering.\n\n"
 				"Trilinear:\nUse OpenGL trilinear interpolation when PS2 uses mipmaps.\n\n"
 				"Trilinear Forced:\nAlways enable full trilinear interpolation. Warning Slow!\n\n";
 		case IDC_CRC_LEVEL:
-			return "Control the number of Auto-CRC fixes and hacks applied to games.\n\n"
-				"Automatic:\nAutomatically sets the recommended CRC level based on the selected renderer.\n"
+			return "Control the number of Auto-CRC hacks applied to games.\n\n"
+				"Automatic:\nAutomatically sets the recommended CRC hack level based on the selected renderer.\n"
 				"This is the recommended setting.\n"
 				"Partial will be selected for OpenGL.\nFull will be selected for Direct3D.\n\n"
-				"None:\nRemove all CRC rendering fixes and hacks.\n\n"
-				"Minimum:\nEnables CRC lookup for special post processing effects.\n\n"
+				"None:\nRemove all CRC hacks.\n\n"
+				"Minimum:\nEnable a couple of CRC hacks.\n\n"
 				"Partial:\nFor an optimal experience with OpenGL.\n\n"
 				"Full:\nFor an optimal experience with Direct3D.\n\n"
 				"Aggressive:\nUse more aggressive CRC hacks.\n"
 				"Removes effects in some games which make the image appear sharper/clearer.\n"
-				"Affected games: AC4, BleachBB, Bully, DBZBT 2 & 3, DeathByDegrees, Evangelion, FF games, FightingBeautyWulong, GOW 1 & 2, Kunoichi, IkkiTousen, Okami, Oneechanbara2, OnimushaDoD, RDRevolver, Simple2000Vol114, SoTC, SMT3, SMTDDS 1 & 2, SteambotChronicles, Tekken5, Ultraman, XenosagaE3, Yakuza 1 & 2.\n";
+				"Affected games: AC4, DBZBT 2 & 3, FF games, GOW games, OnimushaDoD, RDRevolver, RE4, SoTC, SMT3, SMTDDS1, SMTDDS2.\n"
+				"Works as a speedhack for: BleachBB, Kunoichi, Steambot Chronicles.";
 		case IDC_SKIPDRAWHACK:
 		case IDC_SKIPDRAWHACKEDIT:
 		case IDC_SKIPDRAWOFFSET:
@@ -113,7 +109,7 @@ const char* dialog_message(int ID, bool* updateText) {
 				"This is the recommended setting.\n\n"
 				"Medium:\nExtend it to all sprites. Performance impact remains reasonable in 3D game.\n\n"
 				"High:\nExtend it to destination alpha blending and color wrapping (helps shadow and fog effects).\n"
-				"A good GPU is required.\n\n"
+				"A good CPU is required.\n\n"
 				"Full:\nExcept few cases, the blending unit will be fully emulated by the shader. It is ultra slow!\n"
 				"It is intended for debug.\n\n"
 				"Ultra:\nThe blending unit will be completely emulated by the shader. It is ultra slow!\n"
@@ -127,7 +123,7 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Harry Potter games and Stuntman for example.\n\n"
 				"Note: This hack has an impact on performance.\n";
 		case IDC_AFCOMBO:
-			return "Reduces texture aliasing at extreme viewing angles.";
+			return "Reduces texture aliasing at extreme viewing angles. High performance impact.";
 		case IDC_AA1:
 			return "Internal GS feature. Reduces edge aliasing of lines and triangles when the game requests it.";
 		case IDC_SWTHREADS:
@@ -148,7 +144,8 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Note: OpenGL HW renderer is able to handle Jak shadows at full speed without this option.";
 		case IDC_AUTO_FLUSH_SW:
 			return "Force a primitive flush when a framebuffer is also an input texture.\n"
-				"Fixes some processing effects such as the shadows in the Jak series and radiosity in GTA:SA.";
+				"Fixes some processing effects such as the shadows in the Jak series and radiosity in GTA:SA.\n"
+				"Warning: It's very costly on the performance.";
 		case IDC_SAFE_FEATURES:
 			return "This option disables multiple safe features.\n\n"
 				"Disables accurate Unscale Point and Line rendering.\n"
@@ -169,12 +166,12 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Automatic detection is recommended.\n\n"
 				"Note: This option is only supported by GPUs which support at least Direct3D 10.";
 		case IDC_IMAGE_LOAD_STORE:
-			return "Allows advanced atomic operations to speed up DATE Accuracy.\n"
-				"Only disable this if using DATE Accuracy causes (GPU driver) issues.\n\n"
+			return "Allows advanced atomic operations to speed up Accurate Date.\n"
+				"Only disable this if using Accurate Date causes (GPU driver) issues.\n\n"
 				"Note: This option is only supported by GPUs which support at least Direct3D 11.";
 		case IDC_SPARSE_TEXTURE:
-			return "Allows to reduce VRAM usage on the GPU.\n\n"
-				"Note: Feature is currently experimental and works only on Nvidia GPUs.";
+			return "Allows to reduce memory usage on the GPU.\n\n"
+				"Note: Feature is not yet implemented so Force Disable by default.";
 		case IDC_OSD_MAX_LOG_EDIT:
 		case IDC_OSD_MAX_LOG:
 			return "Sets the maximum number of log messages on the screen or in the buffer at the same time.\n\n"

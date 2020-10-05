@@ -373,9 +373,9 @@ BOOL CALLBACK DSound::DSEnumCallback(LPGUID lpGuid, LPCTSTR lpcstrDescription, L
     return DS._DSEnumCallback(lpGuid, lpcstrDescription, lpcstrModule, lpContext);
 }
 
-void DSSetVolume(LONG aVolume)
+void SetVolume(LONG aVolume)
 {
     DS.setVolume(aVolume);
 }
 
-SndOutModule *DSoundOut = &DS;
+SndOutModule *SoundOut = &DS;

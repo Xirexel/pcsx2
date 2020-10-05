@@ -8,16 +8,13 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <functional>
-#include <string>
 #include <vector>
+#include <string>
 
 #include "base/logging.h"
 #include "DataFormat.h"
 
-namespace Lin {
 class Matrix4x4;
-}
 
 namespace Draw {
 
@@ -147,7 +144,6 @@ enum VertexShaderPreset : int {
 enum FragmentShaderPreset : int {
 	FS_COLOR_2D,
 	FS_TEXTURE_COLOR_2D,
-	FS_TEXTURE_COLOR_2D_RB_SWIZZLE,
 	FS_MAX_PRESET,
 };
 
@@ -335,7 +331,6 @@ public:
 		ANY_MAP_BUFFER_RANGE_SLOW = 2,
 		PVR_GENMIPMAP_HEIGHT_GREATER = 3,
 		BROKEN_NAN_IN_CONDITIONAL = 4,
-		COLORWRITEMASK_BROKEN_WITH_DEPTHTEST = 5,
 	};
 
 protected:
@@ -404,9 +399,6 @@ struct InputLayoutDesc {
 class InputLayout : public RefCountedObject { };
 
 enum class UniformType : int8_t {
-	FLOAT1,
-	FLOAT2,
-	FLOAT3,
 	FLOAT4,
 	MATRIX4X4,
 };
@@ -521,10 +513,6 @@ struct DeviceCaps {
 	std::string deviceName;  // The device name to use when creating the thin3d context, to get the same one.
 };
 
-// Use to write data directly to texture memory.  initData is the pointer passed in TextureDesc.
-// Important: only write to the provided pointer, don't read from it.
-typedef std::function<bool(uint8_t *data, const uint8_t *initData, uint32_t w, uint32_t h, uint32_t d, uint32_t byteStride, uint32_t sliceByteStride)> TextureCallback;
-
 struct TextureDesc {
 	TextureType type;
 	DataFormat format;
@@ -536,8 +524,7 @@ struct TextureDesc {
 	// Optional, for tracking memory usage.
 	std::string tag;
 	// Does not take ownership over pointed-to data.
-	std::vector<const uint8_t *> initData;
-	TextureCallback initDataCallback;
+	std::vector<uint8_t *> initData;
 };
 
 enum class RPAction {
@@ -553,7 +540,6 @@ struct RenderPassInfo {
 	uint32_t clearColor;
 	float clearDepth;
 	uint8_t clearStencil;
-	const char *tag;
 };
 
 class DrawContext {
@@ -591,15 +577,15 @@ public:
 	// On some hardware, you might get a 24-bit depth buffer even though you only wanted a 16-bit one.
 	virtual Framebuffer *CreateFramebuffer(const FramebufferDesc &desc) = 0;
 
-	virtual ShaderModule *CreateShaderModule(ShaderStage stage, ShaderLanguage language, const uint8_t *data, size_t dataSize, const std::string &tag = "thin3d") = 0;
+	virtual ShaderModule *CreateShaderModule(ShaderStage stage, ShaderLanguage language, const uint8_t *data, size_t dataSize) = 0;
 	virtual Pipeline *CreateGraphicsPipeline(const PipelineDesc &desc) = 0;
 
 	// Copies data from the CPU over into the buffer, at a specific offset. This does not change the size of the buffer and cannot write outside it.
 	virtual void UpdateBuffer(Buffer *buffer, const uint8_t *data, size_t offset, size_t size, UpdateBufferFlags flags) = 0;
 
-	virtual void CopyFramebufferImage(Framebuffer *src, int level, int x, int y, int z, Framebuffer *dst, int dstLevel, int dstX, int dstY, int dstZ, int width, int height, int depth, int channelBits, const char *tag) = 0;
-	virtual bool BlitFramebuffer(Framebuffer *src, int srcX1, int srcY1, int srcX2, int srcY2, Framebuffer *dst, int dstX1, int dstY1, int dstX2, int dstY2, int channelBits, FBBlitFilter filter, const char *tag) = 0;
-	virtual bool CopyFramebufferToMemorySync(Framebuffer *src, int channelBits, int x, int y, int w, int h, Draw::DataFormat format, void *pixels, int pixelStride, const char *tag) {
+	virtual void CopyFramebufferImage(Framebuffer *src, int level, int x, int y, int z, Framebuffer *dst, int dstLevel, int dstX, int dstY, int dstZ, int width, int height, int depth, int channelBits) = 0;
+	virtual bool BlitFramebuffer(Framebuffer *src, int srcX1, int srcY1, int srcX2, int srcY2, Framebuffer *dst, int dstX1, int dstY1, int dstX2, int dstY2, int channelBits, FBBlitFilter filter) = 0;
+	virtual bool CopyFramebufferToMemorySync(Framebuffer *src, int channelBits, int x, int y, int w, int h, Draw::DataFormat format, void *pixels, int pixelStride) {
 		return false;
 	}
 	virtual DataFormat PreferredFramebufferReadbackFormat(Framebuffer *src) {
@@ -608,7 +594,7 @@ public:
 
 	// These functions should be self explanatory.
 	// Binding a zero render target means binding the backbuffer.
-	virtual void BindFramebufferAsRenderTarget(Framebuffer *fbo, const RenderPassInfo &rp, const char *tag) = 0;
+	virtual void BindFramebufferAsRenderTarget(Framebuffer *fbo, const RenderPassInfo &rp) = 0;
 
 	// color must be 0, for now.
 	virtual void BindFramebufferAsTexture(Framebuffer *fbo, int binding, FBChannel channelBit, int attachment) = 0;
@@ -646,8 +632,9 @@ public:
 	// Call this with 0 to signal that you have been drawing on your own, and need the state reset on the next pipeline bind.
 	virtual void BindPipeline(Pipeline *pipeline) = 0;
 
+	// TODO: Add more sophisticated draws with buffer offsets, and multidraws.
 	virtual void Draw(int vertexCount, int offset) = 0;
-	virtual void DrawIndexed(int vertexCount, int offset) = 0;  // Always 16-bit indices.
+	virtual void DrawIndexed(int vertexCount, int offset) = 0;
 	virtual void DrawUP(const void *vdata, int vertexCount) = 0;
 	
 	// Frame management (for the purposes of sync and resource management, necessary with modern APIs). Default implementations here.
@@ -666,16 +653,19 @@ public:
 	}
 
 	virtual std::string GetInfoString(InfoField info) const = 0;
-	virtual uint64_t GetNativeObject(NativeObject obj) = 0;
+	virtual uintptr_t GetNativeObject(NativeObject obj) = 0;
 
 	virtual void HandleEvent(Event ev, int width, int height, void *param1 = nullptr, void *param2 = nullptr) = 0;
 
 	// Flush state like scissors etc so the caller can do its own custom drawing.
 	virtual void FlushState() {}
 
-	virtual int GetCurrentStepId() const = 0;
-
 protected:
+	struct FRect {
+		float x, y, w, h;
+	};
+	void RotateRectToDisplay(FRect &rect, float curRTWidth, float curRTHeight);
+
 	ShaderModule *vsPresets_[VS_MAX_PRESET];
 	ShaderModule *fsPresets_[FS_MAX_PRESET];
 

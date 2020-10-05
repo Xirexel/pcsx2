@@ -15,7 +15,6 @@
 // Official git repository and contact information can be found at
 // https://github.com/hrydgard/ppsspp and http://www.ppsspp.org/.
 
-#include <algorithm>
 #include <cmath>
 #include "math/math_util.h"
 #include "gfx_es2/gpu_features.h"
@@ -63,15 +62,13 @@ static void SwapUVs(TransformedVertex &a, TransformedVertex &b) {
 
 // Note: 0 is BR and 2 is TL.
 
-static void RotateUV(TransformedVertex v[4], float flippedMatrix[16], bool flippedY) {
+static void RotateUV(TransformedVertex v[4], float flippedMatrix[16], float ySign) {
 	// Transform these two coordinates to figure out whether they're flipped or not.
 	Vec4f tl;
 	Vec3ByMatrix44(tl.AsArray(), v[2].pos, flippedMatrix);
 
 	Vec4f br;
 	Vec3ByMatrix44(br.AsArray(), v[0].pos, flippedMatrix);
-
-	float ySign = flippedY ? -1.0 : 1.0;
 
 	const float invtlw = 1.0f / tl.w;
 	const float invbrw = 1.0f / br.w;
@@ -156,9 +153,15 @@ static int ColorIndexOffset(int prim, GEShadeMode shadeMode, bool clearMode) {
 	return 0;
 }
 
-void SoftwareTransform::Decode(int prim, u32 vertType, const DecVtxFormat &decVtxFormat, int maxIndex, SoftwareTransformResult *result) {
-	u8 *decoded = params_.decoded;
-	TransformedVertex *transformed = params_.transformed;
+void SoftwareTransform(
+	int prim, int vertexCount, u32 vertType, u16 *&inds, int indexType,
+	const DecVtxFormat &decVtxFormat, int &maxIndex, TransformedVertex *&drawBuffer, int &numTrans, bool &drawIndexed, const SoftwareTransformParams *params, SoftwareTransformResult *result) {
+	u8 *decoded = params->decoded;
+	FramebufferManagerCommon *fbman = params->fbman;
+	TextureCacheCommon *texCache = params->texCache;
+	TransformedVertex *transformed = params->transformed;
+	TransformedVertex *transformedExpanded = params->transformedExpanded;
+	float ySign = 1.0f;
 	bool throughmode = (vertType & GE_VTYPE_THROUGH_MASK) != 0;
 	bool lmode = gstate.isUsingSecondaryColor() && gstate.isLightingEnabled();
 
@@ -189,7 +192,7 @@ void SoftwareTransform::Decode(int prim, u32 vertType, const DecVtxFormat &decVt
 	}
 
 	int provokeIndOffset = 0;
-	if (params_.provokeFlatFirst) {
+	if (params->provokeFlatFirst) {
 		provokeIndOffset = ColorIndexOffset(prim, gstate.getShadeMode(), gstate.isModeClear());
 	}
 
@@ -324,8 +327,12 @@ void SoftwareTransform::Decode(int prim, u32 vertType, const DecVtxFormat &decVt
 					}
 				}
 			} else {
-				for (int j = 0; j < 4; j++) {
-					c0[j] = unlitColor[j];
+				if (reader.hasColor0()) {
+					for (int j = 0; j < 4; j++) {
+						c0[j] = unlitColor[j];
+					}
+				} else {
+					c0 = Vec4f::FromRGBA(gstate.getMaterialAmbientRGBA());
 				}
 				if (lmode) {
 					// c1 is already 0.
@@ -441,7 +448,7 @@ void SoftwareTransform::Decode(int prim, u32 vertType, const DecVtxFormat &decVt
 	// TODO: This bleeds outside the play area in non-buffered mode. Big deal? Probably not.
 	// TODO: Allow creating a depth clear and a color draw.
 	bool reallyAClear = false;
-	if (maxIndex > 1 && prim == GE_PRIM_RECTANGLES && gstate.isModeClear() && params_.allowClear) {
+	if (maxIndex > 1 && prim == GE_PRIM_RECTANGLES && gstate.isModeClear() && params->allowClear) {
 		int scissorX2 = gstate.getScissorX2() + 1;
 		int scissorY2 = gstate.getScissorY2() + 1;
 		reallyAClear = IsReallyAClear(transformed, maxIndex, scissorX2, scissorY2);
@@ -450,7 +457,7 @@ void SoftwareTransform::Decode(int prim, u32 vertType, const DecVtxFormat &decVt
 		// If alpha is not allowed to be separate, it must match for both depth/stencil and color.  Vulkan requires this.
 		bool alphaMatchesColor = gstate.isClearModeColorMask() == gstate.isClearModeAlphaMask();
 		bool depthMatchesStencil = gstate.isClearModeAlphaMask() == gstate.isClearModeDepthMask();
-		bool matchingComponents = params_.allowSeparateAlphaClear || (alphaMatchesColor && depthMatchesStencil);
+		bool matchingComponents = params->allowSeparateAlphaClear || (alphaMatchesColor && depthMatchesStencil);
 		bool stencilNotMasked = !gstate.isClearModeAlphaMask() || gstate.getStencilWriteMask() == 0x00;
 		if (matchingComponents && stencilNotMasked) {
 			result->color = transformed[1].color0_32;
@@ -461,104 +468,67 @@ void SoftwareTransform::Decode(int prim, u32 vertType, const DecVtxFormat &decVt
 			return;
 		}
 	}
-}
 
-// Also, this assumes SetTexture() has already figured out the actual texture height.
-void SoftwareTransform::DetectOffsetTexture(int maxIndex) {
-	TransformedVertex *transformed = params_.transformed;
-
-	const int w = gstate.getTextureWidth(0);
-	const int h = gstate.getTextureHeight(0);
-	float widthFactor = (float)w / (float)gstate_c.curTextureWidth;
-	float heightFactor = (float)h / (float)gstate_c.curTextureHeight;
-
-	// Breath of Fire 3 does some interesting rendering here, probably from being a port.
-	// It draws at 384x240 to two buffers in VRAM, one right after the other.
-	// We end up creating separate framebuffers, and rendering to each.
-	// But the game then stretches this to the screen - and reads from a single 512 tall texture.
-	// We initially use the first framebuffer.  This code detects the read from the second.
-	//
-	// First Vs: 12, 228 - second Vs: 252, 468 - estimated fb height: 272
-
-	// If curTextureHeight is < h, it must be a framebuffer that wasn't full height.
+	// This means we're using a framebuffer (and one that isn't big enough.)
 	if (gstate_c.curTextureHeight < (u32)h && maxIndex >= 2) {
-		// This is the max V that will still land within the framebuffer (since it's shorter.)
-		// We already adjusted V to the framebuffer above.
-		const float maxAvailableV = 1.0f;
-		// This is the max V that would've been inside the original texture size.
-		const float maxValidV = heightFactor;
-
-		// Apparently, Assassin's Creed: Bloodlines accesses just outside.
+		// Even if not rectangles, this will detect if either of the first two are outside the framebuffer.
+		// HACK: Adding one pixel margin to this detection fixes issues in Assassin's Creed : Bloodlines,
+		// while still keeping BOF working (see below).
 		const float invTexH = 1.0f / gstate_c.curTextureHeight; // size of one texel.
-
-		// Are either TL or BR inside the texture but outside the framebuffer?
-		const bool tlOutside = transformed[0].v > maxAvailableV + invTexH && transformed[0].v <= maxValidV;
-		const bool brOutside = transformed[1].v > maxAvailableV + invTexH && transformed[1].v <= maxValidV;
-
-		// If TL isn't outside, is it at least near the end?
-		// We check this because some games do 0-512 from a 272 tall framebuf.
-		const bool tlAlmostOutside = transformed[0].v > maxAvailableV * 0.5f && transformed[0].v <= maxValidV;
-
+		bool tlOutside;
+		bool tlAlmostOutside;
+		bool brOutside;
+		// If we're outside heightFactor, then v must be wrapping or clamping.  Avoid this workaround.
+		// If we're <= 1.0f, we're inside the framebuffer (workaround not needed.)
+		// We buffer that 1.0f a little more with a texel to avoid some false positives.
+		tlOutside = transformed[0].v <= heightFactor && transformed[0].v > 1.0f + invTexH;
+		brOutside = transformed[1].v <= heightFactor && transformed[1].v > 1.0f + invTexH;
+		// Careful: if br is outside, but tl is well inside, this workaround still doesn't make sense.
+		// We go with halfway, since we overestimate framebuffer heights sometimes but not by much.
+		tlAlmostOutside = transformed[0].v <= heightFactor && transformed[0].v >= 0.5f;
 		if (tlOutside || (brOutside && tlAlmostOutside)) {
-			const u32 prevXOffset = gstate_c.curTextureXOffset;
+			// Okay, so we're texturing from outside the framebuffer, but inside the texture height.
+			// Breath of Fire 3 does this to access a render surface at an offset.
+			const u32 bpp = fbman->GetTargetFormat() == GE_FORMAT_8888 ? 4 : 2;
+			const u32 prevH = texCache->AttachedDrawingHeight();
+			const u32 fb_size = bpp * fbman->GetTargetStride() * prevH;
 			const u32 prevYOffset = gstate_c.curTextureYOffset;
-
-			// This is how far the nearest coord is, so that's where we'll look for the next framebuf.
-			const u32 yOffset = (int)(gstate_c.curTextureHeight * std::min(transformed[0].v, transformed[1].v));
-			if (params_.texCache->SetOffsetTexture(yOffset)) {
+			if (texCache->SetOffsetTexture(fb_size)) {
 				const float oldWidthFactor = widthFactor;
 				const float oldHeightFactor = heightFactor;
-				widthFactor = (float)w / (float)gstate_c.curTextureWidth;
-				heightFactor = (float)h / (float)gstate_c.curTextureHeight;
+				widthFactor = (float) w / (float) gstate_c.curTextureWidth;
+				heightFactor = (float) h / (float) gstate_c.curTextureHeight;
 
-				// We need to subtract this offset from the UVs to address the new framebuf.
-				const float adjustedYOffset = yOffset + prevYOffset - gstate_c.curTextureYOffset;
-				const float yDiff = (float)adjustedYOffset / (float)h;
-				const float adjustedXOffset = prevXOffset - gstate_c.curTextureXOffset;
-				const float xDiff = (float)adjustedXOffset / (float)w;
-
+				// We've already baked in the old gstate_c.curTextureYOffset, so correct.
+				const float yDiff = (float) (prevH + prevYOffset - gstate_c.curTextureYOffset) / (float) h;
 				for (int index = 0; index < maxIndex; ++index) {
-					transformed[index].u = (transformed[index].u / oldWidthFactor - xDiff) * widthFactor;
+					transformed[index].u *= widthFactor / oldWidthFactor;
+					// Inverse it back to scale to the new FBO, and add 1.0f to account for old FBO.
 					transformed[index].v = (transformed[index].v / oldHeightFactor - yDiff) * heightFactor;
 				}
-
-				// We undid the offset, so reset.  This avoids a different shader.
-				gstate_c.curTextureXOffset = prevXOffset;
-				gstate_c.curTextureYOffset = prevYOffset;
 			}
 		}
 	}
-}
-
-// NOTE: The viewport must be up to date!
-void SoftwareTransform::BuildDrawingParams(int prim, int vertexCount, u32 vertType, u16 *&inds, int &maxIndex, SoftwareTransformResult *result) {
-	TransformedVertex *transformed = params_.transformed;
-	TransformedVertex *transformedExpanded = params_.transformedExpanded;
-	bool throughmode = (vertType & GE_VTYPE_THROUGH_MASK) != 0;
 
 	// Step 2: expand rectangles.
-	result->drawBuffer = transformed;
-	int numTrans = 0;
-
-	FramebufferManagerCommon *fbman = params_.fbman;
-	bool useBufferedRendering = fbman->UseBufferedRendering();
-
-	bool flippedY = g_Config.iGPUBackend == (int)GPUBackend::OPENGL && !useBufferedRendering;
+	drawBuffer = transformed;
+	numTrans = 0;
+	drawIndexed = false;
 
 	if (prim != GE_PRIM_RECTANGLES) {
 		// We can simply draw the unexpanded buffer.
 		numTrans = vertexCount;
-		result->drawIndexed = true;
+		drawIndexed = true;
 	} else {
-		// Pretty bad hackery where we re-do the transform (in RotateUV) to see if the vertices are flipped in screen space.
-		// Since we've already got API-specific assumptions (Y direction, etc) baked into the projMatrix (which we arguably shouldn't),
-		// this gets nasty and very hard to understand.
+		bool useBufferedRendering = g_Config.iRenderingMode != FB_NON_BUFFERED_MODE;
+		if (useBufferedRendering)
+			ySign = -ySign;
 
 		float flippedMatrix[16];
 		if (!throughmode) {
 			memcpy(&flippedMatrix, gstate.projMatrix, 16 * sizeof(float));
 
-			const bool invertedY = flippedY ? (gstate_c.vpHeight < 0) : (gstate_c.vpHeight > 0);
+			const bool invertedY = useBufferedRendering ? (gstate_c.vpHeight < 0) : (gstate_c.vpHeight > 0);
 			if (invertedY) {
 				flippedMatrix[1] = -flippedMatrix[1];
 				flippedMatrix[5] = -flippedMatrix[5];
@@ -577,7 +547,7 @@ void SoftwareTransform::BuildDrawingParams(int prim, int vertexCount, u32 vertTy
 		//rectangles always need 2 vertices, disregard the last one if there's an odd number
 		vertexCount = vertexCount & ~1;
 		numTrans = 0;
-		result->drawBuffer = transformedExpanded;
+		drawBuffer = transformedExpanded;
 		TransformedVertex *trans = &transformedExpanded[0];
 		const u16 *indsIn = (const u16 *)inds;
 		u16 *newInds = inds + vertexCount;
@@ -614,7 +584,7 @@ void SoftwareTransform::BuildDrawingParams(int prim, int vertexCount, u32 vertTy
 			if (throughmode)
 				RotateUVThrough(trans);
 			else
-				RotateUV(trans, flippedMatrix, flippedY);
+				RotateUV(trans, flippedMatrix, ySign);
 
 			// Triangle: BR-TR-TL
 			indsOut[0] = i * 2 + 0;
@@ -630,7 +600,7 @@ void SoftwareTransform::BuildDrawingParams(int prim, int vertexCount, u32 vertTy
 			numTrans += 6;
 		}
 		inds = newInds;
-		result->drawIndexed = true;
+		drawIndexed = true;
 
 		// We don't know the color until here, so we have to do it now, instead of in StateMapping.
 		// Might want to reconsider the order of things later...
@@ -652,5 +622,4 @@ void SoftwareTransform::BuildDrawingParams(int prim, int vertexCount, u32 vertTy
 	}
 
 	result->action = SW_DRAW_PRIMITIVES;
-	result->drawNumTrans = numTrans;
 }

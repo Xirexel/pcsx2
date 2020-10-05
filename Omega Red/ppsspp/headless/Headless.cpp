@@ -5,9 +5,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
-#if defined(ANDROID)
-#include <jni.h>
-#endif
 
 #include "file/zip_read.h"
 #include "profiler/profiler.h"
@@ -39,16 +36,6 @@
 #ifdef ANDROID_NDK_PROFILER
 #include <stdlib.h>
 #include "android/android-ndk-profiler/prof.h"
-#endif
-
-#if defined(ANDROID)
-JNIEnv *getEnv() {
-	return nullptr;
-}
-
-jclass findClass(const char *name) {
-	return nullptr;
-}
 #endif
 
 class PrintfLogger : public LogListener {
@@ -87,14 +74,11 @@ std::string System_GetProperty(SystemProperty prop) { return ""; }
 int System_GetPropertyInt(SystemProperty prop) {
 	return -1;
 }
-float System_GetPropertyFloat(SystemProperty prop) {
-	return -1;
-}
 bool System_GetPropertyBool(SystemProperty prop) {
 	return false;
 }
 void System_SendMessage(const char *command, const char *parameter) {}
-void System_InputBoxGetString(const std::string &title, const std::string &defaultValue, std::function<void(bool, const std::string &)> cb) { cb(false, ""); }
+bool System_InputBoxGetWString(const wchar_t *title, const std::wstring &defaultvalue, std::wstring &outvalue) { return false; }
 void System_AskForPermission(SystemPermission permission) {}
 PermissionStatus System_GetPermissionStatus(SystemPermission permission) { return PERMISSION_STATUS_GRANTED; }
 
@@ -179,8 +163,8 @@ bool RunAutoTest(HeadlessHost *headlessHost, CoreParameter &coreParameter, bool 
 	Core_UpdateDebugStats(g_Config.bShowDebugStats || g_Config.bLogFrameDrops);
 
 	PSP_BeginHostFrame();
-	if (coreParameter.graphicsContext && coreParameter.graphicsContext->GetDrawContext())
-		coreParameter.graphicsContext->GetDrawContext()->BeginFrame();
+	if (coreParameter.thin3d)
+		coreParameter.thin3d->BeginFrame();
 
 	coreState = CORE_RUNNING;
 	while (coreState == CORE_RUNNING)
@@ -206,8 +190,8 @@ bool RunAutoTest(HeadlessHost *headlessHost, CoreParameter &coreParameter, bool 
 	}
 	PSP_EndHostFrame();
 
-	if (coreParameter.graphicsContext && coreParameter.graphicsContext->GetDrawContext())
-		coreParameter.graphicsContext->GetDrawContext()->EndFrame();
+	if (coreParameter.thin3d)
+		coreParameter.thin3d->EndFrame();
 
 	PSP_Shutdown();
 
@@ -241,7 +225,7 @@ int main(int argc, const char* argv[])
 	const char *stateToLoad = 0;
 	GPUCore gpuCore = GPUCORE_NULL;
 	CPUCore cpuCore = CPUCore::JIT;
-
+	
 	std::vector<std::string> testFilenames;
 	const char *mountIso = 0;
 	const char *mountRoot = 0;
@@ -337,7 +321,7 @@ int main(int argc, const char* argv[])
 
 	LogManager::Init();
 	LogManager *logman = LogManager::GetInstance();
-
+	
 	PrintfLogger *printfLogger = new PrintfLogger();
 
 	for (int i = 0; i < LogTypes::NUMBER_OF_LOGS; i++) {
@@ -351,6 +335,7 @@ int main(int argc, const char* argv[])
 	coreParameter.cpuCore = cpuCore;
 	coreParameter.gpuCore = glWorking ? gpuCore : GPUCORE_NULL;
 	coreParameter.graphicsContext = graphicsContext;
+	coreParameter.thin3d = graphicsContext ? graphicsContext->GetDrawContext() : nullptr;
 	coreParameter.enableSound = false;
 	coreParameter.mountIso = mountIso ? mountIso : "";
 	coreParameter.mountRoot = mountRoot ? mountRoot : "";
@@ -392,11 +377,8 @@ int main(int argc, const char* argv[])
 	g_Config.bHighQualityDepth = true;
 	g_Config.bMemStickInserted = true;
 	g_Config.bFragmentTestCache = true;
-	g_Config.bEnableWlan = true;
-	g_Config.sMACAddress = "12:34:56:78:9A:BC";
 
 #ifdef _WIN32
-	g_Config.internalDataDirectory = "";
 	InitSysDirectories();
 #endif
 
@@ -405,10 +387,9 @@ int main(int argc, const char* argv[])
 #endif
 
 	// Try to find the flash0 directory.  Often this is from a subdirectory.
-	for (int i = 0; i < 4 && !File::Exists(g_Config.flash0Directory); ++i) {
-		if (File::Exists(g_Config.flash0Directory + "../assets/flash0/"))
-			g_Config.flash0Directory += "../assets/flash0/";
-		else
+	for (int i = 0; i < 3; ++i)
+	{
+		if (!File::Exists(g_Config.flash0Directory))
 			g_Config.flash0Directory += "../../flash0/";
 	}
 	// Or else, maybe in the executable's dir.
@@ -429,7 +410,7 @@ int main(int argc, const char* argv[])
 #endif
 
 	if (stateToLoad != NULL)
-		SaveState::Load(stateToLoad, -1);
+		SaveState::Load(stateToLoad);
 
 	std::vector<std::string> failedTests;
 	std::vector<std::string> passedTests;

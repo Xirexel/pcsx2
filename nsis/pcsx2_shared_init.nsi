@@ -92,14 +92,15 @@ ${NSD_KillTimer} NSD_Timer.Callback
 
 # If the user is running at least Windows 8.1
 # or has no admin rights, don't waste time trying
-# to install the DX and VS runtimes.
+# to install the DX and VS2015 runtimes.
+# (head straight to the first installer section)
 ${If} ${AtLeastWin8.1}
 ${OrIf} $IsAdmin == 0
-Goto CopyInstallerFiles
+Call PreInstall_UsrWait
 SendMessage $HWNDPARENT ${WM_COMMAND} 1 0
 ${EndIf}
 
-# Check if the VC runtimes are installed
+# Check if the VC 2015 runtimes are installed
 ${If} ${RunningX64}
 ReadRegDword $R0 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86" "Installed"
 ${Else}
@@ -112,15 +113,16 @@ ${If} $R0 == "1"
 Goto ExecDxSetup
 ${EndIf}
 
-# Download and install the VC redistributable from the internet
-${NSD_CreateLabel} 0 45 100% 10u "Downloading Visual C++ package"
+# Download and install the VC 2015 redistributable from the internet
+${NSD_CreateLabel} 0 45 100% 10u "Downloading Visual C++ 2015 package"
 Pop $hwnd
-inetc::get "https://aka.ms/vs/16/release/VC_redist.x86.exe" "$TEMP\vcredist_Update_x86.exe" /SILENT /CONNECTTIMEOUT 30 /RECEIVETIMEOUT 30 /END
-    ${NSD_CreateLabel} 0 45 100% 10u "Installing Visual C++ package"
+inetc::get "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x86.exe" "$TEMP\vcredist_2015_Update_1_x86.exe" /SILENT /CONNECTTIMEOUT 30 /RECEIVETIMEOUT 30 /END
+    ${NSD_CreateLabel} 0 45 100% 10u "Installing Visual C++ 2015 package"
     Pop $hwnd
-    ExecWait '"$TEMP\vcredist_Update_x86.exe /S"'
+    ExecWait '"$TEMP\vcredist_2015_Update_1_x86.exe /S"'
     SendMessage $hwnd ${PBM_SETPOS} 40 0
-    Delete "$TEMP\vcredist_Update_x86.exe"
+    Delete "$TEMP\vcredist_2015_Update_1_x86.exe"
+
 
 # Download and install DirectX
 ExecDxSetup:
@@ -135,38 +137,6 @@ ExecWait '"$TEMP\dxwebsetup.exe" /Q' $DirectXSetupError
 SendMessage $hwnd ${PBM_SETPOS} 100 0
 Delete "$TEMP\dxwebsetup.exe"
 Sleep 20
-;-----------------------------------------
-; Copy installer files to a temp directory instead of repacking twice (for each installer)
-CopyInstallerFiles:
-    ${NSD_CreateLabel} 0 45 80% 10u "Unpacking files. Maybe it's time to upgrade that computer!"
-  SetOutPath "$TEMP\PCSX2_installer_temp"
-    File ..\bin\pcsx2.exe
-    File ..\bin\GameIndex.dbf
-    File ..\bin\cheats_ws.zip
-    File ..\bin\PCSX2_keys.ini.default
-  SetOutPath "$TEMP\PCSX2_installer_temp\Docs"
-    File ..\bin\docs\*
-
-  SetOutPath "$TEMP\PCSX2_installer_temp\Shaders"
-    File ..\bin\shaders\GSdx.fx
-    File ..\bin\shaders\GSdx_FX_Settings.ini
-
-  SetOutPath "$TEMP\PCSX2_installer_temp\Plugins"
-    File /nonfatal ..\bin\Plugins\gsdx32-sse2.dll
-    File /nonfatal ..\bin\Plugins\gsdx32-sse4.dll
-    File /nonfatal ..\bin\Plugins\gsdx32-avx2.dll
-    File /nonfatal ..\bin\Plugins\spu2-x.dll
-    File /nonfatal ..\bin\Plugins\cdvdGigaherz.dll
-    File /nonfatal ..\bin\Plugins\lilypad.dll
-    File /nonfatal ..\bin\Plugins\USBnull.dll
-    File /nonfatal ..\bin\Plugins\DEV9null.dll
-    File /nonfatal ..\bin\Plugins\FWnull.dll
-
-    SetOutPath "$TEMP\PCSX2_installer_temp\Langs"
-    File /nonfatal /r ..\bin\Langs\*.mo
-    ${NSD_CreateLabel} 0 45 100% 10u "Moving on"
-;-----------------------------------------
-
     Call PreInstall_UsrWait
 SendMessage $HWNDPARENT ${WM_COMMAND} 1 0
 FunctionEnd
@@ -260,13 +230,12 @@ FunctionEnd
 ; The default installation directory for the portable binary.
 InstallDir "$DOCUMENTS\$R8\PCSX2 ${APP_VERSION}"
 
-; Path references for the core files here
+; Files to be installed are housed here
 !include "SharedCore.nsh"
 
 Section "" INST_PORTABLE
 SetOutPath "$INSTDIR"
 File portable.ini
-RMDir /r "$TEMP\PCSX2_installer_temp"
 SectionEnd
 
 Section "" SID_PCSX2

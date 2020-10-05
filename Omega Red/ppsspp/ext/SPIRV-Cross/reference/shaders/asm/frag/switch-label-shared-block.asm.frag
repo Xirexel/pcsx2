@@ -16,6 +16,7 @@ void main()
             _19 = 1.0;
             break;
         }
+        case 1:
         default:
         {
             _19 = 3.0;

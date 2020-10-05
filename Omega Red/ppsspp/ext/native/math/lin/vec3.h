@@ -4,8 +4,6 @@
 #include <math.h>
 #include <string.h>	// memset
 
-namespace Lin {
-
 class Matrix4x4;
 
 // Hm, doesn't belong in this file.
@@ -143,7 +141,5 @@ public:
 	Vec3 min;
 	Vec3 max;
 };
-
-}  // namespace Lin
 
 #endif	// _MATH_LIN_VEC3

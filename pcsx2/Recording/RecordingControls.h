@@ -15,7 +15,6 @@
 
 #pragma once
 
-#ifndef DISABLE_RECORDING
 class RecordingControls
 {
 public:
@@ -47,4 +46,3 @@ private:
 };
 
 extern RecordingControls g_RecordingControls;
-#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Bradley Austin Davis
+ * Copyright 2018 Bradley Austin Davis
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #include <iomanip>
 
 using namespace spv;
-using namespace SPIRV_CROSS_NAMESPACE;
+using namespace spirv_cross;
 using namespace std;
 
 namespace simple_json
@@ -36,16 +36,10 @@ using Stack = std::stack<State>;
 class Stream
 {
 	Stack stack;
-	StringStream<> buffer;
+	std::ostringstream buffer;
 	uint32_t indent{ 0 };
-	char current_locale_radix_character = '.';
 
 public:
-	void set_current_locale_radix_character(char c)
-	{
-		current_locale_radix_character = c;
-	}
-
 	void begin_json_object();
 	void end_json_object();
 	void emit_json_key(const std::string &key);
@@ -61,7 +55,6 @@ public:
 	void end_json_array();
 	void emit_json_array_value(const std::string &value);
 	void emit_json_array_value(uint32_t value);
-	void emit_json_array_value(bool value);
 
 	std::string str() const
 	{
@@ -159,16 +152,6 @@ void Stream::emit_json_array_value(uint32_t value)
 	stack.top().second = true;
 }
 
-void Stream::emit_json_array_value(bool value)
-{
-	if (stack.empty() || stack.top().first != Type::Array)
-		SPIRV_CROSS_THROW("Invalid JSON state");
-	if (stack.top().second)
-		statement_inner(",\n");
-	statement_no_return(value ? "true" : "false");
-	stack.top().second = true;
-}
-
 void Stream::begin_json_object()
 {
 	if (!stack.empty() && stack.top().second)
@@ -229,7 +212,7 @@ void Stream::emit_json_key_value(const std::string &key, int32_t value)
 void Stream::emit_json_key_value(const std::string &key, float value)
 {
 	emit_json_key(key);
-	statement_inner(convert_to_string(value, current_locale_radix_character));
+	statement_inner(value);
 }
 
 void Stream::emit_json_key_value(const std::string &key, bool value)
@@ -264,11 +247,12 @@ void CompilerReflection::set_format(const std::string &format)
 
 string CompilerReflection::compile()
 {
+	// Force a classic "C" locale, reverts when function returns
+	ClassicLocale classic_locale;
+
+	// Move constructor for this type is broken on GCC 4.9 ...
 	json_stream = std::make_shared<simple_json::Stream>();
-	json_stream->set_current_locale_radix_character(current_locale_radix_character);
 	json_stream->begin_json_object();
-	fixup_type_alias();
-	reorder_type_alias();
 	emit_entry_points();
 	emit_types();
 	emit_resources();
@@ -277,44 +261,21 @@ string CompilerReflection::compile()
 	return json_stream->str();
 }
 
-static bool naturally_emit_type(const SPIRType &type)
-{
-	return type.basetype == SPIRType::Struct && !type.pointer && type.array.empty();
-}
-
-bool CompilerReflection::type_is_reference(const SPIRType &type) const
-{
-	// Physical pointers and arrays of physical pointers need to refer to the pointee's type.
-	return type_is_top_level_physical_pointer(type) ||
-	       (!type.array.empty() && type_is_top_level_physical_pointer(get<SPIRType>(type.parent_type)));
-}
-
 void CompilerReflection::emit_types()
 {
 	bool emitted_open_tag = false;
-
-	SmallVector<uint32_t> physical_pointee_types;
-
-	// If we have physical pointers or arrays of physical pointers, it's also helpful to emit the pointee type
-	// and chain the type hierarchy. For POD, arrays can emit the entire type in-place.
-	ir.for_each_typed_id<SPIRType>([&](uint32_t self, SPIRType &type) {
-		if (naturally_emit_type(type))
+	for (auto &id : ids)
+	{
+		auto idType = id.get_type();
+		if (idType == TypeType)
 		{
-			emit_type(self, emitted_open_tag);
-		}
-		else if (type_is_reference(type))
-		{
-			if (!naturally_emit_type(this->get<SPIRType>(type.parent_type)) &&
-			    find(physical_pointee_types.begin(), physical_pointee_types.end(),
-			         type.parent_type) == physical_pointee_types.end())
+			auto &type = id.get<SPIRType>();
+			if (type.basetype == SPIRType::Struct && !type.pointer && type.array.empty())
 			{
-				physical_pointee_types.push_back(type.parent_type);
+				emit_type(type, emitted_open_tag);
 			}
 		}
-	});
-
-	for (uint32_t pointee_type : physical_pointee_types)
-		emit_type(pointee_type, emitted_open_tag);
+	}
 
 	if (emitted_open_tag)
 	{
@@ -322,12 +283,11 @@ void CompilerReflection::emit_types()
 	}
 }
 
-void CompilerReflection::emit_type(uint32_t type_id, bool &emitted_open_tag)
+void CompilerReflection::emit_type(const SPIRType &type, bool &emitted_open_tag)
 {
-	auto &type = get<SPIRType>(type_id);
 	auto name = type_to_glsl(type);
 
-	if (type.type_alias != TypeID(0))
+	if (type.type_alias != 0)
 		return;
 
 	if (!emitted_open_tag)
@@ -335,42 +295,26 @@ void CompilerReflection::emit_type(uint32_t type_id, bool &emitted_open_tag)
 		json_stream->emit_json_key_object("types");
 		emitted_open_tag = true;
 	}
-	json_stream->emit_json_key_object("_" + std::to_string(type_id));
+	json_stream->emit_json_key_object("_" + std::to_string(type.self));
 	json_stream->emit_json_key_value("name", name);
-
-	if (type_is_top_level_physical_pointer(type))
+	json_stream->emit_json_key_array("members");
+	// FIXME ideally we'd like to emit the size of a structure as a
+	// convenience to people parsing the reflected JSON.  The problem
+	// is that there's no implicit size for a type.  It's final size
+	// will be determined by the top level declaration in which it's
+	// included.  So there might be one size for the struct if it's
+	// included in a std140 uniform block and another if it's included
+	// in a std430 uniform block.
+	// The solution is to include *all* potential sizes as a map of
+	// layout type name to integer, but that will probably require
+	// some additional logic being written in this class, or in the
+	// parent CompilerGLSL class.
+	auto size = type.member_types.size();
+	for (uint32_t i = 0; i < size; ++i)
 	{
-		json_stream->emit_json_key_value("type", "_" + std::to_string(type.parent_type));
-		json_stream->emit_json_key_value("physical_pointer", true);
+		emit_type_member(type, i);
 	}
-	else if (!type.array.empty())
-	{
-		emit_type_array(type);
-		json_stream->emit_json_key_value("type", "_" + std::to_string(type.parent_type));
-		json_stream->emit_json_key_value("array_stride", get_decoration(type_id, DecorationArrayStride));
-	}
-	else
-	{
-		json_stream->emit_json_key_array("members");
-		// FIXME ideally we'd like to emit the size of a structure as a
-		// convenience to people parsing the reflected JSON.  The problem
-		// is that there's no implicit size for a type.  It's final size
-		// will be determined by the top level declaration in which it's
-		// included.  So there might be one size for the struct if it's
-		// included in a std140 uniform block and another if it's included
-		// in a std430 uniform block.
-		// The solution is to include *all* potential sizes as a map of
-		// layout type name to integer, but that will probably require
-		// some additional logic being written in this class, or in the
-		// parent CompilerGLSL class.
-		auto size = type.member_types.size();
-		for (uint32_t i = 0; i < size; ++i)
-		{
-			emit_type_member(type, i);
-		}
-		json_stream->end_json_array();
-	}
-
+	json_stream->end_json_array();
 	json_stream->end_json_object();
 }
 
@@ -382,12 +326,7 @@ void CompilerReflection::emit_type_member(const SPIRType &type, uint32_t index)
 	// FIXME we'd like to emit the offset of each member, but such offsets are
 	// context dependent.  See the comment above regarding structure sizes
 	json_stream->emit_json_key_value("name", name);
-
-	if (type_is_reference(membertype))
-	{
-		json_stream->emit_json_key_value("type", "_" + std::to_string(membertype.parent_type));
-	}
-	else if (membertype.basetype == SPIRType::Struct)
+	if (membertype.basetype == SPIRType::Struct)
 	{
 		json_stream->emit_json_key_value("type", "_" + std::to_string(membertype.self));
 	}
@@ -401,7 +340,7 @@ void CompilerReflection::emit_type_member(const SPIRType &type, uint32_t index)
 
 void CompilerReflection::emit_type_array(const SPIRType &type)
 {
-	if (!type_is_top_level_physical_pointer(type) && !type.array.empty())
+	if (!type.array.empty())
 	{
 		json_stream->emit_json_key_array("array");
 		// Note that we emit the zeros here as a means of identifying
@@ -410,19 +349,18 @@ void CompilerReflection::emit_type_array(const SPIRType &type)
 		for (const auto &value : type.array)
 			json_stream->emit_json_array_value(value);
 		json_stream->end_json_array();
-
-		json_stream->emit_json_key_array("array_size_is_literal");
-		for (const auto &value : type.array_size_literal)
-			json_stream->emit_json_array_value(value);
-		json_stream->end_json_array();
 	}
 }
 
 void CompilerReflection::emit_type_member_qualifiers(const SPIRType &type, uint32_t index)
 {
+	auto flags = combined_decoration_for_member(type, index);
+	if (flags.get(DecorationRowMajor))
+		json_stream->emit_json_key_value("row_major", true);
+
 	auto &membertype = get<SPIRType>(type.member_types[index]);
 	emit_type_array(membertype);
-	auto &memb = ir.meta[type.self].members;
+	auto &memb = meta[type.self].members;
 	if (index < memb.size())
 	{
 		auto &dec = memb[index];
@@ -430,19 +368,6 @@ void CompilerReflection::emit_type_member_qualifiers(const SPIRType &type, uint3
 			json_stream->emit_json_key_value("location", dec.location);
 		if (dec.decoration_flags.get(DecorationOffset))
 			json_stream->emit_json_key_value("offset", dec.offset);
-
-		// Array stride is a property of the array type, not the struct.
-		if (has_decoration(type.member_types[index], DecorationArrayStride))
-			json_stream->emit_json_key_value("array_stride",
-			                                 get_decoration(type.member_types[index], DecorationArrayStride));
-
-		if (dec.decoration_flags.get(DecorationMatrixStride))
-			json_stream->emit_json_key_value("matrix_stride", dec.matrix_stride);
-		if (dec.decoration_flags.get(DecorationRowMajor))
-			json_stream->emit_json_key_value("row_major", true);
-
-		if (type_is_top_level_physical_pointer(membertype))
-			json_stream->emit_json_key_value("physical_pointer", true);
 	}
 }
 
@@ -450,9 +375,9 @@ string CompilerReflection::execution_model_to_str(spv::ExecutionModel model)
 {
 	switch (model)
 	{
-	case ExecutionModelVertex:
+	case spv::ExecutionModelVertex:
 		return "vert";
-	case ExecutionModelTessellationControl:
+	case spv::ExecutionModelTessellationControl:
 		return "tesc";
 	case ExecutionModelTessellationEvaluation:
 		return "tese";
@@ -462,18 +387,6 @@ string CompilerReflection::execution_model_to_str(spv::ExecutionModel model)
 		return "frag";
 	case ExecutionModelGLCompute:
 		return "comp";
-	case ExecutionModelRayGenerationNV:
-		return "rgen";
-	case ExecutionModelIntersectionNV:
-		return "rint";
-	case ExecutionModelAnyHitNV:
-		return "rahit";
-	case ExecutionModelClosestHitNV:
-		return "rchit";
-	case ExecutionModelMissNV:
-		return "rmiss";
-	case ExecutionModelCallableNV:
-		return "rcall";
 	default:
 		return "???";
 	}
@@ -485,44 +398,12 @@ void CompilerReflection::emit_entry_points()
 	auto entries = get_entry_points_and_stages();
 	if (!entries.empty())
 	{
-		// Needed to make output deterministic.
-		sort(begin(entries), end(entries), [](const EntryPoint &a, const EntryPoint &b) -> bool {
-			if (a.execution_model < b.execution_model)
-				return true;
-			else if (a.execution_model > b.execution_model)
-				return false;
-			else
-				return a.name < b.name;
-		});
-
 		json_stream->emit_json_key_array("entryPoints");
 		for (auto &e : entries)
 		{
 			json_stream->begin_json_object();
 			json_stream->emit_json_key_value("name", e.name);
 			json_stream->emit_json_key_value("mode", execution_model_to_str(e.execution_model));
-			if (e.execution_model == ExecutionModelGLCompute)
-			{
-				const auto &spv_entry = get_entry_point(e.name, e.execution_model);
-
-				SpecializationConstant spec_x, spec_y, spec_z;
-				get_work_group_size_specialization_constants(spec_x, spec_y, spec_z);
-
-				json_stream->emit_json_key_array("workgroup_size");
-				json_stream->emit_json_array_value(spec_x.id != ID(0) ? spec_x.constant_id :
-				                                                        spv_entry.workgroup_size.x);
-				json_stream->emit_json_array_value(spec_y.id != ID(0) ? spec_y.constant_id :
-				                                                        spv_entry.workgroup_size.y);
-				json_stream->emit_json_array_value(spec_z.id != ID(0) ? spec_z.constant_id :
-				                                                        spv_entry.workgroup_size.z);
-				json_stream->end_json_array();
-
-				json_stream->emit_json_key_array("workgroup_size_is_spec_constant_id");
-				json_stream->emit_json_array_value(spec_x.id != ID(0));
-				json_stream->emit_json_array_value(spec_y.id != ID(0));
-				json_stream->emit_json_array_value(spec_z.id != ID(0));
-				json_stream->end_json_array();
-			}
 			json_stream->end_json_object();
 		}
 		json_stream->end_json_array();
@@ -543,10 +424,9 @@ void CompilerReflection::emit_resources()
 	emit_resources("ubos", res.uniform_buffers);
 	emit_resources("push_constants", res.push_constant_buffers);
 	emit_resources("counters", res.atomic_counters);
-	emit_resources("acceleration_structures", res.acceleration_structures);
 }
 
-void CompilerReflection::emit_resources(const char *tag, const SmallVector<Resource> &resources)
+void CompilerReflection::emit_resources(const char *tag, const vector<Resource> &resources)
 {
 	if (resources.empty())
 	{
@@ -557,7 +437,7 @@ void CompilerReflection::emit_resources(const char *tag, const SmallVector<Resou
 	for (auto &res : resources)
 	{
 		auto &type = get_type(res.type_id);
-		auto typeflags = ir.meta[type.self].decoration.decoration_flags;
+		auto typeflags = meta[type.self].decoration.decoration_flags;
 		auto &mask = get_decoration_bitset(res.id);
 
 		// If we don't have a name, use the fallback for the type instead of the variable
@@ -567,7 +447,7 @@ void CompilerReflection::emit_resources(const char *tag, const SmallVector<Resou
 		bool is_block = get_decoration_bitset(type.self).get(DecorationBlock) ||
 		                get_decoration_bitset(type.self).get(DecorationBufferBlock);
 
-		ID fallback_id = !is_push_constant && is_block ? ID(res.base_type_id) : ID(res.id);
+		uint32_t fallback_id = !is_push_constant && is_block ? res.base_type_id : res.id;
 
 		json_stream->begin_json_object();
 
@@ -602,8 +482,7 @@ void CompilerReflection::emit_resources(const char *tag, const SmallVector<Resou
 
 		{
 			bool is_sized_block = is_block && (get_storage_class(res.id) == StorageClassUniform ||
-			                                   get_storage_class(res.id) == StorageClassUniformConstant ||
-			                                   get_storage_class(res.id) == StorageClassStorageBuffer);
+			                                   get_storage_class(res.id) == StorageClassUniformConstant);
 			if (is_sized_block)
 			{
 				uint32_t block_size = uint32_t(get_declared_struct_size(get_type(res.base_type_id)));
@@ -656,10 +535,8 @@ void CompilerReflection::emit_specialization_constants()
 		auto &c = get<SPIRConstant>(spec_const.id);
 		auto type = get<SPIRType>(c.constant_type);
 		json_stream->begin_json_object();
-		json_stream->emit_json_key_value("name", get_name(spec_const.id));
 		json_stream->emit_json_key_value("id", spec_const.constant_id);
 		json_stream->emit_json_key_value("type", type_to_glsl(type));
-		json_stream->emit_json_key_value("variable_id", spec_const.id);
 		switch (type.basetype)
 		{
 		case SPIRType::UInt:
@@ -688,16 +565,9 @@ void CompilerReflection::emit_specialization_constants()
 
 string CompilerReflection::to_member_name(const SPIRType &type, uint32_t index) const
 {
-	auto *type_meta = ir.find_meta(type.self);
-
-	if (type_meta)
-	{
-		auto &memb = type_meta->members;
-		if (index < memb.size() && !memb[index].alias.empty())
-			return memb[index].alias;
-		else
-			return join("_m", index);
-	}
+	auto &memb = meta[type.self].members;
+	if (index < memb.size() && !memb[index].alias.empty())
+		return memb[index].alias;
 	else
 		return join("_m", index);
 }

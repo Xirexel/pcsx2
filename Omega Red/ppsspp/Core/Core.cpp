@@ -150,13 +150,8 @@ static bool IsWindowSmall(int pixelWidth, int pixelHeight) {
 // TODO: Feels like this belongs elsewhere.
 bool UpdateScreenScale(int width, int height) {
 	bool smallWindow;
-#if defined(USING_QT_UI)
-	g_dpi = System_GetPropertyFloat(SYSPROP_DISPLAY_DPI);
-	float g_logical_dpi = System_GetPropertyFloat(SYSPROP_DISPLAY_LOGICAL_DPI);
-	g_dpi_scale_x = g_logical_dpi / g_dpi;
-	g_dpi_scale_y = g_logical_dpi / g_dpi;
-#elif PPSSPP_PLATFORM(WINDOWS) && !PPSSPP_PLATFORM(UWP)
-	g_dpi = System_GetPropertyFloat(SYSPROP_DISPLAY_DPI);
+#if PPSSPP_PLATFORM(WINDOWS) && !PPSSPP_PLATFORM(UWP)
+	g_dpi = (float)System_GetPropertyInt(SYSPROP_DISPLAY_DPI);
 	g_dpi_scale_x = 96.0f / g_dpi;
 	g_dpi_scale_y = 96.0f / g_dpi;
 #else
@@ -187,7 +182,7 @@ bool UpdateScreenScale(int width, int height) {
 		dp_yres = new_dp_yres;
 		pixel_xres = width;
 		pixel_yres = height;
-		ILOG("pixel_res: %dx%d. Calling NativeResized()", pixel_xres, pixel_yres);
+		DEBUG_LOG(SYSTEM, "pixel_res: %dx%d. Calling NativeResized()", pixel_xres, pixel_yres);
 		NativeResized();
 		return true;
 	}

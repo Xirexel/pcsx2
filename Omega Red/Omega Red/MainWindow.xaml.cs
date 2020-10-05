@@ -36,7 +36,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Omega_Red.Properties;
-using Omega_Red.Emulators;
 
 namespace Omega_Red
 {
@@ -45,15 +44,9 @@ namespace Omega_Red
     /// </summary>
     public partial class MainWindow : Window
     {
-
-
         public MainWindow()
         {
             SaveStateManager.Instance.init();
-
-            TexturePackControl.Instance.init();
-
-            Capture.TargetTexture.Instance.init();
 
             InitializeComponent();
 
@@ -61,18 +54,10 @@ namespace Omega_Red
 
             ConfigManager.Instance.SwitchControlModeEvent += Instance_SwitchControlModeEvent;
 
-            Emul.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+            PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
 
             MediaRecorderManager.Instance.ShowWarningEvent += Instance_ShowWarningEvent;
-
-            PadControlManager.Instance.ShowWarningEvent += Instance_ShowWarningEvent;
-
-            MediaRecorderManager.Instance.ShowInfoEvent += Instance_ShowInfoEvent;
-
-            BiosManager.Instance.ShowErrorEvent += Instance_ShowErrorEvent;
-
-            BiosControl.ShowErrorEvent += Instance_ShowErrorEvent;
-
+                        
 #if DEBUG
 
             WindowState = System.Windows.WindowState.Normal;
@@ -86,19 +71,9 @@ namespace Omega_Red
             mTaskbarIcon.ShowBalloonTip(Title, a_message, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Warning);
         }
 
-        private void Instance_ShowInfoEvent(string a_message)
+        void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
         {
-            mTaskbarIcon.ShowBalloonTip(Title, a_message, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
-        }
-
-        private void Instance_ShowErrorEvent(string a_message)
-        {
-            mTaskbarIcon.ShowBalloonTip(Title, a_message, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Error);
-        }
-
-        void Instance_ChangeStatusEvent(Emul.StatusEnum a_Status)
-        {
-            if (!mButtonControl && a_Status == Emul.StatusEnum.Started)
+            if (!mButtonControl && a_Status == PCSX2Controller.StatusEnum.Started)
             {
                 mMediaCloseBtn_Click(null, null);
 
@@ -110,58 +85,64 @@ namespace Omega_Red
 
         void Instance_SwitchControlModeEvent(bool obj)
         {
-            var l_LeftWidthConverter = Resources["mControlLeftWidthOffset"] as WidthConverter;
-
-            var l_RightWidthConverter = Resources["mControlRightWidthOffset"] as WidthConverter;
+            var l_WidthConverter = Resources["mControlWidthOffset"] as WidthConverter;
 
             mButtonControl = obj;
 
-            var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
-
-            if (obj)
+            if(obj)
             {
-                if (l_LeftWidthConverter != null)
-                    l_LeftWidthConverter.Offset = -l_TouchDragBtnWidth - 2.5;
 
-                if (l_RightWidthConverter != null)
-                    l_RightWidthConverter.Offset = 0.0;
+                if (l_WidthConverter != null)
+                    l_WidthConverter.Offset = 0.0;
             }
             else
             {
+                var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
 
-                if (l_LeftWidthConverter != null)
-                    l_LeftWidthConverter.Offset = -l_TouchDragBtnWidth - 10;
-
-                if (l_RightWidthConverter != null)
-                    l_RightWidthConverter.Offset = -l_TouchDragBtnWidth - 10;
+                if (l_WidthConverter != null)
+                    l_WidthConverter.Offset = -l_TouchDragBtnWidth;
             }
         }
 
         public void loadModules()
         {
-            string l_warning = "";
-
             do
             {
 
                 if (Settings.Default.GoogleAccountIsChecked)
                     SocialNetworks.Google.GoogleAccountManager.Instance.tryAuthorize();
 
-
                 if (!RTMPNative.Instance.isInit)
                 {
-                    l_warning = "RTMP is not nitialized!!!";
-
                     break;
                 }
-                                                
+
+                if (!ModuleManager.Instance.isInit)
+                {
+                    break;
+                }
+
+                if (!PCSX2LibNative.Instance.isInit)
+                {
+                    break;
+                }
+
+                if (!PPSSPPNative.Instance.isInit)
+                {
+                    break;
+                }
+
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                 {
 
                     if (m_PadPanel.Content != null && m_PadPanel.Content is DisplayControl)
                     {
-                        Emulators.Emul.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
-                        
+                        ModuleControl.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
+
+                        PPSSPPControl.Instance.setVideoPanelHandler(((m_PadPanel.Content as DisplayControl).VideoPanel).SharedHandle);
+
+                        Tools.Savestate.SStates.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
+
                         ScreenshotsManager.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
 
                         MediaSourcesManager.Instance.DisplayControl = m_PadPanel.Content as DisplayControl;
@@ -169,18 +150,17 @@ namespace Omega_Red
 
                     var wih = new System.Windows.Interop.WindowInteropHelper(App.Current.MainWindow);
 
-                    App.CurrentWindowHandler = wih.Handle;
+                    ModuleControl.Instance.setWindowHandler(wih.Handle);
 
                     MediaSourcesManager.Instance.load(()=>
                     {
                         SocialNetworks.Google.GoogleAccountManager.Instance.sendEvent();
 
-                        Emul.Instance.updateInitilize();
+                        PCSX2Controller.Instance.updateInitilize();
 
-                        LockScreenManager.Instance.hide();
+                        if (ModuleManager.Instance.isInit && PCSX2LibNative.Instance.isInit && PPSSPPNative.Instance.isInit)
+                            LockScreenManager.Instance.hide();
                     });
-
-                    IsoManager.Instance.load();
                 });
                 
                 Capture.MediaStream.Instance.setConnectionFunc(RTMPNative.Instance.Connect);
@@ -192,16 +172,6 @@ namespace Omega_Red
                 Capture.MediaStream.Instance.setIsConnectedFunc(RTMPNative.Instance.IsConnected);
 
             } while (false);
-
-            if(!string.IsNullOrWhiteSpace(l_warning))
-            {
-                LockScreenManager.Instance.hide();
-
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                {
-                    Instance_ShowWarningEvent(l_warning);
-                });
-            }
         }
         
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -213,7 +183,14 @@ namespace Omega_Red
             loadModulesThread.Start();
         }
 
-        public void rebindControlPanel()
+
+        bool mIsPressed = false;
+
+        bool mIsOpened = false;
+
+        Point mStartPosition = new Point();
+
+        private void rebindControlPanel()
         {
             Binding binding = new Binding();
             binding.Source = mControlGrid;
@@ -222,7 +199,7 @@ namespace Omega_Red
             mControlGrid.SetBinding(Canvas.LeftProperty, binding);
         }
 
-        public void rebindMediaPanel()
+        private void rebindMediaPanel()
         {
             Binding binding = new Binding();
             binding.Source = mMediaGrid;
@@ -231,6 +208,159 @@ namespace Omega_Red
             mMediaGrid.SetBinding(Canvas.RightProperty, binding);
         }
 
+        private Ellipse mTouchMark = null; 
+
+        private void mTouchCtr_MouseChange(object sender, MouseButtonEventArgs e)
+        {
+            mIsPressed = e.ButtonState == MouseButtonState.Pressed;
+
+            if (mIsPressed)
+            {
+                mStartPosition = e.GetPosition(this);
+
+                e.MouseDevice.Capture(this, CaptureMode.SubTree);
+
+                if(mTouchMark == null)
+                {
+                    mTouchMark = new Ellipse();
+
+                    mTouchMark.Width = 100;
+
+                    mTouchMark.Height = 100;
+
+                    mTouchMark.Fill = new SolidColorBrush(Color.FromArgb(128 ,0 , 255, 0));
+
+                    var l_position = e.GetPosition(mTouchCtr);
+
+                    Canvas.SetLeft(mTouchMark, l_position.X - mTouchMark.Width / 2);
+
+                    Canvas.SetTop(mTouchMark, l_position.Y - mTouchMark.Height / 2);
+
+                    mTouchCtr.Children.Add(mTouchMark);
+                }
+            }
+            else
+            {
+                if (mTouchMark != null)
+                {
+                    mTouchCtr.Children.Remove(mTouchMark);
+                }
+
+                mTouchMark = null;
+
+                mStartPosition = new Point();
+
+                if (!mIsOpened)
+                {
+                    rebindControlPanel();
+
+                    rebindMediaPanel();
+                }
+
+                e.MouseDevice.Capture(null);
+            }
+
+            mIsOpened = false;
+        }
+
+        private void mTouchCtr_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (mIsPressed)
+            {
+                var l_position = e.GetPosition(this);
+
+                if (mTouchMark != null)
+                {
+                    var l_positionCanvas = e.GetPosition(mTouchCtr);
+
+                    Canvas.SetLeft(mTouchMark, l_positionCanvas.X - mTouchMark.Width / 2);
+
+                    Canvas.SetTop(mTouchMark, l_positionCanvas.Y - mTouchMark.Height / 2);
+                }
+
+                var l_x_Delta = l_position.X - mStartPosition.X;
+
+                var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
+
+                if(l_x_Delta > 0)
+                {
+                    Canvas.SetRight(mMediaGrid, -mMediaPanel.ActualWidth - l_TouchDragBtnWidth - 2);
+
+                    rebindMediaPanel();
+
+                    var l_leftProp = l_x_Delta / mControlPanel.ActualWidth;
+
+                    if (l_leftProp > 0.45)
+                    {
+                        mIsPressed = false;
+
+                        e.MouseDevice.Capture(null);
+
+                        
+                        int timestamp = new TimeSpan(DateTime.Now.Ticks).Milliseconds;
+
+                        MouseButton l_mouseButton = MouseButton.Left;
+
+                        MouseButtonEventArgs l_mouseUpEvent = new MouseButtonEventArgs(Mouse.PrimaryDevice, timestamp, l_mouseButton);
+
+                        l_mouseUpEvent.RoutedEvent = CheckBox.CheckedEvent;
+
+                        l_mouseUpEvent.Source = mControlChkBtn;
+
+                        mControlChkBtn.RaiseEvent(l_mouseUpEvent);
+
+                        mControlChkBtn.Command.Execute(true);
+                        
+
+                        mIsOpened = true;
+                    }
+                    else
+                    {
+                        Canvas.SetLeft(mControlGrid, l_x_Delta - mControlPanel.ActualWidth - l_TouchDragBtnWidth);
+                    }
+                }
+                else
+                {
+                    Canvas.SetLeft(mControlGrid, -mControlPanel.ActualWidth - l_TouchDragBtnWidth - 2);
+
+                    rebindControlPanel();
+
+                    l_x_Delta = Math.Abs(l_x_Delta);
+
+                    var l_leftProp = l_x_Delta / mMediaPanel.ActualWidth;
+
+                    if (l_leftProp > 0.45)
+                    {
+                        mIsPressed = false;
+
+                        e.MouseDevice.Capture(null);
+
+
+                        int timestamp = new TimeSpan(DateTime.Now.Ticks).Milliseconds;
+
+                        MouseButton l_mouseButton = MouseButton.Left;
+
+                        MouseButtonEventArgs l_mouseUpEvent = new MouseButtonEventArgs(Mouse.PrimaryDevice, timestamp, l_mouseButton);
+
+                        l_mouseUpEvent.RoutedEvent = CheckBox.CheckedEvent;
+
+                        l_mouseUpEvent.Source = mControlChkBtn;
+
+                        mMediaChkBtn.RaiseEvent(l_mouseUpEvent);
+
+                        mMediaChkBtn.Command.Execute(true);
+
+
+                        mIsOpened = true;
+                    }
+                    else
+                    {
+                        Canvas.SetRight(mMediaGrid, l_x_Delta - mMediaPanel.ActualWidth - l_TouchDragBtnWidth);
+                    }
+                }
+            }
+        }
+        
         private void mControlCloseBtn_Click(object sender, RoutedEventArgs e)
         {
             int timestamp = new TimeSpan(DateTime.Now.Ticks).Milliseconds;
@@ -244,8 +374,6 @@ namespace Omega_Red
             l_UncheckedEvent.Source = mControlChkBtn;
 
             mControlChkBtn.RaiseEvent(l_UncheckedEvent);
-
-            mControlChkBtn.IsChecked = false;
         }
 
         private void Storyboard_Completed(object sender, EventArgs e)
@@ -253,16 +381,6 @@ namespace Omega_Red
             if (!mButtonControl)
             {
                 rebindControlPanel();
-            }
-            else
-            {
-                var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
-
-                Binding binding = new Binding();
-                binding.Source = mControlGrid;
-                binding.Path = new PropertyPath(FrameworkElement.ActualWidthProperty);
-                binding.Converter = new WidthConverter() { Offset = l_TouchDragBtnWidth - 2.0, Scale = -1.0 };
-                mControlGrid.SetBinding(Canvas.LeftProperty, binding);
             }
         }
 
@@ -279,8 +397,6 @@ namespace Omega_Red
             l_UncheckedEvent.Source = mControlChkBtn;
 
             mMediaChkBtn.RaiseEvent(l_UncheckedEvent);
-
-            mMediaChkBtn.IsChecked = false;
         }
 
         private void Storyboard_Completed_1(object sender, EventArgs e)
@@ -298,42 +414,15 @@ namespace Omega_Red
             else
                 WindowStyle = System.Windows.WindowStyle.SingleBorderWindow;
         }
-        
-        public Grid getMediaGrid()
-        {
-            return mMediaGrid;
-        }
 
-        public MediaPanel getMediaPanel()
+        private void mTouchCtr_MouseLeave(object sender, MouseEventArgs e)
         {
-            return mMediaPanel;
-        }
+            if (mTouchMark != null)
+            {
+                mTouchCtr.Children.Remove(mTouchMark);
+            }
 
-        public ControlPanel getControlPanel()
-        {
-            return mControlPanel;
-        }
-
-        public Grid getControlGrid()
-        {
-            return mControlGrid;
-        }
-
-        public CheckBox getControlChkBtn()
-        {
-            return mControlChkBtn;
-        }
-
-        public CheckBox getMediaChkBtn()
-        {
-            return mMediaChkBtn;
-        }
-               
-        private void Window_Closed(object sender, EventArgs e)
-        {
-            Settings.Default.Save();
-
-            mTaskbarIcon.Dispose();
+            mTouchMark = null;
         }
     }
 }

@@ -372,7 +372,7 @@ public:
 	void WriteModRM(int mod, int rm, int reg);
 	void WriteSIB(int scale, int index, int base);
 
-	void SetCodePointer(u8 *ptr, u8 *writePtr);
+	void SetCodePointer(u8 *ptr);
 	const u8 *GetCodePointer() const;
 
 	void ReserveCodeSpace(int bytes);

@@ -164,9 +164,6 @@
       <Filter>glslang\MachineIndependent</Filter>
     </ClCompile>
     <ClCompile Include="..\..\ext\glslang\SPIRV\SpvPostProcess.cpp" />
-    <ClCompile Include="..\..\ext\glslang\hlsl\hlslParseHelper.cpp">
-      <Filter>hlsl</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -326,9 +323,6 @@
     </ClInclude>
     <ClInclude Include="..\..\ext\glslang\glslang\MachineIndependent\attribute.h">
       <Filter>glslang\MachineIndependent</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\ext\glslang\hlsl\hlslParseHelper.h">
-      <Filter>hlsl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

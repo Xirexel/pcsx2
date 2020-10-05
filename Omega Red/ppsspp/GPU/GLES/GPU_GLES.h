@@ -76,8 +76,10 @@ private:
 
 	void InitClear() override;
 	void BeginFrame() override;
-	void CopyDisplayToOutput(bool reallyDirty) override;
+	void CopyDisplayToOutput() override;
 	void Reinitialize() override;
+
+	inline void UpdateVsyncInterval(bool force);
 
 	FramebufferManagerGLES *framebufferManagerGL_;
 	TextureCacheGLES *textureCacheGL_;
@@ -87,4 +89,8 @@ private:
 	ShaderManagerGLES *shaderManagerGL_;
 
 	std::string shaderCachePath_;
+
+#ifdef _WIN32
+	int lastVsync_;
+#endif
 };

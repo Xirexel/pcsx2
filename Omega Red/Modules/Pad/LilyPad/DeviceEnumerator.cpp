@@ -30,8 +30,10 @@
 #endif
 
 #ifdef __linux__
+#ifndef __ANDROID__
 #include "Linux/KeyboardMouse.h"
 #include "Linux/JoyEvdev.h"
+#endif
 #endif
 
 extern void EnumTouchPadDevices();
@@ -51,8 +53,12 @@ void EnumDevices(int hideDXXinput)
     EnumXInputDevices();
     //EnumDirectInputDevices(hideDXXinput);
 #else
-    EnumLnx();
+#ifndef __ANDROID__
+	EnumLnx();
     EnumJoystickEvdev();
+#else
+	EnumTouchPadDevices();
+#endif
 #endif
 
     dm->CopyBindings(oldDm->numDevices, oldDm->devices);

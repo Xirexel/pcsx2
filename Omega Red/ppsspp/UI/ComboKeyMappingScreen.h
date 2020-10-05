@@ -25,9 +25,9 @@ namespace UI {
 	class CheckBox;
 }
 
-class ComboKeyScreen : public UIDialogScreenWithBackground {
+class Combo_keyScreen : public UIDialogScreenWithBackground {
 public:
-	ComboKeyScreen(int *key): mode(key) {}
+	Combo_keyScreen(int *key): mode(key) {}
 
 	void CreateViews() override;
 	void onFinish(DialogResult result) override;

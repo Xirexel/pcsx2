@@ -16,15 +16,13 @@
 // https://github.com/hrydgard/ppsspp and http://www.ppsspp.org/.
 
 #pragma once
-
-#include "gfx/texture_atlas.h"
 #include "gfx_es2/draw_buffer.h"
 #include "ui/view.h"
 #include "ui/viewgroup.h"
 
 class MultiTouchDisplay : public UI::View {
 public:
-	MultiTouchDisplay(ImageID img, float scale, UI::LayoutParams *layoutParams)
+	MultiTouchDisplay(int img, float scale, UI::LayoutParams *layoutParams)
 		: UI::View(layoutParams), pointerDownMask_(0), scale_(scale), img_(img), angle_(0.0f), flipImageH_(false) {
 	}
 	virtual void Touch(const TouchInput &input) override;
@@ -39,14 +37,14 @@ protected:
 	float scale_;
 
 private:
-	ImageID img_;
+	int img_;
 	float angle_;
 	bool flipImageH_;
 };
 
 class PSPDisplay : public MultiTouchDisplay {
 public:
-	PSPDisplay(ImageID img, float scale, UI::LayoutParams *layoutParams)
+	PSPDisplay(int img, float scale, UI::LayoutParams *layoutParams)
 		: MultiTouchDisplay(img, scale, layoutParams) {
 	}
 };

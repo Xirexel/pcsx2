@@ -43,7 +43,6 @@ const char* dialog_message(int ID, bool* updateText = NULL);
 #ifndef _WIN32
 enum {
 	IDC_FILTER,
-	IDC_HALF_SCREEN_TS,
 	IDC_TRI_FILTER,
 	IDC_SKIPDRAWHACK,
 	IDC_SKIPDRAWHACKEDIT,

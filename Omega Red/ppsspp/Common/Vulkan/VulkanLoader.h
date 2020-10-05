@@ -25,8 +25,6 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#elif defined(__APPLE__)
-#define VK_USE_PLATFORM_METAL_EXT
 #endif
 
 #define VK_NO_PROTOTYPES
@@ -175,8 +173,6 @@ extern PFN_vkCmdExecuteCommands vkCmdExecuteCommands;
 extern PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR;
 #elif defined(_WIN32)
 extern PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
-#elif defined(VK_USE_PLATFORM_METAL_EXT)
-extern PFN_vkCreateMetalSurfaceEXT vkCreateMetalSurfaceEXT;
 #endif
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
 extern PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR;
@@ -199,6 +195,11 @@ extern PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR;
 extern PFN_vkAcquireNextImageKHR vkAcquireNextImageKHR;
 extern PFN_vkQueuePresentKHR vkQueuePresentKHR;
 
+// And the DEBUG_REPORT extension. Since we load this dynamically even in static
+// linked mode, we have to rename it :(
+extern PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT;
+extern PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT;
+
 extern PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
 extern PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
 extern PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT;
@@ -214,8 +215,10 @@ extern PFN_vkGetMemoryHostPointerPropertiesEXT vkGetMemoryHostPointerPropertiesE
 extern PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR;
 extern PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR;
 
+
 // For fast extension-enabled checks.
 struct VulkanDeviceExtensions {
+	bool EXT_debug_report;
 	bool EXT_debug_utils;
 	bool KHR_maintenance1; // required for KHR_create_renderpass2
 	bool KHR_maintenance2;

@@ -64,16 +64,20 @@ bool GSDevice11::CreateTextureFX()
 
 	memset(&sd, 0, sizeof(sd));
 
-	sd.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	sd.Filter = theApp.GetConfigI("MaxAnisotropy") && !theApp.GetConfigB("paltex") ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_POINT;
 	sd.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sd.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sd.MinLOD = -FLT_MAX;
 	sd.MaxLOD = FLT_MAX;
-	sd.MaxAnisotropy = D3D11_MIN_MAXANISOTROPY;
+	sd.MaxAnisotropy = theApp.GetConfigI("MaxAnisotropy");
 	sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
 	hr = m_dev->CreateSamplerState(&sd, &m_palette_ss);
+
+	if(FAILED(hr)) return false;
+
+	hr = m_dev->CreateSamplerState(&sd, &m_rt_ss);
 
 	if(FAILED(hr)) return false;
 
@@ -108,7 +112,7 @@ void GSDevice11::SetupVS(VSSelector sel, const VSConstantBuffer* cb)
 		D3D11_INPUT_ELEMENT_DESC layout[] =
 		{
 			{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-			{"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"TEXCOORD", 1, DXGI_FORMAT_R32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"POSITION", 0, DXGI_FORMAT_R16G16_UINT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"POSITION", 1, DXGI_FORMAT_R32_UINT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -259,7 +263,7 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 
 			memset(&sd, 0, sizeof(sd));
 
-			af.Filter = m_aniso_filter ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+			af.Filter = theApp.GetConfigI("MaxAnisotropy") && !theApp.GetConfigB("paltex") ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 			sd.Filter = ssel.ltf ? af.Filter : D3D11_FILTER_MIN_MAG_MIP_POINT;
 
 			sd.AddressU = ssel.tau ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -267,7 +271,7 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 			sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 			sd.MinLOD = -FLT_MAX;
 			sd.MaxLOD = FLT_MAX;
-			sd.MaxAnisotropy = m_aniso_filter;
+			sd.MaxAnisotropy = theApp.GetConfigI("MaxAnisotropy");
 			sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
 			m_dev->CreateSamplerState(&sd, &ss0);

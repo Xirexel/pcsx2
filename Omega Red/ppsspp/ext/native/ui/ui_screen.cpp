@@ -7,14 +7,13 @@
 #include "ui/ui_screen.h"
 #include "ui/ui_context.h"
 #include "ui/screen.h"
-#include "ui/root.h"
 #include "i18n/i18n.h"
 #include "gfx_es2/draw_buffer.h"
 
 static const bool ClickDebug = false;
 
 UIScreen::UIScreen()
-	: Screen() {
+	: Screen(), root_(nullptr), translation_(0.0f), scale_(1.0f), recreateViews_(true), hatDown_(0) {
 }
 
 UIScreen::~UIScreen() {
@@ -45,7 +44,7 @@ void UIScreen::DoRecreateViews() {
 
 			// Update layout and refocus so things scroll into view.
 			// This is for resizing down, when focused on something now offscreen.
-			UI::LayoutViewHierarchy(*screenManager()->getUIContext(), root_, ignoreInsets_);
+			UI::LayoutViewHierarchy(*screenManager()->getUIContext(), root_);
 			UI::View *focused = UI::GetFocusedView();
 			if (focused) {
 				root_->SubviewFocused(focused);
@@ -80,7 +79,7 @@ void UIScreen::preRender() {
 	}
 	draw->BeginFrame();
 	// Bind and clear the back buffer
-	draw->BindFramebufferAsRenderTarget(nullptr, { RPAction::CLEAR, RPAction::CLEAR, RPAction::CLEAR, 0xFF000000 }, "UI");
+	draw->BindFramebufferAsRenderTarget(nullptr, { RPAction::CLEAR, RPAction::CLEAR, RPAction::CLEAR, 0xFF000000 });
 	screenManager()->getUIContext()->BeginFrame();
 
 	Draw::Viewport viewport;
@@ -107,7 +106,7 @@ void UIScreen::render() {
 
 	if (root_) {
 		UIContext *uiContext = screenManager()->getUIContext();
-		UI::LayoutViewHierarchy(*uiContext, root_, ignoreInsets_);
+		UI::LayoutViewHierarchy(*uiContext, root_);
 
 		uiContext->PushTransform({translation_, scale_, alpha_});
 
@@ -182,11 +181,39 @@ void UIDialogScreen::sendMessage(const char *msg, const char *value) {
 }
 
 bool UIScreen::axis(const AxisInput &axis) {
+	// Simple translation of hat to keys for Shield and other modern pads.
+	// TODO: Use some variant of keymap?
+	int flags = 0;
+	if (axis.axisId == JOYSTICK_AXIS_HAT_X) {
+		if (axis.value < -0.7f)
+			flags |= PAD_BUTTON_LEFT;
+		if (axis.value > 0.7f)
+			flags |= PAD_BUTTON_RIGHT;
+	}
+	if (axis.axisId == JOYSTICK_AXIS_HAT_Y) {
+		if (axis.value < -0.7f)
+			flags |= PAD_BUTTON_UP;
+		if (axis.value > 0.7f)
+			flags |= PAD_BUTTON_DOWN;
+	}
+
+	// Yeah yeah, this should be table driven..
+	int pressed = flags & ~hatDown_;
+	int released = ~flags & hatDown_;
+	if (pressed & PAD_BUTTON_LEFT) key(KeyInput(DEVICE_ID_KEYBOARD, NKCODE_DPAD_LEFT, KEY_DOWN));
+	if (pressed & PAD_BUTTON_RIGHT) key(KeyInput(DEVICE_ID_KEYBOARD, NKCODE_DPAD_RIGHT, KEY_DOWN));
+	if (pressed & PAD_BUTTON_UP) key(KeyInput(DEVICE_ID_KEYBOARD, NKCODE_DPAD_UP, KEY_DOWN));
+	if (pressed & PAD_BUTTON_DOWN) key(KeyInput(DEVICE_ID_KEYBOARD, NKCODE_DPAD_DOWN, KEY_DOWN));
+	if (released & PAD_BUTTON_LEFT) key(KeyInput(DEVICE_ID_KEYBOARD, NKCODE_DPAD_LEFT, KEY_UP));
+	if (released & PAD_BUTTON_RIGHT) key(KeyInput(DEVICE_ID_KEYBOARD, NKCODE_DPAD_RIGHT, KEY_UP));
+	if (released & PAD_BUTTON_UP) key(KeyInput(DEVICE_ID_KEYBOARD, NKCODE_DPAD_UP, KEY_UP));
+	if (released & PAD_BUTTON_DOWN) key(KeyInput(DEVICE_ID_KEYBOARD, NKCODE_DPAD_DOWN, KEY_UP));
+	hatDown_ = flags;
 	if (root_) {
 		UI::AxisEvent(axis, root_);
 		return true;
 	}
-	return false;
+	return (pressed & (PAD_BUTTON_LEFT | PAD_BUTTON_RIGHT | PAD_BUTTON_UP | PAD_BUTTON_DOWN)) != 0;
 }
 
 UI::EventReturn UIScreen::OnBack(UI::EventParams &e) {
@@ -206,7 +233,7 @@ UI::EventReturn UIScreen::OnCancel(UI::EventParams &e) {
 
 PopupScreen::PopupScreen(std::string title, std::string button1, std::string button2)
 	: box_(0), defaultButton_(nullptr), title_(title) {
-	auto di = GetI18NCategory("Dialog");
+	I18NCategory *di = GetI18NCategory("Dialog");
 	if (!button1.empty())
 		button1_ = di->T(button1.c_str());
 	if (!button2.empty())
@@ -240,9 +267,6 @@ bool PopupScreen::key(const KeyInput &key) {
 
 void PopupScreen::update() {
 	UIDialogScreen::update();
-
-	if (defaultButton_)
-		defaultButton_->SetEnabled(CanComplete(DR_OK));
 
 	float animatePos = 1.0f;
 
@@ -290,12 +314,10 @@ void PopupScreen::SetPopupOrigin(const UI::View *view) {
 }
 
 void PopupScreen::TriggerFinish(DialogResult result) {
-	if (CanComplete(result)) {
-		finishFrame_ = frames_;
-		finishResult_ = result;
+	finishFrame_ = frames_;
+	finishResult_ = result;
 
-		OnCompleted(result);
-	}
+	OnCompleted(result);
 }
 
 void PopupScreen::resized() {
@@ -400,7 +422,7 @@ std::string ChopTitle(const std::string &title) {
 UI::EventReturn PopupMultiChoice::HandleClick(UI::EventParams &e) {
 	restoreFocus_ = HasFocus();
 
-	auto category = category_ ? GetI18NCategory(category_) : nullptr;
+	I18NCategory *category = category_ ? GetI18NCategory(category_) : nullptr;
 
 	std::vector<std::string> choices;
 	for (int i = 0; i < numChoices_; i++) {
@@ -423,7 +445,7 @@ void PopupMultiChoice::Update() {
 void PopupMultiChoice::UpdateText() {
 	if (!choices_)
 		return;
-	auto category = GetI18NCategory(category_);
+	I18NCategory *category = GetI18NCategory(category_);
 	// Clamp the value to be safe.
 	if (*value_ < minVal_ || *value_ > minVal_ + numChoices_ - 1) {
 		valueText_ = "(invalid choice)";  // Shouldn't happen. Should be no need to translate this.
@@ -838,7 +860,7 @@ void ChoiceWithValueDisplay::Draw(UIContext &dc) {
 	int paddingX = 12;
 	dc.SetFontStyle(dc.theme->uiFont);
 
-	auto category = GetI18NCategory(category_);
+	I18NCategory *category = GetI18NCategory(category_);
 	std::ostringstream valueText;
 	if (translateCallback_ && sValue_) {
 		valueText << translateCallback_(sValue_->c_str());

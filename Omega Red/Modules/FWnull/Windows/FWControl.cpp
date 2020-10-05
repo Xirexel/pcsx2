@@ -1,5 +1,9 @@
 #include "FWControl.h"
+#ifdef __ANDROID__
+#include "FW.h"
+#else
 #include "../FW.h"
+#endif
 #include "PCSX2Lib_API.h"
 #include "pugixml.hpp"
 

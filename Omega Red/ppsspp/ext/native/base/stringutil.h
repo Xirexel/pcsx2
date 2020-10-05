@@ -13,8 +13,6 @@
 #ifdef _MSC_VER
 #pragma warning (disable:4996)
 #define strncasecmp _strnicmp
-#else
-#include <strings.h>
 #endif
 
 // Dumb wrapper around itoa, providing a buffer. Declare this on the stack.

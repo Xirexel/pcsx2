@@ -137,7 +137,7 @@
       <PreprocessorDefinitions>_CRTDBG_MAP_ALLOC;USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;WIN32;_ARCH_32=1;_M_IX86=1;_DEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ForcedIncludeFiles>stdafx.h;Common/DbgNew.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;../ext/glslang;..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;..</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Precise</FloatingPointModel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -152,6 +152,10 @@
     <Lib>
       <AdditionalLibraryDirectories>Winmm.lib</AdditionalLibraryDirectories>
     </Lib>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -160,7 +164,7 @@
       <ForcedIncludeFiles>stdafx.h;Common/DbgNew.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PreprocessorDefinitions>_CRTDBG_MAP_ALLOC;USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;WIN32;_ARCH_64=1;_M_X64=1;_DEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;../ext/glslang;..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;..</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointModel>Precise</FloatingPointModel>
       <OmitFramePointers>false</OmitFramePointers>
@@ -176,6 +180,10 @@
     <Lib>
       <AdditionalLibraryDirectories>Winmm.lib</AdditionalLibraryDirectories>
     </Lib>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <ClCompile>
@@ -184,7 +192,7 @@
       <ForcedIncludeFiles>stdafx.h;Common/DbgNew.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PreprocessorDefinitions>_CRTDBG_MAP_ALLOC;USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;WIN32;_ARCH_64=1;_DEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;../ext/glslang;..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;..</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointModel>Precise</FloatingPointModel>
       <OmitFramePointers>false</OmitFramePointers>
@@ -200,6 +208,10 @@
     <Lib>
       <AdditionalLibraryDirectories>Winmm.lib</AdditionalLibraryDirectories>
     </Lib>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
@@ -208,7 +220,7 @@
       <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PreprocessorDefinitions>_CRTDBG_MAP_ALLOC;USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;WIN32;_ARCH_32=1;_DEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;../ext/glslang;..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;..</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointModel>Precise</FloatingPointModel>
       <OmitFramePointers>false</OmitFramePointers>
@@ -224,6 +236,10 @@
     <Lib>
       <AdditionalLibraryDirectories>Winmm.lib</AdditionalLibraryDirectories>
     </Lib>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -237,12 +253,11 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Precise</FloatingPointModel>
-      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;../ext/glslang;..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;..</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -253,6 +268,10 @@
     <Lib>
       <AdditionalLibraryDirectories>Winmm.lib</AdditionalLibraryDirectories>
     </Lib>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -263,7 +282,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;WIN32;_ARCH_64=1;_M_X64=1;NDEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
-      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;../ext/glslang;..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;..</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointModel>Precise</FloatingPointModel>
@@ -273,7 +292,6 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <StringPooling>true</StringPooling>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -284,6 +302,10 @@
     <Lib>
       <AdditionalLibraryDirectories>Winmm.lib</AdditionalLibraryDirectories>
     </Lib>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
@@ -294,7 +316,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;WIN32;_ARCH_64=1;NDEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
-      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;../ext/glslang;..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;..</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointModel>Precise</FloatingPointModel>
@@ -304,7 +326,6 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <StringPooling>true</StringPooling>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -315,6 +336,10 @@
     <Lib>
       <AdditionalLibraryDirectories>Winmm.lib</AdditionalLibraryDirectories>
     </Lib>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
@@ -325,7 +350,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USING_WIN_UI;_CRT_SECURE_NO_WARNINGS;WIN32;_ARCH_32=1;NDEBUG;_LIB;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
-      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;../ext/glslang;..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/native;../ext/snappy;..</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointModel>Precise</FloatingPointModel>
@@ -335,7 +360,6 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <StringPooling>true</StringPooling>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -346,12 +370,19 @@
     <Lib>
       <AdditionalLibraryDirectories>Winmm.lib</AdditionalLibraryDirectories>
     </Lib>
+    <PreBuildEvent>
+      <Message>Updating git-version.cpp</Message>
+      <Command>../Windows/git-version-gen.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ABI.h" />
     <ClInclude Include="Arm64Emitter.h" />
     <ClInclude Include="ArmCommon.h" />
     <ClInclude Include="ArmEmitter.h" />
+    <ClInclude Include="Atomics.h" />
+    <ClInclude Include="Atomic_GCC.h" />
+    <ClInclude Include="Atomic_Win32.h" />
     <ClInclude Include="BitScan.h" />
     <ClInclude Include="BitSet.h" />
     <ClInclude Include="ColorConvNEON.h" />
@@ -396,7 +427,6 @@
     <ClInclude Include="KeyMap.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="LogManager.h" />
-    <ClInclude Include="MakeUnique.h" />
     <ClInclude Include="MathUtil.h" />
     <ClInclude Include="MemArena.h" />
     <ClInclude Include="MemoryUtil.h" />
