@@ -17,11 +17,9 @@
 #define IDC_FILTER                      2012
 #define IDC_INTERLACE_TEXT              2013
 #define IDC_INTERLACE                   2014
-#define IDC_OPENCL_DEVICE               2015
-#define IDC_OPENCL_TEXT                 2016
-#define IDC_HACKSBUTTON                 2017
-#define IDC_OSDBUTTON                   2018
-#define IDC_SHADEBUTTON                 2019
+#define IDC_HACKSBUTTON                 2015
+#define IDC_OSDBUTTON                   2016
+#define IDC_SHADEBUTTON                 2017
 // Hardware Renderer Settings:
 #define IDC_PALTEX                      2030
 #define IDC_LARGE_FB                    2031
@@ -39,6 +37,8 @@
 #define IDC_ACCURATE_BLEND_UNIT         2043
 #define IDC_ACCURATE_BLEND_UNIT_D3D11   2044
 #define IDC_ACCURATE_BLEND_UNIT_TEXT    2045
+#define IDC_DITHERING                   2046
+#define IDC_DITHERING_TEXT              2047
 // Software Renderer Settings:
 #define IDC_MIPMAP_SW                   2060
 #define IDC_AA1                         2061
@@ -155,13 +155,14 @@
 #define IDR_COMMON_GLSL                 10015
 #define IDR_TFX_VGS_GLSL                10016
 #define IDR_TFX_FS_GLSL                 10017
+#define IDR_FONT_ROBOTO                 10018
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        10018
+#define _APS_NEXT_RESOURCE_VALUE        10019
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         2194
 #define _APS_NEXT_SYMED_VALUE           5000

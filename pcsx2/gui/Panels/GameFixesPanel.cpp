@@ -93,10 +93,6 @@ Panels::GameFixesPanel::GameFixesPanel( wxWindow* parent )
 			wxEmptyString
 		},
 		{
-			_("Switch to GSdx software rendering when an FMV plays"),
-			wxEmptyString
-		},
-		{
 			_("Preload TLB hack to avoid tlb miss on Goemon"),
 			wxEmptyString
 		},
@@ -104,9 +100,13 @@ Panels::GameFixesPanel::GameFixesPanel( wxWindow* parent )
 			_("VU I bit Hack avoid constant recompilation (Scarface The World Is Yours)"),
 			wxEmptyString
 		},
-        {
+		{
 			_("VU I bit Hack avoid constant recompilation (Crash Tag Team Racing)"),
-             wxEmptyString
+			wxEmptyString
+		},
+		{
+			_("VU0 Kickstart to avoid sync problems with VU1"),
+			wxEmptyString
 		}
 	};
 

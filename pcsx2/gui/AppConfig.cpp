@@ -525,6 +525,7 @@ AppConfig::AppConfig()
 	#endif
 	EnableSpeedHacks	= true;
 	EnableGameFixes		= false;
+	EnableFastBoot		= true;
 
 	EnablePresets		= true;
 	PresetIndex			= 1;
@@ -646,6 +647,7 @@ void AppConfig::LoadSaveRootItems( IniInterface& ini )
 
 	IniEntry( EnableSpeedHacks );
 	IniEntry( EnableGameFixes );
+	IniEntry( EnableFastBoot );
 
 	IniEntry( EnablePresets );
 	IniEntry( PresetIndex );
@@ -671,6 +673,9 @@ void AppConfig::LoadSave( IniInterface& ini )
 	BaseFilenames	.LoadSave( ini );
 	GSWindow		.LoadSave( ini );
 	Framerate		.LoadSave( ini );
+#ifndef DISABLE_RECORDING
+	inputRecording.loadSave(ini);
+#endif
 	Templates		.LoadSave( ini );
 
 	ini.Flush();
@@ -723,8 +728,9 @@ AppConfig::FolderOptions::FolderOptions()
 	, Cheats		( PathDefs::GetCheats() )
 	, CheatsWS      ( PathDefs::GetCheatsWS() )
 
-	, RunIso( PathDefs::GetDocuments() )			// raw default is always the Documents folder.
-	, RunELF( PathDefs::GetDocuments() )			// raw default is always the Documents folder.
+	, RunIso	( PathDefs::GetDocuments() )			// raw default is always the Documents folder.
+	, RunELF	( PathDefs::GetDocuments() )			// raw default is always the Documents folder.
+	, RunDisc	( PathDefs::GetDocuments().GetFilename() )
 {
 	bitset = 0xffffffff;
 }
@@ -764,6 +770,7 @@ void AppConfig::FolderOptions::LoadSave( IniInterface& ini )
 
 	IniEntryDirFile( RunIso, rel );
 	IniEntryDirFile( RunELF, rel );
+	IniEntryDirFile( RunDisc, rel );
 
 	if( ini.IsLoading() )
 	{
@@ -895,6 +902,20 @@ void AppConfig::GSWindowOptions::LoadSave( IniInterface& ini )
 
 	if( ini.IsLoading() ) SanityCheck();
 }
+
+#ifndef DISABLE_RECORDING
+AppConfig::InputRecordingOptions::InputRecordingOptions()
+	: VirtualPadPosition(wxDefaultPosition)
+{
+}
+
+void AppConfig::InputRecordingOptions::loadSave(IniInterface& ini)
+{
+	ScopedIniGroup path(ini, L"InputRecording");
+
+	IniEntry(VirtualPadPosition);
+}
+#endif
 
 // ----------------------------------------------------------------------------
 AppConfig::FramerateOptions::FramerateOptions()
@@ -1032,7 +1053,6 @@ bool AppConfig::IsOkApplyPreset(int n, bool ignoreMTVU)
 	Framerate.SlomoScalar = original_Framerate.SlomoScalar;
 	Framerate.TurboScalar = original_Framerate.TurboScalar;
 
-	EnableSpeedHacks	= false;
 	EnableGameFixes		= false;
 
 	EmuOptions.EnablePatches		= true;
@@ -1253,7 +1273,21 @@ static void LoadUiSettings()
 	g_Conf->LoadSave( loader );
 
 	if( !wxFile::Exists( g_Conf->CurrentIso ) )
+	{
 		g_Conf->CurrentIso.clear();
+	}
+
+#if defined(_WIN32)
+	if( !g_Conf->Folders.RunDisc.DirExists() )
+	{
+		g_Conf->Folders.RunDisc.Clear();
+	}
+#else
+	if (!g_Conf->Folders.RunDisc.Exists())
+	{
+		g_Conf->Folders.RunDisc.Clear();
+	}
+#endif
 
 	sApp.DispatchUiSettingsEvent( loader );
 }
@@ -1286,7 +1320,21 @@ void AppLoadSettings()
 static void SaveUiSettings()
 {	
 	if( !wxFile::Exists( g_Conf->CurrentIso ) )
+	{
 		g_Conf->CurrentIso.clear();
+	}
+
+#if defined(_WIN32)
+	if (!g_Conf->Folders.RunDisc.DirExists())
+	{
+		g_Conf->Folders.RunDisc.Clear();
+	}
+#else
+	if (!g_Conf->Folders.RunDisc.Exists())
+	{
+		g_Conf->Folders.RunDisc.Clear();
+	}
+#endif
 
 	sApp.GetRecentIsoManager().Add( g_Conf->CurrentIso );
 

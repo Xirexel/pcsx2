@@ -23,8 +23,6 @@
 
 #ifndef DISABLE_RECORDING
 #	include "Recording/InputRecording.h"
-#	include "Recording/PadData.h"
-#	include "Recording/RecordingInputManager.h"
 #endif
 
 _sio sio;
@@ -214,17 +212,14 @@ SIO_WRITE sioWriteController(u8 data)
 
 	default:
 		sio.buf[sio.bufCount] = PADpoll(data);
-
 #ifndef DISABLE_RECORDING
 		if (g_Conf->EmuOptions.EnableRecordingTools)
 		{
-			g_InputRecording.ControllerInterrupt(data, sio.port, sio.bufCount, sio.buf);
-			if (g_InputRecording.IsInterruptFrame())
+			// Only examine controllers 1 / 2
+			if (sio.slot[sio.port] == 0)
 			{
-				g_RecordingInput.ControllerInterrupt(data, sio.port, sio.bufCount, sio.buf);
+				g_InputRecording.ControllerInterrupt(data, sio.port, sio.bufCount, sio.buf);
 			}
-
-			PadData::LogPadData(sio.port, sio.bufCount, sio.buf);
 		}
 #endif
 		break;

@@ -20,7 +20,7 @@ include(Pcsx2Utils)
 
 check_no_parenthesis_in_path()
 detectOperatingSystem()
-check_compiler_version("4.8" "4.8")
+check_compiler_version("7.0" "7.0")
 
 #-------------------------------------------------------------------------------
 # Include specific module
@@ -55,6 +55,12 @@ endif()
 # make plugins
 if(EXISTS "${CMAKE_SOURCE_DIR}/plugins")
     add_subdirectory(plugins)
+endif()
+
+# tests
+if(ACTUALLY_ENABLE_TESTS)
+    add_subdirectory(3rdparty/gtest EXCLUDE_FROM_ALL)
+    add_subdirectory(tests/ctest)
 endif()
 
 #-------------------------------------------------------------------------------
