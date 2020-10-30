@@ -39,7 +39,11 @@ else()
     set(pcsx2FinalFlags "")
 endif()
 
-set(pcsx2FinalFlags ${pcsx2FinalFlags} "-DSPU2X_PORTAUDIO" ${CommonFlags})
+set(pcsx2FinalFlags ${pcsx2FinalFlags} ${CommonFlags})
+
+if(PORTAUDIO_FOUND)
+    set(pcsx2FinalFlags ${pcsx2FinalFlags} -DSPU2X_PORTAUDIO)
+endif()
 
 if(XDG_STD)
     set(pcsx2FinalFlags ${pcsx2FinalFlags} -DXDG_STD)
@@ -237,7 +241,6 @@ set(pcsx2SPU2Sources
 	SPU2/Reverb.cpp
 	SPU2/SndOut.cpp
 	SPU2/SndOut_SDL.cpp
-	SPU2/SndOut_Portaudio.cpp
 	SPU2/spu2freeze.cpp
 	SPU2/spu2replay.cpp
 	SPU2/spu2sys.cpp
@@ -252,6 +255,10 @@ set(pcsx2SPU2Sources
 	SPU2/Linux/Dialogs.cpp
 	SPU2/wx/wxConfig.cpp
     )
+
+if(PORTAUDIO_FOUND)
+    set(pcsx2SPU2Sources ${pcsx2SPU2Sources} SPU2/SndOut_Portaudio.cpp)
+endif()
 
 # SPU2 headers
 set(pcsx2SPU2Headers
@@ -548,6 +555,7 @@ set(pcsx2RecordingHeaders
 	${rec_src}/InputRecordingFile.h
 	${rec_src}/NewRecordingFrame.h
 	${rec_src}/PadData.h
+	${rec_src}/Utilities/InputRecordingLogger.h
 	${rec_vp_src}/VirtualPad.h
 	${rec_vp_src}/VirtualPadData.h
 	${rec_vp_src}/VirtualPadResources.h
@@ -766,6 +774,7 @@ set(pcsx2FinalSources
 set(pcsx2FinalLibs
     Utilities
     x86emitter
+    fmt::fmt
     ${wxWidgets_LIBRARIES}
     ${GTK2_LIBRARIES}
     ${ZLIB_LIBRARIES}
@@ -774,9 +783,12 @@ set(pcsx2FinalLibs
     ${ALSA_LIBRARIES}
     ${SOUNDTOUCH_LIBRARIES}
     ${SDL2_LIBRARIES}
-    ${PORTAUDIO_LIBRARIES}
     ${Platform_Libs}
 )
+
+if(PORTAUDIO_FOUND)
+    set(pcsx2FinalLibs ${pcsx2FinalLibs} ${PORTAUDIO_LIBRARIES})
+endif()
 
 if(BUILTIN_GS)
     set(pcsx2FinalLibs "${pcsx2FinalLibs} GSdx")

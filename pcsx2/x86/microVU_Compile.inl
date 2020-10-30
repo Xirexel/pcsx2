@@ -561,6 +561,9 @@ void* mVUcompile(microVU& mVU, u32 startPC, uptr pState)
 		mVUcheckBadOp(mVU);
 		if (curI & _Ebit_) {
 			eBitPass1(mVU, branch);
+			// VU0 end of program MAC results can be read by COP2, so best to make sure the last instance is valid
+			// Needed for State of Emergency 2 and Driving Emotion Type-S
+			if(isVU0) mVUregs.needExactMatch |= 7;
 		}
 
 		if ((curI & _Mbit_) && isVU0) {
@@ -689,6 +692,12 @@ void* mVUcompile(microVU& mVU, u32 startPC, uptr pState)
 			goto perf_and_return;
 		}
 		else if (!mVUinfo.isBdelay) {
+			// Handle range wrapping
+			if ((xPC + 8) == mVU.microMemSize)
+			{
+				mVUsetupRange(mVU, xPC, false);
+				mVUsetupRange(mVU, 0, 1);
+			}
 			incPC(1);
 		}
 		else {

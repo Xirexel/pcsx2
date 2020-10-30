@@ -63,9 +63,10 @@ jobs:
         with:
           key: submodules-${{ hashFiles('./.gitmodules') }}
           path: |
+            ./.git/modules/
+            ./3rdparty/fmt
             ./3rdparty/xz
             ./3rdparty/gtest
-            ./.git/modules/
 
       - name: Checkout Submodules
         if: steps.cache-submodules.outputs.cache-hit != 'true'
@@ -89,10 +90,10 @@ jobs:
 
       - name: Verify VS Project Files
         shell: powershell
-        run: .\.github\workflows\scripts\validate-vs-filters.ps1
+        run: .\.github\workflows\scripts\windows\validate-vs-filters.ps1
 
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.0.1
+        uses: microsoft/setup-msbuild@v1.0.2
         with:
           vs-version: 16.7
 
@@ -105,3 +106,4 @@ jobs:
         with:
           name: PCSX2-${{ matrix.platform }}-${{ steps.git-vars.outputs.artifact-metadata }}
           path: bin
+          retention-days: 30 # https://docs.github.com/en/free-pro-team@latest/actions/reference/usage-limits-billing-and-administration#artifact-and-log-retention-policy

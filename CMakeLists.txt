@@ -35,10 +35,15 @@ get_git_version_info()
 write_svnrev_h()
 
 if(NOT NO_TRANSLATION)
-# make the translation
-if(EXISTS "${CMAKE_SOURCE_DIR}/locales")
-    add_subdirectory(locales)
+    # make the translation
+    if(EXISTS "${CMAKE_SOURCE_DIR}/locales")
+        add_subdirectory(locales)
+    endif()
 endif()
+
+# 3rdpary Libraries
+if(EXISTS "${CMAKE_SOURCE_DIR}/3rdparty/fmt/fmt")
+    add_subdirectory(3rdparty/fmt/fmt)
 endif()
 
 # make common
