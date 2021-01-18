@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Golden_Phi.Emulators;
 using Golden_Phi.Managers;
 using Golden_Phi.Tools;
 
@@ -17,11 +18,11 @@ namespace Golden_Phi.ViewModels
         public ControlViewModel()
         {
 
-            Emul.Emul.Instance.ChangeStatusEvent += (a_Status) =>
+            Emul.Instance.ChangeStatusEvent += (a_Status) =>
             {
                 StateVisibility = Visibility.Visible;
 
-                if (a_Status == Emul.Emul.StatusEnum.Started)
+                if (a_Status == Emul.StatusEnum.Started)
                 {
                     Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
                     {

@@ -8,6 +8,7 @@ namespace Golden_Phi.Panels.Video.Interop
         private ComInterface.IDirect3DDevice9Ex     comObject;
         private ComInterface.CreateRenderTargetEx   createRenderTarget;
         private ComInterface.CreateTextureEx        createTexture;
+        private ComInterface.ColorFill              colorFill;
 
 
         internal Direct3DDevice9Ex(ComInterface.IDirect3DDevice9Ex obj)
@@ -15,6 +16,7 @@ namespace Golden_Phi.Panels.Video.Interop
             this.comObject = obj;
             ComInterface.GetComMethod(this.comObject, 23, out this.createTexture);
             ComInterface.GetComMethod(this.comObject, 28, out this.createRenderTarget);
+            ComInterface.GetComMethod(this.comObject, 35, out this.colorFill);
         }
 
         ~Direct3DDevice9Ex()
@@ -45,6 +47,12 @@ namespace Golden_Phi.Panels.Video.Interop
             Marshal.ThrowExceptionForHR(result);
 
             return new Direct3DTexture9(obj, handle);
+        }
+
+        public void ColorFill(Direct3DSurface9 Surface, NativeStructs.RECT Rect, UInt32 color)
+        {
+            int result = this.colorFill(this.comObject, Surface.texture, Rect, color);
+            Marshal.ThrowExceptionForHR(result);
         }
 
         private void Release()

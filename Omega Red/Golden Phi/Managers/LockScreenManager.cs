@@ -25,6 +25,8 @@ namespace Golden_Phi.Managers
 
         private Image mIconImage = null;
 
+        private Image mBackImage = new Image();
+
         private static LockScreenManager m_Instance = null;
 
         public static LockScreenManager Instance { get { if (m_Instance == null) m_Instance = new LockScreenManager(); return m_Instance; } }
@@ -55,12 +57,17 @@ namespace Golden_Phi.Managers
             { }
         }
 
-        public Image IconImage { get { return mIconImage; } }
-        
+        public Image BackImage { get { return mBackImage; } }
+
+        public Image IconImage { get { return mIconImage; } }                      
+
         public void hide()
         {
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
             {
+                if (mBackImage != null)
+                    mBackImage.Source = null;
+
                 if (StatusEvent != null)
                     StatusEvent(Status.None);
 
@@ -69,14 +76,41 @@ namespace Golden_Phi.Managers
             });
         }
 
-        public void show()
+        public void show(System.Windows.Media.ImageSource a_ImageSource = null)
         {
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
             {
+                if (mBackImage != null)
+                    mBackImage.Source = a_ImageSource;
+
                 if (StatusEvent != null)
                     StatusEvent(Status.Show);
 
-                if(mIconImage.Source != null)
+                displayMessage("");
+
+                if (mIconImage.Source != null)
+                    WpfAnimatedGif.ImageBehavior.GetAnimationController(mIconImage).Play();
+            });
+        }
+
+        public void showSaving(System.Windows.Media.ImageSource a_ImageSource = null)
+        {
+            if (StatusEvent == null)
+                return;
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                if (mBackImage != null)
+                    mBackImage.Source = a_ImageSource;
+
+                var l_SavingTitle = App.Current.Resources["SavingTitle"];
+
+                displayMessage(l_SavingTitle == null ? "" : l_SavingTitle as string);
+
+                if (StatusEvent != null)
+                    StatusEvent(Status.Show);
+
+                if (mIconImage.Source != null)
                     WpfAnimatedGif.ImageBehavior.GetAnimationController(mIconImage).Play();
             });
         }

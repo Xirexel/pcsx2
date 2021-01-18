@@ -25,12 +25,12 @@
                             <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ResolutionModeCollection}" Margin="5,0,5,5"/>
                         </StackPanel>
                     </Border>
-                    <Border>
+                    <!--<Border>
                         <StackPanel Margin="5">
                             <TextBlock Text="{DynamicResource DisplayModeTitle}" TextAlignment="Center"  Margin="5"/>
                             <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding DisplayModeCollection}" Margin="5,0,5,5"/>
                         </StackPanel>
-                    </Border>
+                    </Border>-->
                 </StackPanel>
             </TextBlock.DataContext>
         </TextBlock>
@@ -44,6 +44,16 @@
                         <TextBlock Text="{DynamicResource PadControlTypeTitle}" TextAlignment="Center" Margin="5"/>
                         <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding PadControlCollection}" Margin="5,0,5,0"/>
                         <ContentPresenter Content="{Binding PadConfigPanel}"/>
+                    </StackPanel>
+                </Border>
+            </TextBlock.DataContext>
+        </TextBlock>
+        <TextBlock Text="{DynamicResource LanguageTitle}">
+            <TextBlock.DataContext>
+                <Border>
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource LanguageTypeTitle}" TextAlignment="Center" Margin="5"/>
+                        <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding LanguageCollection}" Margin="5,0,5,0"/>
                     </StackPanel>
                 </Border>
             </TextBlock.DataContext>

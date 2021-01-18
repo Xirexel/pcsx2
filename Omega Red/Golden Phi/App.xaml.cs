@@ -1,4 +1,5 @@
-﻿using Golden_Phi.Utilities;
+﻿using Golden_Phi.Emulators;
+using Golden_Phi.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -117,7 +118,7 @@ namespace Golden_Phi
         {
             Managers.PadControlManager.Instance.stopTimer();
 
-            Emul.Emul.Instance.stop();
+            Emul.Instance.stop(false);
 
             Managers.IsoManager.Instance.save();
 

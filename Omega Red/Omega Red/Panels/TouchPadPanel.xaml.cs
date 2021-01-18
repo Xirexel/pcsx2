@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Tools;
 using Omega_Red.Util;
@@ -106,9 +107,9 @@ namespace Omega_Red.Panels
 
             this.AddHandler(Button.MouseLeaveEvent, new RoutedEventHandler(Button_Release), true);
 
-            PCSX2Controller.Instance.ChangeStatusEvent += (a_Status)=> {
+            Emul.Instance.ChangeStatusEvent += (a_Status)=> {
 
-                if(a_Status == PCSX2Controller.StatusEnum.Stopped)
+                if(a_Status == Emul.StatusEnum.Stopped)
                 {
                     LimitFrame = false;
 
@@ -118,7 +119,7 @@ namespace Omega_Red.Panels
                     });
                 }
 
-                if (a_Status == PCSX2Controller.StatusEnum.Started)
+                if (a_Status == Emul.StatusEnum.Started)
                 {
                     Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
                     {
@@ -371,7 +372,7 @@ namespace Omega_Red.Panels
             var lCheckBox = sender as CheckBox;
 
             if(lCheckBox != null)
-                PCSX2Controller.Instance.setLimitFrame(!(bool)lCheckBox.IsChecked);
+                Emul.Instance.setLimitFrame(!(bool)lCheckBox.IsChecked);
         }
 
 

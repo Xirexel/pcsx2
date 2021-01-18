@@ -1,8 +1,10 @@
-﻿using Golden_Phi.Models;
+﻿using Golden_Phi.Emulators;
+using Golden_Phi.Models;
 using Golden_Phi.Tools;
 using Golden_Phi.Utilities;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,7 +47,7 @@ namespace Golden_Phi.Panels
 
             if (XInputNative.Instance.XInputGetCapabilities(DeviceIndex, 0, ref l_capabilities) == XInputNative.ERROR_SUCCESS)
             {
-                if ((l_capabilities.Flags & XInputNative.XINPUT_CAPS_WIRELESS) != 0)
+                if((l_capabilities.Flags & XInputNative.XINPUT_CAPS_WIRELESS) != 0)
                 {
                     m_wirelese_gliph.Visibility = Visibility.Visible;
 
@@ -67,7 +69,7 @@ namespace Golden_Phi.Panels
 
             if (XInputNative.Instance.XInputGetBatteryInformation(DeviceIndex, XInputNative.BATTERY_DEVTYPE_GAMEPAD, ref l_batteryInformation) == XInputNative.ERROR_SUCCESS)
             {
-                if (l_batteryInformation.BatteryType == XInputNative.BATTERY_TYPE_DISCONNECTED ||
+                if(l_batteryInformation.BatteryType == XInputNative.BATTERY_TYPE_DISCONNECTED ||
                    l_batteryInformation.BatteryType == XInputNative.BATTERY_TYPE_WIRED)
                 {
                     m_has_battery = true;
@@ -75,7 +77,7 @@ namespace Golden_Phi.Panels
             }
 
 
-            Emul.Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
             m_update_pad_Timer.Elapsed += update_pad_Timer_Elapsed;
 
@@ -84,9 +86,9 @@ namespace Golden_Phi.Panels
             m_update_pad_Timer.Start();
         }
 
-        private void Instance_m_ChangeStatusEvent(Emul.Emul.StatusEnum obj)
+        private void Instance_m_ChangeStatusEvent(Emul.StatusEnum obj)
         {
-            if (obj == Emul.Emul.StatusEnum.Started)
+            if (obj == Emul.StatusEnum.Started)
                 m_update_pad_Timer.Interval = 2000;
             else
                 m_update_pad_Timer.Interval = 100;
@@ -100,8 +102,8 @@ namespace Golden_Phi.Panels
 
             if (l_state.Gamepad.wButtons != 0 || l_state.Gamepad.bLeftTrigger != 0 || l_state.Gamepad.bRightTrigger != 0)
                 l_activity = true;
-
-            if (m_has_battery)
+                        
+            if(m_has_battery)
             {
                 XInputNative.XINPUT_BATTERY_INFORMATION l_batteryInformation = new XInputNative.XINPUT_BATTERY_INFORMATION();
 
@@ -120,10 +122,7 @@ namespace Golden_Phi.Panels
 
         ~XInputPadControlInfoPanel()
         {
-
-            m_update_pad_Timer.AutoReset = false;
-
-            m_update_pad_Timer.Stop();
+            stopTimer();
         }
 
         public uint DeviceIndex { get; private set; }
@@ -135,9 +134,16 @@ namespace Golden_Phi.Panels
         public Tools.IPadControl PadControl { get; set; }
 
         public object PadConfigPanel { get; set; }
+        public void stopTimer()
+        {
+            m_update_pad_Timer.AutoReset = false;
+
+            m_update_pad_Timer.Stop();
+        }
 
         private void setActivity(bool a_activity)
         {
+            if(System.Windows.Application.Current != null)
             System.Windows.Application.Current.Dispatcher.BeginInvoke(
             System.Windows.Threading.DispatcherPriority.Send,
             (System.Threading.ThreadStart)delegate ()
@@ -182,7 +188,7 @@ namespace Golden_Phi.Panels
                         break;
                 }
 
-                if (m_previousButteryLevel != a_level && a_level == XInputNative.BATTERY_LEVEL_LOW)
+                if(m_previousButteryLevel != a_level && a_level == XInputNative.BATTERY_LEVEL_LOW)
                 {
                     Managers.PadControlManager.Instance.ShowWarning(m_titleTxtBlk.Text + " " + m_Index.Text + " " + m_low_battery_TxtBlk.Text);
                 }

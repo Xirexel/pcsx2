@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Golden_Phi.Emulators;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,10 +27,10 @@ namespace Golden_Phi.Panels
 
             TouchPadPanel.VibrationEvent += Instance_VibrationEvent;
 
-            Emul.Emul.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
         }
 
-        private void Instance_ChangeStatusEvent(Emul.Emul.StatusEnum obj)
+        private void Instance_ChangeStatusEvent(Emul.StatusEnum obj)
         {
             System.Windows.Application.Current.Dispatcher.BeginInvoke(
             System.Windows.Threading.DispatcherPriority.Background,
@@ -49,8 +50,7 @@ namespace Golden_Phi.Panels
             });
         }
 
-        internal VideoPanel VideoPanel { get { return (VideoPanel)m_TargetRenderBorder.Child; } }
-
+        internal VideoPanel VideoPanel { get { return (VideoPanel)m_TargetRenderBorder.Child; } }        
     }
 }
 

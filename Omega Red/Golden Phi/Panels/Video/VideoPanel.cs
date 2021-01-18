@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Golden_Phi.Emulators;
 using Golden_Phi.Panels.Video.Interop;
 using Golden_Phi.Properties;
 using System;
@@ -87,6 +88,14 @@ namespace Golden_Phi.Panels
                     if (device != null)
                     {
                         texture = GetSharedSurface(device, aWidth, aHeight);
+
+                        device.ColorFill(this.texture.GetSurfaceLevel(0), null, 0x00000000);
+
+                        Emul.Instance.ChangeStatusEvent += (Status) => {
+
+                            if (Status == Emul.StatusEnum.Stopped)
+                                device.ColorFill(this.texture.GetSurfaceLevel(0), null, 0x00000000);
+                        };
 
                         Lock();
 
@@ -175,11 +184,11 @@ namespace Golden_Phi.Panels
         public IntPtr SharedHandle { get { return sharedHandle; } }
 
         public string SymbolicLink { get; private set; }
-        
+
         public VideoPanel()
         {
             SymbolicLink = "";
-
+            
             Managers.ConfigManager.Instance.DisplayFrameEvent += (a_displayFrame) => { m_displayFrame = a_displayFrame; };
 
             var image = new System.Windows.Controls.Image();
@@ -246,6 +255,8 @@ namespace Golden_Phi.Panels
             App.Current.Exit += (sender, e)=>{
                 m_frameRateCalcTimer.Dispose();
             };
+
+
         }
         
         public VideoPanel(uint aWidth, uint aHeight, string a_SymbolicLink)

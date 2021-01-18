@@ -14,6 +14,7 @@
 
     <SolidColorBrush x:Key="MainForegroundBrush" Color="#FFFFFF" />
     <Color x:Key="DropShadowColor"  A="50" R="0" G="0" B="0"/>
+    <Color x:Key="QuickSaveDropShadowColor"  A="50" R="255" G="223" B="0"/>
     <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#00ffffff" />
     <SolidColorBrush x:Key="StandardBorderBrush" Color="#F0FFFF00" />
 
@@ -120,5 +121,22 @@
         </RadialGradientBrush.GradientStops>
     </RadialGradientBrush>
 
+    <LinearGradientBrush x:Key="QuickSaveGradientBackgroundBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientBrush.GradientStops>
+            <GradientStopCollection>
+                <GradientStop Color="#ccffffff" Offset="0.67" />
+                <GradientStop Color="#88000000" Offset="0" />
+            </GradientStopCollection>
+        </GradientBrush.GradientStops>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="QuickResumeGradientBackgroundBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientBrush.GradientStops>
+            <GradientStopCollection>
+                <GradientStop Color="#ccffffff" Offset="0.0" />
+                <GradientStop Color="#88000000" Offset="0.67" />
+            </GradientStopCollection>
+        </GradientBrush.GradientStops>
+    </LinearGradientBrush>
 
 </ResourceDictionary>

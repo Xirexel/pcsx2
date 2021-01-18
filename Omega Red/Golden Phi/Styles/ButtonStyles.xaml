@@ -2,6 +2,52 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
 
+
+    <Style x:Key="BaseBtn" TargetType="Button">
+        <Setter Property="Margin" Value="10" />
+        <Setter Property="Padding" Value="6" />
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Foreground" Value="{DynamicResource UnpressedForegroundBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource UnpressedBackgroundBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Viewbox>
+                        <Grid>
+                            <Viewbox>
+                                <Path VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="1.25" Height="85"  Width="250" 
+                          Fill="{TemplateBinding Background}"
+                          StrokeThickness="3"
+                          Stroke="Transparent"
+                          Data="M 0,0 L 201,0 L 241,26 L 241,78 L 40,78 L 0,52 Z"/>
+                            </Viewbox>
+
+                            <Viewbox>
+                                <Path  VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Height="89"  Width="254" 
+                          Fill="Transparent"
+                          Stroke="{TemplateBinding BorderBrush}" StrokeThickness="3"
+                          Data="M 0,0 L 204,0 L 245,27 L 245,82 L 41,82 L 0,55 Z"/>
+                            </Viewbox>
+                            <Viewbox>
+                                <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"  />
+                            </Viewbox>
+                        </Grid>
+                    </Viewbox>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Visibility"  Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsPressed"  Value="True">
+                            <Setter Property="Background"  Value="{DynamicResource PressedBackgroundBrush}" />
+                            <Setter Property="Foreground"  Value="{DynamicResource PressedForegroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="PadButtonStyle" TargetType="{x:Type Button}">
         <Setter Property="OverridesDefaultStyle" Value="True"/>
         <Setter Property="Width" Value="50"/>
@@ -231,8 +277,8 @@
                           Stroke="{DynamicResource SelectBorderBrush}" 
                           StrokeThickness="1" 
                           Style="{DynamicResource MainBorderPath}"/>
-                        <Viewbox Margin="0,-10,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Height="65" Width="65" Stretch="Uniform">
-                            <Path Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Data="M20 6.91L17.09 4L12 9.09L6.91 4L4 6.91L9.09 12L4 17.09L6.91 20L12 14.91L17.09 20L20 17.09L14.91 12L20 6.91Z" />
+                        <Viewbox Margin="-10,-10,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Height="65" Width="65" Stretch="Uniform">
+                            <Path Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Style="{DynamicResource ClosePath}" />
                         </Viewbox>                        
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -268,34 +314,9 @@
                           StrokeThickness="1" 
                           Style="{DynamicResource MainBorderPath}"/>
 
-                        <Grid  VerticalAlignment="Center" HorizontalAlignment="Center" Width="80" Height="80">
-
-                            <Line Stroke="{DynamicResource OverBorderBrush}" X2="0" X1="9.6" Y1="25" Y2="25" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" X2="0" X1="9.6" Y1="35" Y2="35" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" X2="0" X1="9.6" Y1="45" Y2="45" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" X2="0" X1="9.6" Y1="55" Y2="55" StrokeThickness="4"/>
-
-                            <Line Stroke="{DynamicResource OverBorderBrush}" X2="69.6" X1="80" Y1="25" Y2="25" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" X2="69.6" X1="80" Y1="35" Y2="35" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" X2="69.6" X1="80" Y1="45" Y2="45" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" X2="69.6" X1="80" Y1="55" Y2="55" StrokeThickness="4"/>
-
-                            <Line Stroke="{DynamicResource OverBorderBrush}" Y2="0" Y1="9.6" X1="25" X2="25" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" Y2="0" Y1="9.6" X1="35" X2="35" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" Y2="0" Y1="9.6" X1="45" X2="45" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" Y2="0" Y1="9.6" X1="55" X2="55" StrokeThickness="4"/>
-
-                            <Line Stroke="{DynamicResource OverBorderBrush}" Y2="69.6" Y1="80" X1="25" X2="25" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" Y2="69.6" Y1="80" X1="35" X2="35" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" Y2="69.6" Y1="80" X1="45" X2="45" StrokeThickness="4"/>
-                            <Line Stroke="{DynamicResource OverBorderBrush}" Y2="69.6" Y1="80" X1="55" X2="55" StrokeThickness="4"/>
-
-                            <Rectangle Width="60" Height="60" Stroke="{DynamicResource OverBorderBrush}" StrokeThickness="4"/>
-
-                            <Viewbox Margin="15,12,18,15" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Path Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Data="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
-                            </Viewbox>
-                        </Grid>
+                        <Viewbox Margin="0,0,0,10" VerticalAlignment="Center" HorizontalAlignment="Center" Width="80" Height="80">
+                            <Path Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Data="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+                        </Viewbox>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
@@ -304,6 +325,171 @@
                         <Trigger Property="IsPressed"  Value="True">
                             <Setter Property="Background"  Value="{DynamicResource PressedBackgroundBrush}" />
                             <Setter Property="Foreground"  Value="{DynamicResource PressedForegroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="VideosBtn" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource UnpressedForegroundBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource UnpressedBackgroundBrush}"/>
+        <Setter Property="Command" Value="{Binding InteractCommand}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Viewbox VerticalAlignment="Center" HorizontalAlignment="Center" Height="95" Width="156" Stretch="Fill">
+                            <Path Fill="{TemplateBinding Background}"
+                          StrokeThickness="1"
+                          Stroke="Transparent"
+                          Style="{DynamicResource MainBorderPath}"/>
+                        </Viewbox>
+                        <Path Fill="Transparent" VerticalAlignment="Center" HorizontalAlignment="Center"
+                          Stroke="{DynamicResource SelectBorderBrush}" 
+                          StrokeThickness="1" 
+                          Style="{DynamicResource MainBorderPath}"/>
+
+                        <Viewbox Margin="0,0,0,25" VerticalAlignment="Center" HorizontalAlignment="Center" Width="100" Height="100">
+                            <Path Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Data="M15,8V16H5V8H15M16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5V7A1,1 0 0,0 16,6Z" />
+                        </Viewbox>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity"  Value="0.75" />
+                        </Trigger>
+                        <Trigger Property="IsPressed"  Value="True">
+                            <Setter Property="Background"  Value="{DynamicResource PressedBackgroundBrush}" />
+                            <Setter Property="Foreground"  Value="{DynamicResource PressedForegroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ScreensBtn" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource UnpressedForegroundBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource UnpressedBackgroundBrush}"/>
+        <Setter Property="Command" Value="{Binding InteractCommand}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Viewbox VerticalAlignment="Center" HorizontalAlignment="Center" Height="95" Width="156" Stretch="Fill">
+                            <Path Fill="{TemplateBinding Background}"
+                          StrokeThickness="1"
+                          Stroke="Transparent"
+                          Style="{DynamicResource MainBorderPath}"/>
+                        </Viewbox>
+                        <Path Fill="Transparent" VerticalAlignment="Center" HorizontalAlignment="Center"
+                          Stroke="{DynamicResource SelectBorderBrush}" 
+                          StrokeThickness="1" 
+                          Style="{DynamicResource MainBorderPath}"/>
+
+                        <Viewbox Margin="0,0,0,10" VerticalAlignment="Center" HorizontalAlignment="Center" Width="80" Height="80">
+                            <Path Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Data="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6" />
+                        </Viewbox>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity"  Value="0.75" />
+                        </Trigger>
+                        <Trigger Property="IsPressed"  Value="True">
+                            <Setter Property="Background"  Value="{DynamicResource PressedBackgroundBrush}" />
+                            <Setter Property="Foreground"  Value="{DynamicResource PressedForegroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="QuickSaveBtn" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource UnpressedForegroundBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource UnpressedBackgroundBrush}"/>
+        <Setter Property="Command" Value="{Binding QuickSaveCommand}" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect ShadowDepth="1" Color="{DynamicResource QuickSaveDropShadowColor}"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Viewbox VerticalAlignment="Center" HorizontalAlignment="Center" Height="95" Width="156" Stretch="Fill">
+                            <Path Fill="{TemplateBinding Background}"
+                          StrokeThickness="1"
+                          Stroke="Transparent"
+                          Style="{DynamicResource MainBorderPath}"/>
+                        </Viewbox>
+                        <Viewbox Stretch="Uniform" Margin="10,0,10,10">
+                            <Grid>
+                                <Rectangle Margin="4,4,2.5,0" Fill="{TemplateBinding Background}"/>
+                                <Path Fill="{TemplateBinding Background}" Stroke="{TemplateBinding Background}" Style="{DynamicResource SavingFillPath}"/>
+                                <Path Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Style="{DynamicResource SavingBorderPath}"/>
+                            </Grid>
+                        </Viewbox>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity"  Value="0.75" />
+                        </Trigger>
+                        <Trigger Property="IsPressed"  Value="True">
+                            <Setter Property="Background"  Value="{DynamicResource PressedBackgroundBrush}" />
+                            <Setter Property="Foreground"  Value="{DynamicResource PressedForegroundBrush}" />
+                            <Setter Property="Effect" >
+                                <Setter.Value>
+                                    <DropShadowEffect Opacity="0.0"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TakeScreenBtn" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource UnpressedForegroundBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource UnpressedBackgroundBrush}"/>
+        <Setter Property="Command" Value="{Binding AddCommand}" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect ShadowDepth="1" Color="{DynamicResource QuickSaveDropShadowColor}"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Viewbox VerticalAlignment="Center" HorizontalAlignment="Center" Height="95" Width="156" Stretch="Fill">
+                            <Path Fill="{TemplateBinding Background}"
+                          StrokeThickness="1"
+                          Stroke="Transparent"
+                          Style="{DynamicResource MainBorderPath}"/>
+                        </Viewbox>
+                        <Viewbox Stretch="Uniform" Margin="10,0,10,10">
+                            <Grid>
+                                <Rectangle Margin="4,4,2.5,0" Fill="{TemplateBinding Background}"/>
+                                <Path Opacity="0.95" Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Style="{DynamicResource TakeScreenFillPath}"/>
+                            </Grid>
+                        </Viewbox>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity"  Value="0.75" />
+                        </Trigger>
+                        <Trigger Property="IsPressed"  Value="True">
+                            <Setter Property="Background"  Value="{DynamicResource PressedBackgroundBrush}" />
+                            <Setter Property="Foreground"  Value="{DynamicResource PressedForegroundBrush}" />
+                            <Setter Property="Effect" >
+                                <Setter.Value>
+                                    <DropShadowEffect Opacity="0.0"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -113,6 +113,12 @@ namespace PCSXEmul.Tools
 
         private IntPtr m_TouchPadCallbackHandler = IntPtr.Zero;
 
+        private IntPtr m_VibrationCallbackHandler = IntPtr.Zero;
+
+        private IntPtr m_VideoTargetHandler = IntPtr.Zero;
+
+        private IntPtr m_AudioCaptureTargetHandler = IntPtr.Zero;
+
         private string m_iso_file = "";
 
         private static ModuleControl m_Instance = null;
@@ -133,6 +139,21 @@ namespace PCSXEmul.Tools
         public void setTouchPadCallbackHandler(IntPtr a_TouchPadCallbackHandler)
         {
             m_TouchPadCallbackHandler = a_TouchPadCallbackHandler;
+        }
+
+        public void setVibrationCallbackHandler(IntPtr a_VibrationCallbackHandler)
+        {
+            m_VibrationCallbackHandler = a_VibrationCallbackHandler;
+        }
+
+        public void setVideoTargetHandler(IntPtr a_VideoTargetHandler)
+        {
+            m_VideoTargetHandler = a_VideoTargetHandler;
+        }
+
+        public void setAudioCaptureTargetHandler(IntPtr a_AudioCaptureTargetHandler)
+        {
+            m_AudioCaptureTargetHandler = a_AudioCaptureTargetHandler;
         }
         public void setIsoFile(string a_iso_file)
         {
@@ -169,12 +190,10 @@ namespace PCSXEmul.Tools
                     setVideoRendererConfig(l_XmlDocument, l_PropertyNode);
                     break;
                 case PCSXModuleManager.ModuleType.GPUHardware:
-                    {
-                        setVideoRendererConfig(l_XmlDocument, l_PropertyNode);
-                    }
+                    setVideoRendererConfig(l_XmlDocument, l_PropertyNode);
                     break;
                 case PCSXModuleManager.ModuleType.Pad:
-                    setPadConfig(l_XmlDocument, l_PropertyNode, m_TouchPadCallbackHandler);
+                    setPadConfig(l_XmlDocument, l_PropertyNode, m_TouchPadCallbackHandler, m_VibrationCallbackHandler);
                     break;
                 case PCSXModuleManager.ModuleType.bladesio1:
                     break;
@@ -244,9 +263,9 @@ namespace PCSXEmul.Tools
             }
         }
 
-        public void setMemoryCard(string a_file_path = null)
+        public void setMemoryCard(string a_file_path = null, int a_port = 0)
         {
-            int l_slot = 0;
+            int l_slot = a_port;
 
             if (string.IsNullOrWhiteSpace(a_file_path))
                 l_slot = -1;
@@ -319,14 +338,11 @@ namespace PCSXEmul.Tools
         
         private void setAudioRendererConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
         {
-            //if (m_VideoPanel == null)
-            //    return;
+            var l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
 
-            //var l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
+            l_Atrr.Value = m_AudioCaptureTargetHandler.ToString();
 
-            //l_Atrr.Value = Capture.AudioCaptureTarget.Instance.DataCallbackHandler.ToString();
-
-            //a_PropertyNode.Attributes.Append(l_Atrr);
+            a_PropertyNode.Attributes.Append(l_Atrr);
         }
 
         private void setVideoRendererConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
@@ -341,11 +357,11 @@ namespace PCSXEmul.Tools
             a_PropertyNode.Attributes.Append(l_Atrr);
 
 
-            //l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
+            l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
 
-            //l_Atrr.Value = Capture.TargetTexture.Instance.TargetHandler.ToString();
+            l_Atrr.Value = m_VideoTargetHandler.ToString();
 
-            //a_PropertyNode.Attributes.Append(l_Atrr);
+            a_PropertyNode.Attributes.Append(l_Atrr);
         }
 
         private void setWindowHandlerOpenConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
@@ -361,7 +377,11 @@ namespace PCSXEmul.Tools
             a_PropertyNode.Attributes.Append(l_Atrr);
         }
 
-        private void setPadConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode, IntPtr a_getTouchPadCallbackHandler)
+        private void setPadConfig(
+            XmlDocument a_XmlDocument, 
+            XmlNode a_PropertyNode, 
+            IntPtr a_getTouchPadCallbackHandler,
+            IntPtr a_VibrationCallbackHandler)
         {
 
             var l_Atrr = a_XmlDocument.CreateAttribute("GetTouchPadCallbackHandler");
@@ -481,11 +501,13 @@ namespace PCSXEmul.Tools
 
 
 
-            //l_Atrr = a_XmlDocument.CreateAttribute("VibrationCallback");
 
-            //l_Atrr.Value = Marshal.GetFunctionPointerForDelegate(PadControlManager.Instance.VibrationCallback).ToString();
 
-            //a_PropertyNode.Attributes.Append(l_Atrr);
+            l_Atrr = a_XmlDocument.CreateAttribute("VibrationCallback");
+
+            l_Atrr.Value = a_VibrationCallbackHandler.ToString();
+
+            a_PropertyNode.Attributes.Append(l_Atrr);
 
         }
 
@@ -691,39 +713,7 @@ namespace PCSXEmul.Tools
                 l_Module.execute(stringWriter.GetStringBuilder().ToString());
             }
         }
-
-
-        public void initPad()
-        {
-            var a_Module = PCSXModuleManager.Instance.getModule(PCSXModuleManager.ModuleType.Pad);
-
-            XmlDocument l_XmlDocument = new XmlDocument();
-
-            XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
-
-            l_XmlDocument.AppendChild(ldocNode);
-
-            XmlNode rootNode = l_XmlDocument.CreateElement("Config");
-
-            XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Init");
-
-            setPadConfig(l_XmlDocument, l_PropertyNode, m_TouchPadCallbackHandler);
-
-            rootNode.AppendChild(l_PropertyNode);
-
-            l_XmlDocument.AppendChild(rootNode);
-
-            using (var stringWriter = new StringWriter())
-            using (var xmlTextWriter = XmlWriter.Create(stringWriter))
-            {
-                l_XmlDocument.WriteTo(xmlTextWriter);
-
-                xmlTextWriter.Flush();
-
-                a_Module.execute(stringWriter.GetStringBuilder().ToString());
-            }
-        }
-
+                
         public void openPad()
         {
             var l_Module = PCSXModuleManager.Instance.getModule(PCSXModuleManager.ModuleType.Pad);

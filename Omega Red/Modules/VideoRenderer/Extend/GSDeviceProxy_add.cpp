@@ -455,7 +455,8 @@ void GSDeviceProxy::Flip()
 
     m_ctx->CopyResource(m_SharedTexture, m_RenderTargetTexture);
 
-    //m_ctx->CopyResource(m_CaptureTexture, m_RenderTargetTexture);
+	if(m_CaptureTexture)
+		m_ctx->CopyResource(m_CaptureTexture, m_RenderTargetTexture);
 }
 
 void GSDeviceProxy::BeforeDraw()

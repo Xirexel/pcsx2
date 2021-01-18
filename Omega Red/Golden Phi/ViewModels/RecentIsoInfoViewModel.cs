@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using Golden_Phi.Emulators;
 using Golden_Phi.Managers;
 using Golden_Phi.Models;
 
@@ -37,10 +38,10 @@ namespace Golden_Phi.ViewModels
                         a_Item.BiosInfo.GameType == a_Item.GameType ? "_" + a_Item.BiosInfo.CheckSum.ToString("X8") : ""
                         : "";
 
-                        l_SaveStateInfo = SaveStateManager.Instance.getAutoSaveStateInfo(a_Item.DiscSerial, l_bios_check_sum);
+                        l_SaveStateInfo = SaveStateManager.Instance.getAutoSaveStateInfo(a_Item.DiscSerial, l_bios_check_sum, -1);
                     }
 
-                    Emul.Emul.Instance.play(a_Item, l_SaveStateInfo);
+                    Emul.Instance.play(a_Item, l_SaveStateInfo);
                 });
             }
         }
@@ -55,7 +56,24 @@ namespace Golden_Phi.ViewModels
                 });
             }
         }
-        
+
+        public System.Windows.Input.ICommand StopEmulCommand
+        {
+            get
+            {
+                return new Tools.DelegateCommand<IsoInfo>((a_Item) => {
+                    if (a_Item != null)
+                    {
+                        Emul.Instance.stop();
+
+                        a_Item.ActiveStateImage = null;
+
+                        LockScreenManager.Instance.show();
+                    }
+                });
+            }
+        }
+
         public new ICollectionView Collection
         {
             get { return IsoManager.Instance.RecentIsoCollection; }

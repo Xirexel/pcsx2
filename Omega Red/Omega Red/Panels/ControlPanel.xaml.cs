@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Tools;
 using System;
@@ -47,7 +48,7 @@ namespace Omega_Red.Panels
 
             ConfigManager.Instance.SwitchControlModeEvent += Instance_SwitchControlModeEvent;
 
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
 
             { 
@@ -183,15 +184,15 @@ namespace Omega_Red.Panels
             mIPList.Visibility = VisibilityStateIP;
         }
 
-        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
             switch (a_Status)
             {
-                case PCSX2Controller.StatusEnum.NoneInitilized:
-                case PCSX2Controller.StatusEnum.Initilized:
-                case PCSX2Controller.StatusEnum.Stopped:
-                case PCSX2Controller.StatusEnum.Paused:
-                case PCSX2Controller.StatusEnum.Started:
+                case Emul.StatusEnum.NoneInitilized:
+                case Emul.StatusEnum.Initilized:
+                case Emul.StatusEnum.Stopped:
+                case Emul.StatusEnum.Paused:
+                case Emul.StatusEnum.Started:
                     for (int i = 0; i < m_Panels.Items.Count; i++)
                     {
                         Expander l_ItemExpander = m_Panels.Items.GetItemAt(i) as Expander;

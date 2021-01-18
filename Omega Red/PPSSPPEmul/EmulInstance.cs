@@ -25,7 +25,9 @@ namespace PPSSPPEmul
         public bool start(
             string szCmdLine, 
             IntPtr a_VideoPanelHandler,
-            IntPtr a_getTouchPadCallback, 
+            IntPtr a_getTouchPadCallback,
+            IntPtr a_VideoTargetHandler,
+            IntPtr a_AudioCaptureTargetHandler,
             string szStickDirectory)
         {
             var l_result = false;
@@ -37,9 +39,9 @@ namespace PPSSPPEmul
                 m_PPSSPPNative.launch(
                     szCmdLine,
                     a_VideoPanelHandler,
-                    IntPtr.Zero,
+                    a_VideoTargetHandler,
                     a_getTouchPadCallback,
-                    null,
+                    a_AudioCaptureTargetHandler,
                     szStickDirectory);
 
                 l_result = true;
@@ -171,6 +173,6 @@ namespace PPSSPPEmul
             {
                 m_PPSSPPNative.setAudioVolume(a_value);
             }
-        }        
+        }
     }
 }

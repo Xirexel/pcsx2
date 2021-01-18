@@ -21,7 +21,7 @@
             <RowDefinition Height="1*"/>
             <RowDefinition Height="6*"/>
         </Grid.RowDefinitions>
-        <Image Grid.RowSpan="2" Stretch="Uniform" Source="../Assests/Images/GamePadQSInfo.png"/>
+        <Image Grid.RowSpan="2" Stretch="Uniform" Source="pack://application:,,,/Omega Red;component/Assests/Images/GamePadQSInfo.png"/>
         <Viewbox Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Left">
             <Button Margin="15" Style="{DynamicResource CloseBtn}"
                                    DataContext="{Binding RelativeSource={RelativeSource  

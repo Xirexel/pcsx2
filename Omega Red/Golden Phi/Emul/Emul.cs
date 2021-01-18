@@ -15,7 +15,7 @@ using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
-namespace Golden_Phi.Emul
+namespace Golden_Phi.Emulators
 {
     public class Emul
     {
@@ -23,16 +23,21 @@ namespace Golden_Phi.Emul
 
         private Image mActiveStateImage = null;
 
+        
         private double m_Audiolevel = 1.0;
         
         public event Action<StatusEnum> ChangeStatusEvent;
 
         public enum StatusEnum
         {
+            NoneInitilized,
+            Initilized,
             Stopped,
             Started,
             Paused
         }
+
+        private AspectRatio m_AspectRatio = AspectRatio.Ratio_4_3;
 
         public event Action<string> ShowErrorEvent = null;
 
@@ -41,6 +46,8 @@ namespace Golden_Phi.Emul
         public string DiscSerial { get; private set; } = "";
 
         private IEmul m_currentEmul = null;
+
+        private string m_file_path = "";
 
         private StatusEnum m_Status = StatusEnum.Stopped;
 
@@ -65,14 +72,14 @@ namespace Golden_Phi.Emul
 
                 WpfAnimatedGif.ImageBehavior.SetAnimatedSource(mActiveStateImage, lBitmapImage);
 
-                if (mActiveStateImage != null)
-                    mActiveStateImage.Loaded += (object sender, RoutedEventArgs e) =>
-                    {
-                        var l_Controller = WpfAnimatedGif.ImageBehavior.GetAnimationController(mActiveStateImage);
+                //if (mActiveStateImage != null)
+                //    mActiveStateImage.Loaded += (object sender, RoutedEventArgs e) =>
+                //    {
+                //        var l_Controller = WpfAnimatedGif.ImageBehavior.GetAnimationController(mActiveStateImage);
 
-                        if (l_Controller != null)
-                            l_Controller.Pause();
-                    };
+                //        if (l_Controller != null)
+                //            l_Controller.Pause();
+                //    };
             }
             catch (Exception)
             { }
@@ -85,34 +92,42 @@ namespace Golden_Phi.Emul
             m_VideoPanel = a_VideoPanel;
         }
 
-        public void play(IsoInfo a_IsoInfo, SaveStateInfo a_SaveStateInfo = null)
+        public void play(IsoInfo a_IsoInfo, SaveStateInfo a_SaveStateInfo = null, bool a_EmitStopEvent = true)
         {
-            if (a_IsoInfo == null)
+            if (m_Status == StatusEnum.NoneInitilized)
                 return;
 
             IsoManager.Instance.clearActiveState();
             
             IsoManager.Instance.refresh(a_IsoInfo);            
             
-            LockScreenManager.Instance.show();
+            if (a_IsoInfo == null)
+                return;
 
+            if (a_SaveStateInfo != null && a_SaveStateInfo.ImageSource != null)
+                LockScreenManager.Instance.show(a_SaveStateInfo.ImageSource);
+            else if (a_IsoInfo.ImageSource != null)
+                LockScreenManager.Instance.show(a_IsoInfo.ImageSource);
+            else
+                LockScreenManager.Instance.show();
+            
             if (m_currentEmul != null)
             {
                 if (a_IsoInfo.GameType != m_currentEmul.GameType)
                 {
-                    stop_start(a_IsoInfo, a_SaveStateInfo);
+                    stop_start(a_IsoInfo, a_SaveStateInfo, a_EmitStopEvent);
 
                     return;
                 }
                 else if (a_IsoInfo.DiscSerial != m_currentEmul.DiscSerial)
                 {
-                    stop_start(a_IsoInfo, a_SaveStateInfo);
+                    stop_start(a_IsoInfo, a_SaveStateInfo, a_EmitStopEvent);
 
                     return;
                 }
                 else if (a_IsoInfo.BiosInfo != null && a_IsoInfo.BiosInfo.CheckSum.ToString("X8") != m_currentEmul.BiosCheckSum)
                 {
-                    stop_start(a_IsoInfo, a_SaveStateInfo);
+                    stop_start(a_IsoInfo, a_SaveStateInfo, a_EmitStopEvent);
 
                     return;
                 }
@@ -122,8 +137,20 @@ namespace Golden_Phi.Emul
             
             switch (m_Status)
             {
+                case StatusEnum.Initilized:
                 case StatusEnum.Stopped:
-                    startInner(a_IsoInfo, a_SaveStateInfo);
+                    {
+                        {
+                            var l_bios_check_sum =
+                            a_IsoInfo.BiosInfo != null ?
+                            a_IsoInfo.BiosInfo.GameType == a_IsoInfo.GameType ? "_" + a_IsoInfo.BiosInfo.CheckSum.ToString("X8") : ""
+                            : "";
+                            
+                            SaveStateManager.Instance.resetQuickSaveStateInfo(a_IsoInfo.DiscSerial, l_bios_check_sum);
+                        }
+
+                        startInner(a_IsoInfo, a_SaveStateInfo);
+                    }
                     break;
                 case StatusEnum.Paused:
                     startInner(a_IsoInfo);
@@ -134,7 +161,7 @@ namespace Golden_Phi.Emul
                     break;
             }
         }
-
+        
         public void pause()
         {
             if (m_currentEmul != null)
@@ -176,10 +203,59 @@ namespace Golden_Phi.Emul
             }
         }
 
-        public void stop()
+        public void lockPause()
         {
-            if(m_currentEmul != null)
+            if (m_currentEmul != null)
             {
+                m_currentEmul.pause();
+
+                var l_IsoInfo = IsoManager.Instance.getIsoInfo(m_currentEmul.DiscSerial);
+
+                if (l_IsoInfo != null && m_VideoPanel != null)
+                {
+                    var l_data = m_VideoPanel.takeScreenshot();
+
+                    if (l_data != null && l_data.Length > 0)
+                    {
+                        var bitmap = new BitmapImage();
+
+                        using (var stream = new MemoryStream(l_data))
+                        {
+                            stream.Position = 0; // here
+
+                            bitmap.BeginInit();
+                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                            bitmap.StreamSource = stream;
+                            bitmap.EndInit();
+                            bitmap.Freeze();
+                        }
+
+                        l_IsoInfo.ImageSource = bitmap;
+                    }
+                }
+
+                m_Status = StatusEnum.Paused;
+
+                mGameSessionDuration += DateTime.Now - mCurrentDateTime;
+            }
+        }
+
+        public void unlockResume()
+        {
+            if (m_currentEmul != null)
+            {
+                m_currentEmul.resume();
+
+                m_Status = StatusEnum.Started;
+            }
+        }
+
+        private void stopInner(bool a_EmitStopEvent = true)
+        {
+            if (m_currentEmul != null)
+            {
+                m_currentEmul.pause();
+
                 var l_bios_check_sum =
                 !string.IsNullOrWhiteSpace(m_currentEmul.BiosCheckSum) ? "_" + m_currentEmul.BiosCheckSum : "";
 
@@ -191,7 +267,7 @@ namespace Golden_Phi.Emul
 
                 if (m_VideoPanel != null)
                     l_Screenshot = m_VideoPanel.takeScreenshot();
-                
+
                 m_currentEmul.saveState(l_AutoSaveStateInfo, DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds, l_Screenshot);
 
                 m_currentEmul.stop();
@@ -199,10 +275,37 @@ namespace Golden_Phi.Emul
 
             m_currentEmul = null;
 
-            if(m_Status != StatusEnum.Stopped)
-                setStatus(StatusEnum.Stopped);
+            if(a_EmitStopEvent)
+                if (m_Status != StatusEnum.Stopped)
+                    setStatus(StatusEnum.Stopped);
+
+            m_Status = StatusEnum.Stopped;
 
             mGameSessionDuration = new TimeSpan();
+        }
+
+        public void stop(bool a_isthreaded = true)
+        {
+            if(a_isthreaded)
+            {
+                Thread l_resumeThread = new Thread(() => {
+
+                    LockScreenManager.Instance.show();
+
+                    stopInner();
+
+                    LockScreenManager.Instance.hide();
+
+                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                    {
+                        SaveStateManager.Instance.updateSave(SaveStateManager.Instance.AutoSave);
+                    });
+                });
+
+                l_resumeThread.Start();
+            }
+            else
+                stopInner();
         }
 
         public void setLimitFrame(bool a_state)
@@ -219,26 +322,6 @@ namespace Golden_Phi.Emul
             {
                 DiscSerial = "";
 
-                if (m_currentEmul == null)
-                {
-                    switch (a_IsoInfo.GameType)
-                    {
-                        case GameType.PS2:
-                            m_currentEmul = PCSX2Emul.Instance;
-                            break;
-                        case GameType.PS1:
-                            m_currentEmul = PCSXEmul.Instance;
-                            break;
-                        case GameType.PSP:
-                            m_currentEmul = PPSSPPEmul.Instance;
-                            break;
-                        case GameType.Unknown:
-                            break;
-                        default:
-                            break;
-                    }
-                }
-
                 GameType = a_IsoInfo.GameType;
 
                 mCurrentDateTime = DateTime.Now;
@@ -249,6 +332,27 @@ namespace Golden_Phi.Emul
 
                     do
                     {
+
+                        if (m_currentEmul == null)
+                        {
+                            switch (a_IsoInfo.GameType)
+                            {
+                                case GameType.PS2:
+                                    m_currentEmul = PCSX2Emul.Instance;
+                                    break;
+                                case GameType.PS1:
+                                    m_currentEmul = PCSXEmul.Instance;
+                                    break;
+                                case GameType.PSP:
+                                    m_currentEmul = PPSSPPEmul.Instance;
+                                    break;
+                                case GameType.Unknown:
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+
                         if (m_currentEmul == null)
                             break;
 
@@ -279,10 +383,25 @@ namespace Golden_Phi.Emul
                             if (mActiveStateImage.Source != null)
                                 WpfAnimatedGif.ImageBehavior.GetAnimationController(mActiveStateImage).Pause();
 
+
+                                                       
+                            if(m_Status == StatusEnum.Stopped)
+                                MemoryCardManager.Instance.setMemoryCard();
+
                             setStatus(StatusEnum.Started);
 
+                            if (m_Status == StatusEnum.Started)
+                                setMemoryCard(m_file_path);
+                            
+                            if (m_Status == StatusEnum.Started)
+                                m_currentEmul.setVideoAspectRatio(m_AspectRatio);
+
                             if (a_SaveStateInfo != null)
+                            {
                                 m_currentEmul.loadState(a_SaveStateInfo);
+
+                                mGameSessionDuration = a_SaveStateInfo.DurationNative;
+                            }
 
                             DiscSerial = a_IsoInfo.DiscSerial;
 
@@ -304,11 +423,12 @@ namespace Golden_Phi.Emul
         {
             m_Status = a_Status;
 
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
-            {
-                if (ChangeStatusEvent != null)
-                    ChangeStatusEvent(m_Status);
-            });
+            if(Application.Current != null)
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
+                {
+                    if (ChangeStatusEvent != null)
+                        ChangeStatusEvent(m_Status);
+                });
         }
 
         private void showErrorEvent(string a_message)
@@ -317,11 +437,11 @@ namespace Golden_Phi.Emul
                 ShowErrorEvent(a_message);
         }
 
-        private void stop_start(IsoInfo a_IsoInfo, SaveStateInfo a_SaveStateInfo)
+        private void stop_start(IsoInfo a_IsoInfo, SaveStateInfo a_SaveStateInfo, bool a_EmitStopEvent)
         {
             Thread l_resumeThread = new Thread(() => {
 
-                stop();
+                stopInner(a_EmitStopEvent);
 
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                 {
@@ -348,89 +468,77 @@ namespace Golden_Phi.Emul
             return l_file_signature;
         }
 
-        public void saveState(SaveStateInfo a_SaveStateInfo)
+        public async Task saveState(SaveStateInfo a_SaveStateInfo)
         {
-            if (m_Status == StatusEnum.Paused)
+            try
             {
-                a_SaveStateInfo.Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.CreateSpecificCulture("en-US"));
 
-                a_SaveStateInfo.Duration = mGameSessionDuration.ToString(@"dd\.hh\:mm\:ss");
-
-                a_SaveStateInfo.DurationNative = mGameSessionDuration;
-
-
-
-                byte[] l_Screenshot = null;
-
-                if (m_VideoPanel != null)
-                    l_Screenshot = m_VideoPanel.takeScreenshot();
-
-                m_currentEmul.saveState(a_SaveStateInfo, a_SaveStateInfo.Date, a_SaveStateInfo.DurationNative.TotalSeconds, l_Screenshot);
-
-                if (l_Screenshot != null && l_Screenshot.Length > 0)
+                if (m_Status == StatusEnum.Paused)
                 {
-                    var bitmap = new BitmapImage();
+                    await Task.Run(() => {
 
-                    using (var stream = new MemoryStream(l_Screenshot))
-                    {
-                        stream.Position = 0; // here
+                        AutoResetEvent lBlockEvent = new AutoResetEvent(false);
 
-                        bitmap.BeginInit();
-                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.StreamSource = stream;
-                        bitmap.EndInit();
-                        bitmap.Freeze();
-                    }
 
-                    a_SaveStateInfo.ImageSource = bitmap;
+
+                        byte[] l_Screenshot = null;
+
+                        if (m_VideoPanel != null)
+                            l_Screenshot = m_VideoPanel.takeScreenshot();
+
+                        if (l_Screenshot != null && l_Screenshot.Length > 0)
+                        {
+                            var bitmap = new BitmapImage();
+
+                            using (var stream = new MemoryStream(l_Screenshot))
+                            {
+                                stream.Position = 0; // here
+
+                                bitmap.BeginInit();
+                                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                                bitmap.StreamSource = stream;
+                                bitmap.EndInit();
+                                bitmap.Freeze();
+                            }
+
+                            a_SaveStateInfo.ImageSource = bitmap;
+                        }
+
+                        LockScreenManager.Instance.showSaving(a_SaveStateInfo.ImageSource);
+
+                        var l_DateTimeNow = DateTime.Now;
+
+                        a_SaveStateInfo.Date = l_DateTimeNow.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.CreateSpecificCulture("en-US"));
+
+                        mGameSessionDuration += l_DateTimeNow - mCurrentDateTime;
+
+                        a_SaveStateInfo.Duration = mGameSessionDuration.ToString(@"dd\.hh\:mm\:ss");
+
+                        a_SaveStateInfo.DurationNative = mGameSessionDuration;
+                        
+
+                        ThreadStart innerCallSaveStart = new ThreadStart(() =>
+                        {
+                            m_currentEmul.saveState(a_SaveStateInfo, a_SaveStateInfo.Date, a_SaveStateInfo.DurationNative.TotalSeconds, l_Screenshot);
+                            
+                            Thread.Sleep(200);
+
+                            LockScreenManager.Instance.hide();
+
+                            lBlockEvent.Set();
+                        });
+
+                        Thread innerCallSaveStartThread = new Thread(innerCallSaveStart);
+
+                        innerCallSaveStartThread.Start();
+
+                        lBlockEvent.WaitOne(TimeSpan.FromSeconds(20));
+
+                    });
                 }
-
-
-
-                //LockScreenManager.Instance.showSaving();
-
-                //if (m_IsoInfo.GameType == GameType.PSP)
-                //{
-
-                //    ThreadStart innerCallSaveStart = new ThreadStart(() =>
-                //    {
-                //        SaveStateManager.Instance.savePPSSPPState(a_SaveStateInfo, a_SaveStateInfo.Date, a_SaveStateInfo.DurationNative.TotalSeconds);
-
-                //        LockScreenManager.Instance.hide();
-                //    });
-
-                //    Thread innerCallSaveStartThread = new Thread(innerCallSaveStart);
-
-                //    innerCallSaveStartThread.Start();
-                //}
-                //else if (m_IsoInfo.GameType == GameType.PS1)
-                //{
-
-                //    ThreadStart innerCallSaveStart = new ThreadStart(() =>
-                //    {
-                //        SaveStateManager.Instance.savePCSXState(a_SaveStateInfo, a_SaveStateInfo.Date, a_SaveStateInfo.DurationNative.TotalSeconds);
-
-                //        LockScreenManager.Instance.hide();
-                //    });
-
-                //    Thread innerCallSaveStartThread = new Thread(innerCallSaveStart);
-
-                //    innerCallSaveStartThread.Start();
-                //}
-                //else if (m_IsoInfo.GameType == GameType.PS2)
-                //{
-                //    ThreadStart innerCallSaveStart = new ThreadStart(() =>
-                //    {
-
-                //        SaveStateManager.Instance.saveState(a_SaveStateInfo, a_SaveStateInfo.Date, a_SaveStateInfo.DurationNative.TotalSeconds);
-
-                //        LockScreenManager.Instance.hide();
-                //    });
-
-                //    Thread innerCallSaveStartThread = new Thread(innerCallSaveStart);
-
-                //    innerCallSaveStartThread.Start();
-                //}
+            }
+            catch (Exception exc)
+            {
             }
         }
 
@@ -459,52 +567,21 @@ namespace Golden_Phi.Emul
             mGameSessionDuration = a_SaveStateInfo.DurationNative;
         }
 
-        public void quickSave()
+        public async Task quickSave(SaveStateInfo a_SaveStateInfo)
         {
             if (m_Status == StatusEnum.Started)
             {
-                //LockScreenManager.Instance.showSaving();
+                m_currentEmul.pause();
 
-                //if (m_IsoInfo.GameType == GameType.PSP)
-                //{
-                //    ThreadStart innerCallQuickSaveStart = new ThreadStart(() => {
-                //        PlayPause();
-                //        SaveStateManager.Instance.quickSavePPSSPP(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
-                //        PlayPause();
-                //        LockScreenManager.Instance.hide();
-                //    });
+                m_Status = StatusEnum.Paused;
 
-                //    Thread innerCallQuickSaveStartThread = new Thread(innerCallQuickSaveStart);
+                await saveState(a_SaveStateInfo);
 
-                //    innerCallQuickSaveStartThread.Start();
-                //}
-                //else if (m_IsoInfo.GameType == GameType.PS1)
-                //{
-                //    ThreadStart innerCallQuickSaveStart = new ThreadStart(() => {
-                //        PlayPause();
-                //        SaveStateManager.Instance.quickSavePCSX(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
-                //        PlayPause();
-                //        LockScreenManager.Instance.hide();
-                //    });
+                m_currentEmul.resume();
 
-                //    Thread innerCallQuickSaveStartThread = new Thread(innerCallQuickSaveStart);
+                mCurrentDateTime = DateTime.Now;
 
-                //    innerCallQuickSaveStartThread.Start();
-                //}
-                //else if (m_IsoInfo.GameType == GameType.PS2)
-                //{
-
-                //    ThreadStart innerCallQuickSaveStart = new ThreadStart(() => {
-                //        PlayPause();
-                //        SaveStateManager.Instance.quickSave(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), mGameSessionDuration.TotalSeconds);
-                //        PlayPause();
-                //        LockScreenManager.Instance.hide();
-                //    });
-
-                //    Thread innerCallQuickSaveStartThread = new Thread(innerCallQuickSaveStart);
-
-                //    innerCallQuickSaveStartThread.Start();
-                //}
+                m_Status = StatusEnum.Started;
             }
         }
 
@@ -527,16 +604,32 @@ namespace Golden_Phi.Emul
             }
         }
 
+        public void setMemoryCard(string a_file_path = null, int slot = 0)
+        {
+            m_file_path = "";
+
+            if (m_currentEmul != null)
+            {
+                m_currentEmul.setMemoryCard(a_file_path, slot);
+            }
+            else
+                m_file_path = a_file_path;
+        }
+
         public void playActiveState()
-        {            
+        {
             if (Status == StatusEnum.Paused && mActiveStateImage.Source != null)
                 WpfAnimatedGif.ImageBehavior.GetAnimationController(mActiveStateImage).Play();
         }
 
-        public void stopActiveState()
+        public void setVideoAspectRatio(AspectRatio a_AspectRatio)
         {
-            if (mActiveStateImage.Source != null)
-                WpfAnimatedGif.ImageBehavior.GetAnimationController(mActiveStateImage).Pause();
+            m_AspectRatio = a_AspectRatio;
+
+            if (m_currentEmul != null)
+            {
+                m_currentEmul.setVideoAspectRatio(m_AspectRatio);
+            }
         }
     }
 }

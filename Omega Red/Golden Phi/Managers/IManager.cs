@@ -15,5 +15,7 @@ namespace Golden_Phi.Managers
         System.ComponentModel.ICollectionView Collection { get; }
 
         object View { get; }
+
+        bool IsConfirmed { get; }
     }
 }

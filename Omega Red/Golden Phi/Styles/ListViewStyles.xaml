@@ -39,7 +39,7 @@
     </Style>
 
     <Style x:Key="HScrolledRecentIsoInfoListView" TargetType="ListView">
-        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="ScrollViewer.CanContentScroll" Value="False"/>
         <Setter Property="ItemsSource" Value="{Binding Collection}"/>
@@ -172,7 +172,7 @@
                                            FindAncestor, 
                                            AncestorType={x:Type ListViewItem}, 
                                            AncestorLevel=1}, Path=BorderBrush}" 
-                          StrokeThickness="1" 
+                          StrokeThickness="{DynamicResource SelectStrokeThickness}" 
                           Style="{DynamicResource MainBorderPath}"/>
             <UserControl VerticalAlignment="Center" HorizontalAlignment="Center" Height="95" Width="156" x:Name="LogoPanel">
                 <UserControl.Clip>
@@ -200,15 +200,32 @@
                                    AncestorType={x:Type ListView}, 
                                    AncestorLevel=1}, Path=DataContext}">
                 <Button Style="{DynamicResource SavingBtn}"
-                         Height="18" Width="18"
+                         Height="30" Width="30"
                     CommandParameter="{Binding RelativeSource={RelativeSource  
                                    FindAncestor, 
                                    AncestorType={x:Type Grid}, 
                                    AncestorLevel=1}, Path=DataContext}"/>
             </Border>
-            
-            <Border VerticalAlignment="Bottom" Height="20" Width="20" Margin="2,2,2,3" HorizontalAlignment="Right">
-                <ContentPresenter Content="{Binding ActiveStateImage}"/>
+
+            <Border VerticalAlignment="Bottom" Height="30" Width="30" Margin="2,2,2,3" HorizontalAlignment="Right"
+                    DataContext="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type ListView}, 
+                                   AncestorLevel=1}, Path=DataContext}">
+                <Button Style="{DynamicResource IconBtn}"
+                        Command="{Binding StopEmulCommand}"
+                    CommandParameter="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Grid}, 
+                                   AncestorLevel=1}, Path=DataContext}">
+                    <Border
+                    DataContext="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Grid}, 
+                                   AncestorLevel=1}, Path=DataContext}">
+                        <ContentPresenter Content="{Binding ActiveStateImage}"/>
+                    </Border>
+                </Button>
             </Border>
         </Grid>
         <DataTemplate.Triggers>
@@ -291,6 +308,19 @@
             <Border VerticalAlignment="Top" HorizontalAlignment="Left" Background="{DynamicResource HeaderBackgroundBrush}" Padding="2" Margin="3.5,4,4,3.5">
                 <TextBlock FontWeight="Bold" Margin="2,0" MaxWidth="100" MaxHeight="28" FontSize="10" Text="{Binding Title}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" />
             </Border>
+
+
+            <Button Style="{DynamicResource RemoveBtn}" x:Name="m_RmBtn" Margin="5" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
+                            
+                            CommandParameter="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Grid}, 
+                                   AncestorLevel=1}, Path=DataContext}"
+                                                                
+                            DataContext="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type UserControl}, 
+                                   AncestorLevel=1}, Path=DataContext}"  />
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
@@ -329,6 +359,80 @@
         </DataTemplate.Triggers>
     </DataTemplate>
 
+    <DataTemplate x:Key="QuickResumeIsoInfoItem">
+        <Grid Margin="10">
+            <Grid.Effect>
+                <DropShadowEffect ShadowDepth="1" Color="{DynamicResource DropShadowColor}"/>
+            </Grid.Effect>
+            <Viewbox VerticalAlignment="Center" HorizontalAlignment="Center" Height="95" Width="156" Stretch="Fill">
+                <Path Fill="Transparent"
+                          StrokeThickness="1"
+                          Stroke="Transparent"
+                          Style="{DynamicResource MainBorderPath}"
+                       x:Name="m_innerPath"/>
+            </Viewbox>
+            <Path Fill="Transparent" VerticalAlignment="Center" HorizontalAlignment="Center"
+                          Stroke="{Binding RelativeSource={RelativeSource  
+                                           FindAncestor, 
+                                           AncestorType={x:Type ListViewItem}, 
+                                           AncestorLevel=1}, Path=BorderBrush}" 
+                          StrokeThickness="{DynamicResource SelectStrokeThickness}" 
+                          Style="{DynamicResource MainBorderPath}"/>
+            <UserControl VerticalAlignment="Center" HorizontalAlignment="Center" Height="95" Width="156" x:Name="LogoPanel">
+                <UserControl.Clip>
+                    <PathGeometry Figures="{DynamicResource MainBorderPathFigure}" />
+                </UserControl.Clip>
+            </UserControl>
+
+
+            <Viewbox VerticalAlignment="Center" HorizontalAlignment="Center" Height="96" Width="157" Stretch="Fill">
+                <Image Height="95" Width="156" Stretch="Fill" Source="{Binding ImageSource}">
+                    <Image.Clip>
+                        <PathGeometry Figures="{DynamicResource MainBorderPathFigure}" />
+                    </Image.Clip>
+                </Image>
+            </Viewbox>
+
+            <Border VerticalAlignment="Top" HorizontalAlignment="Left" Background="{DynamicResource HeaderBackgroundBrush}" Padding="2" Margin="3.5,4,4,3.5">
+                <TextBlock FontWeight="Bold" Margin="2,0" MaxWidth="100" MaxHeight="28" FontSize="10" Text="{Binding Title}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" />
+            </Border>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
+                <Setter TargetName="m_innerPath" Property="Fill" Value="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type ListViewItem}, 
+                                   AncestorLevel=1}, Path=Background}" />
+            </DataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding ImageSource}" Value="{x:Null}"/>
+                    <Condition Binding="{Binding GameType}" Value="PS1"/>
+                </MultiDataTrigger.Conditions>
+                <MultiDataTrigger.Setters>
+                    <Setter TargetName="LogoPanel" Property="Style"  Value="{DynamicResource PS1LogoPanel}" />
+                </MultiDataTrigger.Setters>
+            </MultiDataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding ImageSource}" Value="{x:Null}"/>
+                    <Condition Binding="{Binding GameType}" Value="PS2"/>
+                </MultiDataTrigger.Conditions>
+                <MultiDataTrigger.Setters>
+                    <Setter TargetName="LogoPanel" Property="Style"  Value="{DynamicResource PS2LogoPanel}" />
+                </MultiDataTrigger.Setters>
+            </MultiDataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding ImageSource}" Value="{x:Null}"/>
+                    <Condition Binding="{Binding GameType}" Value="PSP"/>
+                </MultiDataTrigger.Conditions>
+                <MultiDataTrigger.Setters>
+                    <Setter TargetName="LogoPanel" Property="Style"  Value="{DynamicResource PSPLogoPanel}" />
+                </MultiDataTrigger.Setters>
+            </MultiDataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
 
     <DataTemplate x:Key="BiosInfoItem">
         <Grid Height="89"                         >
@@ -479,10 +583,20 @@
                     </Grid>
 
 
-                    <Image Margin="40,10,0,18" RenderOptions.BitmapScalingMode="Fant" x:Name="m_icon" VerticalAlignment="Center" Width="100" Source="{Binding ImageSource}"/>
+                    <Image Margin="40,10,0,18" RenderOptions.BitmapScalingMode="Linear" x:Name="m_icon" 
+                           VerticalAlignment="Center" Width="100" Source="{Binding ImageSource}"/>
+
+                    <Border x:Name="m_autosaveBrd" Visibility="Collapsed" Margin="40,10,0,18" VerticalAlignment="Top" Background="{DynamicResource HeaderBackgroundBrush}" Padding="2">
+                        <TextBlock FontWeight="Bold" Margin="2,0" MaxWidth="90" MaxHeight="28" FontSize="12" Text="{DynamicResource AutosaveTitle}" TextTrimming="CharacterEllipsis"/>
+                    </Border>
+
+                    <Border x:Name="m_quicksaveBrd" Visibility="Collapsed" Margin="40,10,0,18" VerticalAlignment="Top" Background="{DynamicResource HeaderBackgroundBrush}" Padding="2">
+                        <TextBlock FontWeight="Bold" Margin="2,0" MaxWidth="90" MaxHeight="28" FontSize="12" Text="{DynamicResource QuicksaveTitle}" TextTrimming="CharacterEllipsis"/>
+                    </Border>
+                    
 
                     <StackPanel Margin="5,8,5,10" Grid.Column="1">
-                        <TextBlock FontSize="12" Text="{Binding Date}" TextWrapping="Wrap" />
+                        <TextBlock FontSize="12" Text="{Binding Date}" HorizontalAlignment="Left" MaxWidth="80" TextWrapping="Wrap" />
                         <TextBlock x:Name="mDurationTitle" FontSize="12" Margin="0, 3, 0 , 0" Text="{DynamicResource DurationTitle}" />
                         <TextBlock FontSize="12" Text="{Binding Duration}" />
                     </StackPanel>
@@ -506,9 +620,122 @@
                 <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/None.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding IsAutosave}" Value="True">
-                <Setter TargetName="m_RmBtn" Property="Visibility" Value="Collapsed"/>
-            </DataTrigger>            
+                <Setter TargetName="m_autosaveBrd" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsQuicksave}" Value="True">
+                <Setter TargetName="m_quicksaveBrd" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
         </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <DataTemplate x:Key="QuickStateInfoItem">
+        <Grid>
+            <Button Style="{DynamicResource IconBtn}"                             
+                            Command="{Binding LoadCommand}"                               
+                                
+                            CommandParameter="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Grid}, 
+                                   AncestorLevel=1}, Path=DataContext}"
+                                                                
+                            DataContext="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type UserControl}, 
+                                   AncestorLevel=1}, Path=DataContext}"                             
+                            >
+                <Grid Height="89"  DataContext="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Grid}, 
+                                   AncestorLevel=1}, Path=DataContext}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,0,0,0">
+                        <Path VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1.25" Height="85"  Width="250" 
+                          Fill="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type ListViewItem}, 
+                                   AncestorLevel=1}, Path=Background}"
+                          StrokeThickness="1"
+                          Stroke="Transparent"
+                          Data="M 0,0 L 201,0 L 241,26 L 241,78 L 40,78 L 0,52 Z"/>
+
+                        <Path  VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Height="89"  Width="254" 
+                          Fill="Transparent"
+                          Stroke="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type ListViewItem}, 
+                                   AncestorLevel=1}, Path=BorderBrush}" StrokeThickness="1"
+                          Data="M 0,0 L 204,0 L 245,27 L 245,82 L 41,82 L 0,55 Z"/>
+                    </Grid>
+
+
+                    <Image Margin="40,10,0,18" RenderOptions.BitmapScalingMode="Linear" x:Name="m_icon" 
+                           VerticalAlignment="Center" Width="100" Source="{Binding ImageSource}"/>
+
+                    <StackPanel Margin="5,8,5,10" Grid.Column="1">
+                        <TextBlock FontSize="12" Text="{Binding Date}" HorizontalAlignment="Left" MaxWidth="80" TextWrapping="Wrap" />
+                        <TextBlock x:Name="mDurationTitle" FontSize="12" Margin="0, 3, 0 , 0" Text="{DynamicResource DurationTitle}" />
+                        <TextBlock FontSize="12" Text="{Binding Duration}" />
+                    </StackPanel>
+                </Grid>
+            </Button>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
+                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/None.png" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <DataTemplate x:Key="ScreenshotInfoItem">
+        <Grid Height="150" Width="300">
+            <Grid.Style>
+                <Style>
+                    <Setter Property="Control.FontSize" Value="16"/>
+                    <Setter Property="Control.FontWeight" Value="Bold"/>
+                </Style>
+            </Grid.Style>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Viewbox Grid.Row="1">
+                <Grid>
+                    <Viewbox Height="95" Width="156" Stretch="Uniform">
+                        <Viewbox.Clip>
+                            <PathGeometry Figures="{DynamicResource MainBorderPathFigure}" />
+                        </Viewbox.Clip>
+                        <Path Margin="5" Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Data="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6" />
+                    </Viewbox>
+                    <Image x:Name="m_icon" Height="95" Width="156" Stretch="Fill" Source="{Binding SmallImageSource}">
+                        <Image.Clip>
+                            <PathGeometry Figures="{DynamicResource MainBorderPathFigure}" />
+                        </Image.Clip>
+                    </Image>
+                    <UserControl  Margin="5" HorizontalAlignment="Left"
+                                
+                                DataContext="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type ContentControl}, 
+                                   AncestorLevel=3}, Path=DataContext}" >
+                        <Button CommandParameter="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Grid}, 
+                                   AncestorLevel=1}, Path=DataContext}"
+                                
+                                Style="{DynamicResource RemoveBtn}" 
+                                 />
+                    </UserControl>
+                </Grid>
+            </Viewbox>
+            <TextBlock Margin="2,0" Background="{DynamicResource LockBackgroundBrush}" Padding="5,2.5" Foreground="{DynamicResource MainForegroundBrush}" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Top"/>
+        </Grid>
     </DataTemplate>
 
 </ResourceDictionary>

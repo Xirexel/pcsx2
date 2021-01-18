@@ -1,4 +1,5 @@
-﻿using Golden_Phi.Managers;
+﻿using Golden_Phi.Emulators;
+using Golden_Phi.Managers;
 using Golden_Phi.Models;
 using Golden_Phi.Tools;
 using System;
@@ -17,7 +18,7 @@ namespace Golden_Phi.ViewModels
         public SaveStateInfoViewModel()
         {
             
-            IsEnabled = Emul.Emul.Instance.Status != Emul.Emul.StatusEnum.Stopped;
+            IsEnabled = Emul.Instance.Status != Emul.StatusEnum.Stopped;
 
             CommandManager.InvalidateRequerySuggested();
         }
@@ -42,8 +43,8 @@ namespace Golden_Phi.ViewModels
                 return new DelegateCommand(SaveStateManager.Instance.addSaveStateInfo,
                     () =>
                     {
-                        return Emul.Emul.Instance.Status == Emul.Emul.StatusEnum.Paused &&
-                        SaveStateManager.Instance.DiscSerial == Emul.Emul.Instance.DiscSerial;
+                        return Emul.Instance.Status == Emul.StatusEnum.Paused &&
+                        SaveStateManager.Instance.DiscSerial == Emul.Instance.DiscSerial;
                     });
             }
         }
@@ -57,11 +58,22 @@ namespace Golden_Phi.ViewModels
                 if (l_ContextMenu != null)
                     l_ContextMenu.IsOpen = false;
 
-                Emul.Emul.Instance.loadState(a_SaveStateInfo);
+                Emul.Instance.loadState(a_SaveStateInfo);
             }                
             ); }
         }
-        
+
+        public ICommand QuickSaveCommand
+        {
+            get
+            {
+                return new DelegateCommand(SaveStateManager.Instance.quickSave,
+              () => {
+                  return Emul.Instance.Status ==  Emul.StatusEnum.Started;
+              });
+            }
+        }
+
         protected override IManager Manager
         {
             get { return SaveStateManager.Instance; }

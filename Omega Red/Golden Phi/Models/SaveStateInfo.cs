@@ -1,4 +1,4 @@
-﻿using Golden_Phi.Emul;
+﻿using Golden_Phi.Emulators;
 using System;
 using System.Collections.Generic;
 using System.Linq;

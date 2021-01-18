@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Golden_Phi.Emul
+namespace Golden_Phi.Emulators
 {
     class PPSSPPEmul : IEmul
     {
@@ -31,6 +31,8 @@ namespace Golden_Phi.Emul
         private MethodInfo m_SaveState = null;
 
         private MethodInfo m_SetAudioVolume = null;
+
+        private MethodInfo m_SetMemoryCard = null;
 
 
 
@@ -88,6 +90,8 @@ namespace Golden_Phi.Emul
                             m_SaveState = l_CaptureType.GetMethod("saveState");
 
                             m_SetAudioVolume = l_CaptureType.GetMethod("setAudioVolume");
+
+                            m_SetMemoryCard = l_CaptureType.GetMethod("setMemoryCard");
                         }
                     }
                 }
@@ -133,6 +137,8 @@ namespace Golden_Phi.Emul
                         a_IsoInfo.FilePath,
                         a_SharedHandle,
                         Tools.PadInput.Instance.TouchPadCallbackHandler,
+                        IntPtr.Zero,
+                        IntPtr.Zero,
                         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\"+ App.c_MainFolderName + @"\"});
 
                 if (l_Start_Result)
@@ -218,7 +224,7 @@ namespace Golden_Phi.Emul
             }
         }
 
-        private bool resume()
+        public bool resume()
         {
             bool l_result = false;
 
@@ -369,6 +375,24 @@ namespace Golden_Phi.Emul
             } while (false);
 
             return l_IsoInfo;
+        }
+        public void setMemoryCard(string a_file_path, int a_slot)
+        {
+            do
+            {
+                if (m_InstanceObj == null)
+                    break;
+
+                if (m_SetMemoryCard == null)
+                    break;
+
+                m_SetMemoryCard.Invoke(m_InstanceObj, new object[] { a_file_path, a_slot });
+
+            } while (false);
+        }
+
+        public void setVideoAspectRatio(AspectRatio a_AspectRatio)
+        {
         }
     }
 }

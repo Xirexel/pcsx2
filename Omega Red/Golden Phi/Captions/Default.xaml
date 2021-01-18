@@ -12,6 +12,8 @@
     <sys:String x:Key="VisualVibrationIsEnabledTitle">Визуальная вибрация включена</sys:String>
     <sys:String x:Key="PadTitle">Игровой контроллер</sys:String>
     <sys:String x:Key="PadControlTypeTitle">Тип управления:</sys:String>
+    <sys:String x:Key="LanguageTitle">Перевод</sys:String>
+    <sys:String x:Key="LanguageTypeTitle">Текущий перевод:</sys:String>
     <sys:String x:Key="CannotStartGame">Невозможно запустить STUB диск!!!</sys:String>
     <sys:String xml:space="preserve" x:Key="VersionTitle">Версия: </sys:String>
     <sys:String xml:space="preserve" x:Key="DurationTitle">Длительность: </sys:String>
@@ -34,6 +36,11 @@
     <sys:String x:Key="NoTitle">Отменить</sys:String>
     <sys:String x:Key="IsoChooseTitle">Выбор образа игры</sys:String>
     <sys:String x:Key="BiosChooseTitle">Выбор Bios</sys:String>
+    <sys:String x:Key="ScreenshotsTitle">Сохранённые кадры</sys:String>
+    <sys:String x:Key="VideoTitle">Сохранённые видео</sys:String>
+    <sys:String x:Key="SavingTitle">Сохранение...</sys:String>
+    <sys:String x:Key="LowBatteryTitle">малый заряд батареи!!!</sys:String>
+    <sys:String x:Key="EmptyBatteryTitle">батарея разряжена!!!</sys:String>
 
 
 

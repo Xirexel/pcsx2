@@ -174,7 +174,7 @@
 
             <Viewbox Grid.Row="0" Grid.Column="2" VerticalAlignment="Top">
                 <Button Style="{DynamicResource IconBtn}"  Margin="10" Command="{Binding AddCommand}">
-                    <Image Source="/Assests/Images/TakeScreenshot.png" 
+                    <Image Source="pack://application:,,,/Omega Red;component/Assests/Images/TakeScreenshot.png" 
                                    Stretch="Uniform" 
                                    Height="64" 
                                    Width="64" Opacity="0.5"/>
@@ -259,7 +259,7 @@
 
             <Viewbox Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Top">
                 <Button Style="{DynamicResource IconBtn}" Margin="10" Command="{Binding QuickSaveCommand}">
-                    <Image Source="/Assests/Images/SaveState.png" 
+                    <Image Source="pack://application:,,,/Omega Red;component/Assests/Images/SaveState.png" 
                                        Stretch="Uniform" 
                                        Height="64" 
                                        Width="64" Opacity="{DynamicResource StandardOpacity}"/>

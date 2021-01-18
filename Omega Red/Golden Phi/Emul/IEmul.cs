@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Golden_Phi.Emul
+namespace Golden_Phi.Emulators
 {
     enum EmulStartState
     {
@@ -14,11 +14,21 @@ namespace Golden_Phi.Emul
         Postpone
     }
 
+
+    public enum AspectRatio
+    {
+        None = 0,
+        Ratio_4_3 = 1,
+        Ratio_16_9 = 2
+    }
+
     interface IEmul
     {
         EmulStartState start(IsoInfo a_IsoInfo, IntPtr a_SharedHandle);
 
         bool pause();
+
+        bool resume();
         
         bool stop();
 
@@ -29,6 +39,10 @@ namespace Golden_Phi.Emul
         void setLimitFrame(bool a_state);
 
         void setAudioVolume(float a_level);
+
+        void setMemoryCard(string a_file_path, int a_slot);
+
+        void setVideoAspectRatio(AspectRatio a_AspectRatio);
 
         GameType GameType { get; }
 

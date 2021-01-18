@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Golden_Phi.Emul
+namespace Golden_Phi.Emulators
 {
     public enum GameType
     {

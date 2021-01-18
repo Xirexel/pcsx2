@@ -243,11 +243,12 @@ namespace PCSX2Emul.Tools
 	        // (e.g. the user presses TAB to speed up emulation), we don't want to apply the
 	        // settings as if the game is already running (title, loadeding patches, etc).
 	        bool ingame = (PCSX2LibNative.Instance.getElfCRCFunc() > 0 && (PCSX2LibNative.Instance.getGameLoadingFunc() || PCSX2LibNative.Instance.getGameStartedFunc()));
+            if (ingame)
+                gameCRC = EmulInstance.InternalInstance.ElfCRC.ToString("x");
 
-            gameCRC = EmulInstance.InternalInstance.ElfCRC.ToString("x");
             //if (ingame && !DiscSerial.IsEmpty()) gameSerial = L" [" + DiscSerial + L"]";
 
-	        string newGameKey = ingame ? EmulInstance.InternalInstance.DiscSerial : PCSX2LibNative.Instance.getSysGetBiosDiscIDFunc();
+            string newGameKey = ingame ? EmulInstance.InternalInstance.DiscSerial : PCSX2LibNative.Instance.getSysGetBiosDiscIDFunc();
 	        bool verbose =  newGameKey != curGameKey && ingame;
 	        //Console.WriteLn(L"------> patches verbose: %d   prev: '%s'   new: '%s'", (int)verbose, WX_STR(curGameKey), WX_STR(newGameKey));
             //SetupPatchesCon(verbose);
@@ -289,11 +290,11 @@ namespace PCSX2Emul.Tools
 
 		        gameName = "Booting PS2 BIOS... ";
 	        }
-            
-	        // wide screen patches
-            if(!string.IsNullOrWhiteSpace(curGameKey))
+
+            // wide screen patches
+            if (!string.IsNullOrWhiteSpace(curGameKey))
                 LoadPatches(gameCRC);
-            
+
             gsUpdateFrequency(fixup);
         }
 

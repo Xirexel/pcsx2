@@ -273,6 +273,8 @@ static __inline void PRIMDirectXdrawTexturedTri()
 
 	size_t l_position = 0;
 
+    auto lcol = vertex[0].c.lcol;
+
 	for (size_t vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 	{
 		float* l_pDest = temp + l_position;
@@ -285,6 +287,10 @@ static __inline void PRIMDirectXdrawTexturedTri()
 
 		++l_position;
 	}
+
+    temp[0].lcol = lcol;
+    temp[1].lcol = lcol;
+    temp[2].lcol = lcol;
 
 	draw(GL_TRIANGLES, temp, TRUE);
 
@@ -1058,7 +1064,7 @@ void SetSemiTrans(void)
     }
    else
     {
-     glBlendEquationEXTExStub(FUNC_REVERSESUBTRACT_EXT);
+     glBlendEquationEXTExStub(FUNC_REVERSE_SUBTRACT_EXT);
      obm1=TransSets[GlobalTextABR].srcFac;
      obm2=TransSets[GlobalTextABR].dstFac;
      glBlendFuncStub(GL_ONE,GL_ONE);                     // set blend func

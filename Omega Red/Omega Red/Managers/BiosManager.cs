@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Models;
 using Omega_Red.Properties;
 using Omega_Red.SocialNetworks.Google;
@@ -101,7 +102,7 @@ namespace Omega_Red.Managers
             {
                 m_GoogleDriveAccess = obj;
 
-                if (PCSX2Controller.Instance.IsoInfo != null)
+                if (Emul.Instance.IsoInfo != null)
                     load();
             };
         }
@@ -153,8 +154,8 @@ namespace Omega_Red.Managers
             if (string.IsNullOrEmpty(Settings.Default.BiosInfoCollection))
                 return;
 
-            if (PCSX2Controller.Instance.IsoInfo != null &&
-                PCSX2Controller.Instance.IsoInfo.GameType != GameType.PS2)
+            if (Emul.Instance.IsoInfo != null &&
+                Emul.Instance.IsoInfo.GameType != GameType.PS2)
                 return;
 
             _biosInfoCollection.Clear();
@@ -230,7 +231,7 @@ namespace Omega_Red.Managers
                 });
 
                 if (a_BiosInfo.IsCurrent)
-                    PCSX2Controller.Instance.BiosInfo = null;
+                    Emul.Instance.BiosInfo = null;
             }
         }
 
@@ -245,7 +246,7 @@ namespace Omega_Red.Managers
 
                 a_BiosInfo.IsCurrent = true;
 
-                PCSX2Controller.Instance.BiosInfo = a_BiosInfo;
+                Emul.Instance.BiosInfo = a_BiosInfo;
 
                 save();
             }
@@ -287,7 +288,7 @@ namespace Omega_Red.Managers
                 string data = "";
                 string build = "";
                 int versionInt = 0;
-                Models.GameType gameType = GameType.Unknown;
+                GameType gameType = GameType.Unknown;
 
                 string l_file_path = (string)a_file_path;
 

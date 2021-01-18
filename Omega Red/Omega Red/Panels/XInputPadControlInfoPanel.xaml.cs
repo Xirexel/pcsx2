@@ -1,4 +1,5 @@
-﻿using Omega_Red.Models;
+﻿using Omega_Red.Emulators;
+using Omega_Red.Models;
 using Omega_Red.Tools;
 using Omega_Red.Util;
 using System;
@@ -76,7 +77,7 @@ namespace Omega_Red.Panels
             }
 
 
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
             m_update_pad_Timer.Elapsed += update_pad_Timer_Elapsed;
 
@@ -85,9 +86,9 @@ namespace Omega_Red.Panels
             m_update_pad_Timer.Start();
         }
 
-        private void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum obj)
+        private void Instance_m_ChangeStatusEvent(Emul.StatusEnum obj)
         {
-            if (obj == PCSX2Controller.StatusEnum.Started)
+            if (obj == Emul.StatusEnum.Started)
                 m_update_pad_Timer.Interval = 2000;
             else
                 m_update_pad_Timer.Interval = 100;
@@ -121,10 +122,7 @@ namespace Omega_Red.Panels
 
         ~XInputPadControlInfoPanel()
         {
-
-            m_update_pad_Timer.AutoReset = false;
-
-            m_update_pad_Timer.Stop();
+            stopTimer();
         }
 
         public uint DeviceIndex { get; private set; }
@@ -136,9 +134,16 @@ namespace Omega_Red.Panels
         public Tools.IPadControl PadControl { get; set; }
 
         public object PadConfigPanel { get; set; }
+        public void stopTimer()
+        {
+            m_update_pad_Timer.AutoReset = false;
+
+            m_update_pad_Timer.Stop();
+        }
 
         private void setActivity(bool a_activity)
         {
+            if(System.Windows.Application.Current != null)
             System.Windows.Application.Current.Dispatcher.BeginInvoke(
             System.Windows.Threading.DispatcherPriority.Send,
             (System.Threading.ThreadStart)delegate ()

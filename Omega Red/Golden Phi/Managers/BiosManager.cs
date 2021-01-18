@@ -1,7 +1,7 @@
-﻿using Golden_Phi.Emul;
+﻿using Golden_Phi.Emulators;
 using Golden_Phi.Models;
 using Golden_Phi.Properties;
-using Omega_Red.Tools;
+using Golden_Phi.Tools;
 using SevenZipExtractor;
 using System;
 using System.Collections.Generic;
@@ -210,7 +210,7 @@ namespace Golden_Phi.Managers
                 if (a_IsoInfo == null)
                     break;
 
-                if(a_IsoInfo.GameType == Emul.GameType.PSP)
+                if(a_IsoInfo.GameType == GameType.PSP)
                 {
                     l_result = true;
 
@@ -248,7 +248,7 @@ namespace Golden_Phi.Managers
                 if (a_IsoInfo == null)
                     break;
 
-                if (a_IsoInfo.GameType == Emul.GameType.PSP)
+                if (a_IsoInfo.GameType == GameType.PSP)
                 {
                     break;
                 }
@@ -423,7 +423,7 @@ namespace Golden_Phi.Managers
                                                     VersionInt = versionInt,
                                                     Data = data,
                                                     Build = build,
-                                                    CheckSum = Omega_Red.Tools.BiosControl.getBIOSChecksum(l_result),
+                                                    CheckSum = Golden_Phi.Tools.BiosControl.getBIOSChecksum(l_result),
                                                     FilePath = l_file_path + "|" + item.FileName,
                                                     NVM = l_NVM,
                                                     MEC = l_MEC,
@@ -499,7 +499,7 @@ namespace Golden_Phi.Managers
                                     VersionInt = versionInt,
                                     Data = data,
                                     Build = build,
-                                    CheckSum = Omega_Red.Tools.BiosControl.getBIOSChecksum(l_file_path),
+                                    CheckSum = Golden_Phi.Tools.BiosControl.getBIOSChecksum(l_file_path),
                                     FilePath = l_file_path,
                                     NVM = l_NVM,
                                     MEC = l_MEC,
@@ -529,6 +529,8 @@ namespace Golden_Phi.Managers
         public ICollectionView Collection => mCustomerView;
         
         public object View { get; private set; }
+
+        public bool IsConfirmed => false;
 
         public void CloseChooseBios()
         {

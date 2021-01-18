@@ -104,6 +104,12 @@
     </ApplicationDefinition>
     <Compile Include="Capture\AudioCaptureTarget.cs" />
     <Compile Include="Capture\TargetTexture.cs" />
+    <Compile Include="Emulators\Emul.cs" />
+    <Compile Include="Emulators\GameType.cs" />
+    <Compile Include="Emulators\IEmul.cs" />
+    <Compile Include="Emulators\PCSX2Emul.cs" />
+    <Compile Include="Emulators\PCSXEmul.cs" />
+    <Compile Include="Emulators\PPSSPPEmul.cs" />
     <Compile Include="Managers\IStreamingManager.cs" />
     <Compile Include="Managers\MediaSourcesManager.cs" />
     <Compile Include="Managers\RecordingCaptureConfigManager.cs" />
@@ -116,6 +122,7 @@
     <Compile Include="Models\StreamingCaptureConfigInfo.cs" />
     <Compile Include="Models\YouTubeBroadcastInfo.cs" />
     <Compile Include="Models\YouTubeStreamInfo.cs" />
+    <Compile Include="Panels\DirectInputPadControlInfoPanel.xaml.cs" />
     <Compile Include="Panels\DisplayControl.xaml.cs">
       <DependentUpon>DisplayControl.xaml</DependentUpon>
     </Compile>
@@ -153,13 +160,20 @@
     <Compile Include="Tools\Converters\InverseBooleanConverter.cs" />
     <Compile Include="Tools\Converters\PrivacyStatusConvertor.cs" />
     <Compile Include="Tools\Converters\TypeNameConverter.cs" />
+    <Compile Include="Tools\DirectInputPadControl.cs" />
     <Compile Include="Tools\Extensions.cs" />
     <Compile Include="Tools\IModule.cs" />
-    <Compile Include="Tools\PCSXControl.cs" />
-    <Compile Include="Tools\PCSXModuleManager.cs" />
+    <Compile Include="Tools\Savestate\IBaseSavestateEntry.cs" />
+    <Compile Include="Tools\Savestate\ILoadStateBase.cs" />
+    <Compile Include="Tools\Savestate\ISaveStateBase.cs" />
+    <Compile Include="Tools\Savestate\MemLoadingState.cs" />
+    <Compile Include="Tools\Savestate\MemSavingState.cs" />
+    <Compile Include="Tools\Savestate\SavestateEntries.cs" />
+    <Compile Include="Tools\Savestate\SStates.cs" />
     <Compile Include="Tools\TexturePackControl.cs" />
     <Compile Include="Tools\XInputPadControl.cs" />
-    <Compile Include="Util\DirectInput8Native.cs" />
+    <Compile Include="Util\DirectInput.cs" />
+    <Compile Include="Util\DirectInputNative.cs" />
     <Compile Include="Util\Interop\ComInterface.cs" />
     <Compile Include="Util\Interop\D3D11Texture2D.cs" />
     <Compile Include="Util\Interop\Direct3D11.cs" />
@@ -167,7 +181,6 @@
     <Compile Include="Util\Interop\NativeMethods.cs" />
     <Compile Include="Util\Interop\NativeStructs.cs" />
     <Compile Include="Capture\MediaStream.cs" />
-    <Compile Include="Capture\OffScreenStream.cs" />
     <Compile Include="Managers\AdditionalControlManager.cs" />
     <Compile Include="Managers\IManager.cs" />
     <Compile Include="Managers\MediaRecorderManager.cs" />
@@ -180,10 +193,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="SocialNetworks\Google\GoogleAccountManager.cs" />
-    <Compile Include="Tools\PPSSPPControl.cs" />
     <Compile Include="Util\Direct3D11Device.cs" />
-    <Compile Include="Util\PCSXNative.cs" />
-    <Compile Include="Util\PPSSPPNative.cs" />
     <Compile Include="Models\BiosInfo.cs" />
     <Compile Include="Models\IsoInfo.cs" />
     <Compile Include="Models\MediaRecorderInfo.cs" />
@@ -235,8 +245,6 @@
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="Managers\LockScreenManager.cs" />
     <Compile Include="Managers\MemoryCardManager.cs" />
-    <Compile Include="Tools\ModuleControl.cs" />
-    <Compile Include="Tools\PCSX2ModuleManager.cs" />
     <Compile Include="Managers\PadControlManager.cs" />
     <Compile Include="Tools\PadInput.cs" />
     <Compile Include="Panels\AnalogStickPanel.xaml.cs">
@@ -266,21 +274,11 @@
     <Compile Include="Panels\Video\Interop\NativeStructs.cs" />
     <Compile Include="Panels\Video\VideoPanel.cs" />
     <Compile Include="Tools\PatchAndGameFixManager.cs" />
-    <Compile Include="Tools\Pcsx2Config.cs" />
-    <Compile Include="Tools\PCSX2Controller.cs" />
     <Compile Include="Tools\PlayingControl.cs" />
     <Compile Include="Managers\SaveStateManager.cs" />
-    <Compile Include="Tools\Savestate\IBaseSavestateEntry.cs" />
-    <Compile Include="Tools\Savestate\ILoadStateBase.cs" />
-    <Compile Include="Tools\Savestate\ISaveStateBase.cs" />
-    <Compile Include="Tools\Savestate\MemLoadingState.cs" />
-    <Compile Include="Tools\Savestate\MemSavingState.cs" />
-    <Compile Include="Tools\Savestate\SavestateEntries.cs" />
-    <Compile Include="Tools\Savestate\SStates.cs" />
     <Compile Include="Managers\ScreenshotsManager.cs" />
     <Compile Include="Util\BitField.cs" />
     <Compile Include="Util\LibLoader.cs" />
-    <Compile Include="Util\PCSX2LibNative.cs" />
     <Compile Include="Util\Win32NativeMethods.cs" />
     <Compile Include="ViewModels\BiosInfoViewModel.cs" />
     <Compile Include="ViewModels\ConfigViewModel.cs" />
@@ -374,6 +372,10 @@
     <Page Include="Panels\AnalogTriggerPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\DirectInputPadControlInfoPanel.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Panels\DisplayControl.xaml">
       <SubType>Designer</SubType>
@@ -622,7 +624,11 @@
   <ItemGroup>
     <Resource Include="Assests\Images\GamePadQSInfo.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\AnyCPU\PCSX2Emul.dll" />
+    <EmbeddedResource Include="Modules\AnyCPU\PCSXEmul.dll" />
+    <EmbeddedResource Include="Modules\AnyCPU\PPSSPPEmul.dll" />
+  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Modules\AnyCPU\CaptureManagerToCSharpProxy.dll" />
     <EmbeddedResource Include="Modules\AnyCPU\MediaCapture.dll" />

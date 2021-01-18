@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Properties;
 using Omega_Red.Tools;
@@ -27,6 +28,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using static Omega_Red.Emulators.Emul;
 
 namespace Omega_Red.ViewModels
 {
@@ -40,7 +42,7 @@ namespace Omega_Red.ViewModels
 
             ConfigManager.Instance.SwitchCaptureConfigEvent += Instance_SwitchCaptureConfigEvent;            
 
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
 
             ConfigManager.Instance.FrameRateEvent += (a_framerate) => { FrameRate = a_framerate; };
                         
@@ -60,9 +62,9 @@ namespace Omega_Red.ViewModels
             CaptureConfig = obj;
         }
 
-        private void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum obj)
+        private void Instance_ChangeStatusEvent(Emul.StatusEnum obj)
         {
-            if (PCSX2Controller.Instance.IsoInfo != null && PCSX2Controller.Instance.IsoInfo.GameType == Models.GameType.PSP)
+            if (Emul.Instance.IsoInfo != null && Emul.Instance.IsoInfo.GameType == GameType.PSP)
                 VisibilityDiskState = Visibility.Collapsed;
             else
                 VisibilityDiskState = Visibility.Visible;
@@ -71,8 +73,8 @@ namespace Omega_Red.ViewModels
 
             VisibilityTexturePackMode = Visibility.Collapsed;
 
-            if (obj == PCSX2Controller.StatusEnum.Stopped ||
-                obj == PCSX2Controller.StatusEnum.Initilized)
+            if (obj == Emul.StatusEnum.Stopped ||
+                obj == Emul.StatusEnum.Initilized)
                 VisibilityTexturePackMode = Visibility.Visible;
 
             checkIsStopped();
@@ -83,8 +85,8 @@ namespace Omega_Red.ViewModels
 
             IsStopped = false;
 
-            if ((PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Stopped ||
-                PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Initilized) 
+            if ((Emul.Instance.Status == Emul.StatusEnum.Stopped ||
+                Emul.Instance.Status == Emul.StatusEnum.Initilized) 
                 &&
                 !MediaRecorderManager.Instance.State)
                 IsStopped = true;
@@ -204,7 +206,10 @@ namespace Omega_Red.ViewModels
 
         public bool EnableWideScreen
         {
-            get {
+            get
+            {
+
+                Emul.Instance.setVideoAspectRatio(!Settings.Default.DisableWideScreen ? AspectRatio.Ratio_16_9 : AspectRatio.Ratio_4_3);
 
                 return !Settings.Default.DisableWideScreen;
             }
@@ -213,7 +218,7 @@ namespace Omega_Red.ViewModels
 
                 Settings.Default.DisableWideScreen = !value;
 
-                PCSX2Controller.Instance.setVideoAspectRatio(value ? AspectRatio.Ratio_4_3 : AspectRatio.Ratio_16_9);
+                Emul.Instance.setVideoAspectRatio(value ? AspectRatio.Ratio_16_9 : AspectRatio.Ratio_4_3);
 
                 RaisePropertyChangedEvent("EnableWideScreen");
             }
@@ -273,13 +278,11 @@ namespace Omega_Red.ViewModels
 
                 l_checkBox.Checked += (object sender, RoutedEventArgs e)=> {
 
-                    Tools.ModuleControl.Instance.setIsWired(true);
 
                 };
 
                 l_checkBox.Unchecked += (object sender, RoutedEventArgs e) => {
 
-                    Tools.ModuleControl.Instance.setIsWired(false);
 
                 };
 
@@ -291,19 +294,15 @@ namespace Omega_Red.ViewModels
         {
             get
             {
-                ModuleControl.Instance.setSoundLevel(Settings.Default.SoundLevel);
-
-                PPSSPPControl.Instance.setSoundLevel(Settings.Default.SoundLevel);
+                Emul.Instance.setAudioVolume(Settings.Default.SoundLevel);
 
                 return Settings.Default.SoundLevel;
             }
             set
             {
                 Settings.Default.SoundLevel = value;
-
-                ModuleControl.Instance.setSoundLevel(Settings.Default.SoundLevel);
-
-                PPSSPPControl.Instance.setSoundLevel(Settings.Default.SoundLevel);
+                
+                Emul.Instance.setAudioVolume(Settings.Default.SoundLevel);
 
                 RaisePropertyChangedEvent("SoundLevel");
             }
@@ -313,19 +312,15 @@ namespace Omega_Red.ViewModels
         {
             get
             {
-                ModuleControl.Instance.setIsMuted(Settings.Default.IsMuted);
-
-                PPSSPPControl.Instance.setIsMuted(Settings.Default.IsMuted);
+                Emul.Instance.setIsMuted(Settings.Default.IsMuted);
 
                 return Settings.Default.IsMuted;
             }
             set
             {
                 Settings.Default.IsMuted = value;
-
-                ModuleControl.Instance.setIsMuted(Settings.Default.IsMuted);
-
-                PPSSPPControl.Instance.setIsMuted(Settings.Default.IsMuted);
+                
+                Emul.Instance.setIsMuted(Settings.Default.IsMuted);
 
                 RaisePropertyChangedEvent("IsMuted");
             }
@@ -354,9 +349,7 @@ namespace Omega_Red.ViewModels
             set
             {
                 Settings.Default.IsFXAA = value;
-
-                ModuleControl.Instance.setIsFXAA(Settings.Default.IsFXAA);
-
+                
                 RaisePropertyChangedEvent("IsFXAA");
             }
         }

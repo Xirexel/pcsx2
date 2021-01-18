@@ -63,6 +63,8 @@
             </Border.Style>
         </Border>
         <panels:ControlPanel/>
+        <panels:QuickSaveStatePanel/>
+        <panels:QuickResumePanel/>        
         <panels:LockScreenPanel/>
     </Grid>
 </Window>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Golden_Phi.Emulators;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -56,7 +57,7 @@ namespace Golden_Phi.Models
 
         public byte[] MEC { get; set; }
 
-        public Emul.GameType GameType { get; set; }
+        public GameType GameType { get; set; }
 
         public ContainerFile ContainerFile { get; set; } = new ContainerFile();
 

@@ -47,7 +47,10 @@ namespace PCSX2Emul
 
         public bool start(
             IntPtr a_VideoPanelHandler, 
-            IntPtr a_TouchPadCallbackHandler, 
+            IntPtr a_TouchPadCallbackHandler,
+            IntPtr a_VibrationCallbackHandler,
+            IntPtr a_VideoTargetHandler,
+            IntPtr a_AudioCaptureTargetHandler,
             string a_iso_file,
             string a_discSerial,
             uint a_ElfCRC,
@@ -68,6 +71,12 @@ namespace PCSX2Emul
                 ModuleControl.Instance.setVideoPanelHandler(a_VideoPanelHandler);
 
                 ModuleControl.Instance.setTouchPadCallbackHandler(a_TouchPadCallbackHandler);
+
+                ModuleControl.Instance.setVibrationCallbackHandler(a_VibrationCallbackHandler);
+
+                ModuleControl.Instance.setVideoTargetHandler(a_VideoTargetHandler);
+
+                ModuleControl.Instance.setAudioCaptureTargetHandler(a_AudioCaptureTargetHandler);
 
                 ModuleControl.Instance.setIsoFile(a_iso_file);
 
@@ -223,7 +232,7 @@ namespace PCSX2Emul
             m_Pcsx2Config.CdvdShareWrite = false;
             m_Pcsx2Config.EnablePatches = true;
             m_Pcsx2Config.EnableCheats = false;
-            m_Pcsx2Config.EnableWideScreenPatches = false;// !Settings.Default.DisableWideScreen;
+            m_Pcsx2Config.EnableWideScreenPatches = !EmulInstance.InternalInstance.DisableWideScreen;
             m_Pcsx2Config.UseBOOT2Injection = false;
             m_Pcsx2Config.BackupSavestate = true;
             m_Pcsx2Config.McdEnableEjection = true;
@@ -455,6 +464,22 @@ namespace PCSX2Emul
             ModuleControl.Instance.setSoundLevel(a_value);
         }
 
+        public void setMemoryCard(string a_file_path, int a_port)
+        {
+            if(!string.IsNullOrWhiteSpace(a_file_path))
+                ModuleControl.Instance.setMemoryCard(a_file_path, a_port);
+        }
+
+        public void setAspectRatio(int a_AspectRatio)
+        {
+            EmulInstance.InternalInstance.DisableWideScreen = false;
+
+            if (a_AspectRatio == 2)
+            {
+                EmulInstance.InternalInstance.DisableWideScreen = false;
+            }
+        }
+
         internal void update()
         {
             if (m_updateAction != null)
@@ -466,6 +491,29 @@ namespace PCSX2Emul
             Thread.Sleep(100);
 
             InternalInstance.m_BlockEvent.Set();
+        }
+
+        private void reloadPath()
+        {
+            PCSX2LibNative.Instance.ForgetLoadedPatchesFunc();
+
+            m_Pcsx2Config.EnableWideScreenPatches = !EmulInstance.InternalInstance.DisableWideScreen;
+
+            PatchAndGameFixManager.Instance.loadGameSettings(m_Pcsx2Config, DiscSerial);
+
+            PatchAndGameFixManager.Instance.LoadAllPatchesAndStuff();
+
+            PCSX2LibNative.Instance.ApplySettings(m_Pcsx2Config.serialize());
+
+            var l_wideScreen = Tools.Converters.WideScreenConverter.IsWideScreen(
+                ElfCRC.ToString("x")) && !EmulInstance.InternalInstance.DisableWideScreen;
+
+            if (l_wideScreen)
+                PatchAndGameFixManager.Instance.LoadPatches(ElfCRC.ToString("x"));
+
+            ModuleControl.Instance.setVideoAspectRatio(l_wideScreen ? AspectRatio.Ratio_16_9 : AspectRatio.Ratio_4_3);
+
+            ModuleControl.Instance.setGameCRC(ElfCRC);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Golden_Phi.Managers;
+﻿using Golden_Phi.Emulators;
+using Golden_Phi.Managers;
 using Golden_Phi.Tools;
 using Golden_Phi.Utilities;
 using System;
@@ -13,6 +14,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -94,11 +96,11 @@ namespace Golden_Phi.Panels
 
             this.AddHandler(Button.MouseLeaveEvent, new RoutedEventHandler(Button_Release), true);
 
-            Emul.Emul.Instance.ChangeStatusEvent += (a_Status) =>
+            Emul.Instance.ChangeStatusEvent += (a_Status) =>
             {
 
-                if (a_Status == Emul.Emul.StatusEnum.Stopped ||
-                    a_Status == Emul.Emul.StatusEnum.Paused)
+                if (a_Status == Emul.StatusEnum.Stopped ||
+                    a_Status == Emul.StatusEnum.Paused)
                 {
                     LimitFrame = false;
 
@@ -110,7 +112,7 @@ namespace Golden_Phi.Panels
                     });
                 }
 
-                if (a_Status == Emul.Emul.StatusEnum.Started)
+                if (a_Status == Emul.StatusEnum.Started)
                 {
                     Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
                     {
@@ -152,11 +154,13 @@ namespace Golden_Phi.Panels
         {
             if (obj)
             {
+                MouseMoveVisibility = Visibility.Hidden;
                 TouchPadPanelVisibility = System.Windows.Visibility.Visible;
             }
             else
             {
                 TouchPadPanelVisibility = System.Windows.Visibility.Hidden;
+                MouseMoveVisibility = Visibility.Visible;
             }
         }
 
@@ -378,7 +382,7 @@ namespace Golden_Phi.Panels
             var lCheckBox = sender as CheckBox;
 
             if (lCheckBox != null)
-                Emul.Emul.Instance.setLimitFrame(!(bool)lCheckBox.IsChecked);
+                Emul.Instance.setLimitFrame(!(bool)lCheckBox.IsChecked);
         }
 
 
@@ -425,5 +429,25 @@ namespace Golden_Phi.Panels
             if (VibrationEvent != null)
                 VibrationEvent(l_LeftMotorSpeed, l_RightMotorSpeed);
         }
+        
+        private void UserControl_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (TouchPadPanelVisibility != System.Windows.Visibility.Visible)
+            {
+                MouseMoveVisibility = Visibility.Hidden;
+
+                MouseMoveVisibility = Visibility.Visible;
+            }
+        }
+        
+        public Visibility MouseMoveVisibility
+        {
+            get { return (Visibility)GetValue(MouseMoveVisibilityProperty); }
+            set { SetValue(MouseMoveVisibilityProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for TouchPadPanelVisibility.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty MouseMoveVisibilityProperty =
+            DependencyProperty.Register("MouseMoveVisibility", typeof(Visibility), typeof(TouchPadPanel), new PropertyMetadata(Visibility.Hidden));
     }
 }

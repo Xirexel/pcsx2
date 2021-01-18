@@ -27,7 +27,7 @@
 
         <ListView Grid.Row="1" Grid.ColumnSpan="3"
                   x:Name="RecentIsoListView"
-                  Margin="0,30"
+                  Margin="0,41.7"
                   Background="{DynamicResource HeaderBackgroundBrush}"
                   Style="{DynamicResource HScrolledRecentIsoInfoListView}"
                   utilities:SelectorDoubleClickCommandBehavior.HandleDoubleClick="True"
@@ -37,16 +37,18 @@
             </ListView.DataContext>
         </ListView>
         <Viewbox Grid.Column="1"  Grid.Row="2" Stretch="Uniform">
-            <Grid Width="600" Height="200" Margin="0,50,0,0">
+            <Grid Width="400" Height="200" Margin="0,50,0,0">
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition/>
-                    <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <Button Style="{DynamicResource SelectBtn}"/>
-                <Button Grid.Column="1" Style="{DynamicResource SelectBtn}"/>
-                <Button Grid.Column="2" Style="{DynamicResource OptionBtn}">
+                <Button Style="{DynamicResource ScreensBtn}">
+                    <Button.CommandParameter>
+                        <viewModels:ScreenshotsInfoViewModel/>
+                    </Button.CommandParameter>
+                </Button>            
+                <Button Grid.Column="1" Style="{DynamicResource OptionBtn}">
                     <Button.CommandParameter>
                         <viewModels:ConfigViewModel/>
                     </Button.CommandParameter>

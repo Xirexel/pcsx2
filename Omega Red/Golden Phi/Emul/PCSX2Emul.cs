@@ -12,10 +12,9 @@ using System.Xml;
 using Golden_Phi.Managers;
 using Golden_Phi.Models;
 using Golden_Phi.Tools;
-using Omega_Red.Tools;
 using static Golden_Phi.Managers.IsoManager;
 
-namespace Golden_Phi.Emul
+namespace Golden_Phi.Emulators
 {
     class PCSX2Emul : IEmul
     {
@@ -44,9 +43,12 @@ namespace Golden_Phi.Emul
 
         private MethodInfo m_SetAudioVolume = null;
 
+        private MethodInfo m_SetMemoryCard = null;
+
+        private MethodInfo m_SetAspectRatio = null;
+
+
         
-
-
 
 
         private bool m_restart = false;
@@ -110,7 +112,12 @@ namespace Golden_Phi.Emul
 
                             m_SaveState = l_CaptureType.GetMethod("saveState");
 
-                            m_SetAudioVolume = l_CaptureType.GetMethod("setAudioVolume");                            
+                            m_SetAudioVolume = l_CaptureType.GetMethod("setAudioVolume");
+
+                            m_SetMemoryCard = l_CaptureType.GetMethod("setMemoryCard");
+
+                            m_SetAspectRatio = l_CaptureType.GetMethod("setAspectRatio");  
+
                         }
                     }
                 }
@@ -201,10 +208,13 @@ namespace Golden_Phi.Emul
                 var l_Start_Result = (bool)m_Start.Invoke(m_InstanceObj, new object[] {
                         a_SharedHandle,
                         Tools.PadInput.Instance.TouchPadCallbackHandler,
+                        Tools.PadInput.Instance.VibrationCallbackHandler,
+                        IntPtr.Zero,
+                        IntPtr.Zero,
                         a_IsoInfo.FilePath,
                         a_IsoInfo.DiscSerial,
                         a_IsoInfo.ElfCRC,
-                        a_IsoInfo.BIOSFile,
+                        a_IsoInfo.BiosInfo.FilePath,
                         a_IsoInfo.BiosInfo.Zone,
                         a_IsoInfo.BiosInfo.VersionInt,
                         a_IsoInfo.BiosInfo.CheckSum,
@@ -299,7 +309,7 @@ namespace Golden_Phi.Emul
             }
         }
 
-        private bool resume()
+        public bool resume()
         {
             bool l_result = false;
 
@@ -548,6 +558,36 @@ namespace Golden_Phi.Emul
             } while (false);
 
             return l_result;
+        }
+
+        public void setMemoryCard(string a_file_path, int a_slot)
+        {
+            do
+            {
+                if (m_InstanceObj == null)
+                    break;
+
+                if (m_SetMemoryCard == null)
+                    break;
+
+                m_SetMemoryCard.Invoke(m_InstanceObj, new object[] { a_file_path, a_slot });
+
+            } while (false);            
+        }
+
+        public void setVideoAspectRatio(AspectRatio a_AspectRatio)
+        {
+            do
+            {
+                if (m_InstanceObj == null)
+                    break;
+
+                if (m_SetAspectRatio == null)
+                    break;
+
+                m_SetAspectRatio.Invoke(m_InstanceObj, new object[] { (int)a_AspectRatio });
+
+            } while (false);
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Golden_Phi.Emulators;
 using Golden_Phi.Managers;
 using Golden_Phi.Tools;
 
@@ -17,7 +18,7 @@ namespace Golden_Phi.ViewModels
             {
                 return new DelegateCommand(() => {
 
-                    Emul.Emul.Instance.pause();
+                    Emul.Instance.pause();
                 
                 });
             }

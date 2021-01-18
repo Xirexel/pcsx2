@@ -1,4 +1,4 @@
-﻿using Golden_Phi.Emul;
+﻿using Golden_Phi.Emulators;
 using Golden_Phi.Models;
 using Golden_Phi.Properties;
 using Golden_Phi.Tools.Savestate;
@@ -14,12 +14,14 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace Golden_Phi.Managers
 {
     class SaveStateManager : IManager
     {
+        public bool IsConfirmed => true;
         class Compare : IEqualityComparer<SaveStateInfo>
         {
             public bool Equals(SaveStateInfo x, SaveStateInfo y)
@@ -64,6 +66,8 @@ namespace Golden_Phi.Managers
 
         public static SaveStateManager Instance { get { if (m_Instance == null) m_Instance = new SaveStateManager(); return m_Instance; } }
 
+        public SaveStateInfo AutoSave { get { return m_autoSave; } }
+
         private SaveStateManager()
         {
             if (string.IsNullOrEmpty(Settings.Default.SlotFolder))
@@ -81,6 +85,12 @@ namespace Golden_Phi.Managers
             mQuickSaveCustomerView.Filter = new Predicate<object>(x => ((SaveStateInfo)x).IsQuicksave);
 
             mQuickSaveCustomerView.SortDescriptions.Add(new SortDescription("DateTime", ListSortDirection.Descending));
+
+            mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
+        }
+
+        private void mCustomerView_CurrentChanged(object sender, EventArgs e)
+        {
         }
 
         public void init()
@@ -446,6 +456,38 @@ namespace Golden_Phi.Managers
                     RefreshEvent();
             });
         }
+        public void resetQuickSaveStateInfo(string a_disk_serial, string a_bios_check_sum)
+        {
+            string l_file_signature = a_disk_serial + a_bios_check_sum;
+
+            List<SaveStateInfo> l_quickSaves = new List<SaveStateInfo>();
+
+            for (int i = 0; i < 25; i++)
+            {
+                int l_index = i + 101;
+
+                var l_GameSessionDuration = new TimeSpan(0);
+
+                var lquickSaveState = new SaveStateInfo()
+                {
+                    IsQuicksave = true,
+                    FilePath = Settings.Default.SlotFolder +
+                        l_file_signature + ".quick." +
+                        l_index.ToString() + App.c_sstate_ext,
+                    Index = l_index,
+                    DateTime = DateTime.Now,
+                    Date = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")),
+                    Duration = l_GameSessionDuration.ToString(@"dd\.hh\:mm\:ss"),
+                    DurationNative = l_GameSessionDuration,
+                    DiscSerial = a_disk_serial
+                };
+                
+                l_quickSaves.Add(lquickSaveState);
+            }
+
+            m_quickSaves = l_quickSaves.OrderBy(o => o.DateTime).ToList();
+        }
+        
 
         public SaveStateInfo getAutoSaveStateInfo(string a_disk_serial, string a_bios_check_sum, int a_DecodePixelWidth = 100)
         {
@@ -477,18 +519,11 @@ namespace Golden_Phi.Managers
             return l_autoSave;
         }
 
-        void Instance_m_ChangeStatusEvent(Emul.Emul.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
         }
         
-        public void addSaveStateInfo()
-        {
-            addSaveStateInfo(createSaveStateInfo());
-
-            mCustomerView.Refresh();
-        }
-
-        private SaveStateInfo createSaveStateInfo()
+        public async void addSaveStateInfo()
         {
             SaveStateInfo l_SaveStateInfo = null;
 
@@ -498,19 +533,14 @@ namespace Golden_Phi.Managers
 
             string lFilePath = "";
 
-            string l_file_signature = Emul.Emul.Instance.getFileSignature();
+            string l_file_signature = Emul.Instance.getFileSignature();
 
             if (m_ListSlotIndexes.Count > 0)
             {
                 lIndex = m_ListSlotIndexes[0];
 
                 m_ListSlotIndexes.RemoveAt(0);
-
-                //if (PCSX2Controller.Instance.IsoInfo.GameType == GameType.PSP)
-                //    lCheckSum = 1;
-                //else
-                //    lCheckSum = PCSX2Controller.Instance.BiosInfo.CheckSum;
-
+                
                 var lIndexString = lIndex.ToString();
 
                 if (lIndexString.Length == 1)
@@ -522,10 +552,12 @@ namespace Golden_Phi.Managers
 
                 l_SaveStateInfo = new SaveStateInfo() { Index = lIndex, CheckSum = lCheckSum, Visibility = Visibility.Collapsed, FilePath = lFilePath };
 
-                Emul.Emul.Instance.saveState(l_SaveStateInfo);
-            }
+                await Emul.Instance.saveState(l_SaveStateInfo);
 
-            return l_SaveStateInfo;
+                addSaveStateInfo(l_SaveStateInfo);
+
+                mCustomerView.Refresh();
+            }
         }
 
         private void addSaveStateInfo(SaveStateInfo a_SaveStateInfo, ObservableCollection<SaveStateInfo> a_saveStateInfoCollection = null)
@@ -584,8 +616,9 @@ namespace Golden_Phi.Managers
 
                 m_ListSlotIndexes.Add(a_SaveStateInfo.Index);
 
-                if (a_SaveStateInfo.IsCloudsave)
+                if (a_SaveStateInfo.IsAutosave)
                 {
+                    IsoManager.Instance.clearImage(a_SaveStateInfo.DiscSerial);
                 }
             }
 
@@ -657,6 +690,49 @@ namespace Golden_Phi.Managers
                 if (File.Exists(a_SaveStateInfo.FilePath))
                     File.Delete(a_SaveStateInfo.FilePath);
             }
+        }
+
+        public async void quickSave()
+        {
+            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
+            {
+                var l_quickSave = m_quickSaves.ElementAt(m_quickSaves.Count - 1);
+
+                m_quickSaves.RemoveAt(m_quickSaves.Count - 1);
+
+                await Emul.Instance.quickSave(l_quickSave);
+
+                m_quickSaves.Insert(0, l_quickSave);
+
+                updateSave(l_quickSave);
+            }
+        }
+
+        public void updateSave(SaveStateInfo a_saveState)
+        {
+            //var lstateSave = SStates.Instance.readData(a_saveState.FilePath, a_saveState.Index, a_saveState.IsAutosave, a_saveState.IsQuicksave);
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                //var lcurrentstateSave = _saveStateInfoCollection.FirstOrDefault(stateSave => stateSave.Index == a_saveState.Index);
+
+                //_saveStateInfoCollection.Remove(lcurrentstateSave);
+
+                //if (lcurrentstateSave != null)
+                //    lstateSave.IsCloudsave = lcurrentstateSave.IsCloudsave;
+
+                //if (lcurrentstateSave != null && lcurrentstateSave.IsCloudOnlysave)
+                //    lstateSave.IsCloudsave = true;
+
+                //if (lcurrentstateSave != null)
+                //{
+                //    lstateSave.CloudSaveDate = lcurrentstateSave.CloudSaveDate;
+
+                //    lstateSave.CloudSaveDuration = lcurrentstateSave.CloudSaveDuration;
+                //}
+
+                addSaveStateInfo(a_saveState);
+            });
         }
 
         public void createItem()

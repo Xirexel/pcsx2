@@ -14,5 +14,6 @@
     <FontWeight x:Key="TitleFontWeight">Bold</FontWeight>
     <sys:Double x:Key="StandardOpacity">0.75</sys:Double>
     <sys:Double x:Key="ButtonBorderThickness">3</sys:Double>
+    <sys:Double x:Key="SelectStrokeThickness">3</sys:Double>
     
 </ResourceDictionary> 

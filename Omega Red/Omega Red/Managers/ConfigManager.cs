@@ -425,9 +425,7 @@ namespace Omega_Red.Managers
 
             if (l_TexturePackModeInfo == null)
                 return;
-
-            Tools.ModuleControl.Instance.TexturePackMode = (int)l_TexturePackModeInfo.Value;
-
+            
             Settings.Default.TexturePackMode = l_TexturePackModeInfo.Value.ToString();
         }
 

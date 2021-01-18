@@ -5,6 +5,7 @@
         <ResourceDictionary Source="ConfigView.xaml" />
         <ResourceDictionary Source="IsoView.xaml" />
         <ResourceDictionary Source="BiosView.xaml" />
+        <ResourceDictionary Source="ScreenshotsView.xaml" />
     </ResourceDictionary.MergedDictionaries>
     
 </ResourceDictionary>

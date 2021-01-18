@@ -84,8 +84,31 @@ namespace Golden_Phi.ViewModels
             {
                 return new DelegateCommand<object>((a_Item) => {
 
-                    Manager.removeItem(a_Item);
+                    if(Manager.IsConfirmed)
+                    {
 
+                        var l_ContextMenu = App.getResource("ConfirmMenu") as ContextMenu;
+
+                        dynamic l_CommandObject = new System.Dynamic.ExpandoObject();
+
+                        l_CommandObject.ConfirmCommand = new DelegateCommand(() =>
+                        {
+                            l_ContextMenu.IsOpen = false;
+                            Manager.removeItem(a_Item);
+                        });
+
+                        l_CommandObject.CancelCommand = new DelegateCommand(() =>
+                        {
+                            l_ContextMenu.IsOpen = false;
+                        });
+
+                        l_ContextMenu.DataContext = l_CommandObject;
+
+                        l_ContextMenu.IsOpen = true;
+                    }
+                    else
+                        Manager.removeItem(a_Item);
+                                                         
                 }, () => {
                     return true;
                 });

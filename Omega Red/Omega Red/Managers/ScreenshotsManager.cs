@@ -29,6 +29,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using Omega_Red.Emulators;
 
 namespace Omega_Red.Managers
 {
@@ -63,8 +64,8 @@ namespace Omega_Red.Managers
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
         {
-            if (PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Started)
-                PCSX2Controller.Instance.PlayPause();
+            if (Emul.Instance.Status == Emul.StatusEnum.Started)
+                Emul.Instance.pause();
 
             Managers.MediaRecorderManager.Instance.StartStop(false);
 
@@ -183,7 +184,7 @@ namespace Omega_Red.Managers
         
         public void createItem()
         {
-            var l_isoInfo = PCSX2Controller.Instance.IsoInfo;
+            var l_isoInfo = Emul.Instance.IsoInfo;
 
             if (l_isoInfo == null)
                 return;

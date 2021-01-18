@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Golden_Phi.Emulators;
 using Golden_Phi.Managers;
 using Golden_Phi.Properties;
 
@@ -30,7 +31,7 @@ namespace Golden_Phi.ViewModels
 
             ConfigManager.Instance.FrameRateEvent += (a_framerate) => { FrameRate = a_framerate; };
 
-            Emul.Emul.Instance.ChangeStatusEvent += (a_State) => { IsStopped = a_State == Emul.Emul.StatusEnum.Stopped; };
+            Emul.Instance.ChangeStatusEvent += (a_State) => { IsStopped = a_State == Emul.StatusEnum.Stopped; };
         }
         
         private object mCurrentItemDataContext = null;
@@ -60,6 +61,11 @@ namespace Golden_Phi.ViewModels
         public ICollectionView ResolutionModeCollection
         {
             get { return ConfigManager.Instance.ResolutionModeCollection; }
+        }
+
+        public ICollectionView LanguageCollection
+        {
+            get { return ConfigManager.Instance.LanguageCollection; }
         }
 
         private string mFrameRate = "";
@@ -98,7 +104,7 @@ namespace Golden_Phi.ViewModels
         {
             get
             {
-                Emul.Emul.Instance.setAudioVolume(Settings.Default.SoundLevel);
+                Emul.Instance.setAudioVolume(Settings.Default.SoundLevel);
 
                 return Settings.Default.SoundLevel;
             }
@@ -106,7 +112,7 @@ namespace Golden_Phi.ViewModels
             {
                 Settings.Default.SoundLevel = value;
 
-                Emul.Emul.Instance.setAudioVolume(Settings.Default.SoundLevel);
+                Emul.Instance.setAudioVolume(Settings.Default.SoundLevel);
 
                 RaisePropertyChangedEvent("SoundLevel");
             }
@@ -116,7 +122,7 @@ namespace Golden_Phi.ViewModels
         {
             get
             {
-                Emul.Emul.Instance.setIsMuted(Settings.Default.IsMuted);
+                Emul.Instance.setIsMuted(Settings.Default.IsMuted);
 
                 return Settings.Default.IsMuted;
             }
@@ -124,7 +130,7 @@ namespace Golden_Phi.ViewModels
             {
                 Settings.Default.IsMuted = value;
 
-                Emul.Emul.Instance.setIsMuted(Settings.Default.IsMuted);
+                Emul.Instance.setIsMuted(Settings.Default.IsMuted);
 
                 RaisePropertyChangedEvent("IsMuted");
             }

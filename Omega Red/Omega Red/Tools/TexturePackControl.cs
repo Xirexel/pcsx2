@@ -1,4 +1,5 @@
-﻿using Omega_Red.Properties;
+﻿using Omega_Red.Emulators;
+using Omega_Red.Properties;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -42,7 +43,7 @@ namespace Omega_Red.Tools
 
         private TexturePackControl()
         {
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
             m_Callback = (a_Index, a_Arg) =>
             {
@@ -82,10 +83,10 @@ namespace Omega_Red.Tools
             }
         }
 
-        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
-            //if (a_Status != PCSX2Controller.StatusEnum.NoneInitilized && PCSX2Controller.Instance.IsoInfo != null)
-            //    load(PCSX2Controller.Instance.IsoInfo.DiscSerial);
+            //if (a_Status != Emul.StatusEnum.NoneInitilized && Emul.Instance.IsoInfo != null)
+            //    load(Emul.Instance.IsoInfo.DiscSerial);
         }
 
         private void load(string a_disk_serial)

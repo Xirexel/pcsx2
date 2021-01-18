@@ -43,6 +43,30 @@
     <StartupObject>Golden_Phi.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Google.Apis, Version=1.49.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.1.49.0\lib\net45\Google.Apis.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.Auth, Version=1.49.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Auth.1.49.0\lib\net45\Google.Apis.Auth.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.Auth.PlatformServices, Version=1.49.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Auth.1.49.0\lib\net45\Google.Apis.Auth.PlatformServices.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.Core, Version=1.49.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Core.1.49.0\lib\net45\Google.Apis.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.Drive.v3, Version=1.49.0.2091, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Drive.v3.1.49.0.2091\lib\net45\Google.Apis.Drive.v3.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.PlatformServices, Version=1.49.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.1.49.0\lib\net45\Google.Apis.PlatformServices.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.YouTube.v3, Version=1.49.0.2106, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.YouTube.v3.1.49.0.2106\lib\net45\Google.Apis.YouTube.v3.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="SevenZipExtractor, Version=1.0.15.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SevenZipExtractor.1.0.15\lib\net45\SevenZipExtractor.dll</HintPath>
     </Reference>
@@ -52,6 +76,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Windows" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -78,17 +103,30 @@
     <Compile Include="Emul\PCSX2Emul.cs" />
     <Compile Include="Emul\PCSXEmul.cs" />
     <Compile Include="Emul\PPSSPPEmul.cs" />
+    <Compile Include="Managers\AdditionalControlManager.cs" />
     <Compile Include="Managers\BiosManager.cs" />
     <Compile Include="Managers\ConfigManager.cs" />
     <Compile Include="Managers\IManager.cs" />
     <Compile Include="Managers\IsoManager.cs" />
+    <Compile Include="Managers\IStreamingManager.cs" />
     <Compile Include="Managers\LockScreenManager.cs" />
+    <Compile Include="Managers\MemoryCardManager.cs" />
     <Compile Include="Managers\PadControlManager.cs" />
     <Compile Include="Managers\SaveStateManager.cs" />
+    <Compile Include="Managers\ScreenshotsManager.cs" />
+    <Compile Include="Managers\SoundSchemaManager.cs" />
     <Compile Include="Models\BiosInfo.cs" />
     <Compile Include="Models\IsoInfo.cs" />
+    <Compile Include="Models\MediaRecorderInfo.cs" />
+    <Compile Include="Models\MediaSourceInfo.cs" />
+    <Compile Include="Models\MemoryCardInfo.cs" />
+    <Compile Include="Models\PadControlConfig.cs" />
     <Compile Include="Models\PadControlInfo.cs" />
     <Compile Include="Models\SaveStateInfo.cs" />
+    <Compile Include="Models\ScreenshotInfo.cs" />
+    <Compile Include="Models\StreamingCaptureConfigInfo.cs" />
+    <Compile Include="Models\YouTubeBroadcastInfo.cs" />
+    <Compile Include="Models\YouTubeStreamInfo.cs" />
     <Compile Include="Panels\AnalogStickPanel.xaml.cs">
       <DependentUpon>AnalogStickPanel.xaml</DependentUpon>
     </Compile>
@@ -98,11 +136,20 @@
     <Compile Include="Panels\ControlPanel.xaml.cs">
       <DependentUpon>ControlPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Panels\DirectInputPadControlInfoPanel.xaml.cs">
+      <DependentUpon>DirectInputPadControlInfoPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Panels\DisplayControl.xaml.cs">
       <DependentUpon>DisplayControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Panels\LockScreenPanel.xaml.cs">
       <DependentUpon>LockScreenPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\QuickResumePanel.xaml.cs">
+      <DependentUpon>QuickResumePanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\QuickSaveStatePanel.xaml.cs">
+      <DependentUpon>QuickSaveStatePanel.xaml</DependentUpon>
     </Compile>
     <Compile Include="Panels\SoundControl.xaml.cs">
       <DependentUpon>SoundControl.xaml</DependentUpon>
@@ -125,10 +172,13 @@
       <DependentUpon>XInputPadControlInfoPanel.xaml</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="SocialNetworks\Google\DriveManager.cs" />
+    <Compile Include="SocialNetworks\Google\GoogleAccountManager.cs" />
     <Compile Include="Tools\BiosControl.cs" />
     <Compile Include="Tools\Converters\ScaledTouchPadConverter.cs" />
     <Compile Include="Tools\Converters\WidthConverter.cs" />
     <Compile Include="Tools\DelegateCommand.cs" />
+    <Compile Include="Tools\DirectInputPadControl.cs" />
     <Compile Include="Tools\DropDownButton.cs" />
     <Compile Include="Tools\GameIndex.cs" />
     <Compile Include="Tools\ItemsPanelTemplateManager.cs" />
@@ -142,8 +192,19 @@
     <Compile Include="Tools\Savestate\SavestateEntries.cs" />
     <Compile Include="Tools\Savestate\SStates.cs" />
     <Compile Include="Tools\XInputPadControl.cs" />
+    <Compile Include="Utilities\Direct3D11Device.cs" />
+    <Compile Include="Utilities\DirectInput.cs" />
+    <Compile Include="Utilities\DirectInputNative.cs" />
+    <Compile Include="Utilities\Interop\ComInterface.cs" />
+    <Compile Include="Utilities\Interop\D3D11Texture2D.cs" />
+    <Compile Include="Utilities\Interop\Direct3D11.cs" />
+    <Compile Include="Utilities\Interop\DXGIResource.cs" />
+    <Compile Include="Utilities\Interop\NativeMethods.cs" />
+    <Compile Include="Utilities\Interop\NativeStructs.cs" />
     <Compile Include="Utilities\LibLoader.cs" />
+    <Compile Include="Utilities\RTMPNative.cs" />
     <Compile Include="Utilities\SelectorDoubleClickCommandBehavior.cs" />
+    <Compile Include="Utilities\StringStream.cs" />
     <Compile Include="Utilities\Win32NativeMethods.cs" />
     <Compile Include="Utilities\XInputNative.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
@@ -152,11 +213,14 @@
     <Compile Include="ViewModels\ControlViewModel.cs" />
     <Compile Include="ViewModels\EmulViewModel.cs" />
     <Compile Include="ViewModels\IsoInfoViewModel.cs" />
+    <Compile Include="ViewModels\QuickResumeViewModel.cs" />
+    <Compile Include="ViewModels\QuickSaveStateViewModel.cs" />
     <Compile Include="ViewModels\RecentIsoInfoViewModel.cs" />
     <Compile Include="ViewModels\ItemDataTemplateSelector.cs" />
     <Compile Include="ViewModels\LockScreenViewModel.cs" />
     <Compile Include="ViewModels\PadControlViewModel.cs" />
     <Compile Include="ViewModels\SaveStateInfoViewModel.cs" />
+    <Compile Include="ViewModels\ScreenshotsInfoViewModel.cs" />
     <Compile Include="WpfAnimatedGif\AnimationCache.cs" />
     <Compile Include="WpfAnimatedGif\Decoding\GifApplicationExtension.cs" />
     <Compile Include="WpfAnimatedGif\Decoding\GifBlock.cs" />
@@ -181,6 +245,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <EmbeddedResource Include="Captions\Translates\English.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <Page Include="ColourSchemes\Default.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -209,11 +277,23 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Panels\DirectInputPadControlInfoPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Panels\DisplayControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Panels\LockScreenPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\QuickResumePanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\QuickSaveStatePanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -297,6 +377,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\ScreenshotsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Views\Views.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -372,9 +456,6 @@
     <Resource Include="Assests\Images\PSPLogo.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Modules\AnyCPU\PCSX2Emul.dll" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Assests\Images\None.png" />
   </ItemGroup>
   <ItemGroup>
@@ -382,11 +463,17 @@
     <Resource Include="Assests\Images\SaveState.png" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Modules\AnyCPU\PCSX2Emul.dll" />
+    <EmbeddedResource Include="Modules\AnyCPU\PCSXEmul.dll" />
     <EmbeddedResource Include="Modules\AnyCPU\PPSSPPEmul.dll" />
+    <Resource Include="Assests\Images\Media.png" />
+    <Resource Include="Assests\Sounds\BaseSounds\Click.wav" />
+    <Resource Include="Assests\Sounds\BaseSounds\Switch.wav" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Modules\AnyCPU\PCSXEmul.dll" />
+    <Resource Include="Assests\Images\GamePadQSInfo.png" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\SevenZipExtractor.1.0.15\build\SevenZipExtractor.targets" Condition="Exists('..\packages\SevenZipExtractor.1.0.15\build\SevenZipExtractor.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

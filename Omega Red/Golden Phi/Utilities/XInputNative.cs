@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Golden_Phi.Managers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -173,6 +174,14 @@ namespace Golden_Phi.Utilities
         {
             try
             {
+                var l_ModuleBeforeTitle = App.Current.Resources["ModuleBeforeTitle"];
+
+                var l_ModuleAfterTitle = App.Current.Resources["ModuleAfterTitle"];
+
+                LockScreenManager.Instance.displayMessage(
+                    l_ModuleBeforeTitle
+                    + "XInput"
+                    + l_ModuleAfterTitle);
 
                 do
                 {
@@ -189,6 +198,12 @@ namespace Golden_Phi.Utilities
                     m_IsInitialized = true;
 
                 } while (false);
+
+                LockScreenManager.Instance.displayMessage(
+                    l_ModuleBeforeTitle
+                    + "XInput "
+                    + (m_IsInitialized ? App.Current.Resources["ModuleIsLoadedTitle"] : App.Current.Resources["ModuleIsNotLoadedTitle"]));
+
             }
             catch (Exception)
             {

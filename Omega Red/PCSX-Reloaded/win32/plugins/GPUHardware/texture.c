@@ -4069,9 +4069,9 @@ void DefineSubTextureSortHiRes(void)
 
 void DefineSubTextureSort(void)
 {
-    saveTexture(XTexS, YTexS,
-                DXTexS, DYTexS,
-                giWantedFMT, giWantedTYPE, texturepart);
+    //saveTexture(XTexS, YTexS,
+    //            DXTexS, DYTexS,
+    //            giWantedFMT, giWantedTYPE, texturepart);
 
  if(iHiResTextures)
   {

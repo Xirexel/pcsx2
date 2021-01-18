@@ -171,7 +171,7 @@
                     Background="{DynamicResource MainBackgroundBrush}"
                     BorderThickness="{DynamicResource StandardBorderThickness}"
                     CornerRadius="{DynamicResource StandardCornerRadius}">
-                <Image Margin="5" x:Name="m_icon" Source="../Assests/Images/Unknown.png"/>
+                <Image Margin="5" x:Name="m_icon" Source="pack://application:,,,/Omega Red;component/Assests/Images/Unknown.png"/>
             </Border>
             <StackPanel Margin="5,0" Grid.Column="1">
                 <StackPanel Orientation="Horizontal">
@@ -208,28 +208,28 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding Zone}" Value="Test">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Test.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Test.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="Europe">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Europe.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Europe.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="Japan">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Japan.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Japan.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="USA">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/USA.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/USA.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="Free">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Free.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Free.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="China">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/China.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/China.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="HK">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/HK.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/HK.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="T10K">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/T10K.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/T10K.png" />
             </DataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
@@ -280,7 +280,7 @@
                     Background="{DynamicResource MainBackgroundBrush}"
                     BorderThickness="{DynamicResource StandardBorderThickness}"
                     CornerRadius="{DynamicResource StandardCornerRadius}">
-                    <Image Margin="5" RenderOptions.BitmapScalingMode="Fant" x:Name="m_icon" Source="../Assests/Images/ISO.png"/>
+                    <Image Margin="5" RenderOptions.BitmapScalingMode="Fant" x:Name="m_icon" Source="pack://application:,,,/Omega Red;component/Assests/Images/ISO.png"/>
                 </Border>
                 <StackPanel Margin="5,0" Grid.Column="1">
                     <StackPanel Orientation="Horizontal">
@@ -411,7 +411,7 @@
                             FindAncestor, 
                             AncestorType={x:Type UserControl}, 
                             AncestorLevel=1}, Path=DataContext}">
-                    <Image Source="/Assests/Images/Google_Drive.png" 
+                    <Image Source="pack://application:,,,/Omega Red;component/Assests/Images/Google_Drive.png" 
                                        Stretch="Uniform" 
                                        Height="64" 
                                        Width="64"/>
@@ -442,7 +442,7 @@
                                    FindAncestor, 
                                    AncestorType={x:Type Button}, 
                                    AncestorLevel=1}, Path=IsEnabled}" 
-                                   Source="../Assests/Images/LoadState.png" 
+                                   Source="pack://application:,,,/Omega Red;component/Assests/Images/LoadState.png" 
                                    Stretch="Uniform" 
                                    Height="30" 
                                    Width="30"/>
@@ -469,7 +469,7 @@
                                    FindAncestor, 
                                    AncestorType={x:Type Button}, 
                                    AncestorLevel=1}, Path=IsEnabled}" 
-                               Source="../Assests/Images/SaveState.png" 
+                               Source="pack://application:,,,/Omega Red;component/Assests/Images/SaveState.png" 
                                Stretch="Uniform" 
                                Height="30" 
                                Width="30"/>
@@ -514,7 +514,7 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/None.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/None.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Duration}" Value="{x:Null}">
                 <Setter TargetName="mDurationTitle" Property="Visibility" Value="Hidden"/>
@@ -632,7 +632,7 @@
                                    FindAncestor, 
                                    AncestorType={x:Type Button}, 
                                    AncestorLevel=1}, Path=IsEnabled}" 
-                                   Source="../Assests/Images/LoadState.png" 
+                                   Source="pack://application:,,,/Omega Red;component/Assests/Images/LoadState.png" 
                                    Stretch="Uniform" 
                                    Height="30" 
                                    Width="30"/>
@@ -654,7 +654,7 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/None.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/None.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Duration}" Value="{x:Null}">
                 <Setter TargetName="mDurationTitle" Property="Visibility" Value="Hidden"/>
@@ -701,7 +701,7 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/None.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/None.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Duration}" Value="{x:Null}">
                 <Setter TargetName="mDurationTitle" Property="Visibility" Value="Hidden"/>
@@ -737,7 +737,7 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding SmallImageSource}" Value="{ x:Null}">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Media.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Media.png" />
             </DataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
@@ -817,7 +817,7 @@
                             FindAncestor, 
                             AncestorType={x:Type UserControl}, 
                             AncestorLevel=1}, Path=DataContext}">
-                    <Image Source="/Assests/Images/Google_Drive.png" 
+                    <Image Source="pack://application:,,,/Omega Red;component/Assests/Images/Google_Drive.png" 
                                        Stretch="Uniform" 
                                        Height="64" 
                                        Width="64"/>
@@ -1039,11 +1039,11 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding Type}" Value="Video">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/WebCam.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/WebCam.png" />
                 <Setter TargetName="mVideoLockGrid" Property="Visibility" Value="Visible"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Type}" Value="Audio">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Mic.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Mic.png" />
                 <Setter TargetName="mAudioLockGrid" Property="Visibility" Value="Visible"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Type}" Value="Image">
@@ -1133,7 +1133,7 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding SmallImageSource}" Value="{ x:Null}">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Media.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Media.png" />
             </DataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>

@@ -180,15 +180,18 @@ bool GPUDevice11::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, 
 
     l_Resource.Release();
 
-    //hr = m_dev->OpenSharedResource(capturehandle, IID_PPV_ARGS(&l_Resource));
+	if (capturehandle != nullptr)
+	{
+		hr = m_dev->OpenSharedResource(capturehandle, IID_PPV_ARGS(&l_Resource));
 
-    //if (FAILED(hr))
-    //    return false;
+		if (FAILED(hr))
+			return false;
 
-    //hr = l_Resource->QueryInterface(IID_PPV_ARGS(&m_CaptureTexture));
+		hr = l_Resource->QueryInterface(IID_PPV_ARGS(&m_CaptureTexture));
 
-    //if (FAILED(hr))
-    //    return false;
+		if (FAILED(hr))
+			return false;
+	}
 
 
     CComPtrCustom<ID3D11RenderTargetView> l_RTV;
@@ -474,13 +477,14 @@ void GPUDevice11::Flip()
                                  0,
                                  nullptr);
 
-    //m_ctx->CopySubresourceRegion(m_CaptureTexture,
-    //                             0,
-    //                             m_Xoffset, 0,
-    //                             0,
-    //                             m_RenderTargetTexture,
-    //                             0,
-    //                             nullptr);
+	if(m_CaptureTexture)
+		m_ctx->CopySubresourceRegion(m_CaptureTexture,
+									 0,
+									 m_Xoffset, 0,
+									 0,
+									 m_RenderTargetTexture,
+									 0,
+									 nullptr);
 }
 
 void GPUDevice11::ClearTargets()
@@ -710,8 +714,7 @@ void GPUDevice11::draw(DWORD aDrawMode, void *aPtrVertexes, BOOL aIsTextured)
             l_PtrVERTEX[1].TexCoord = l_temp_TexCoord;
         }
     }
-
-
+	   
     INT32 l_sourceRowPitch = l_vertextCount * sizeof(VERTEX);
 
     m_ctx->UpdateSubresource(
@@ -826,7 +829,7 @@ void GPUDevice11::setBlendFunc(DWORD aSfactor, DWORD aDfactor)
 
 void GPUDevice11::setBlendEquation(DWORD aOPcode)
 {
-    if (aOPcode == FUNC_REVERSESUBTRACT_EXT) {
+    if (aOPcode == FUNC_REVERSE_SUBTRACT_EXT) {
         m_color_blend_op = D3D11_BLEND_OP::D3D11_BLEND_OP_REV_SUBTRACT;
 
         m_alpha_blend_op = D3D11_BLEND_OP::D3D11_BLEND_OP_REV_SUBTRACT;
@@ -916,16 +919,16 @@ void GPUDevice11::createTexture(
 
     CComPtrCustom<ID3D11Texture2D> l_Texture;
 
-    D3D11_SUBRESOURCE_DATA l_subresourceResource;
-    ZeroMemory(&l_subresourceResource, sizeof(D3D11_SUBRESOURCE_DATA));
-
-    l_subresourceResource.pSysMem = aPtrPixels;
-    l_subresourceResource.SysMemPitch = aWidth * l_source_pixel_bytes;
-
-    if (aPtrPtrUnkShaderResourceView != nullptr) {
+    if (aPtrPixels == nullptr) {
         LOG_INVOKE(m_dev->CreateTexture2D(&l_Desc, nullptr, &l_Texture));
-
     } else {
+
+        D3D11_SUBRESOURCE_DATA l_subresourceResource;
+        ZeroMemory(&l_subresourceResource, sizeof(D3D11_SUBRESOURCE_DATA));
+
+        l_subresourceResource.pSysMem = aPtrPixels;
+        l_subresourceResource.SysMemPitch = aWidth * l_source_pixel_bytes;
+
         LOG_INVOKE(m_dev->CreateTexture2D(&l_Desc, &l_subresourceResource, &l_Texture));
     }
 

@@ -1,4 +1,5 @@
-﻿using Golden_Phi.Managers;
+﻿using Golden_Phi.Emulators;
+using Golden_Phi.Managers;
 using Golden_Phi.Panels;
 using System;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ namespace Golden_Phi
         public MainWindow()
         {
             LockScreenManager.Instance.show();
-
+            
             InitializeComponent();
 
             SaveStateManager.Instance.init();
@@ -39,7 +40,7 @@ namespace Golden_Phi
                 IsoManager.Instance.load();
             });
 
-            Emul.Emul.Instance.ShowErrorEvent += Instance_ShowWarningEvent;
+            Emul.Instance.ShowErrorEvent += Instance_ShowWarningEvent;
 
 #if DEBUG
 
@@ -71,9 +72,11 @@ namespace Golden_Phi
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            Emul.Emul.Instance.stop();
+            Emul.Instance.stop();
 
-            Emul.Emul.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
+            Emul.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
+
+            ScreenshotsManager.Instance.setVideoPanel((m_PadPanel.Content as DisplayControl).VideoPanel);
 
             var wih = new System.Windows.Interop.WindowInteropHelper(App.Current.MainWindow);
 

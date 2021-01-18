@@ -11,28 +11,32 @@
     <UserControl.DataContext>
         <viewModels:LockScreenViewModel/>
     </UserControl.DataContext>
-    <Grid Background="{DynamicResource LockBackgroundBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="3*"/>
-            <RowDefinition Height="1*"/>
-        </Grid.RowDefinitions>
-        <ContentPresenter Content="{Binding IconImage}" Grid.Row="1" x:Name="mIconContent"/>
-        <Viewbox Grid.Row="2">
-            <Border BorderBrush="{DynamicResource StandardBorderBrush}" 
+    <Grid Background="Black">
+        <ContentPresenter Content="{Binding BackImage}"/>
+        <Grid Background="{DynamicResource LockBackgroundBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*"/>
+                <RowDefinition Height="3*"/>
+                <RowDefinition Height="1*"/>
+            </Grid.RowDefinitions>
+            <ContentPresenter Content="{Binding IconImage}" Grid.Row="1"/>
+
+            <Viewbox Grid.Row="2">
+                <Border BorderBrush="{DynamicResource StandardBorderBrush}" 
                 BorderThickness="{DynamicResource StandardBorderThickness}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="5, 20">
-                <TextBlock FontSize="18" Margin="10" Text="{Binding Message}" Foreground="White"/>
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Message}" Value ="">
-                                <Setter Property="Visibility" Value ="Hidden" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-            </Border>
-        </Viewbox>
-       
+                    <TextBlock FontSize="18" Margin="10" Text="{Binding Message}" Foreground="White"/>
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Message}" Value ="">
+                                    <Setter Property="Visibility" Value ="Hidden" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                </Border>
+            </Viewbox>
+
+        </Grid>
     </Grid>
 </UserControl>

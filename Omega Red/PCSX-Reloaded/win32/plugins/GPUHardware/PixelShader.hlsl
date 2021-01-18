@@ -21,13 +21,13 @@ float4 PS(PS_INPUT input) : SV_Target
     {
         if (alpha <= mValue)
             discard;
-    }
-    else if (mFunc == GL_EQUAL)
+    }else
+    if (mFunc == GL_EQUAL)
     {
         if (alpha != mValue)
             discard;
-    }
-    else if (mFunc == GL_NOTEQUAL)
+    }else 
+	if (mFunc == GL_NOTEQUAL)
     {
         if (alpha == mValue)
             discard;

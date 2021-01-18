@@ -26,9 +26,9 @@ using SevenZipExtractor;
 using System.Windows;
 using System.Windows.Threading;
 using System.Threading;
-using Golden_Phi.Emul;
+using Golden_Phi.Emulators;
 
-namespace Omega_Red.Tools
+namespace Golden_Phi.Tools
 {
     class BiosControl
     {
@@ -320,9 +320,18 @@ namespace Omega_Red.Tools
 
                         if(l_zoneByte == 0x20)
                         {
-                            l_bytes.Insert(6, Convert.ToByte('9'));
+                            if(Convert.ToChar(l_bytes[6]) == '0')
+                            {
+                                l_bytes.Insert(6, Convert.ToByte('0'));
 
-                            l_bytes.Insert(6, Convert.ToByte('1'));
+                                l_bytes.Insert(6, Convert.ToByte('2'));
+                            }
+                            else
+                            {
+                                l_bytes.Insert(6, Convert.ToByte('9'));
+
+                                l_bytes.Insert(6, Convert.ToByte('1'));
+                            }
 
                             l_zoneByte = stream.ReadByte();
                         }

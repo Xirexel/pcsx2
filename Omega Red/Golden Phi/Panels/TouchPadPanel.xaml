@@ -9,6 +9,7 @@
              xmlns:p="clr-namespace:Golden_Phi.Properties"   
              mc:Ignorable="d" 
              DataContext="{Binding}"
+             PreviewMouseMove="UserControl_PreviewMouseMove"             
              d:DesignHeight="800" d:DesignWidth="700">
     <UserControl.ContentTemplate>
         <DataTemplate>
@@ -254,17 +255,98 @@
                             <ColumnDefinition Width="auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <Viewbox VerticalAlignment="Bottom" HorizontalAlignment="Right" Grid.Column="2" Grid.Row="5">
-                            <Button Opacity="0.5" Margin="20" Style="{DynamicResource OptionBtn}">
+                        <Viewbox VerticalAlignment="Bottom" HorizontalAlignment="Right" Grid.Column="2" Grid.Row="5" Visibility="{Binding MouseMoveVisibility}">
+                            <Viewbox.Style>
+                                <Style TargetType="{x:Type Viewbox}">
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding TouchPadPanelVisibility}" Value="Hidden" />
+                                                <Condition Binding="{Binding MouseMoveVisibility}" Value="Visible" />
+                                            </MultiDataTrigger.Conditions>
+                                            <MultiDataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" Duration="0:0:2.4">
+                                                            <LinearDoubleKeyFrame Value="1" KeyTime="0:0:0" />
+                                                            <LinearDoubleKeyFrame Value="1" KeyTime="0:0:1.8" />
+                                                            <EasingDoubleKeyFrame Value="0" KeyTime="0:0:2.4">
+                                                                <EasingDoubleKeyFrame.EasingFunction>
+                                                                    <SineEase EasingMode="EaseInOut"/>
+                                                                </EasingDoubleKeyFrame.EasingFunction>
+                                                            </EasingDoubleKeyFrame>
+                                                        </DoubleAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </MultiDataTrigger.EnterActions>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Viewbox.Style>
+                            <Button Opacity="0.75" Margin="20" Style="{DynamicResource OptionBtn}">
                                 <Button.DataContext>
                                     <viewModels:EmulViewModel/>
                                 </Button.DataContext>
                             </Button>
                         </Viewbox>
 
-                        <Viewbox Grid.Row="1" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <Viewbox VerticalAlignment="Bottom" HorizontalAlignment="Right" Grid.Column="2" Grid.Row="5" Visibility="{Binding TouchPadPanelVisibility}">
+                            <Button Opacity="0.75" Margin="20" Style="{DynamicResource OptionBtn}">
+                                <Button.DataContext>
+                                    <viewModels:EmulViewModel/>
+                                </Button.DataContext>
+                            </Button>
+                        </Viewbox>
+
+                        <Viewbox Grid.Row="1" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{Binding TouchPadPanelVisibility}">
                             <local:SoundControl Orientation="Vertical" Margin="10,0,10,10" Opacity="{DynamicResource StandardOpacity}" IsMuted="{Binding Source={StaticResource mConfigViewModel}, Path=IsMuted, Mode=TwoWay}"  Volume="{Binding Source={StaticResource mConfigViewModel}, Path=SoundLevel, Mode=TwoWay}"/>
                         </Viewbox>
+
+                        <Viewbox Grid.Row="0" HorizontalAlignment="Left" Margin="10" VerticalAlignment="Top" Visibility="{Binding TouchPadPanelVisibility}">
+                            <Button Opacity="0.75" Style="{DynamicResource QuickSaveBtn}" Margin="10" >
+                                <Button.DataContext>
+                                    <viewModels:SaveStateInfoViewModel/>
+                                </Button.DataContext>
+                            </Button>
+                        </Viewbox>
+                        <Viewbox Grid.Row="0" Grid.Column="2" HorizontalAlignment="Right" Margin="10" VerticalAlignment="Top" Visibility="{Binding TouchPadPanelVisibility}">
+                            <Button Opacity="0.75" Style="{DynamicResource TakeScreenBtn}"  Margin="10">
+                                <Button.DataContext>
+                                    <viewModels:ScreenshotsInfoViewModel/>
+                                </Button.DataContext>
+                            </Button>
+                        </Viewbox>
+                        <Border BorderBrush="{DynamicResource StandardBorderBrush}" BorderThickness="{DynamicResource StandardBorderThickness}" Visibility="{Binding LockVisibility}" Grid.Row="0" Grid.Column="2" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Top">
+                            <Border.DataContext>
+                                <viewModels:ScreenshotsInfoViewModel/>
+                            </Border.DataContext>
+                            <Border.Style>
+                                <Style>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={x:Static RelativeSource.Self}, Path=IsVisible}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" Duration="0:0:1.4">
+                                                            <LinearDoubleKeyFrame Value="1" KeyTime="0:0:0" />
+                                                            <LinearDoubleKeyFrame Value="1" KeyTime="0:0:1" />
+                                                            <EasingDoubleKeyFrame Value="0" KeyTime="0:0:1.4">
+                                                                <EasingDoubleKeyFrame.EasingFunction>
+                                                                    <SineEase EasingMode="EaseInOut"/>
+                                                                </EasingDoubleKeyFrame.EasingFunction>
+                                                            </EasingDoubleKeyFrame>
+                                                        </DoubleAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Viewbox>
+                                <Image Source="{Binding ScreenshotSource}"/>
+                            </Viewbox>
+                        </Border>
                     </Grid>                    
                 </Grid>
             </Grid>

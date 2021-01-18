@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 
-namespace Golden_Phi.Emul
+namespace Golden_Phi.Emulators
 {
     class PCSXEmul : IEmul
     {
@@ -38,6 +38,8 @@ namespace Golden_Phi.Emul
 
         private MethodInfo m_SetAudioVolume = null;
 
+        private MethodInfo m_SetMemoryCard = null;
+
 
 
 
@@ -45,7 +47,7 @@ namespace Golden_Phi.Emul
 
         private bool m_restart = false;
 
-        public GameType GameType => GameType.PSP;
+        public GameType GameType => GameType.PS1;
 
         private static PCSXEmul m_Instance = null;
 
@@ -105,6 +107,8 @@ namespace Golden_Phi.Emul
                             m_SaveState = l_CaptureType.GetMethod("saveState");
 
                             m_SetAudioVolume = l_CaptureType.GetMethod("setAudioVolume");
+
+                            m_SetMemoryCard = l_CaptureType.GetMethod("setMemoryCard");
                         }
                     }
                 }
@@ -160,6 +164,9 @@ namespace Golden_Phi.Emul
                 var l_Start_Result = (bool)m_Start.Invoke(m_InstanceObj, new object[] {
                         a_SharedHandle,
                         Tools.PadInput.Instance.TouchPadCallbackHandler,
+                        Tools.PadInput.Instance.VibrationCallbackHandler,
+                        IntPtr.Zero,
+                        IntPtr.Zero,
                         App.CurrentWindowHandler,
                         a_IsoInfo.FilePath,
                         a_IsoInfo.DiscSerial,
@@ -250,7 +257,7 @@ namespace Golden_Phi.Emul
             }
         }
 
-        private bool resume()
+        public bool resume()
         {
             bool l_result = false;
 
@@ -333,6 +340,24 @@ namespace Golden_Phi.Emul
                 m_SetAudioVolume.Invoke(m_InstanceObj, new object[] { a_level });
 
             } while (false);
+        }
+        public void setMemoryCard(string a_file_path, int a_slot)
+        {
+            do
+            {
+                if (m_InstanceObj == null)
+                    break;
+
+                if (m_SetMemoryCard == null)
+                    break;
+
+                m_SetMemoryCard.Invoke(m_InstanceObj, new object[] { a_file_path, a_slot });
+
+            } while (false);
+        }
+
+        public void setVideoAspectRatio(AspectRatio a_AspectRatio)
+        {
         }
     }
 }

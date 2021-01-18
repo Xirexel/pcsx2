@@ -9,13 +9,13 @@ using System.Windows.Markup;
 
 namespace Omega_Red
 {
-    class Program
+    public class Program
     {
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [MTAThread]
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             var t = new Thread(() =>
             {

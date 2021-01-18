@@ -46,6 +46,11 @@ namespace Golden_Phi.ViewModels
             }
         }
 
+        public System.Windows.Controls.Image BackImage
+        {
+            get { return LockScreenManager.Instance.BackImage; }
+        }
+
         public System.Windows.Controls.Image IconImage
         {
             get { return LockScreenManager.Instance.IconImage; }

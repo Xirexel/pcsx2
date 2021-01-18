@@ -1,4 +1,5 @@
-﻿using Golden_Phi.Properties;
+﻿using Golden_Phi.Emulators;
+using Golden_Phi.Properties;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,7 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
+using System.Windows.Markup;
 using System.Windows.Threading;
 
 namespace Golden_Phi.Managers
@@ -101,6 +104,16 @@ namespace Golden_Phi.Managers
         private readonly ObservableCollection<DisplayModeInfo> _displayModeCollection = new ObservableCollection<DisplayModeInfo>();
 
 
+               
+
+        private ICollectionView mLanguageModeView = null;
+
+        private readonly ObservableCollection<String> _languageModeCollection = new ObservableCollection<String>();
+
+
+        private ResourceDictionary m_languageResource = null;
+
+
         private ICollectionView mCustomerView = null;
                      
         private static ConfigManager m_Instance = null;
@@ -153,6 +166,25 @@ namespace Golden_Phi.Managers
             mDisplayModeView.CurrentChanged += mDisplayModeView_CurrentChanged;
 
 
+
+
+            System.Reflection.Assembly l_assembly = System.Reflection.Assembly.GetExecutingAssembly();
+
+            _languageModeCollection.Add("Русский");
+
+            foreach (var item in l_assembly.GetManifestResourceNames())
+            {
+                if (item.Contains("Golden_Phi.Captions.Translates."))
+                {
+                    _languageModeCollection.Add(item.Replace("Golden_Phi.Captions.Translates.", "").Replace(".xaml", ""));
+                }
+            }
+
+            mLanguageModeView = CollectionViewSource.GetDefaultView(_languageModeCollection);
+
+            mLanguageModeView.CurrentChanged += mLanguageModeView_CurrentChanged;
+
+
             reset();
         }
 
@@ -176,7 +208,7 @@ namespace Golden_Phi.Managers
             if (mResolutionModeView.CurrentItem == null)
                 return;
 
-            if(!(Emul.Emul.Instance.Status == Emul.Emul.StatusEnum.Stopped))
+            if(!(Emul.Instance.Status == Emul.StatusEnum.Stopped))
                 return;
 
             var l_ResolutionModeInfo = (ResolutionModeInfo)mResolutionModeView.CurrentItem;
@@ -212,6 +244,55 @@ namespace Golden_Phi.Managers
             Settings.Default.DisplayMode = l_DisplayMode.Value.ToString();
         }
 
+        void mLanguageModeView_CurrentChanged(object sender, EventArgs e)
+        {
+            if (mLanguageModeView == null)
+                return;
+
+            if (mLanguageModeView.CurrentItem == null)
+                return;
+
+            if (App.Current == null)
+                return;
+
+            if (App.Current.MainWindow == null)
+                return;
+
+            loadLanguage(mLanguageModeView.CurrentItem as string);
+
+            reset();
+        }
+
+        private void loadLanguage(string a_language)
+        {
+            var l_assembly = System.Reflection.Assembly.GetExecutingAssembly();
+
+            using (var lStream = l_assembly.GetManifestResourceStream(
+                string.Format("Golden_Phi.Captions.Translates.{0}.xaml", a_language)))
+            {
+                if (m_languageResource != null)
+                    App.Current.Resources.MergedDictionaries.Remove(m_languageResource);
+
+                m_languageResource = null;
+
+                if (lStream == null)
+                {
+                    Settings.Default.Language = "Русский";
+
+                    return;
+                }
+
+                m_languageResource = (ResourceDictionary)XamlReader.Load(lStream);
+
+                if (m_languageResource != null)
+                {
+                    App.Current.Resources.MergedDictionaries.Add(m_languageResource);
+
+                    Settings.Default.Language = a_language;
+                }
+            }
+        }
+
         public ICollectionView Collection => mCustomerView;
         
         public ICollectionView DisplayModeCollection
@@ -229,10 +310,16 @@ namespace Golden_Phi.Managers
             get { return mSkipFrameModeView; }
         }
 
+        public ICollectionView LanguageCollection
+        {
+            get { return mLanguageModeView; }
+        }
+
         private void reset()
         {
             App.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
             {
+
                 mResolutionModeView.MoveCurrentToPosition(-1);
 
                 mResolutionModeView.MoveCurrentToPosition(Settings.Default.ResolutionMode);
@@ -246,6 +333,10 @@ namespace Golden_Phi.Managers
                 mDisplayModeView.MoveCurrentToPosition(-1);
 
                 mDisplayModeView.MoveCurrentToPosition((int)l_DisplayMode);
+
+
+
+                mLanguageModeView.MoveCurrentTo(Settings.Default.Language);
             });
         }
 
@@ -264,5 +355,7 @@ namespace Golden_Phi.Managers
         }
 
         public object View { get; private set; }
+
+        public bool IsConfirmed => false;
     }
 }

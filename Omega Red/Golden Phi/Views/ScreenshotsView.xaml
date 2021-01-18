@@ -1,0 +1,29 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:p="clr-namespace:Golden_Phi.Properties">
+
+    <UserControl x:Key="ScreenshotsView">
+        <Viewbox>
+            <Grid Height="720" Width="1280">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock HorizontalAlignment="Center" FontSize="42" FontWeight="Bold" Foreground="White" Text="{DynamicResource ScreenshotsTitle}"/>
+
+                <Grid Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="350"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <ListView BorderThickness="0"
+                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                              Style="{DynamicResource TileInfoListView}" />
+                    <Image Grid.Column="1" Source="{Binding ImageSource}"/>
+                </Grid>
+            </Grid>
+        </Viewbox>
+    </UserControl>
+
+</ResourceDictionary>

@@ -28,6 +28,9 @@ namespace PCSXEmul
         public bool start(
             IntPtr a_VideoPanelHandler,
             IntPtr a_TouchPadCallbackHandler,
+            IntPtr a_VibrationCallbackHandler,
+            IntPtr a_VideoTargetHandler,
+            IntPtr a_AudioCaptureTargetHandler,
             IntPtr a_WindowHandler,
             string a_iso_file,
             string a_discSerial,
@@ -41,6 +44,12 @@ namespace PCSXEmul
                 ModuleControl.Instance.setVideoPanelHandler(a_VideoPanelHandler);
 
                 ModuleControl.Instance.setTouchPadCallbackHandler(a_TouchPadCallbackHandler);
+
+                ModuleControl.Instance.setVibrationCallbackHandler(a_VibrationCallbackHandler);
+
+                ModuleControl.Instance.setVideoTargetHandler(a_VideoTargetHandler);
+
+                ModuleControl.Instance.setAudioCaptureTargetHandler(a_AudioCaptureTargetHandler);
 
                 ModuleControl.Instance.setWindowHandler(a_WindowHandler);
 
@@ -205,6 +214,11 @@ namespace PCSXEmul
         public void setAudioVolume(float a_value)
         {
             ModuleControl.Instance.setSoundLevel(a_value);
+        }
+
+        public void setMemoryCard(string a_file_path, int a_port)
+        {
+            ModuleControl.Instance.setMemoryCard(a_file_path, a_port);
         }
     }
 }

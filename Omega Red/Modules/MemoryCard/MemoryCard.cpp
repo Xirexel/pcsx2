@@ -43,9 +43,7 @@ void MemoryCard::execute(const wchar_t* a_command, wchar_t** a_result)
 				if (std::wstring(l_ChildNode.name()) == L"Init")
 				{
 					auto l_Mcds = l_ChildNode.select_nodes(L"Mcd");
-
-					m_McdFiles.clear();
-
+					
 					// Regular Bindings
 					for (auto& l_item : l_Mcds)
 					{

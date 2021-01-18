@@ -30,10 +30,12 @@ namespace Golden_Phi.Panels.Video.Interop
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate int CreateOffscreenPlainSurface(IDirect3DDevice9 device, uint Width, uint Height, int Format, int Pool, out IDirect3DTexture9 ppTexture, ref IntPtr pSharedHandle);
 
-
-        
-
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate int ColorFill(IDirect3DDevice9Ex device, IDirect3DSurface9 ppSurface, NativeStructs.RECT pRect, UInt32 color);
+
+
+
+          [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate uint GetLevelCount(IDirect3DTexture9 texture);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]

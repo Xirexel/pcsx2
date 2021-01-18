@@ -1,4 +1,4 @@
-﻿using Golden_Phi.Emul;
+﻿using Golden_Phi.Emulators;
 using Golden_Phi.Models;
 using Golden_Phi.Properties;
 using Golden_Phi.Tools;
@@ -37,7 +37,7 @@ namespace Golden_Phi.Managers
         {
             public bool Equals(IsoInfo x, IsoInfo y)
             {
-                if (x.DiscSerial == y.DiscSerial)
+                if (x != null && y != null && x.DiscSerial == y.DiscSerial)
                 {
                     return true;
                 }
@@ -50,7 +50,7 @@ namespace Golden_Phi.Managers
 
         }
 
-        private const int c_maxRecent = 5;
+        private const int c_maxRecent = 3;
 
         private int m_current_count = 0;
 
@@ -58,12 +58,21 @@ namespace Golden_Phi.Managers
 
         private readonly ObservableCollection<IsoInfo> _isoInfoCollection = new ObservableCollection<IsoInfo>();
 
+        public bool IsConfirmed => true;
 
 
 
         private ICollectionView mRecentIsoCustomerView = null;
 
         private CollectionViewSource mRecentIsoCollectionViewSource = new CollectionViewSource();
+
+
+
+        private ICollectionView mResumeIsoCustomerView = null;
+
+        private CollectionViewSource mResumeIsoCollectionViewSource = new CollectionViewSource();
+
+
 
 
         public event Action<bool> ShowChooseIsoEvent;
@@ -99,6 +108,18 @@ namespace Golden_Phi.Managers
             mRecentIsoCustomerView.CurrentChanged += mRecentIsoCustomerView_CurrentChanged;
 
             mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
+
+
+
+
+
+
+            mResumeIsoCollectionViewSource.Source = _isoInfoCollection;
+
+            mResumeIsoCollectionViewSource.SortDescriptions.Add(
+            new SortDescription("LastLaunchTime", ListSortDirection.Descending));
+            
+            mResumeIsoCustomerView = mResumeIsoCollectionViewSource.View;
         }
 
         void mRecentIsoCustomerView_CurrentChanged(object sender, EventArgs e)
@@ -135,7 +156,7 @@ namespace Golden_Phi.Managers
 
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                 {
-                    Emul.Emul.Instance.playActiveState();
+                    Emul.Instance.playActiveState();
                 });
 
                 m_current_count = 0;
@@ -144,7 +165,7 @@ namespace Golden_Phi.Managers
 
                 mRecentIsoCustomerView.Refresh();
 
-                mRecentIsoCustomerView.MoveCurrentToPosition(0);
+                mRecentIsoCustomerView.MoveCurrentToPosition(-1);
 
                 CloseChooseIso();
             }
@@ -270,7 +291,14 @@ namespace Golden_Phi.Managers
         public ICollectionView RecentIsoCollection
         {
             get { return mRecentIsoCustomerView; }
-        }               
+        }
+
+        public ICollectionView ResumeIsoCollection
+        {
+            get { return mResumeIsoCustomerView; }
+        }
+
+        
 
         public void updateImage(IsoInfo a_IsoInfo)
         {
@@ -292,6 +320,16 @@ namespace Golden_Phi.Managers
                 a_IsoInfo.ImageSource = l_AutoSaveStateInfo.ImageSource;
             else
                 a_IsoInfo.ImageSource = null;
+        }
+
+        public void clearImage(string a_disk_serial)
+        {
+            IsoInfo a_IsoInfo = getIsoInfo(a_disk_serial);
+
+            if (a_IsoInfo == null)
+                return;
+
+            a_IsoInfo.ImageSource = null;
         }
 
         public IsoInfo getIsoInfo(string a_discSerial)
@@ -334,6 +372,8 @@ namespace Golden_Phi.Managers
         {
             if (!_isoInfoCollection.Contains(a_IsoInfo, new Compare()))
             {
+                updateImage(a_IsoInfo);
+
                 _isoInfoCollection.Add(a_IsoInfo);
 
                 IsoManager.Instance.save();
@@ -350,6 +390,23 @@ namespace Golden_Phi.Managers
 
         public void removeItem(object a_Item)
         {
+            var l_IsoInfo = a_Item as IsoInfo;
+
+            if (l_IsoInfo == null)
+                return;
+
+            l_IsoInfo.ActiveStateImage = null;
+
+            _isoInfoCollection.Remove(l_IsoInfo);
+
+            mCustomerView.Refresh();
+
+
+            m_current_count = 0;
+
+            mRecentIsoCustomerView.Refresh();
+
+            m_current_count = 0;
         }
     }
 }

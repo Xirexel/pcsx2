@@ -1,4 +1,5 @@
-﻿using Omega_Red.Properties;
+﻿using Omega_Red.Emulators;
+using Omega_Red.Properties;
 using Omega_Red.Tools;
 using Omega_Red.Util;
 using System;
@@ -35,6 +36,7 @@ namespace Omega_Red
         public const string m_MainFolderName = "OmegaRed";
 
         private static string m_MainStoreDirectoryPath = "";
+        public static IntPtr CurrentWindowHandler { get; set; }
 
         public static string MainStoreDirectoryPath { get {
 
@@ -89,7 +91,13 @@ namespace Omega_Red
         private void Application_Exit(object sender, ExitEventArgs e)
         {
             Managers.PadControlManager.Instance.stopTimer();
-            
+
+            Emul.Instance.stop(false);
+
+            Managers.IsoManager.Instance.save();
+
+            Omega_Red.Properties.Settings.Default.Save();
+
             saveCopy();
 
             m_is_exit = true;
@@ -97,36 +105,6 @@ namespace Omega_Red
             Capture.MediaCapture.Instance.stop();
 
             Capture.MediaStream.Instance.stop(true);
-
-            Capture.OffScreenStream.Instance.stopServer();
-
-            PCSX2Controller.Instance.Stop(true);
-            
-            Thread.Sleep(1500);
-
-            PCSX2LibNative.Instance.SysThreadBase_CancelFunc();
-
-            Thread.Sleep(1500);
-
-            PCSX2LibNative.Instance.MTVU_CancelFunc();
-
-            PCSX2LibNative.Instance.MTGS_CancelFunc();
-
-            ModuleControl.Instance.shutdownPCSX2();
-
-            ModuleControl.Instance.shutdownPCSX();
-
-            PCSX2LibNative.Instance.resetCallbacksFunc();
-
-            PCSX2ModuleManager.Instance.release();
-
-            Thread.Sleep(1500);
-
-            PCSX2LibNative.Instance.release();
-
-            PPSSPPNative.Instance.release();
-
-            PCSXNative.Instance.release();
         }
 
         public static void saveCopy()

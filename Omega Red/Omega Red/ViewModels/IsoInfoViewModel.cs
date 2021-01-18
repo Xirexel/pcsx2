@@ -13,6 +13,7 @@
 */
 
 using Microsoft.Win32;
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Models;
 using Omega_Red.Panels;
@@ -51,7 +52,7 @@ namespace Omega_Red.ViewModels
 
         public IsoInfoViewModel()
         {
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
             if (Collection != null)
                 Collection.CollectionChanged += Collection_CollectionChanged;
@@ -107,18 +108,18 @@ namespace Omega_Red.ViewModels
 
         private bool m_IsEnabled = true;
 
-        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
             CurrentGameTitle = "";
 
-            IsEnabled = a_Status == PCSX2Controller.StatusEnum.Stopped
-                || a_Status == PCSX2Controller.StatusEnum.Initilized
-                || a_Status == PCSX2Controller.StatusEnum.NoneInitilized;
+            IsEnabled = a_Status == Emul.StatusEnum.Stopped
+                || a_Status == Emul.StatusEnum.Initilized
+                || a_Status == Emul.StatusEnum.NoneInitilized;
 
-            if (PCSX2Controller.Instance.IsoInfo == null)
+            if (Emul.Instance.IsoInfo == null)
                 return;
 
-            CurrentGameTitle = ": " + PCSX2Controller.Instance.IsoInfo.Title;
+            CurrentGameTitle = ": " + Emul.Instance.IsoInfo.Title;
         }
 
         public bool IsEnabled

@@ -42,7 +42,7 @@
                             <viewModels:SocialNetworksViewModel/>
                         </Grid.DataContext>
                         <CheckBox Style="{DynamicResource StateCheckBox}" Background="Transparent" IsChecked="{Binding GoogleAccountIsChecked}">
-                            <Image Source="/Assests/Images/Register_google.png" 
+                            <Image Source="pack://application:,,,/Omega Red;component/Assests/Images/Register_google.png" 
                                        Stretch="Uniform" 
                                        Height="64" 
                                        Width="64"/>

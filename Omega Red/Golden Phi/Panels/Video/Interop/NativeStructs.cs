@@ -46,5 +46,14 @@ namespace Golden_Phi.Panels.Video.Interop
             public int FullScreen_RefreshRateInHz;
             public int PresentationInterval;
         }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public sealed class RECT
+        {
+            public int left;
+            public int top;
+            public int right;
+            public int bottom;
+        }
     }
 }

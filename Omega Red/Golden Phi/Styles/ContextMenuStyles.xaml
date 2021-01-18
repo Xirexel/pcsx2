@@ -124,27 +124,27 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ContextMenu}">
-                    <Border Background="Transparent" Padding="10">
-                        <Border Background="{TemplateBinding Background}" 
-                            BorderBrush="{TemplateBinding BorderBrush}" 
-                            BorderThickness="{DynamicResource StandardBorderThickness}"
-                                CornerRadius="{DynamicResource StandardCornerRadius}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition/>
-                                    <ColumnDefinition/>
-                                </Grid.ColumnDefinitions>
-                                <Button Style="{DynamicResource BaseBtn}" Width="90" Height="90" Command="{Binding ConfirmCommand}">
-                                    <TextBlock Margin="8" FontSize="20" FontWeight="Bold" Text="{DynamicResource YesTitle}" 
-                                           Foreground="{TemplateBinding Foreground}"/>
-                                </Button>
-                                <Button Style="{DynamicResource BaseBtn}" Width="90" Height="90" Command="{Binding CancelCommand}" Grid.Column="1">
-                                    <TextBlock Margin="8" FontSize="20" FontWeight="Bold" Text="{DynamicResource NoTitle}" 
-                                           Foreground="{TemplateBinding Foreground}"/>
-                                </Button>
-                            </Grid>
-                        </Border>
-                    </Border>
+                    <Grid Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,0,0,0">
+                        <Path  VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Height="89"  Width="300" 
+                          Fill="{TemplateBinding Background}"
+                          Stroke="{TemplateBinding BorderBrush}" StrokeThickness="1"
+                          Data="M 0,0 L 260,0 L 298,27 L 298,82 L 38,82 L 0,55 Z"/>
+                        <Grid Margin="3.5,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Button Margin="10,0,0,0" Style="{DynamicResource BaseBtn}" Width="140" Height="80" Command="{Binding ConfirmCommand}">
+                                <Grid Margin="-5,-2,0,0">
+                                    <Path Height="25" Opacity="0.95" Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Style="{DynamicResource DeleteFillPath}"/>
+                                    <Path Height="25" Opacity="0.95" Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Style="{DynamicResource DeletePath}"/>
+                                </Grid>
+                            </Button>
+                            <Button Style="{DynamicResource BaseBtn}" Width="140" Height="80" Command="{Binding CancelCommand}" Grid.Column="1">
+                                <Path Margin="-5,-2,0,0" Height="25" Opacity="0.95" Fill="{DynamicResource SettinsBackgroundBrush}" Stroke="{DynamicResource OverBorderBrush}" Style="{DynamicResource ClosePath}"/>
+                            </Button>
+                        </Grid>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

@@ -32,6 +32,7 @@ using System.Windows.Data;
 using System.Windows.Threading;
 using Omega_Red.SocialNetworks.Google;
 using System.Xml.Serialization;
+using Omega_Red.Emulators;
 
 namespace Omega_Red.Managers
 {
@@ -96,13 +97,13 @@ namespace Omega_Red.Managers
 
                 m_file_signature = "";
                 
-                if (PCSX2Controller.Instance.IsoInfo != null)
+                if (Emul.Instance.IsoInfo != null)
                 {
-                    var l_disk_serial = PCSX2Controller.Instance.IsoInfo.DiscSerial;
+                    var l_disk_serial = Emul.Instance.IsoInfo.DiscSerial;
 
                     var l_bios_check_sum =
-                    PCSX2Controller.Instance.BiosInfo != null ?
-                    PCSX2Controller.Instance.BiosInfo.GameType == PCSX2Controller.Instance.IsoInfo.GameType ? "_" + PCSX2Controller.Instance.BiosInfo.CheckSum.ToString("X8") : ""
+                    Emul.Instance.BiosInfo != null ?
+                    Emul.Instance.BiosInfo.GameType == Emul.Instance.IsoInfo.GameType ? "_" + Emul.Instance.BiosInfo.CheckSum.ToString("X8") : ""
                     : "";
 
                     load(l_disk_serial, l_bios_check_sum);
@@ -147,7 +148,7 @@ namespace Omega_Red.Managers
                 System.IO.Directory.CreateDirectory(Settings.Default.SlotFolder);
             }
 
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
 
             var files = System.IO.Directory.GetFiles(Settings.Default.SlotFolder, "*.p2stempstate");
@@ -359,7 +360,7 @@ namespace Omega_Red.Managers
                         continue;
                     }
 
-                    if (fi.Name.Contains(l_file_signature))
+                    if (fi.Name.Contains(l_file_signature + "."))
                     {
                         var l_splits = fi.Name.Split(new char[] { '.' });
 
@@ -554,17 +555,17 @@ namespace Omega_Red.Managers
             }
         }
         
-        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
-            if (a_Status != PCSX2Controller.StatusEnum.NoneInitilized)
+            if (a_Status != Emul.StatusEnum.NoneInitilized)
             {
-                if (PCSX2Controller.Instance.IsoInfo != null)
+                if (Emul.Instance.IsoInfo != null)
                 {
-                    var l_disk_serial = PCSX2Controller.Instance.IsoInfo.DiscSerial;
+                    var l_disk_serial = Emul.Instance.IsoInfo.DiscSerial;
 
                     var l_bios_check_sum =
-                    PCSX2Controller.Instance.BiosInfo != null ?
-                    PCSX2Controller.Instance.BiosInfo.GameType == PCSX2Controller.Instance.IsoInfo.GameType ? "_" + PCSX2Controller.Instance.BiosInfo.CheckSum.ToString("X8") : ""
+                    Emul.Instance.BiosInfo != null ?
+                    Emul.Instance.BiosInfo.GameType == Emul.Instance.IsoInfo.GameType ? "_" + Emul.Instance.BiosInfo.CheckSum.ToString("X8") : ""
                     : "";
 
                     load(l_disk_serial, l_bios_check_sum);
@@ -586,10 +587,10 @@ namespace Omega_Red.Managers
 
                 m_ListSlotIndexes.RemoveAt(0);
 
-                if (PCSX2Controller.Instance.IsoInfo.GameType == GameType.PSP)
+                if (Emul.Instance.IsoInfo.GameType == GameType.PSP)
                     lCheckSum = 1;
                 else
-                    lCheckSum = PCSX2Controller.Instance.BiosInfo.CheckSum;
+                    lCheckSum = Emul.Instance.BiosInfo.CheckSum;
 
 
                 var lIndexString = lIndex.ToString();
@@ -613,19 +614,22 @@ namespace Omega_Red.Managers
         
         private void addSaveStateInfo(SaveStateInfo a_SaveStateInfo, ObservableCollection<SaveStateInfo> a_saveStateInfoCollection = null)
         {
-            if (PCSX2Controller.Instance.BiosInfo == null || PCSX2Controller.Instance.BiosInfo.CheckSum != a_SaveStateInfo.CheckSum)
+            if(Emul.Instance.IsoInfo != null)
+                a_SaveStateInfo.DiscSerial = Emul.Instance.IsoInfo.DiscSerial;
+
+            if (Emul.Instance.BiosInfo == null || Emul.Instance.BiosInfo.CheckSum != a_SaveStateInfo.CheckSum)
                 if (1 != a_SaveStateInfo.CheckSum && 2 != a_SaveStateInfo.CheckSum)
                     return;
                 else
                 {
                     if(a_SaveStateInfo.CheckSum == 1)
-                        a_SaveStateInfo.Type = SaveStateType.PPSSPP;
+                        a_SaveStateInfo.Type = GameType.PSP;
                     else if (a_SaveStateInfo.CheckSum == 2)
-                        a_SaveStateInfo.Type = SaveStateType.PCSX;
+                        a_SaveStateInfo.Type = GameType.PS1;
 
                 }
             else
-                a_SaveStateInfo.Type = SaveStateType.PCSX2;
+                a_SaveStateInfo.Type = GameType.PS2;
 
             if(a_saveStateInfoCollection == null)
             {
@@ -697,7 +701,7 @@ namespace Omega_Red.Managers
                         Console.WriteLine(e.Message);
                     }
 
-                    if (fi.Name.Contains(PCSX2Controller.Instance.IsoInfo.DiscSerial))
+                    if (fi.Name.Contains(Emul.Instance.IsoInfo.DiscSerial))
                     {
                         var l_splits = fi.Name.Split(new char[] { '.' });
 
@@ -745,86 +749,18 @@ namespace Omega_Red.Managers
                     File.Delete(a_SaveStateInfo.FilePath);
             }
         }
-        
-        public void saveState(SaveStateInfo a_SaveStateInfo, string aDate, double aDurationInSeconds)
+
+        public async void save(SaveStateInfo a_SaveStateInfo)
         {
             if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
             {
-                Tools.Savestate.SStates.Instance.Save(a_SaveStateInfo.FilePath, aDate, aDurationInSeconds);
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                {
-                    updateSave(a_SaveStateInfo);
-                });
+                await Emul.Instance.saveState(a_SaveStateInfo);
+
+                updateSave(a_SaveStateInfo);
             }
         }
 
-        public void savePPSSPPState(SaveStateInfo a_SaveStateInfo, string aDate, double aDurationInSeconds)
-        {
-            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
-            {
-                string l_tempFile = a_SaveStateInfo.FilePath + "temp";
-
-                PPSSPPControl.Instance.saveState(l_tempFile);
-
-                if (File.Exists(l_tempFile))
-                {
-                    Tools.Savestate.SStates.Instance.SavePPSSPP(a_SaveStateInfo.FilePath, l_tempFile, aDate, aDurationInSeconds);
-
-                    File.Delete(l_tempFile);
-                }
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                {
-                    updateSave(a_SaveStateInfo);
-                });
-            }
-        }
-
-        public void savePCSXState(SaveStateInfo a_SaveStateInfo, string aDate, double aDurationInSeconds)
-        {
-            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
-            {
-                string l_tempFile = a_SaveStateInfo.FilePath + "temp";
-
-                PCSXControl.Instance.saveState(l_tempFile);
-
-                if (File.Exists(l_tempFile))
-                {
-                    Tools.Savestate.SStates.Instance.SavePCSX(a_SaveStateInfo.FilePath, l_tempFile, aDate, aDurationInSeconds);
-
-                    File.Delete(l_tempFile);
-                }
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                {
-                    updateSave(a_SaveStateInfo);
-                });
-            }
-        }
-
-        public void loadState(SaveStateInfo a_SaveStateInfo)
-        {
-            if (System.IO.File.Exists(a_SaveStateInfo.FilePath))
-            {
-                Tools.Savestate.SStates.Instance.Load(a_SaveStateInfo.FilePath);
-            }
-        }
-
-        public void loadPPSSPPState(SaveStateInfo a_SaveStateInfo, string a_tempFilePath)
-        {
-            if (System.IO.File.Exists(a_SaveStateInfo.FilePath))
-            {
-                Tools.Savestate.SStates.Instance.LoadPPSSPP(a_SaveStateInfo.FilePath, a_tempFilePath);
-            }
-        }
-
-        public void loadPCSXState(SaveStateInfo a_SaveStateInfo, string a_tempFilePath)
-        {
-            if (System.IO.File.Exists(a_SaveStateInfo.FilePath))
-            {
-                Tools.Savestate.SStates.Instance.LoadPCSX(a_SaveStateInfo.FilePath, a_tempFilePath);
-            }
-        }
-
-        public void quickSavePPSSPP(string aDate, double aDurationInSeconds)
+        public async void quickSave()
         {
             if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
             {
@@ -832,87 +768,7 @@ namespace Omega_Red.Managers
 
                 m_quickSaves.RemoveAt(0);
 
-                l_quickSave.Date = aDate;
-
-                l_quickSave.Duration = TimeSpan.FromSeconds(aDurationInSeconds).ToString(@"dd\.hh\:mm\:ss");
-
-                var l_file_path = l_quickSave.FilePath + "_temp";
-                
-                string l_tempFile = l_quickSave.FilePath + "temp";
-
-                PPSSPPControl.Instance.saveState(l_tempFile);
-
-                if (File.Exists(l_tempFile))
-                {
-                    Tools.Savestate.SStates.Instance.SavePPSSPP(l_file_path, l_tempFile, aDate, aDurationInSeconds);
-
-                    File.Delete(l_tempFile);
-                }
-
-                File.Delete(l_quickSave.FilePath);
-
-                File.Move(l_file_path, l_quickSave.FilePath);
-
-                m_quickSaves.Add(l_quickSave);
-
-                updateSave(l_quickSave);
-            }
-        }
-
-        public void quickSavePCSX(string aDate, double aDurationInSeconds)
-        {
-            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
-            {
-                var l_quickSave = m_quickSaves.ElementAt(0);
-
-                m_quickSaves.RemoveAt(0);
-
-                l_quickSave.Date = aDate;
-
-                l_quickSave.Duration = TimeSpan.FromSeconds(aDurationInSeconds).ToString(@"dd\.hh\:mm\:ss");
-
-                var l_file_path = l_quickSave.FilePath + "_temp";
-
-                string l_tempFile = l_quickSave.FilePath + "temp";
-
-                PCSXControl.Instance.saveState(l_tempFile);
-
-                if (File.Exists(l_tempFile))
-                {
-                    Tools.Savestate.SStates.Instance.SavePCSX(l_file_path, l_tempFile, aDate, aDurationInSeconds);
-
-                    File.Delete(l_tempFile);
-                }
-
-                File.Delete(l_quickSave.FilePath);
-
-                File.Move(l_file_path, l_quickSave.FilePath);
-
-                m_quickSaves.Add(l_quickSave);
-
-                updateSave(l_quickSave);
-            }
-        }
-
-        public void quickSave(string aDate, double aDurationInSeconds)
-        {
-            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
-            {
-                var l_quickSave = m_quickSaves.ElementAt(0);
-
-                m_quickSaves.RemoveAt(0);
-
-                l_quickSave.Date = aDate;
-
-                l_quickSave.Duration = TimeSpan.FromSeconds(aDurationInSeconds).ToString(@"dd\.hh\:mm\:ss");
-
-                var l_file_path = l_quickSave.FilePath + "_temp";
-
-                Tools.Savestate.SStates.Instance.Save(l_file_path, aDate, aDurationInSeconds);
-
-                File.Delete(l_quickSave.FilePath);
-
-                File.Move(l_file_path, l_quickSave.FilePath);
+                await Emul.Instance.quickSave(l_quickSave);
 
                 m_quickSaves.Add(l_quickSave);
 
@@ -947,31 +803,40 @@ namespace Omega_Red.Managers
             });
         }
 
-        private void updateSave(SaveStateInfo a_saveState)
+        public void updateSave(SaveStateInfo a_saveState)
         {
-            var lstateSave = SStates.Instance.readData(a_saveState.FilePath, a_saveState.Index, a_saveState.IsAutosave, a_saveState.IsQuicksave);
-
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            try
             {
-                var lcurrentstateSave = _saveStateInfoCollection.FirstOrDefault(stateSave => stateSave.Index == a_saveState.Index);
 
-                _saveStateInfoCollection.Remove(lcurrentstateSave);
+                var lstateSave = SStates.Instance.readData(a_saveState.FilePath, a_saveState.Index, a_saveState.IsAutosave, a_saveState.IsQuicksave);
 
-                if (lcurrentstateSave != null)
-                    lstateSave.IsCloudsave = lcurrentstateSave.IsCloudsave;
-
-                if (lcurrentstateSave != null && lcurrentstateSave.IsCloudOnlysave)
-                    lstateSave.IsCloudsave = true;
-
-                if (lcurrentstateSave != null)
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
                 {
-                    lstateSave.CloudSaveDate = lcurrentstateSave.CloudSaveDate;
+                    var lcurrentstateSave = _saveStateInfoCollection.FirstOrDefault(stateSave => stateSave.Index == a_saveState.Index);
 
-                    lstateSave.CloudSaveDuration = lcurrentstateSave.CloudSaveDuration;
-                }
+                    _saveStateInfoCollection.Remove(lcurrentstateSave);
 
-                addSaveStateInfo(lstateSave);
-            });
+                    if (lcurrentstateSave != null)
+                        lstateSave.IsCloudsave = lcurrentstateSave.IsCloudsave;
+
+                    if (lcurrentstateSave != null && lcurrentstateSave.IsCloudOnlysave)
+                        lstateSave.IsCloudsave = true;
+
+                    if (lcurrentstateSave != null)
+                    {
+                        lstateSave.CloudSaveDate = lcurrentstateSave.CloudSaveDate;
+
+                        lstateSave.CloudSaveDuration = lcurrentstateSave.CloudSaveDuration;
+                    }
+
+                    addSaveStateInfo(lstateSave);
+
+                    Collection.Refresh();
+                });
+            }
+            catch (Exception)
+            {
+            }
         }
         
         public async void persistItemAsync(object a_Item, SaveStateInfo a_SaveStateInfo, Action a_callbackAction)
@@ -1026,87 +891,7 @@ namespace Omega_Red.Managers
                     a_callbackAction();
             }
         }
-
-        public void autoSave(string aDate, double aDurationInSeconds)
-        {
-            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
-            {
-                m_autoSave.Date = aDate;
-
-                m_autoSave.Duration = TimeSpan.FromSeconds(aDurationInSeconds).ToString(@"dd\.hh\:mm\:ss");
-
-                var l_file_path = m_autoSave.FilePath + "_temp";
-
-                Tools.Savestate.SStates.Instance.Save(l_file_path, aDate, aDurationInSeconds);
-
-                File.Delete(m_autoSave.FilePath);
-
-                File.Move(l_file_path, m_autoSave.FilePath);
-
-                updateAutoSave();
-            }
-        }
-
-        public void autoPPSSPPSave(string aDate, double aDurationInSeconds)
-        {
-            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
-            {
-                m_autoSave.Date = aDate;
-
-                m_autoSave.Duration = TimeSpan.FromSeconds(aDurationInSeconds).ToString(@"dd\.hh\:mm\:ss");
-
-                string l_tempFile = m_autoSave.FilePath + "temp";
-
-                PPSSPPControl.Instance.saveState(l_tempFile);
-
-                Thread.Sleep(500);
-
-                var l_file_path = m_autoSave.FilePath + "_temp";
-                if (File.Exists(l_tempFile))
-                {
-                    Tools.Savestate.SStates.Instance.SavePPSSPP(l_file_path, l_tempFile, aDate, aDurationInSeconds);
-
-                    File.Delete(l_tempFile);
-                }
-
-                File.Delete(m_autoSave.FilePath);
-
-                File.Move(l_file_path, m_autoSave.FilePath);
-
-                updateAutoSave();
-            }
-        }
-
-        public void autoPCSXSave(string aDate, double aDurationInSeconds)
-        {
-            if (System.IO.Directory.Exists(Settings.Default.SlotFolder))
-            {
-                m_autoSave.Date = aDate;
-
-                m_autoSave.Duration = TimeSpan.FromSeconds(aDurationInSeconds).ToString(@"dd\.hh\:mm\:ss");
-
-                string l_tempFile = m_autoSave.FilePath + "temp";
-
-                PCSXControl.Instance.saveState(l_tempFile);
-
-                Thread.Sleep(500);
-
-                var l_file_path = m_autoSave.FilePath + "_temp";
-                if (File.Exists(l_tempFile))
-                {
-                    Tools.Savestate.SStates.Instance.SavePCSX(l_file_path, l_tempFile, aDate, aDurationInSeconds);
-
-                    File.Delete(l_tempFile);
-                }
-
-                File.Delete(m_autoSave.FilePath);
-
-                File.Move(l_file_path, m_autoSave.FilePath);
-
-                updateAutoSave();
-            }
-        }
-                     
+                                     
         public async void removeItem(object a_Item)
         {
             var l_SaveStateInfo = a_Item as SaveStateInfo;
@@ -1288,6 +1073,8 @@ namespace Omega_Red.Managers
 
             return false;
         }
+
+        public SaveStateInfo AutoSave { get { return m_autoSave; } }
 
         public void registerItem(object a_Item)
         {

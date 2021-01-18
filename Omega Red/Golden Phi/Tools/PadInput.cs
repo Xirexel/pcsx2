@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Golden_Phi.Managers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -112,11 +113,18 @@ namespace Golden_Phi.Tools
         private GetTouchPadCallback m_GetTouchPadCallback = null;
 
         private IntPtr m_TouchPadCallbackHandler = IntPtr.Zero;
-
-        public GetTouchPadCallback TouchPadCallback { get { return m_GetTouchPadCallback; } }
-
+        
         public IntPtr TouchPadCallbackHandler { get { return m_TouchPadCallbackHandler; } }
 
+
+
+        private GetTouchPadCallback m_GetVibrationCallback = null;
+
+        private IntPtr m_VibrationCallbackHandler = IntPtr.Zero;
+
+
+
+        public IntPtr VibrationCallbackHandler { get { return m_VibrationCallbackHandler; } }
 
         private static PadInput m_PadInput = new PadInput();
 
@@ -126,6 +134,9 @@ namespace Golden_Phi.Tools
             m_GetTouchPadCallback = getTouchPad;
 
             m_TouchPadCallbackHandler = Marshal.GetFunctionPointerForDelegate(m_GetTouchPadCallback);
+            
+
+            m_VibrationCallbackHandler = Marshal.GetFunctionPointerForDelegate(PadControlManager.Instance.VibrationCallback);
 
             int size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(XINPUT_STATE));
 
@@ -136,8 +147,8 @@ namespace Golden_Phi.Tools
         {
             var l_state = PadControl.getState();
 
-            //if (Managers.AdditionalControlManager.Instance.ButtonCheck(l_state.Gamepad.wButtons, PadControl))
-            //    return m_Ptr;
+            if (Managers.AdditionalControlManager.Instance.ButtonCheck(l_state.Gamepad.wButtons, PadControl))
+                return m_Ptr;
 
             Marshal.StructureToPtr(l_state, m_Ptr, false);
 

@@ -23,7 +23,7 @@ namespace PPSSPPEmul.Util
             IntPtr a_parent, 
             IntPtr a_CaptureHandler,
             IntPtr a_getTouchPadCallback,
-            [MarshalAs(UnmanagedType.FunctionPtr)] SetDataCallback a_setAudioDataCallback,
+            IntPtr a_setAudioDataCallbackHandler,
             [MarshalAs(UnmanagedType.LPWStr)]String szStickDirectory);
         
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -134,13 +134,13 @@ namespace PPSSPPEmul.Util
             }
         }
 
-        public void launch(string szCmdLine, IntPtr a_VideoPanelHandler, IntPtr a_CaptureHandler, IntPtr a_getTouchPadCallback, SetDataCallback a_setAudioDataCallback, string szStickDirectory)
+        public void launch(string szCmdLine, IntPtr a_VideoPanelHandler, IntPtr a_CaptureHandler, IntPtr a_getTouchPadCallback, IntPtr a_AudioCaptureTargetHandler, string szStickDirectory)
         {
             if (!m_IsInitialized)
                 return;
 
             if (m_PPSSPPFunctions.Launch != null)
-                m_PPSSPPFunctions.Launch(szCmdLine, a_VideoPanelHandler, a_CaptureHandler, a_getTouchPadCallback, a_setAudioDataCallback, szStickDirectory);
+                m_PPSSPPFunctions.Launch(szCmdLine, a_VideoPanelHandler, a_CaptureHandler, a_getTouchPadCallback, a_AudioCaptureTargetHandler, szStickDirectory);
         }
 
         public void getGameInfo(string a_filename, out string a_title, out string a_id)

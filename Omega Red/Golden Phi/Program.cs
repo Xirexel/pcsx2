@@ -35,7 +35,12 @@ namespace Golden_Phi
                         process.Kill();
                 }
             }
-            
+
+            if (Utilities.DirectInputNative.Instance.isInit)
+            {
+
+            }
+
             var t = new Thread(() =>
             {
                 try

@@ -212,6 +212,10 @@ void ResetPad(int port, int slot)
 	pads[port][slot].previousType = config.padConfigs[port][slot].type;
 
 	pads[port][slot].config = 0;
+
+	pads[port][slot].vibrateI[0] = 0x3;
+
+	pads[port][slot].vibrateI[1] = 0x4;
 }
 
 
@@ -614,6 +618,11 @@ void LilyPad::Update(unsigned int port, unsigned int slot)
 		for (int port = 0; port < 2; port++) {
 			for (int slot = 0; slot < 4; slot++) {
 				for (int motor = 0; motor < 2; motor++) {
+
+					auto nextVibrate = pads[port][slot].nextVibrate[motor];
+
+					auto currentVibrate = pads[port][slot].currentVibrate[motor];
+
 					// TODO:  Probably be better to send all of these at once.
 					if (pads[port][slot].nextVibrate[motor] | pads[port][slot].currentVibrate[motor]) {
 						pads[port][slot].currentVibrate[motor] = pads[port][slot].nextVibrate[motor];

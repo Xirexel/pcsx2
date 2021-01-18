@@ -1,4 +1,5 @@
-﻿using Golden_Phi.Tools;
+﻿using Golden_Phi.Emulators;
+using Golden_Phi.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,7 +41,7 @@ namespace Golden_Phi.Models
             }
         }
 
-        public Emul.GameType GameType { get; set; }
+        public GameType GameType { get; set; }
 
         public bool IsCloudsave { get; set; }
 

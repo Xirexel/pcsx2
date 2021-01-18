@@ -13,6 +13,7 @@
 */
 
 using Omega_Red.Managers;
+using Omega_Red.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -162,6 +163,13 @@ namespace Omega_Red.Panels
                     continue;
 
                 l_ItemExpander.IsExpanded = false;
+            }
+
+            var l_MediaRecorderInfoViewModel = l_Expander.DataContext as MediaRecorderInfoViewModel;
+
+            if(l_MediaRecorderInfoViewModel != null)
+            {
+                MediaRecorderManager.Instance.loadAsync();
             }
 
             this.UpdateLayout();

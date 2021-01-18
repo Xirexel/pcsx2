@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,14 +21,6 @@ using System.Threading.Tasks;
 
 namespace Omega_Red.Models
 {
-    public enum GameType
-    {
-        PS2,
-        PS1,
-        PSP,
-        Unknown
-    }
-
     public class IsoInfo
     {
         public string Title { get; set; }

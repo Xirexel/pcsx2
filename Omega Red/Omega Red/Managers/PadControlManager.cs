@@ -34,7 +34,7 @@ using System.Xml.Serialization;
 namespace Omega_Red.Managers
 {
     delegate void VibrationCallbackDelegate(uint a_vibrationCombo);
-    
+
     class PadControlManager
     {
         private static PadControlManager m_Instance = null;
@@ -57,21 +57,23 @@ namespace Omega_Red.Managers
 
         private bool m_is_vibration_activity = false;
 
+        private bool m_DirectInputLockFlag = false;
+
 
         public static PadControlManager Instance { get { if (m_Instance == null) m_Instance = new PadControlManager(); return m_Instance; } }
 
 
-                
+
         private PadControlManager()
         {
             VibrationCallback = VibrationCallbackInner;
-            
+
             //load();
 
             mCustomerView = CollectionViewSource.GetDefaultView(_padControlInfoCollection);
 
             mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
-                       
+
 
             m_check_connecting_pad_Timer.Elapsed += check_connecting_pad_Elapsed;
 
@@ -81,7 +83,7 @@ namespace Omega_Red.Managers
 
 
 
-            m_check_vibration_activity_pad_Timer.Elapsed += (sender, e)=> {
+            m_check_vibration_activity_pad_Timer.Elapsed += (sender, e) => {
 
                 if (!m_is_vibration_activity)
                 {
@@ -97,7 +99,7 @@ namespace Omega_Red.Managers
             m_check_vibration_activity_pad_Timer.AutoReset = true;
 
 
-            
+
 
 
             //mCustomerView = CollectionViewSource.GetDefaultView(
@@ -242,96 +244,226 @@ namespace Omega_Red.Managers
 
         private void check_connecting_pad_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            IList<uint> l_XInputGamePadList = new List<uint>();
-
-            IList<uint> l_removeXInputGamePadList = new List<uint>();
-
             if (XInputNative.Instance.isInit)
             {
+
+                IList<uint> l_GamePadList = new List<uint>();
+
+                IList<uint> l_removeGamePadList = new List<uint>();
+
+
                 for (uint i = 0; i < XInputNative.XUSER_MAX_COUNT; i++)
                 {
                     XInputNative.XINPUT_CAPABILITIES l_capabilities = new XInputNative.XINPUT_CAPABILITIES();
-                    
-                    if(XInputNative.Instance.XInputGetCapabilities(i, 0, ref l_capabilities) == XInputNative.ERROR_SUCCESS)
+
+                    if (XInputNative.Instance.XInputGetCapabilities(i, 0, ref l_capabilities) == XInputNative.ERROR_SUCCESS)
                     {
-                        if(l_capabilities.Type == XInputNative.XINPUT_DEVTYPE_GAMEPAD &&
+                        if (l_capabilities.Type == XInputNative.XINPUT_DEVTYPE_GAMEPAD &&
                            l_capabilities.SubType == XInputNative.XINPUT_DEVSUBTYPE_GAMEPAD)
                         {
-                            l_XInputGamePadList.Add(i);
+                            l_GamePadList.Add(i);
                         }
                         else
                         {
-                            l_removeXInputGamePadList.Add(i);
+                            l_removeGamePadList.Add(i);
                         }
                     }
                     else
                     {
-                        l_removeXInputGamePadList.Add(i);
+                        l_removeGamePadList.Add(i);
                     }
                 }
-            }
 
-            System.Windows.Application.Current.Dispatcher.BeginInvoke(
-            System.Windows.Threading.DispatcherPriority.Background,
-            (System.Threading.ThreadStart)delegate ()
-            {
-                foreach (var item in l_removeXInputGamePadList)
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Background,
+                (System.Threading.ThreadStart)delegate ()
                 {
+                    foreach (var item in l_removeGamePadList)
+                    {
 
-                    var l_padControlInfo = _padControlInfoCollection.FirstOrDefault((a_item) => {
+                        var l_padControlInfo = _padControlInfoCollection.FirstOrDefault((a_item) => {
 
-                        if(a_item.PadType == PadType.XInputPad)
-                        {
-                            var l_pad = (a_item as XInputPadControlInfoPanel);
-
-                            if(l_pad != null)
+                            if (a_item.PadType == PadType.XInputPad)
                             {
-                                return l_pad.DeviceIndex == item;
-                            }
+                                var l_pad = (a_item as XInputPadControlInfoPanel);
 
-                            return false;
+                                if (l_pad != null)
+                                {
+                                    return l_pad.DeviceIndex == item;
+                                }
+
+                                return false;
+                            }
+                            else
+                                return false;
+                        });
+
+
+                        if (l_padControlInfo != null)
+                        {
+                            l_padControlInfo.stopTimer();
+
+                            _padControlInfoCollection.Remove(l_padControlInfo);
+                        }
+                    }
+
+                });
+
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Background,
+                (System.Threading.ThreadStart)delegate ()
+                {
+                    foreach (var item in l_GamePadList)
+                    {
+
+                        var l_padControlInfo = _padControlInfoCollection.FirstOrDefault((a_item) => {
+
+                            if (a_item.PadType == PadType.XInputPad)
+                            {
+                                var l_pad = (a_item as XInputPadControlInfoPanel);
+
+                                if (l_pad != null)
+                                {
+                                    return l_pad.DeviceIndex == item;
+                                }
+
+                                return false;
+                            }
+                            else
+                                return false;
+                        });
+
+                        if (l_padControlInfo == null)
+                            _padControlInfoCollection.Add(
+                                new XInputPadControlInfoPanel(item)
+                                );
+                    }
+
+                });
+
+            }
+                       
+            if (DirectInputNative.Instance.isInit)
+            {
+                if (m_DirectInputLockFlag)
+                    return;
+
+                m_DirectInputLockFlag = true;
+
+                var l_GamePadList = DirectInputNative.Instance.getGamePadList();
+
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Background,
+                (System.Threading.ThreadStart)delegate ()
+                {
+                    var l_DirectInputPads = _padControlInfoCollection.Select((a_item) =>
+                    {
+                        if (a_item.PadType == PadType.DirectInputPad)
+                        {
+                            return a_item;
                         }
                         else
-                            return false; });
+                            return null;
+                    });
 
+                    var l_DirectInputPadList = l_DirectInputPads.ToList();
 
-                    if (l_padControlInfo != null)
-                        _padControlInfoCollection.Remove(l_padControlInfo);
-                }
-
-            });
-
-            System.Windows.Application.Current.Dispatcher.BeginInvoke(
-            System.Windows.Threading.DispatcherPriority.Background,
-            (System.Threading.ThreadStart)delegate ()
-            {
-                foreach (var item in l_XInputGamePadList)
-                {
-
-                    var l_padControlInfo = _padControlInfoCollection.FirstOrDefault((a_item) => {
-
-                        if (a_item.PadType == PadType.XInputPad)
+                    foreach (var l_padControlInfo in l_DirectInputPadList)
+                    {
+                        var l_gamePad = l_GamePadList.FirstOrDefault((a_item) =>
                         {
-                            var l_pad = (a_item as XInputPadControlInfoPanel);
+                            var l_pad = (l_padControlInfo as DirectInputPadControlInfoPanel);
 
                             if (l_pad != null)
                             {
-                                return l_pad.DeviceIndex == item;
+                                return l_pad.DeviceGuid == a_item.Item2;
                             }
+                            else
+                                return false;
+                        });
 
-                            return false;
+
+                        if (l_gamePad == null && l_padControlInfo != null)
+                        {
+                            l_padControlInfo.stopTimer();
+
+                            _padControlInfoCollection.Remove(l_padControlInfo);
                         }
-                        else
-                            return false;
-                    });
-                    
-                    if (l_padControlInfo == null)
-                        _padControlInfoCollection.Add(
-                            new XInputPadControlInfoPanel(item)
-                            );
-                }
+                    }
 
-            });
+                });
+
+                if(l_GamePadList.Count == 0)
+                    m_DirectInputLockFlag = false;
+
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Background,
+                (System.Threading.ThreadStart)delegate ()
+                {
+                    bool l_state = false;
+
+                    foreach (var item in l_GamePadList)
+                    {
+
+                        var l_padControlInfo = _padControlInfoCollection.FirstOrDefault((a_item) =>
+                        {
+
+                            if (a_item.PadType == PadType.DirectInputPad)
+                            {
+                                var l_pad = (a_item as DirectInputPadControlInfoPanel);
+
+                                if (l_pad != null)
+                                {
+                                    return l_pad.DeviceGuid == item.Item2;
+                                }
+
+                                return false;
+                            }
+                            else
+                                return false;
+                        });
+
+                        if (l_padControlInfo == null)
+                        {
+                            l_state = true;
+
+                            ThreadPool.QueueUserWorkItem((state) => {
+
+                                try
+                                {
+                                    var l_DirectInputDevice = DirectInputNative.Instance.createDevice(item.Item2);
+
+                                    if (l_DirectInputDevice != null)
+                                    {
+                                        l_DirectInputDevice.setData();
+
+                                        l_DirectInputDevice.Acquire();
+
+                                        var l_PadControl = new DirectInputPadControl(l_DirectInputDevice);
+
+                                        System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                                        System.Windows.Threading.DispatcherPriority.Background,
+                                        (System.Threading.ThreadStart)delegate ()
+                                        {
+                                            _padControlInfoCollection.Add(
+                                                new DirectInputPadControlInfoPanel(item, l_PadControl)
+                                                );
+                                        });
+
+                                    }
+                                }
+                                catch (Exception)
+                                {
+                                }
+
+                                m_DirectInputLockFlag = false;
+                            });
+                        }
+                    }
+                    
+                    m_DirectInputLockFlag = l_state;
+                });
+            }
         }
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
@@ -373,7 +505,7 @@ namespace Omega_Red.Managers
 
                 if (l_padControlInfo != null)
                     _padControlInfoCollection.Remove(l_padControlInfo);
-                
+
                 _padControlInfoCollection.Insert(0, a_padControlInfo);
 
                 if (_padControlInfoCollection.Count != 0)
@@ -404,36 +536,13 @@ namespace Omega_Red.Managers
             m_currentPadControl = a_PadControlInfo.PadControl;
 
             PadInput.Instance.PadControl = m_currentPadControl;
-
-
-            //m_PadControlConfig[a_pad].PadIndex = mCustomerView.CurrentPosition;
-
-            //save();
-
-            //ModuleControl.Instance.closePad();
-
-            //ModuleControl.Instance.shutdownPad();
-
-            //ModuleControl.Instance.initPad();
         }
 
         private void load()
         {
-
-            //m_PadControlConfig.Clear();
-
-            //if (string.IsNullOrEmpty(Omega_Red.Properties.Settings.Default.PadControlConfigCollection))
-            //{
-            //    m_PadControlConfig.Add(new PadControlConfig() { PadIndex = 0});
-
-            //    save();
-
-            //    return;
-            //}
-
             XmlSerializer ser = new XmlSerializer(typeof(List<PadControlConfig>));
 
-            XmlReader xmlReader = XmlReader.Create(new StringReader(Omega_Red.Properties.Settings.Default.PadControlConfigCollection));
+            XmlReader xmlReader = XmlReader.Create(new StringReader(Properties.Settings.Default.PadControlConfigCollection));
 
             if (ser.CanDeserialize(xmlReader))
             {
@@ -459,7 +568,7 @@ namespace Omega_Red.Managers
 
             StreamReader reader = new StreamReader(stream);
 
-            Omega_Red.Properties.Settings.Default.PadControlConfigCollection = reader.ReadToEnd();
+            Properties.Settings.Default.PadControlConfigCollection = reader.ReadToEnd();
         }
 
 

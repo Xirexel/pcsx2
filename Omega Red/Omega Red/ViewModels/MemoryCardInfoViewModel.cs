@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Models;
 using Omega_Red.SocialNetworks.Google;
@@ -32,7 +33,7 @@ namespace Omega_Red.ViewModels
     {
         public MemoryCardInfoViewModel()
         {
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
             GoogleAccountManager.Instance.mEnableStateEvent += Instance_mEnableStateEvent;
         }
@@ -54,13 +55,13 @@ namespace Omega_Red.ViewModels
                
         private bool m_IsEnabled = false;
 
-        private PCSX2Controller.StatusEnum m_Status = PCSX2Controller.StatusEnum.NoneInitilized;
+        private Emul.StatusEnum m_Status = Emul.StatusEnum.NoneInitilized;
         
-        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
             m_Status = a_Status;
 
-            IsEnabled = a_Status != PCSX2Controller.StatusEnum.NoneInitilized;
+            IsEnabled = a_Status != Emul.StatusEnum.NoneInitilized;
         } 
 
         public bool IsEnabled

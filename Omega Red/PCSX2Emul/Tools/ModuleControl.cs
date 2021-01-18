@@ -115,6 +115,12 @@ namespace PCSX2Emul.Tools
 
         private IntPtr m_TouchPadCallbackHandler = IntPtr.Zero;
 
+        private IntPtr m_VibrationCallbackHandler = IntPtr.Zero;
+
+        private IntPtr m_VideoTargetHandler = IntPtr.Zero;
+
+        private IntPtr m_AudioCaptureTargetHandler = IntPtr.Zero;
+
         private string m_iso_file = "";
         
         private static ModuleControl m_Instance = null;
@@ -136,6 +142,23 @@ namespace PCSX2Emul.Tools
         {
             m_TouchPadCallbackHandler = a_TouchPadCallbackHandler;
         }
+
+        public void setVibrationCallbackHandler(IntPtr a_VibrationCallbackHandler)
+        {
+            m_VibrationCallbackHandler = a_VibrationCallbackHandler;
+        }
+
+        public void setVideoTargetHandler(IntPtr a_VideoTargetHandler)
+        {
+            m_VideoTargetHandler = a_VideoTargetHandler;
+        }
+
+        public void setAudioCaptureTargetHandler(IntPtr a_AudioCaptureTargetHandler)
+        {
+            m_AudioCaptureTargetHandler = a_AudioCaptureTargetHandler;
+        }
+
+
 
         
 
@@ -175,7 +198,7 @@ namespace PCSX2Emul.Tools
                 case PCSX2ModuleManager.ModuleType.DEV9:
                     break;
                 case PCSX2ModuleManager.ModuleType.Pad:
-                    setPadConfig(l_XmlDocument, l_PropertyNode, m_TouchPadCallbackHandler);
+                    setPadConfig(l_XmlDocument, l_PropertyNode, m_TouchPadCallbackHandler, m_VibrationCallbackHandler);
                     break;
                 case PCSX2ModuleManager.ModuleType.CDVD:
                     break;
@@ -278,37 +301,6 @@ namespace PCSX2Emul.Tools
             }
         }
 
-        public void initPad()
-        {
-            var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.Pad);
-
-            XmlDocument l_XmlDocument = new XmlDocument();
-
-            XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
-
-            l_XmlDocument.AppendChild(ldocNode);
-
-            XmlNode rootNode = l_XmlDocument.CreateElement("Config");
-
-            XmlNode l_PropertyNode = l_XmlDocument.CreateElement("Init");
-
-            //setPadConfig(l_XmlDocument, l_PropertyNode, Tools.PadInput.Instance.TouchPadCallbackHandler);
-
-            rootNode.AppendChild(l_PropertyNode);
-
-            l_XmlDocument.AppendChild(rootNode);
-
-            using (var stringWriter = new StringWriter())
-            using (var xmlTextWriter = XmlWriter.Create(stringWriter))
-            {
-                l_XmlDocument.WriteTo(xmlTextWriter);
-
-                xmlTextWriter.Flush();
-
-                l_Module.execute(stringWriter.GetStringBuilder().ToString());
-            }
-        }
-
         public void closePad()
         {
             var l_Module = PCSX2ModuleManager.Instance.getModule(PCSX2ModuleManager.ModuleType.Pad);
@@ -367,22 +359,8 @@ namespace PCSX2Emul.Tools
             }
         }
 
-        public void setMemoryCard(string a_file_path = null)
+        public void setMemoryCard(string a_file_path = null, int a_port = 0)
         {
-            //if (PCSX2Controller.Instance.IsoInfo != null && PCSX2Controller.Instance.IsoInfo.GameType == GameType.PS1)
-            //{
-            //    int l_slot = 0;
-
-            //    if (string.IsNullOrWhiteSpace(a_file_path))
-            //        l_slot = -1;
-
-            //    PCSXNative.Instance.setMcd(a_file_path, l_slot);
-
-            //    return;
-            //}
-
-
-
             XmlDocument l_XmlDocument = new XmlDocument();
 
             XmlNode ldocNode = l_XmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
@@ -410,7 +388,7 @@ namespace PCSX2Emul.Tools
 
                 l_attributeNode = l_XmlDocument.CreateAttribute("Slot");
 
-                l_attributeNode.Value = "0";
+                l_attributeNode.Value = a_port.ToString();
 
                 l_McdNode.Attributes.Append(l_attributeNode);
 
@@ -700,11 +678,11 @@ namespace PCSX2Emul.Tools
 
         private void setAudioRendererConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
         {
-            //var l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
+            var l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
 
-            //l_Atrr.Value = Capture.AudioCaptureTarget.Instance.DataCallbackHandler.ToString();
+            l_Atrr.Value = m_AudioCaptureTargetHandler.ToString();
 
-            //a_PropertyNode.Attributes.Append(l_Atrr);
+            a_PropertyNode.Attributes.Append(l_Atrr);
         }
 
         private void setVideoRendererConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode)
@@ -719,11 +697,11 @@ namespace PCSX2Emul.Tools
             a_PropertyNode.Attributes.Append(l_Atrr);
 
 
-            //l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
+            l_Atrr = a_XmlDocument.CreateAttribute("CaptureHandler");
 
-            //l_Atrr.Value = Capture.TargetTexture.Instance.TargetHandler.ToString();
+            l_Atrr.Value = m_VideoTargetHandler.ToString();
 
-            //a_PropertyNode.Attributes.Append(l_Atrr);
+            a_PropertyNode.Attributes.Append(l_Atrr);
 
 
             //l_Atrr = a_XmlDocument.CreateAttribute("TexturePacksPath");
@@ -780,7 +758,11 @@ namespace PCSX2Emul.Tools
         }
 
 
-        private void setPadConfig(XmlDocument a_XmlDocument, XmlNode a_PropertyNode, IntPtr a_getTouchPadCallbackHandler)
+        private void setPadConfig(
+            XmlDocument a_XmlDocument, 
+            XmlNode a_PropertyNode, 
+            IntPtr a_getTouchPadCallbackHandler,
+            IntPtr a_VibrationCallbackHandler)
         {
 
             var l_Atrr = a_XmlDocument.CreateAttribute("GetTouchPadCallbackHandler");
@@ -900,11 +882,11 @@ namespace PCSX2Emul.Tools
 
 
 
-            //l_Atrr = a_XmlDocument.CreateAttribute("VibrationCallback");
+            l_Atrr = a_XmlDocument.CreateAttribute("VibrationCallback");
 
-            //l_Atrr.Value = Marshal.GetFunctionPointerForDelegate(PadControlManager.Instance.VibrationCallback).ToString();
+            l_Atrr.Value = a_VibrationCallbackHandler.ToString();
 
-            //a_PropertyNode.Attributes.Append(l_Atrr);
+            a_PropertyNode.Attributes.Append(l_Atrr);
 
         }
 

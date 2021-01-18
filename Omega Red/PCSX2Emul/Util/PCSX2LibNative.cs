@@ -541,7 +541,12 @@ namespace PCSX2Emul.Util
                 return 0;
 
             if (m_PCSX2System.getElfCRCFunc != null)
-                return m_PCSX2System.getElfCRCFunc();
+            {
+                var l_ElfCRC = m_PCSX2System.getElfCRCFunc();
+                
+                return l_ElfCRC;
+            }
+                 
 
             return 0;
         }

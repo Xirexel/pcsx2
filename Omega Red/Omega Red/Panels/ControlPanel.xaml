@@ -35,13 +35,13 @@
                 <viewModels:ControlViewModel/>
             </Grid.DataContext>
             <Button Command="{Binding ExitCommand}" Width="60" Height="60" Style="{DynamicResource BaseBtn}">
-                <Image Margin="10,10,10,10" Source="/Assests/Images/Exit.png" 
+                <Image Margin="10,10,10,10" Source="pack://application:,,,/Omega Red;component/Assests/Images/Exit.png" 
                                    Stretch="Uniform" 
                                    Height="64" 
                                    Width="64" Opacity="1"/>
             </Button>
             <Button Command="{Binding AboutCommand}" Grid.Column="2" Width="60" Height="60" Style="{DynamicResource BaseBtn}">
-                <Image Margin="10,6,10,14" Source="/Assests/Images/OmegaRed.png" 
+                <Image Margin="10,6,10,14" Source="pack://application:,,,/Omega Red;component/Assests/Images/OmegaRed.png" 
                                    Stretch="Uniform" 
                                    Height="256" 
                                    Width="256" Opacity="1"/>
