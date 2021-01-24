@@ -395,7 +395,8 @@ namespace Golden_Phi.Managers
             if (l_IsoInfo == null)
                 return;
 
-            l_IsoInfo.ActiveStateImage = null;
+            if(l_IsoInfo.ActiveStateImage != null)
+                l_IsoInfo.ActiveStateImage = null;
 
             _isoInfoCollection.Remove(l_IsoInfo);
 

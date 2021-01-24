@@ -67,19 +67,26 @@ namespace Golden_Phi.Emulators
 
                 BitmapImage lBitmapImage = new BitmapImage();
                 lBitmapImage.BeginInit();
-                lBitmapImage.UriSource = new Uri("pack://application:,,,/Golden Phi;component/Assests/Images/Golden_Phi.gif", UriKind.Absolute);
+                lBitmapImage.UriSource = new Uri("pack://application:,,,/Golden Phi;component/Assests/Images/Golden_Phi_Small.gif", UriKind.Absolute);
                 lBitmapImage.EndInit();
 
                 WpfAnimatedGif.ImageBehavior.SetAnimatedSource(mActiveStateImage, lBitmapImage);
 
-                //if (mActiveStateImage != null)
-                //    mActiveStateImage.Loaded += (object sender, RoutedEventArgs e) =>
-                //    {
-                //        var l_Controller = WpfAnimatedGif.ImageBehavior.GetAnimationController(mActiveStateImage);
+                bool lInitStopped = false;
 
-                //        if (l_Controller != null)
-                //            l_Controller.Pause();
-                //    };
+                if (mActiveStateImage != null)
+                    mActiveStateImage.Loaded += (object sender, RoutedEventArgs e) =>
+                    {
+                        if (lInitStopped)
+                            return;
+
+                        var l_Controller = WpfAnimatedGif.ImageBehavior.GetAnimationController(mActiveStateImage);
+
+                        if (l_Controller != null)
+                            l_Controller.Pause();
+
+                        lInitStopped = true;
+                    };
             }
             catch (Exception)
             { }

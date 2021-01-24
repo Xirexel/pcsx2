@@ -21,7 +21,7 @@ namespace Golden_Phi
 
         public const string c_MainFolderName = "Golden Phi";
 
-        public const string c_sstate_ext = ".sstate";
+        public const string c_sstate_ext = ".p2s";
 
         private static string m_MainStoreDirectoryPath = "";
 
