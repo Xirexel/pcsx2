@@ -35,7 +35,9 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#if !PPSSPP_PLATFORM(SWITCH)
 #include <dlfcn.h>
+#endif
 #endif
 
 const std::string INDEX_FILENAME = ".ppsspp-index.lst";
@@ -319,7 +321,7 @@ int VirtualDiscFileSystem::getFileListIndex(u32 accessBlock, u32 accessSize, boo
 	return -1;
 }
 
-u32 VirtualDiscFileSystem::OpenFile(std::string filename, FileAccess access, const char *devicename)
+int VirtualDiscFileSystem::OpenFile(std::string filename, FileAccess access, const char *devicename)
 {
 	OpenFileEntry entry;
 	entry.curOffset = 0;
@@ -394,7 +396,7 @@ u32 VirtualDiscFileSystem::OpenFile(std::string filename, FileAccess access, con
 		ERROR_LOG(FILESYS, "VirtualDiscFileSystem::OpenFile: FAILED, access = %i", (int)access);
 #endif
 		//wwwwaaaaahh!!
-		return 0;
+		return SCE_KERNEL_ERROR_ERRNO_FILE_NOT_FOUND;
 	} else {
 		u32 newHandle = hAlloc->GetNewHandle();
 		entries[newHandle] = entry;
@@ -809,6 +811,7 @@ void VirtualDiscFileSystem::HandlerLogger(void *arg, HandlerHandle handle, LogTy
 }
 
 VirtualDiscFileSystem::Handler::Handler(const char *filename, VirtualDiscFileSystem *const sys) {
+#if !PPSSPP_PLATFORM(SWITCH)
 #ifdef _WIN32
 #if PPSSPP_PLATFORM(UWP)
 #define dlopen(name, ignore) (void *)LoadPackagedLibrary(ConvertUTF8ToWString(name).c_str(), 0)
@@ -847,13 +850,14 @@ VirtualDiscFileSystem::Handler::Handler(const char *filename, VirtualDiscFileSys
 #undef dlsym
 #undef dlclose
 #endif
+#endif
 }
 
 VirtualDiscFileSystem::Handler::~Handler() {
 	if (library != NULL) {
 		Shutdown();
 
-#if !PPSSPP_PLATFORM(UWP)
+#if !PPSSPP_PLATFORM(UWP) && !PPSSPP_PLATFORM(SWITCH)
 #ifdef _WIN32
 		FreeLibrary((HMODULE)library);
 #else

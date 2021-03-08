@@ -64,20 +64,16 @@ bool GSDevice11::CreateTextureFX()
 
 	memset(&sd, 0, sizeof(sd));
 
-	sd.Filter = theApp.GetConfigI("MaxAnisotropy") && !theApp.GetConfigB("paltex") ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_POINT;
+	sd.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	sd.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sd.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sd.MinLOD = -FLT_MAX;
 	sd.MaxLOD = FLT_MAX;
-	sd.MaxAnisotropy = theApp.GetConfigI("MaxAnisotropy");
+	sd.MaxAnisotropy = D3D11_MIN_MAXANISOTROPY;
 	sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
 	hr = m_dev->CreateSamplerState(&sd, &m_palette_ss);
-
-	if(FAILED(hr)) return false;
-
-	hr = m_dev->CreateSamplerState(&sd, &m_rt_ss);
 
 	if(FAILED(hr)) return false;
 
@@ -105,14 +101,13 @@ void GSDevice11::SetupVS(VSSelector sel, const VSConstantBuffer* cb)
 	{
 		ShaderMacro sm(m_shader.model);
 
-		sm.AddMacro("VS_BPPZ", sel.bppz);
 		sm.AddMacro("VS_TME", sel.tme);
 		sm.AddMacro("VS_FST", sel.fst);
 
 		D3D11_INPUT_ELEMENT_DESC layout[] =
 		{
 			{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-			{"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"TEXCOORD", 1, DXGI_FORMAT_R32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"POSITION", 0, DXGI_FORMAT_R16G16_UINT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"POSITION", 1, DXGI_FORMAT_R32_UINT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -147,12 +142,13 @@ void GSDevice11::SetupGS(GSSelector sel, const GSConstantBuffer* cb)
 {
 	CComPtr<ID3D11GeometryShader> gs;
 
-	bool Unscale_GSShader = (sel.point == 1 || sel.line == 1);
-	if((sel.prim > 0 && (sel.iip == 0 || sel.prim == 3)) || Unscale_GSShader) // geometry shader works in every case, but not needed
+	const bool unscale_pt_ln = (sel.point == 1 || sel.line == 1);
+	// Geometry shader is disabled if sprite conversion is done on the cpu (sel.cpu_sprite).
+	if ((sel.prim > 0 && sel.cpu_sprite == 0 && (sel.iip == 0 || sel.prim == 3)) || unscale_pt_ln)
 	{
-		auto i = std::as_const(m_gs).find(sel);
+		const auto i = std::as_const(m_gs).find(sel);
 
-		if(i != m_gs.end())
+		if (i != m_gs.end())
 		{
 			gs = i->second;
 		}
@@ -223,6 +219,8 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 		sm.AddMacro("PS_BLEND_B", sel.blend_b);
 		sm.AddMacro("PS_BLEND_C", sel.blend_c);
 		sm.AddMacro("PS_BLEND_D", sel.blend_d);
+		sm.AddMacro("PS_DITHER", sel.dither);
+		sm.AddMacro("PS_ZCLAMP", sel.zclamp);
 
 		CComPtr<ID3D11PixelShader> ps;
 
@@ -263,7 +261,7 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 
 			memset(&sd, 0, sizeof(sd));
 
-			af.Filter = theApp.GetConfigI("MaxAnisotropy") && !theApp.GetConfigB("paltex") ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+			af.Filter = m_aniso_filter ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 			sd.Filter = ssel.ltf ? af.Filter : D3D11_FILTER_MIN_MAG_MIP_POINT;
 
 			sd.AddressU = ssel.tau ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -271,7 +269,7 @@ void GSDevice11::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSe
 			sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 			sd.MinLOD = -FLT_MAX;
 			sd.MaxLOD = FLT_MAX;
-			sd.MaxAnisotropy = theApp.GetConfigI("MaxAnisotropy");
+			sd.MaxAnisotropy = m_aniso_filter;
 			sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
 			m_dev->CreateSamplerState(&sd, &ss0);

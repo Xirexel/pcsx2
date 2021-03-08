@@ -69,13 +69,78 @@ namespace Omega_Red.Managers
                     App.Current.Resources["ControlModeTouchTitle"] as String;
             }
         }
-        
+
+        enum TexturePackMode
+        {
+            None = 0,
+            Load = 1,
+            Save = 2
+        }
+
+        class TexturePackModeInfo
+        {
+            public TexturePackMode Value { get; set; }
+
+            public override string ToString()
+            {
+                switch (Value)
+                {
+                    case TexturePackMode.None:
+                        return App.Current.Resources["TexturePackModeNoneTitle"] as String;
+                    case TexturePackMode.Load:
+                        return App.Current.Resources["TexturePackModeLoadTitle"] as String;
+                    case TexturePackMode.Save:
+                        return App.Current.Resources["TexturePackModeSaveTitle"] as String;
+                    default:
+                        return "";
+                }
+            }
+        }
+
+        enum SkipFrameMode
+        {
+            None = 1,
+            One = 2,
+            Two = 3
+        }
+
+        class SkipFrameModeInfo
+        {
+            public SkipFrameMode Value { get; set; }
+
+            public override string ToString()
+            {
+                switch (Value)
+                {
+                    case SkipFrameMode.None:
+                        return App.Current.Resources["SkipFrameModeNoneTitle"] as String;
+                    case SkipFrameMode.One:
+                        return App.Current.Resources["SkipFrameModeOneTitle"] as String;
+                    case SkipFrameMode.Two:
+                        return App.Current.Resources["SkipFrameModeTwoTitle"] as String;
+                    default:
+                        return "";
+                }
+            }
+        }
+
+        class ResolutionModeInfo
+        {
+            public uint Value { get; set; } = 0;
+
+            public override string ToString()
+            {
+                if (Value == 0)
+                    return "";
+
+                return Value.ToString() + "p";
+            }
+        }
 
         private ICollectionView mDisplayModeView = null;
 
         private readonly ObservableCollection<DisplayModeInfo> _displayModeCollection = new ObservableCollection<DisplayModeInfo>();
-
-
+       
 
 
         private ICollectionView mControlModeView = null;
@@ -84,7 +149,19 @@ namespace Omega_Red.Managers
 
 
 
-                       
+        private ICollectionView mSkipFrameModeView = null;
+
+        private readonly ObservableCollection<SkipFrameModeInfo> _skipFrameModeCollection = new ObservableCollection<SkipFrameModeInfo>();
+
+
+
+        private ICollectionView mResolutionModeView = null;
+
+        private readonly ObservableCollection<ResolutionModeInfo> _resolutionModeCollection = new ObservableCollection<ResolutionModeInfo>();
+
+
+        
+
 
 
 
@@ -98,6 +175,13 @@ namespace Omega_Red.Managers
         private ICollectionView mColourSchemaModeView = null;
 
         private readonly ObservableCollection<String> _colourSchemaCollection = new ObservableCollection<String>();
+
+
+
+
+        private ICollectionView mTexturePackModeView = null;
+
+        private readonly ObservableCollection<TexturePackModeInfo> _TexturePackModeCollection = new ObservableCollection<TexturePackModeInfo>();
 
 
 
@@ -133,6 +217,12 @@ namespace Omega_Red.Managers
 
         public event Action<Object> SwitchCaptureConfigEvent;
 
+        public event Action<int> DisplayFrameEvent;
+
+        public event Action<string> FrameRateEvent;
+
+        public event Action<uint> ResolutionEvent;
+
         private ConfigManager()
         {
             System.Reflection.Assembly l_assembly = Assembly.GetExecutingAssembly();
@@ -160,6 +250,31 @@ namespace Omega_Red.Managers
                 _displayModeCollection.Add(new DisplayModeInfo() { Value = DisplayMode.Full });
 
                 mDisplayModeView = CollectionViewSource.GetDefaultView(_displayModeCollection);
+
+
+
+
+                _skipFrameModeCollection.Add(new SkipFrameModeInfo() { Value = SkipFrameMode.None });
+
+                _skipFrameModeCollection.Add(new SkipFrameModeInfo() { Value = SkipFrameMode.One });
+
+                _skipFrameModeCollection.Add(new SkipFrameModeInfo() { Value = SkipFrameMode.Two });
+
+                mSkipFrameModeView = CollectionViewSource.GetDefaultView(_skipFrameModeCollection);
+
+
+
+
+                _resolutionModeCollection.Add(new ResolutionModeInfo() { Value = 720 });
+
+                _resolutionModeCollection.Add(new ResolutionModeInfo() { Value = 1080 });
+
+                _resolutionModeCollection.Add(new ResolutionModeInfo() { Value = 1440 });
+
+                _resolutionModeCollection.Add(new ResolutionModeInfo() { Value = 2160 });
+
+                mResolutionModeView = CollectionViewSource.GetDefaultView(_resolutionModeCollection); 
+
 
 
 
@@ -208,8 +323,31 @@ namespace Omega_Red.Managers
 
 
 
+                _TexturePackModeCollection.Add(new TexturePackModeInfo() { Value = TexturePackMode.None });
+
+                _TexturePackModeCollection.Add(new TexturePackModeInfo() { Value = TexturePackMode.Load });
+
+                _TexturePackModeCollection.Add(new TexturePackModeInfo() { Value = TexturePackMode.Save });
+
+                
+
+
+                mTexturePackModeView = CollectionViewSource.GetDefaultView(_TexturePackModeCollection);
+
+
+
+
+
+
+
+
+
 
                 mDisplayModeView.CurrentChanged += mDisplayModeView_CurrentChanged;
+
+                mSkipFrameModeView.CurrentChanged += mSkipFrameModeView_CurrentChanged;
+
+                mResolutionModeView.CurrentChanged += mResolutionModeView_CurrentChanged;
 
                 mControlModeView.CurrentChanged += mControlModeView_CurrentChanged;
                 
@@ -220,7 +358,10 @@ namespace Omega_Red.Managers
                 mMediaOutputTypeModeView.CurrentChanged += mMediaOutputTypeModeView_CurrentChanged;
 
                 mRenderingSchemaModeView.CurrentChanged += mRenderingSchemaCollection_CurrentChanged;
-                               
+
+                mTexturePackModeView.CurrentChanged += mTexturePackModeView_CurrentChanged;
+
+
                 if (SwitchTopmostEvent != null)
                     SwitchTopmostEvent(Settings.Default.Topmost);
 
@@ -232,6 +373,60 @@ namespace Omega_Red.Managers
                 reset();
             });
 
+        }
+
+        private void mResolutionModeView_CurrentChanged(object sender, EventArgs e)
+        {
+            if (mResolutionModeView.CurrentItem == null)
+                return;
+
+            var l_ResolutionModeInfo = (ResolutionModeInfo)mResolutionModeView.CurrentItem;
+
+            if (ResolutionEvent != null)
+                ResolutionEvent(l_ResolutionModeInfo.Value);
+
+            Settings.Default.ResolutionMode = mResolutionModeView.CurrentPosition;
+        }
+
+        private void mSkipFrameModeView_CurrentChanged(object sender, EventArgs e)
+        {
+            if (mSkipFrameModeView.CurrentItem == null)
+                return;
+
+            var l_SkipFrameModeInfo = (SkipFrameModeInfo)mSkipFrameModeView.CurrentItem;
+
+            if (SwitchDisplayModeEvent == null)
+                return;
+
+            var l_displayFrame = (int)l_SkipFrameModeInfo.Value;
+
+            if (DisplayFrameEvent != null)
+                DisplayFrameEvent(l_displayFrame);
+
+            Settings.Default.SkipFrameMode = l_displayFrame;
+        }
+
+        private void mTexturePackModeView_CurrentChanged(object sender, EventArgs e)
+        {
+            if (mTexturePackModeView == null)
+                return;
+
+            if (mTexturePackModeView.CurrentItem == null)
+                return;
+
+            if (App.Current == null)
+                return;
+
+            if (App.Current.MainWindow == null)
+                return;
+
+
+            var l_TexturePackModeInfo = (TexturePackModeInfo)mTexturePackModeView.CurrentItem;
+
+            if (l_TexturePackModeInfo == null)
+                return;
+            
+            Settings.Default.TexturePackMode = l_TexturePackModeInfo.Value.ToString();
         }
 
         private void reset()
@@ -251,7 +446,21 @@ namespace Omega_Red.Managers
                 mDisplayModeView.MoveCurrentToPosition(-1);
 
                 mDisplayModeView.MoveCurrentToPosition((int)l_DisplayMode);
+
                 
+                SkipFrameMode l_SkipFrameMode = (SkipFrameMode)Enum.ToObject(typeof(SkipFrameMode), Settings.Default.SkipFrameMode);
+                
+                mSkipFrameModeView.MoveCurrentToPosition(-1);
+
+                mSkipFrameModeView.MoveCurrentToPosition(((int)l_SkipFrameMode) - 1);
+
+
+
+                mResolutionModeView.MoveCurrentToPosition(-1);
+
+                mResolutionModeView.MoveCurrentToPosition(Settings.Default.ResolutionMode);
+
+
 
 
                 ControlMode l_ControlMode = ControlMode.Button;
@@ -286,6 +495,17 @@ namespace Omega_Red.Managers
                 mMediaOutputTypeModeView.MoveCurrentToPosition(-1);
                 mMediaOutputTypeModeView.MoveCurrentToPosition((int)l_MediaOutputType);
 
+
+
+                TexturePackMode l_TexturePackMode = TexturePackMode.None;
+
+                Enum.TryParse<TexturePackMode>(Settings.Default.TexturePackMode, out l_TexturePackMode);
+
+                mTexturePackModeView.MoveCurrentToPosition(-1);
+                mTexturePackModeView.MoveCurrentToPosition((int)l_TexturePackMode);
+
+
+                PadControlManager.Instance.reset();
             });
         }
 
@@ -309,18 +529,16 @@ namespace Omega_Red.Managers
             if (string.IsNullOrEmpty(ltitle))
                 return;
 
-            if(ltitle == "Tessellated")
-            {
-                Tools.ModuleControl.Instance.setIsTessellated(true);
-            }
-            else
-            {
-                Tools.ModuleControl.Instance.setIsTessellated(false);
-            }
+            //if(ltitle == "Tessellated")
+            //{
+            //    Tools.ModuleControl.Instance.setIsTessellated(true);
+            //}
+            //else
+            //{
+            //    Tools.ModuleControl.Instance.setIsTessellated(false);
+            //}
 
             Settings.Default.RenderingSchema = ltitle;
-
-            Settings.Default.Save();
         }
 
         private void mMediaOutputTypeModeView_CurrentChanged(object sender, EventArgs e)
@@ -345,8 +563,6 @@ namespace Omega_Red.Managers
             Managers.MediaRecorderManager.Instance.setMediaOutputType(l_MediaOutputType.Value);
 
             Settings.Default.MediaOutputType = l_MediaOutputType.Value.ToString();
-
-            Settings.Default.Save();
         }
 
         void mColourSchemaModeView_CurrentChanged(object sender, EventArgs e)
@@ -382,8 +598,6 @@ namespace Omega_Red.Managers
                 {
                     Settings.Default.ColourSchema = "Default";
 
-                    Settings.Default.Save();
-
                     return;
                 }
 
@@ -394,8 +608,6 @@ namespace Omega_Red.Managers
                     App.Current.Resources.MergedDictionaries.Add(m_colourSchemaResource);
 
                     Settings.Default.ColourSchema = a_colourSchema;
-
-                    Settings.Default.Save();
                 }
             }
         }
@@ -435,8 +647,6 @@ namespace Omega_Red.Managers
                 {
                     Settings.Default.Language = "Русский";
 
-                    Settings.Default.Save();
-
                     return;
                 }
 
@@ -447,8 +657,6 @@ namespace Omega_Red.Managers
                     App.Current.Resources.MergedDictionaries.Add(m_languageResource);
 
                     Settings.Default.Language = a_language;
-
-                    Settings.Default.Save();
                 }
             }
         }
@@ -476,24 +684,11 @@ namespace Omega_Red.Managers
             {
                 case ControlMode.Button:
                     {
-                        var l_PanelWidth = App.Current.MainWindow.Resources["mControlWidthOffset"] as Omega_Red.Tools.Converters.WidthConverter;
-
-                        if (l_PanelWidth != null)
-                            l_PanelWidth.Offset = 0.0;
-
                         SwitchControlModeEvent(true);
                     }
                     break;
                 case ControlMode.Touch:
                     {
-
-                        var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
-
-                        var l_PanelWidth = App.Current.MainWindow.Resources["mControlWidthOffset"] as Omega_Red.Tools.Converters.WidthConverter;
-
-                        if (l_PanelWidth != null)
-                            l_PanelWidth.Offset = -l_TouchDragBtnWidth;
-
                         SwitchControlModeEvent(false);
                     }
                     break;
@@ -503,8 +698,6 @@ namespace Omega_Red.Managers
 
 
             Settings.Default.ControlMode = l_ControlMode.Value.ToString();
-
-            Settings.Default.Save();
         }
 
         void mDisplayModeView_CurrentChanged(object sender, EventArgs e)
@@ -530,15 +723,28 @@ namespace Omega_Red.Managers
             }
 
             Settings.Default.DisplayMode = l_DisplayMode.Value.ToString();
-
-            Settings.Default.Save();
         }
         
+        public void setFrameRate(string a_frameRate)
+        {
+            if (FrameRateEvent != null)
+                FrameRateEvent(a_frameRate);
+        }
+
         public ICollectionView DisplayModeCollection
         {
             get { return mDisplayModeView; }
         }
-        
+
+        public ICollectionView SkipFrameModeCollection
+        {
+            get { return mSkipFrameModeView; }
+        }
+
+        public ICollectionView ResolutionModeCollection
+        {
+            get { return mResolutionModeView; }
+        }                      
 
         public ICollectionView ControlModeCollection
         {
@@ -562,6 +768,11 @@ namespace Omega_Red.Managers
         public ICollectionView RenderingSchemaCollection
         {
             get { return mRenderingSchemaModeView; }
+        }
+
+        public ICollectionView TexturePackModeCollection
+        {
+            get { return mTexturePackModeView; }
         }
     }
 }

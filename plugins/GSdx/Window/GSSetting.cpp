@@ -37,24 +37,28 @@ const char* dialog_message(int ID, bool* updateText) {
 				" Rendering is smoother but it could generate a few glitches. If upscaling is enabled, this setting is recommended over 'Bilinear Forced'\n\n"
 				"Bilinear Forced:\nAlways enable interpolation. Rendering is smoother but it could generate some glitches.\n\n"
 				"Bilinear PS2:\nUse same mode as the PS2. It is the more accurate option.";
+		case IDC_HALF_SCREEN_TS:
+			return "Control the half-screen fix detection on texture shuffling.\n\n"
+				"Automatic:\nUses an algorithm to automatically enable or disable the detection.\n\n"
+				"Force-Disabled:\nDisables the detection. Will cause visual bugs in many games. It helps Xenosaga games.\n\n"
+				"Force-Enabled:\nAlways enables the detection. Use it when a game has half-screen issues.";
 		case IDC_TRI_FILTER:
 			return "Control the texture tri-filtering of the emulation.\n\n"
 				"None:\nNo extra trilinear filtering.\n\n"
 				"Trilinear:\nUse OpenGL trilinear interpolation when PS2 uses mipmaps.\n\n"
 				"Trilinear Forced:\nAlways enable full trilinear interpolation. Warning Slow!\n\n";
 		case IDC_CRC_LEVEL:
-			return "Control the number of Auto-CRC hacks applied to games.\n\n"
-				"Automatic:\nAutomatically sets the recommended CRC hack level based on the selected renderer.\n"
+			return "Control the number of Auto-CRC fixes and hacks applied to games.\n\n"
+				"Automatic:\nAutomatically sets the recommended CRC level based on the selected renderer.\n"
 				"This is the recommended setting.\n"
 				"Partial will be selected for OpenGL.\nFull will be selected for Direct3D.\n\n"
-				"None:\nRemove all CRC hacks.\n\n"
-				"Minimum:\nEnable a couple of CRC hacks.\n\n"
+				"None:\nRemove all CRC rendering fixes and hacks.\n\n"
+				"Minimum:\nEnables CRC lookup for special post processing effects.\n\n"
 				"Partial:\nFor an optimal experience with OpenGL.\n\n"
 				"Full:\nFor an optimal experience with Direct3D.\n\n"
 				"Aggressive:\nUse more aggressive CRC hacks.\n"
 				"Removes effects in some games which make the image appear sharper/clearer.\n"
-				"Affected games: AC4, DBZBT 2 & 3, FF games, GOW games, OnimushaDoD, RDRevolver, RE4, SoTC, SMT3, SMTDDS1, SMTDDS2.\n"
-				"Works as a speedhack for: BleachBB, Kunoichi, Steambot Chronicles.";
+				"Affected games: AC4, BleachBB, Bully, DBZBT 2 & 3, DeathByDegrees, Evangelion, FF games, FightingBeautyWulong, GOW 1 & 2, Kunoichi, IkkiTousen, Okami, Oneechanbara2, OnimushaDoD, RDRevolver, Simple2000Vol114, SoTC, SteambotChronicles, Tekken5, Ultraman, XenosagaE3, Yakuza 1 & 2.\n";
 		case IDC_SKIPDRAWHACK:
 		case IDC_SKIPDRAWHACKEDIT:
 		case IDC_SKIPDRAWOFFSET:
@@ -88,19 +92,18 @@ const char* dialog_message(int ID, bool* updateText) {
 		case IDC_OSD_MONITOR:
 			return "Continuously prints the FPS and the EE, GS and VU(if the MTVU speedhack is enabled) percentages onscreen.";
 		case IDC_PALTEX:
-			return "When checked 4/8 bits texture will be send to the GPU with a palette. GPU will be in charge of the conversion.\n\n"
-				"When unchecked the CPU will convert directly the texture to 32 bits.\n\n"
-				"It is basically a trade-off between GPU/CPU.";
+			return "Enabled: GPU will handle 4/8 bits textures while CPU does the rest.\n"
+				"Disabled: CPU will have full control and directly convert the textures to 32 bits.\n\n"
+				"It is basically a trade-off between GPU/CPU vs CPU alone.";
 		case IDC_ACCURATE_DATE:
 			return "Implement a more accurate algorithm to compute GS destination alpha testing.\n"
 				"It improves shadow and transparency rendering.\n\n"
-				"None:\nDisables accurate destination alpha testing.\n\n"
-				"Fast:\nFast accurate destination alpha testing.\n"
-				"Most of the time this option should be enough.\n"
+				"None:\nDisables DATE accuracy.\n\n"
+				"Basic:\nBasic DATE accuracy.\n"
+				"Can be inaccurate at times.\n"
+				"Full:\nFully emulates DATE accuracy. Might be slower.\n"
 				"This is the recommended setting.\n\n"
-				"Full:\nSlower but fully emulates destination alpha testing.\n"
-				"Not needed unless Fast mode isn't enough.\n\n"
-				"Note: Full mode is not available on Direct3D.";
+				"Note: Full mode is not available on Direct3D, Basic mode will be used on Full level as well.";
 		case IDC_ACCURATE_BLEND_UNIT:
 			return "Control the accuracy level of the GS blending unit emulation.\n\n"
 				"None:\nFast but introduces various rendering issues.\n"
@@ -109,7 +112,7 @@ const char* dialog_message(int ID, bool* updateText) {
 				"This is the recommended setting.\n\n"
 				"Medium:\nExtend it to all sprites. Performance impact remains reasonable in 3D game.\n\n"
 				"High:\nExtend it to destination alpha blending and color wrapping (helps shadow and fog effects).\n"
-				"A good CPU is required.\n\n"
+				"A good GPU is required.\n\n"
 				"Full:\nExcept few cases, the blending unit will be fully emulated by the shader. It is ultra slow!\n"
 				"It is intended for debug.\n\n"
 				"Ultra:\nThe blending unit will be completely emulated by the shader. It is ultra slow!\n"
@@ -123,12 +126,15 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Harry Potter games and Stuntman for example.\n\n"
 				"Note: This hack has an impact on performance.\n";
 		case IDC_AFCOMBO:
-			return "Reduces texture aliasing at extreme viewing angles. High performance impact.";
+			return "Reduces texture aliasing at extreme viewing angles.";
 		case IDC_AA1:
 			return "Internal GS feature. Reduces edge aliasing of lines and triangles when the game requests it.";
 		case IDC_SWTHREADS:
 		case IDC_SWTHREADS_EDIT:
-			return "Number of rendering threads: 0 for single thread, 2 or more for multithread (1 is for debugging)";
+			return "Number of rendering threads: 0 for single thread, 2 or more for multithread (1 is for debugging)\n"
+				"If you have 4 threads on your CPU pick 2 or 3.\n"
+				"You can calculate how to get the best performance (amount of CPU threads - 2)\n"
+				"Note: 7+ threads will not give much more performance and could perhaps even lower it.";
 		case IDC_MIPMAP_SW:
 			return "Enables mipmapping, which some games require to render correctly.";
 		case IDC_SHADEBOOST:
@@ -144,8 +150,7 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Note: OpenGL HW renderer is able to handle Jak shadows at full speed without this option.";
 		case IDC_AUTO_FLUSH_SW:
 			return "Force a primitive flush when a framebuffer is also an input texture.\n"
-				"Fixes some processing effects such as the shadows in the Jak series and radiosity in GTA:SA.\n"
-				"Warning: It's very costly on the performance.";
+				"Fixes some processing effects such as the shadows in the Jak series and radiosity in GTA:SA.";
 		case IDC_SAFE_FEATURES:
 			return "This option disables multiple safe features.\n\n"
 				"Disables accurate Unscale Point and Line rendering.\n"
@@ -159,19 +164,19 @@ const char* dialog_message(int ID, bool* updateText) {
 				"Note: This hack can have a small impact on performance.";
 		case IDC_MERGE_PP_SPRITE:
 			return "Replaces post-processing multiple paving sprites by a single fat sprite.\n"
-				" It reduces various upscaling lines.\n\n"
+				"It reduces various upscaling lines.\n\n"
 				"Note: This hack is a work in progress.";
 		case IDC_GEOMETRY_SHADER_OVERRIDE:
 			return "Allows the GPU instead of just the CPU to transform lines into sprites. This reduces CPU load and bandwidth requirement, but it is heavier on the GPU.\n"
 				"Automatic detection is recommended.\n\n"
 				"Note: This option is only supported by GPUs which support at least Direct3D 10.";
 		case IDC_IMAGE_LOAD_STORE:
-			return "Allows advanced atomic operations to speed up Accurate Date.\n"
-				"Only disable this if using Accurate Date causes (GPU driver) issues.\n\n"
+			return "Allows advanced atomic operations to speed up DATE Accuracy.\n"
+				"Only disable this if using DATE Accuracy causes (GPU driver) issues.\n\n"
 				"Note: This option is only supported by GPUs which support at least Direct3D 11.";
 		case IDC_SPARSE_TEXTURE:
-			return "Allows to reduce memory usage on the GPU.\n\n"
-				"Note: Feature is not yet implemented so Force Disable by default.";
+			return "Allows to reduce VRAM usage on the GPU.\n\n"
+				"Note: Feature is currently experimental and works only on Nvidia GPUs.";
 		case IDC_OSD_MAX_LOG_EDIT:
 		case IDC_OSD_MAX_LOG:
 			return "Sets the maximum number of log messages on the screen or in the buffer at the same time.\n\n"
@@ -193,15 +198,13 @@ const char* dialog_message(int ID, bool* updateText) {
 			return "By default, the texture cache handles partial invalidations. Unfortunately it is very costly to compute CPU wise."
 				"\n\nThis hack replaces the partial invalidation with a complete deletion of the texture to reduce the CPU load.\n\nIt helps snowblind engine games.";
 		case IDC_LARGE_FB:
-			return "Allocate a large framebuffer to be compliant with GS memory (Prevents FMV flickering).\n"
-				"It increases GPU/memory requirements.\n\n"
-				"Note: It should be disabled for Armored Core, Destroy All Humans, and Gran Turismo.\n"
-				"It will amplify RAM/VRAM spikes. Other games might be affected as well.";
+			return "Reserves a larger framebuffer to prevent FMV flickers.\n"
+				"Increases GPU/memory requirements.\n"
+				"Enabling this can amplify stuttering due to low RAM/VRAM.\n\n"
+				"Note: It should be disabled for Armored Core, Destroy All Humans, Gran Turismo and possibly others.\n"
+				"This option does not improve the graphics or the FPS.";
 		// Windows only options.
 #ifdef _WIN32
-		case IDC_ALPHASTENCIL:
-			return "Improves shadows/transparency rendering in games such as Amagami.\n\n"
-				"Note: It will break transparency rendering in many games, avoid using it.";
 		case IDC_ACCURATE_BLEND_UNIT_D3D11:
 			return "Control the accuracy level of the GS blending unit emulation.\n\n"
 				"None:\nFast but introduces various rendering issues.\n"

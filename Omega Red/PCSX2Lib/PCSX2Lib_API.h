@@ -14,20 +14,14 @@
 
 #pragma once
 
-#ifndef __ANDROID__
-	#ifdef EXPORTS
-		#define PCSX2_EXPORT_C_(type)extern "C" type __stdcall
-		#define PCSX2_EXPORT_C PCSX2_EXPORT_C_(void)
-	#else
-		#define PCSX2_EXPORT_C_(type)extern "C" type __stdcall
-		#define PCSX2_EXPORT_C PCSX2_EXPORT_C_(void)
-	#endif
+
+#ifdef EXPORTS 
+#define PCSX2_EXPORT_C_(type)extern "C" type __stdcall
+#define PCSX2_EXPORT_C PCSX2_EXPORT_C_(void)
 #else
-	#define PCSX2_EXPORT_C_(type) type __attribute__((stdcall))
-	#define PCSX2_EXPORT_C PCSX2_EXPORT_C_(void)
+#define PCSX2_EXPORT_C_(type)extern "C" type __stdcall
+#define PCSX2_EXPORT_C PCSX2_EXPORT_C_(void)
 #endif
-
-
 
 
 
@@ -41,11 +35,18 @@ typedef unsigned int uint32;
 typedef signed int int32;
 typedef unsigned long long uint64;
 typedef signed long long int64;
-#ifdef __x86_64__
-typedef uint64 uptr;
+
+
+#if __ANDROID__
+	typedef uintptr_t uptr;
 #else
-typedef uint32 uptr;
+	#ifdef __x86_64__
+	typedef uint64 uptr;
+	#else
+	typedef uint32 uptr;
+	#endif
 #endif
+
 
 
 

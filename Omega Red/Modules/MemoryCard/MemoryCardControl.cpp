@@ -38,7 +38,7 @@ BOOL PS2E_CALLBACK McdEraseBlock(PS2E_THISPTR thisptr, uint32 port, uint32 slot,
 	return g_MemoryCard.EraseBlock(port, slot, adr);
 }
 
-uint64 PS2E_CALLBACK McdGetCRC(PS2E_THISPTR thisptr, uint32 port, uint32 slot)
+u64 PS2E_CALLBACK McdGetCRC(PS2E_THISPTR thisptr, uint32 port, uint32 slot)
 {
 	return g_MemoryCard.GetCRC(port, slot);
 }

@@ -68,12 +68,12 @@ namespace MainWindow
 	void UpdateMenus(bool isMenuSelect = false);
 	void UpdateCommands();
 	void SetWindowTitle(const wchar_t *title);
-	void Redraw();
+    void Redraw();
     void SetUnkDirectX11Device(IUnknown *a_PtrUnkDirectX11Device);
     IUnknown *GetUnkDirectX11Device();
 	HWND GetHWND();
 	HINSTANCE GetHInstance();
-	HWND GetDisplayHWND();
+    HWND GetDisplayHWND();
     void SetDisplayHWND(HWND hwnd);
     HWND GetCaptureHWND();
     void SetCaptureHWND(HWND hwnd);

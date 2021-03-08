@@ -37,7 +37,11 @@ namespace Omega_Red.Managers
         }
 
         public void loadItemAsync(object a_Item)
-        {}
+        { }
+
+        public void registerItem(object a_Item)
+        {
+        }
 
         public void persistItemAsync(object a_Item)
         {
@@ -66,8 +70,6 @@ namespace Omega_Red.Managers
                 m_Manager.deleteStream(lYouTubeStreamInfo);
                 
                 Settings.Default.YouTubeStreamSelectedId = "";
-
-                Settings.Default.Save();
 
             } while (false);
         }

@@ -39,7 +39,7 @@ u32 lClocks = 0;
 EXPORT_C_(u32)
 PS2EgetLibType()
 {
-    return PS2E_LT_SPU2;
+    return 1;
 }
 
 EXPORT_C_(char *)
@@ -51,7 +51,7 @@ PS2EgetLibName()
 EXPORT_C_(u32)
 PS2EgetLibVersion2(u32 type)
 {
-    return (PS2E_SPU2_VERSION << 16) | (VersionInfo::Release << 8) | VersionInfo::Revision;
+    return (1 << 16) | (VersionInfo::Release << 8) | VersionInfo::Revision;
 }
 
 EXPORT_C_(void)

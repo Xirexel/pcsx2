@@ -8,8 +8,9 @@
     <sys:Double x:Key="ButtonBorderThickness">3</sys:Double>
     <sys:Double x:Key="PadBorderThickness">5</sys:Double>
     <sys:Double x:Key="BlurRadius">1</sys:Double>
-    <sys:Double x:Key="TouchDragBtnWidth">34</sys:Double>
+    <sys:Double x:Key="TouchDragBtnWidth">30</sys:Double>
     <sys:Double x:Key="ItemWidth">290</sys:Double>
+    <sys:Double x:Key="ImageItemWidth">190</sys:Double>
     <sys:Double x:Key="StandardOpacity">0.75</sys:Double>
     <FontWeight x:Key="StandardFontWeight">Bold</FontWeight>
     <sys:Double x:Key="StandardFontSize">15</sys:Double>

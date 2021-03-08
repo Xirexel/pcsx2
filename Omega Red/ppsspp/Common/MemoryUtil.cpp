@@ -50,7 +50,7 @@ static SYSTEM_INFO sys_info;
 #endif
 
 #define MEM_PAGE_MASK ((MEM_PAGE_SIZE)-1)
-#define round_page(x) ((((uintptr_t)(x)) + MEM_PAGE_MASK) & ~(MEM_PAGE_MASK))
+#define ppsspp_round_page(x) ((((uintptr_t)(x)) + MEM_PAGE_MASK) & ~(MEM_PAGE_MASK))
 
 #ifdef _WIN32
 // Win32 flags are odd...
@@ -117,7 +117,6 @@ static void *SearchForFreeMem(size_t size) {
 
 // This is purposely not a full wrapper for virtualalloc/mmap, but it
 // provides exactly the primitive operations that PPSSPP needs.
-
 void *AllocateExecutableMemory(size_t size) {
 #if defined(_WIN32)
 	void *ptr = nullptr;
@@ -128,7 +127,7 @@ void *AllocateExecutableMemory(size_t size) {
 		GetSystemInfo(&sys_info);
 #if defined(_M_X64)
 	if ((uintptr_t)&hint_location > 0xFFFFFFFFULL) {
-		size_t aligned_size = round_page(size);
+		size_t aligned_size = ppsspp_round_page(size);
 #if 1   // Turn off to hunt for RIP bugs on x86-64.
 		ptr = SearchForFreeMem(aligned_size);
 		if (!ptr) {
@@ -157,18 +156,16 @@ void *AllocateExecutableMemory(size_t size) {
 	}
 #else
 	static char *map_hint = 0;
-#if defined(_M_X64) && !defined(MAP_32BIT)
+#if defined(_M_X64)
 	// Try to request one that is close to our memory location if we're in high memory.
 	// We use a dummy global variable to give us a good location to start from.
 	if (!map_hint) {
 		if ((uintptr_t) &hint_location > 0xFFFFFFFFULL)
-			map_hint = (char*)round_page(&hint_location) - 0x20000000; // 0.5gb lower than our approximate location
+			map_hint = (char*)ppsspp_round_page(&hint_location) - 0x20000000; // 0.5gb lower than our approximate location
 		else
 			map_hint = (char*)0x20000000; // 0.5GB mark in memory
-	}
-	else if ((uintptr_t) map_hint > 0xFFFFFFFFULL)
-	{
-		map_hint -= round_page(size); /* round down to the next page if we're in high memory */
+	} else if ((uintptr_t) map_hint > 0xFFFFFFFFULL) {
+		map_hint -= ppsspp_round_page(size); /* round down to the next page if we're in high memory */
 	}
 #endif
 
@@ -176,13 +173,7 @@ void *AllocateExecutableMemory(size_t size) {
 	if (PlatformIsWXExclusive())
 		prot = PROT_READ | PROT_WRITE;  // POST_EXEC is added later in this case.
 
-	void* ptr = mmap(map_hint, size, prot,
-		MAP_ANON | MAP_PRIVATE
-#if defined(_M_X64) && defined(MAP_32BIT)
-		| MAP_32BIT
-#endif
-		, -1, 0);
-
+	void* ptr = mmap(map_hint, size, prot, MAP_ANON | MAP_PRIVATE, -1, 0);
 #endif /* defined(_WIN32) */
 
 #if !defined(_WIN32)
@@ -193,13 +184,14 @@ void *AllocateExecutableMemory(size_t size) {
 
 	if (ptr == failed_result) {
 		ptr = nullptr;
-		ERROR_LOG(MEMMAP, "Failed to allocate executable memory (%d)", (int)size);
+		ERROR_LOG(MEMMAP, "Failed to allocate executable memory (%d) errno=%d", (int)size, errno);
 		PanicAlert("Failed to allocate executable memory\n%s", GetLastErrorMsg());
 	}
-#if defined(_M_X64) && !defined(_WIN32) && !defined(MAP_32BIT)
+
+#if defined(_M_X64) && !defined(_WIN32)
 	else if ((uintptr_t)map_hint <= 0xFFFFFFFF) {
 		// Round up if we're below 32-bit mark, probably allocating sequentially.
-		map_hint += round_page(size);
+		map_hint += ppsspp_round_page(size);
 
 		// If we moved ahead too far, skip backwards and recalculate.
 		// When we free, we keep moving forward and eventually move too far.
@@ -212,7 +204,7 @@ void *AllocateExecutableMemory(size_t size) {
 }
 
 void *AllocateMemoryPages(size_t size, uint32_t memProtFlags) {
-	size = round_page(size);
+	size = ppsspp_round_page(size);
 #ifdef _WIN32
 	if (sys_info.dwPageSize == 0)
 		GetSystemInfo(&sys_info);

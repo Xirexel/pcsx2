@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.4.1)
 #            )
 
 set(UTILITIES_SRC
-        ${UTILITIES_DIR}/Mutex.cpp
+        ${EXTEND_DIR}/Mutex.cpp
         ${UTILITIES_DIR}/Semaphore.cpp
         ${UTILITIES_DIR}/ThreadTools.cpp
         ${PCSX2_UTILITIES_SRC_DIR}/Console.cpp
@@ -29,6 +29,7 @@ set(UTILITIES_SRC
 
 include_directories(
         ${PCSX2_UTILITIES_SRC_DIR}/Linux
+        ${EMITTER_DIR}
         ${EXTEND_DIR}
         ${FRAMEWORK_DIR}
         ${UTILITIES_DIR}

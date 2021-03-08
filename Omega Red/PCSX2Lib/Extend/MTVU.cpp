@@ -280,7 +280,7 @@ __fi u32 VU_Thread::Read()
 
 __fi void VU_Thread::Read(void* dest, u32 size)
 {
-    apex::MemoryManager::memcpy(dest, &buffer[m_read_pos], size);
+	memcpy(dest, &buffer[m_read_pos], size);
 	m_read_pos += size_u32(size);
 }
 
@@ -304,7 +304,7 @@ __fi void VU_Thread::Write(u32 val)
 
 __fi void VU_Thread::Write(void* src, u32 size)
 {
-    apex::MemoryManager::memcpy(GetWritePtr(), src, size);
+	memcpy(GetWritePtr(), src, size);
 	m_write_pos += size_u32(size);
 }
 
@@ -367,6 +367,7 @@ void VU_Thread::ExecuteVU(u32 vu_addr, u32 vif_top, u32 vif_itop)
 	KickStart();
 	u32 cycles = std::min(Get_vuCycles(), 3000u);
 	cpuRegs.cycle += cycles * EmuConfig.Speedhacks.EECycleSkip;
+	VU0.cycle += cycles * EmuConfig.Speedhacks.EECycleSkip;
 }
 
 void VU_Thread::VifUnpack(vifStruct& _vif, VIFregisters& _vifRegs, u8* data, u32 size)

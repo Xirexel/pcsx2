@@ -23,8 +23,6 @@
 
 #ifndef DISABLE_RECORDING
 #	include "Recording/InputRecording.h"
-#	include "Recording/PadData.h"
-#	include "Recording/RecordingInputManager.h"
 #endif
 
 _sio sio;
@@ -214,6 +212,16 @@ SIO_WRITE sioWriteController(u8 data)
 
 	default:
 		sio.buf[sio.bufCount] = PADpoll(data);
+#ifndef DISABLE_RECORDING
+		if (g_Conf->EmuOptions.EnableRecordingTools)
+		{
+			// Only examine controllers 1 / 2
+			if (sio.slot[sio.port] == 0)
+			{
+				g_InputRecording.ControllerInterrupt(data, sio.port, sio.bufCount, sio.buf);
+			}
+		}
+#endif
 		break;
 	}
 	//Console.WriteLn( "SIO: sent = %02X  From pad data =  %02X  bufCnt %08X ", data, sio.buf[sio.bufCount], sio.bufCount);
@@ -367,7 +375,7 @@ SIO_WRITE memcardErase(u8 data)
 			{
 			case 0x82: // Erase
 				//siomode = SIO_DUMMY; // Nothing more to do here.
-                memcpy(sio.buf, &header[1], 4);
+				memcpy(sio.buf, &header[1], 4);
 				sio.bufSize = 3;
 				mcd->EraseBlock();
 				break;
@@ -415,7 +423,7 @@ SIO_WRITE memcardWrite(u8 data)
 			switch(data)
 			{
 			case 0x42: // Write
-                    memcpy(sio.buf, header, 4);
+				memcpy(sio.buf, header, 4);
 				once = true;
 				break;
 
@@ -423,7 +431,7 @@ SIO_WRITE memcardWrite(u8 data)
 				if(once)
 				{
 					siomode = SIO_DUMMY; // Nothing more to do here.
-                    memcpy(sio.buf, &header[1], 4);
+					memcpy(sio.buf, &header[1], 4);
 					sio.bufSize = 3;
 
 					sio2.packet.recvVal1 = 0x1600; // Writing
@@ -505,7 +513,7 @@ SIO_WRITE memcardRead(u8 data)
 			switch(data)
 			{
 			case 0x43: // Read
-                    memcpy(sio.buf, header, 4);
+				memcpy(sio.buf, header, 4);
 				once = true;
 				break;
 
@@ -513,7 +521,7 @@ SIO_WRITE memcardRead(u8 data)
 				if(once)
 				{
 					siomode = SIO_DUMMY; // Nothing more to do here.
-                    memcpy(sio.buf, &header[1], 4);
+					memcpy(sio.buf, &header[1], 4);
 					sio.bufSize = 3;
 
 					sio2.packet.recvVal1 = 0x1700; // Reading
@@ -751,7 +759,7 @@ SIO_WRITE sioWriteMemcardPSX(u8 data)
 		{
 		case 0x53: // PSX 'S'tate // haven't seen it happen yet
 			sio.buf[1] = mcd->FLAG;
-            memcpy(&sio.buf[2], memcard_psx, 8);
+			memcpy(&sio.buf[2], memcard_psx, 8);
 			siomode = SIO_DUMMY;
 			break;
 

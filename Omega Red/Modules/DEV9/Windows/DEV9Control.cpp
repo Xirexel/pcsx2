@@ -1,9 +1,5 @@
 #include "DEV9Control.h"
-#ifdef __ANDROID__
-	#include "DEV9.h"
-#else
-	#include "../DEV9.h"
-#endif
+#include "../DEV9.h"
 #include "PCSX2Lib_API.h"
 #include "pugixml.hpp"
 

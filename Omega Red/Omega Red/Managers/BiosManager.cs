@@ -12,9 +12,12 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Models;
 using Omega_Red.Properties;
+using Omega_Red.SocialNetworks.Google;
 using Omega_Red.Tools;
+using SevenZipExtractor;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -52,6 +55,12 @@ namespace Omega_Red.Managers
 
         }
 
+        private bool m_GoogleDriveAccess = false;
+
+        public event Action<string> ShowInfoEvent;
+
+        public event Action<string> ShowErrorEvent;
+
         private ICollectionView mCustomerView = null;
 
         private readonly ObservableCollection<BiosInfo> _biosInfoCollection = new ObservableCollection<BiosInfo>();
@@ -61,13 +70,21 @@ namespace Omega_Red.Managers
         public static BiosManager Instance { get { if (m_Instance == null) m_Instance = new BiosManager(); return m_Instance; } }
 
         private BiosManager() {
-
-            load();
-
+            
             mCustomerView = CollectionViewSource.GetDefaultView(_biosInfoCollection);
+
+            PropertyGroupDescription l_GameTypeGroupDescription = new PropertyGroupDescription("GameType");
+
+            mCustomerView.GroupDescriptions.Add(l_GameTypeGroupDescription);
+
+            PropertyGroupDescription l_ArchiveFileGroupDescription = new PropertyGroupDescription("ContainerFile");
+
+            mCustomerView.GroupDescriptions.Add(l_ArchiveFileGroupDescription);
 
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate()
             {
+                load();
+
                 foreach (var item in _biosInfoCollection)
                 {
                     if (item.IsCurrent)
@@ -80,7 +97,16 @@ namespace Omega_Red.Managers
             });
 
             mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
+                       
+            GoogleAccountManager.Instance.mEnableStateEvent += (obj) =>
+            {
+                m_GoogleDriveAccess = obj;
+
+                if (Emul.Instance.IsoInfo != null)
+                    load();
+            };
         }
+
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
         {
@@ -89,10 +115,19 @@ namespace Omega_Red.Managers
             if (l_BiosInfo != null)
                 selectBiosInfo(l_BiosInfo);
         }
-        
+
+        private void showErrorEvent(string a_message)
+        {
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
+            {
+                if (ShowErrorEvent != null)
+                    ShowErrorEvent(a_message);
+            });
+        }
+
+
         public void save()
         {
-
             XmlSerializer ser = new XmlSerializer(typeof(ObservableCollection<BiosInfo>));
 
             MemoryStream stream = new MemoryStream();
@@ -107,12 +142,23 @@ namespace Omega_Red.Managers
 
             Settings.Default.Save();
 
+            App.saveCopy();
+        }
+        public void load()
+        {
+            loadInner();
         }
 
-        public void load()
+        private void loadInner()
         {
             if (string.IsNullOrEmpty(Settings.Default.BiosInfoCollection))
                 return;
+
+            if (Emul.Instance.IsoInfo != null &&
+                Emul.Instance.IsoInfo.GameType != GameType.PS2)
+                return;
+
+            _biosInfoCollection.Clear();
 
             XmlSerializer ser = new XmlSerializer(typeof(ObservableCollection<BiosInfo>));
 
@@ -130,18 +176,46 @@ namespace Omega_Red.Managers
                     }
                 }
             }
+            
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
+            {
+                foreach (var item in _biosInfoCollection)
+                {
+                    if (item.IsCurrent)
+                    {
+                        mCustomerView.MoveCurrentTo(item);
+
+                        break;
+                    }
+                }
+            });
         }
 
         public void addBiosInfo(BiosInfo a_BiosInfo)
         {
+            if (string.IsNullOrWhiteSpace(a_BiosInfo.FilePath))
+                return;
+
             if (!_biosInfoCollection.Contains(a_BiosInfo, new Compare()))
             {
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate()
                 {
-                    _biosInfoCollection.Add(a_BiosInfo);
-                });
+                    a_BiosInfo.ContainerFile = new ContainerFile();
 
-                save();
+                    var l_splits = a_BiosInfo.FilePath.Split(new char[] { '|'}, StringSplitOptions.RemoveEmptyEntries);
+
+                    if(l_splits != null && l_splits.Length == 2)
+                    {
+                        l_splits = l_splits[0].Split(new char[] { '\\' }, StringSplitOptions.RemoveEmptyEntries);
+
+                        if (l_splits != null && l_splits.Length >= 1)
+                            a_BiosInfo.ContainerFile = new ContainerFile(l_splits[l_splits.Length - 1]);
+                    }
+
+                    _biosInfoCollection.Add(a_BiosInfo);
+
+                    save();
+                });
             }
         }
 
@@ -157,7 +231,7 @@ namespace Omega_Red.Managers
                 });
 
                 if (a_BiosInfo.IsCurrent)
-                    PCSX2Controller.Instance.BiosInfo = null;
+                    Emul.Instance.BiosInfo = null;
             }
         }
 
@@ -172,7 +246,7 @@ namespace Omega_Red.Managers
 
                 a_BiosInfo.IsCurrent = true;
 
-                PCSX2Controller.Instance.BiosInfo = a_BiosInfo;
+                Emul.Instance.BiosInfo = a_BiosInfo;
 
                 save();
             }
@@ -194,7 +268,7 @@ namespace Omega_Red.Managers
 
             lOpenFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-            lOpenFileDialog.Filter = "Bios files (*.zip, *.bin)|*.zip;*.bin|All files (*.*)|*.*";
+            lOpenFileDialog.Filter = "Bios files (*.zip, *.7z, *.bin)|*.zip;*.7z;*.bin|All files (*.*)|*.*";
             
             bool l_result = (bool)lOpenFileDialog.ShowDialog();
 
@@ -214,195 +288,196 @@ namespace Omega_Red.Managers
                 string data = "";
                 string build = "";
                 int versionInt = 0;
+                GameType gameType = GameType.Unknown;
 
                 string l_file_path = (string)a_file_path;
 
-                if (BiosControl.IsBIOS(
-                                        l_file_path,
-                                        ref zone,
-                                        ref version,
-                                        ref versionInt,
-                                        ref data,
-                                        ref build))
+                try
                 {
-
-                    byte[] l_NVM = null;
-
-                    var l_add_file_path = l_file_path.Replace(".bin", ".nvm");
-
-                    if (File.Exists(l_add_file_path))
+                    using (ArchiveFile archive = new ArchiveFile(l_file_path))
                     {
-                        using (var l_FileStream = File.Open(l_add_file_path, FileMode.Open))
+                        var l_EntriesCount = archive.Entries.Count;
+
+                        for (int l_EntryIndex = 0; l_EntryIndex < l_EntriesCount; l_EntryIndex++)
                         {
-                            if (l_FileStream == null)
-                                return;
+                            var item = archive.Entries[l_EntryIndex];
 
-                            l_NVM = new byte[l_FileStream.Length];
-
-                            l_FileStream.Read(l_NVM, 0, l_NVM.Length);
-                        }
-                    }
-
-                    byte[] l_MEC = null;
-
-                    l_add_file_path = l_file_path.Replace(".bin", ".mec");
-
-                    if (File.Exists(l_add_file_path))
-                    {
-                        using (var l_FileStream = File.Open(l_add_file_path, FileMode.Open))
-                        {
-                            if (l_FileStream == null)
-                                return;
-
-                            l_MEC = new byte[l_FileStream.Length];
-
-                            l_FileStream.Read(l_MEC, 0, l_MEC.Length);
-                        }
-                    }
-
-                    LockScreenManager.Instance.displayMessage(l_add_file_path);
-
-                    BiosManager.Instance.addBiosInfo(new Models.BiosInfo()
-                    {
-                        Zone = zone,
-                        Version = version,
-                        VersionInt = versionInt,
-                        Data = data,
-                        Build = build,
-                        CheckSum = Omega_Red.Tools.BiosControl.getBIOSChecksum(l_file_path),
-                        FilePath = l_file_path,
-                        NVM = l_NVM,
-                        MEC = l_MEC
-                    });
-                }
-                else
-                {
-                    try
-                    {
-
-                        using (FileStream zipToOpen = new FileStream(l_file_path, FileMode.Open))
-                        {
-                            using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
+                            if (item != null && !item.IsFolder && !item.IsEncrypted)
                             {
-
-
-                                foreach (var item in archive.Entries)
+                                using (MemoryStream l_memoryStream = new MemoryStream())
                                 {
-                                    if (item != null)
+                                    try
                                     {
-                                        using (BinaryReader reader = new BinaryReader(item.Open()))
+                                        item.Extract(l_memoryStream);
+
+                                        LockScreenManager.Instance.displayMessage(l_file_path + "|" + string.Format(" {0,5:0.00} %", (float)l_EntryIndex * 100.0 / (float)l_EntriesCount));
+
+                                        l_memoryStream.Position = 0;
+
+                                        using (BinaryReader memoryReader = new BinaryReader(l_memoryStream))
                                         {
-                                            try
+                                            if (BiosControl.IsBIOS(
+                                                                    memoryReader,
+                                                                    ref zone,
+                                                                    ref version,
+                                                                    ref versionInt,
+                                                                    ref data,
+                                                                    ref build,
+                                                                    ref gameType))
                                             {
-                                                MemoryStream l_memoryStream = new MemoryStream();
-                                                
-                                                reader.BaseStream.CopyTo(l_memoryStream);
+                                                var lname = item.FileName.Remove(item.FileName.Length - 4).ToLower();
 
-                                                l_memoryStream.Position = 0;
+                                                var lNVMname = lname + ".nvm";
 
-                                                using (BinaryReader memoryReader = new BinaryReader(l_memoryStream))
+                                                var lMECname = lname + ".mec";
+
+                                                byte[] l_NVM = null;
+
+                                                foreach (var NVMitem in archive.Entries)
                                                 {
-                                                    if (BiosControl.IsBIOS(
-                                                                            memoryReader,
-                                                                            ref zone,
-                                                                            ref version,
-                                                                            ref versionInt,
-                                                                            ref data,
-                                                                            ref build))
+                                                    if (NVMitem.FileName.ToLower() == lNVMname)
                                                     {
-                                                        var lname = item.Name.Remove(item.Name.Length - 4).ToLower();
-
-                                                        var lNVMname = lname + ".nvm";
-
-                                                        var lMECname = lname + ".mec";
-
-                                                        byte[] l_NVM = null;
-
-                                                        foreach (var NVMitem in archive.Entries)
+                                                        if (NVMitem != null)
                                                         {
-                                                            if (NVMitem.Name.ToLower() == lNVMname)
+                                                            using (MemoryStream l_NVMmemoryStream = new MemoryStream())
                                                             {
-                                                                if (NVMitem != null)
-                                                                {
-                                                                    using (BinaryReader readerEntry = new BinaryReader(NVMitem.Open()))
-                                                                    {
-                                                                        MemoryStream l_NVMmemoryStream = new MemoryStream();
+                                                                NVMitem.Extract(l_NVMmemoryStream);
 
-                                                                        readerEntry.BaseStream.CopyTo(l_NVMmemoryStream);
+                                                                l_NVMmemoryStream.Position = 0;
 
-                                                                        l_NVMmemoryStream.Position = 0;
+                                                                l_NVM = new byte[l_NVMmemoryStream.Length];
 
-                                                                        l_NVM = new byte[l_NVMmemoryStream.Length];
-
-                                                                        l_NVMmemoryStream.Read(l_NVM, 0, l_NVM.Length);
-                                                                    }
-                                                                }
+                                                                l_NVMmemoryStream.Read(l_NVM, 0, l_NVM.Length);
                                                             }
                                                         }
-
-                                                        byte[] l_MEC = null;
-
-                                                        foreach (var MECitem in archive.Entries)
-                                                        {
-                                                            if (MECitem.Name.ToLower() == lMECname)
-                                                            {
-                                                                if (MECitem != null)
-                                                                {
-                                                                    using (BinaryReader readerEntry = new BinaryReader(MECitem.Open()))
-                                                                    {
-
-                                                                        MemoryStream l_MECMmemoryStream = new MemoryStream();
-
-                                                                        readerEntry.BaseStream.CopyTo(l_MECMmemoryStream);
-
-                                                                        l_MECMmemoryStream.Position = 0;
-
-                                                                        l_MEC = new byte[l_MECMmemoryStream.Length];
-
-                                                                        l_MECMmemoryStream.Read(l_MEC, 0, l_MEC.Length);
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-
-                                                        LockScreenManager.Instance.displayMessage(l_file_path + "|" + item.Name);
-
-                                                        byte[] l_result = new byte[l_memoryStream.Length];
-
-                                                        var l_readLength = l_memoryStream.Read(l_result, 0, l_result.Length);
-
-                                                        BiosManager.Instance.addBiosInfo(new Models.BiosInfo()
-                                                        {
-                                                            Zone = zone,
-                                                            Version = version,
-                                                            VersionInt = versionInt,
-                                                            Data = data,
-                                                            Build = build,
-                                                            CheckSum = Omega_Red.Tools.BiosControl.getBIOSChecksum(l_result),
-                                                            FilePath = l_file_path + "|" + item.Name,
-                                                            NVM = l_NVM,
-                                                            MEC = l_MEC
-                                                        });
                                                     }
                                                 }
-                                            }
-                                            catch (Exception)
-                                            {
+
+                                                byte[] l_MEC = null;
+
+                                                foreach (var MECitem in archive.Entries)
+                                                {
+                                                    if (MECitem.FileName.ToLower() == lMECname)
+                                                    {
+                                                        if (MECitem != null)
+                                                        {
+                                                            using (MemoryStream l_MECMmemoryStream = new MemoryStream())
+                                                            {
+                                                                MECitem.Extract(l_MECMmemoryStream);
+
+                                                                l_MECMmemoryStream.Position = 0;
+
+                                                                l_MEC = new byte[l_MECMmemoryStream.Length];
+
+                                                                l_MECMmemoryStream.Read(l_MEC, 0, l_MEC.Length);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                byte[] l_result = new byte[l_memoryStream.Length];
+
+                                                var l_readLength = l_memoryStream.Read(l_result, 0, l_result.Length);
+
+                                                BiosManager.Instance.addBiosInfo(new Models.BiosInfo()
+                                                {
+                                                    Zone = zone,
+                                                    Version = version,
+                                                    VersionInt = versionInt,
+                                                    Data = data,
+                                                    Build = build,
+                                                    CheckSum = Omega_Red.Tools.BiosControl.getBIOSChecksum(l_result),
+                                                    FilePath = l_file_path + "|" + item.FileName,
+                                                    NVM = l_NVM,
+                                                    MEC = l_MEC,
+                                                    GameType = gameType
+                                                });
                                             }
                                         }
                                     }
+                                    catch (Exception)
+                                    {
+                                    }
                                 }
-
-
-
-
                             }
                         }
                     }
-                    catch (Exception)
-                    {
-                    }
                 }
+                catch (Exception exc)
+                {
+                    if (exc.Message != null && exc.Message.Contains("is not a known archive type"))
+                    {
+                        try
+                        {
+                            if (BiosControl.IsBIOS(
+                                                    l_file_path,
+                                                    ref zone,
+                                                    ref version,
+                                                    ref versionInt,
+                                                    ref data,
+                                                    ref build,
+                                                    ref gameType))
+                            {
+
+                                byte[] l_NVM = null;
+
+                                var l_add_file_path = l_file_path.Replace(".bin", ".nvm");
+
+                                if (File.Exists(l_add_file_path))
+                                {
+                                    using (var l_FileStream = File.Open(l_add_file_path, FileMode.Open))
+                                    {
+                                        if (l_FileStream == null)
+                                            return;
+
+                                        l_NVM = new byte[l_FileStream.Length];
+
+                                        l_FileStream.Read(l_NVM, 0, l_NVM.Length);
+                                    }
+                                }
+
+                                byte[] l_MEC = null;
+
+                                l_add_file_path = l_file_path.Replace(".bin", ".mec");
+
+                                if (File.Exists(l_add_file_path))
+                                {
+                                    using (var l_FileStream = File.Open(l_add_file_path, FileMode.Open))
+                                    {
+                                        if (l_FileStream == null)
+                                            return;
+
+                                        l_MEC = new byte[l_FileStream.Length];
+
+                                        l_FileStream.Read(l_MEC, 0, l_MEC.Length);
+                                    }
+                                }
+
+                                LockScreenManager.Instance.displayMessage(l_add_file_path);
+
+                                BiosManager.Instance.addBiosInfo(new Models.BiosInfo()
+                                {
+                                    Zone = zone,
+                                    Version = version,
+                                    VersionInt = versionInt,
+                                    Data = data,
+                                    Build = build,
+                                    CheckSum = Omega_Red.Tools.BiosControl.getBIOSChecksum(l_file_path),
+                                    FilePath = l_file_path,
+                                    NVM = l_NVM,
+                                    MEC = l_MEC,
+                                    GameType = gameType
+                                });
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            showErrorEvent(e.Message);
+                        }
+                    }
+                    else
+                        showErrorEvent(exc.Message);
+                }                
 
             } while (false);
 
@@ -430,12 +505,10 @@ namespace Omega_Red.Managers
 
         public void persistItemAsync(object a_Item)
         {
-            throw new NotImplementedException();
         }
 
         public void loadItemAsync(object a_Item)
         {
-            throw new NotImplementedException();
         }
 
         public bool accessPersistItem(object a_Item)
@@ -446,6 +519,10 @@ namespace Omega_Red.Managers
         public bool accessLoadItem(object a_Item)
         {
             return true;
+        }
+
+        public void registerItem(object a_Item)
+        {
         }
 
         public System.ComponentModel.ICollectionView Collection

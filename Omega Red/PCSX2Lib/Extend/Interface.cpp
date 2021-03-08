@@ -26,10 +26,10 @@
 #include "../pcsx2/R3000A.h"
 #include "../pcsx2/Counters.h"
 #include "../pcsx2/Sif.h"
-#include "../pcsx2/x86/newVif.h"
 #include "../pcsx2/IPU/IPU.h"
 #include "../pcsx2/IPU/IPU_Fifo.h"
 #include "../pcsx2/IPU/mpeg2lib/Mpeg.h"
+#include "../pcsx2/CDVD/CDVDaccess.h"
 
 
 
@@ -38,6 +38,7 @@
 #include "../pcsx2/ps2/BiosTools.h"
 
 #include "Extend.h"
+#include "PCSX2Def.h"
 #include "../pcsx2/Sio.h"
 #include "../pcsx2/Elfheader.h"
 #include "../pcsx2/Patch.h"
@@ -54,11 +55,11 @@ SysCoreThread &GetCoreThread()
 }
 
 
-CDVD_API *CDVD = nullptr;
-
 CDVD_API CDVDapi_Plugin;
 
 CDVD_API CDVDapi_Iso;
+
+CDVD_API CDVDapi_Disc;
 
 // ----------------------------------------------------------------------------
 // Yay, order of this array shouldn't be important. :)
@@ -67,10 +68,10 @@ const PluginInfo tbl_PluginInfo[] =
     {
         {"GS", PluginId_GS, PS2E_LT_GS, PS2E_GS_VERSION},
         {"PAD", PluginId_PAD, PS2E_LT_PAD, PS2E_PAD_VERSION},
-        {"SPU2", PluginId_SPU2, PS2E_LT_SPU2, PS2E_SPU2_VERSION},
+        //{"SPU2", PluginId_SPU2, PS2E_LT_SPU2, PS2E_SPU2_VERSION},
         //{ "CDVD", PluginId_CDVD, PS2E_LT_CDVD, PS2E_CDVD_VERSION },
         {"USB", PluginId_USB, PS2E_LT_USB, PS2E_USB_VERSION},
-        {"FW", PluginId_FW, PS2E_LT_FW, PS2E_FW_VERSION},
+        //{"FW", PluginId_FW, PS2E_LT_FW, PS2E_FW_VERSION},
         {"DEV9", PluginId_DEV9, PS2E_LT_DEV9, PS2E_DEV9_VERSION},
 
         {NULL},
@@ -96,21 +97,21 @@ _GSreadFIFO2 GSreadFIFO2;
 _GSgifSoftReset GSgifSoftReset;
 
 
-_SPU2reset SPU2reset;
-_SPU2write SPU2write;
-_SPU2read SPU2read;
-_SPU2async SPU2async;
-_SPU2readDMA4Mem SPU2readDMA4Mem;
-_SPU2writeDMA4Mem SPU2writeDMA4Mem;
-_SPU2interruptDMA4 SPU2interruptDMA4;
-_SPU2readDMA7Mem SPU2readDMA7Mem;
-_SPU2writeDMA7Mem SPU2writeDMA7Mem;
-_SPU2irqCallback SPU2irqCallback;
-_SPU2setClockPtr SPU2setClockPtr;
-_SPU2setDMABaseAddr SPU2setDMABaseAddr;
-_SPU2interruptDMA7 SPU2interruptDMA7;
-_SPU2WriteMemAddr SPU2WriteMemAddr;
-_SPU2ReadMemAddr SPU2ReadMemAddr;
+_SPU2reset SPU2resetProxy;
+_SPU2write SPU2writeProxy;
+_SPU2read SPU2readProxy;
+_SPU2async SPU2asyncProxy;
+_SPU2readDMA4Mem SPU2readDMA4MemProxy;
+_SPU2writeDMA4Mem SPU2writeDMA4MemProxy;
+_SPU2interruptDMA4 SPU2interruptDMA4Proxy;
+_SPU2readDMA7Mem SPU2readDMA7MemProxy;
+_SPU2writeDMA7Mem SPU2writeDMA7MemProxy;
+_SPU2irqCallback SPU2irqCallbackProxy;
+_SPU2setClockPtr SPU2setClockPtrProxy;
+_SPU2setDMABaseAddr SPU2setDMABaseAddrProxy;
+_SPU2interruptDMA7 SPU2interruptDMA7Proxy;
+_SPU2WriteMemAddr SPU2WriteMemAddrProxy;
+_SPU2ReadMemAddr SPU2ReadMemAddrProxy;
 
 
 
@@ -144,10 +145,6 @@ USBhandler usbHandler;
 
 
 
-_FWread32 FWread32;
-_FWwrite32 FWwrite32;
-_FWirqCallback FWirqCallback;
-
 
 
 _PADstartPoll PADstartPoll;
@@ -158,8 +155,8 @@ _PADsetSlot PADsetSlot;
 // manualized reset that writes core reset registers of the SPU2 plugin:
 static void CALLBACK SPU2_Reset()
 {
-    SPU2write(0x1f90019A, 1 << 15); // core 0
-    SPU2write(0x1f90059A, 1 << 15); // core 1
+    SPU2writeProxy(0x1f90019A, 1 << 15); // core 0
+    SPU2writeProxy(0x1f90059A, 1 << 15); // core 1
 }
 
 PCSX2_EXPORT void STDAPICALLTYPE setSPU2(PCSX2Lib::API::SPU2_API *a_API)
@@ -167,21 +164,21 @@ PCSX2_EXPORT void STDAPICALLTYPE setSPU2(PCSX2Lib::API::SPU2_API *a_API)
     if (a_API == nullptr)
         return;
 
-    SPU2reset = SPU2_Reset;
-    SPU2write = a_API->SPU2write;
-    SPU2read = a_API->SPU2read;
-    SPU2readDMA4Mem = a_API->SPU2readDMA4Mem;
-    SPU2writeDMA4Mem = a_API->SPU2writeDMA4Mem;
-    SPU2interruptDMA4 = a_API->SPU2interruptDMA4;
-    SPU2readDMA7Mem = a_API->SPU2readDMA7Mem;
-    SPU2writeDMA7Mem = a_API->SPU2writeDMA7Mem;
-    SPU2setDMABaseAddr = a_API->SPU2setDMABaseAddr;
-    SPU2interruptDMA7 = a_API->SPU2interruptDMA7;
-    SPU2ReadMemAddr = a_API->SPU2ReadMemAddr;
-    SPU2WriteMemAddr = a_API->SPU2WriteMemAddr;
-    SPU2irqCallback = a_API->SPU2irqCallback;
-    SPU2setClockPtr = a_API->SPU2setClockPtr;
-    SPU2async = a_API->SPU2async;
+    SPU2resetProxy = SPU2_Reset;
+    SPU2writeProxy = a_API->SPU2write;
+    SPU2readProxy = a_API->SPU2read;
+    SPU2readDMA4MemProxy = a_API->SPU2readDMA4Mem;
+    SPU2writeDMA4MemProxy = a_API->SPU2writeDMA4Mem;
+    SPU2interruptDMA4Proxy = a_API->SPU2interruptDMA4;
+    SPU2readDMA7MemProxy = a_API->SPU2readDMA7Mem;
+    SPU2writeDMA7MemProxy = a_API->SPU2writeDMA7Mem;
+    SPU2setDMABaseAddrProxy = a_API->SPU2setDMABaseAddr;
+    SPU2interruptDMA7Proxy = a_API->SPU2interruptDMA7;
+    SPU2ReadMemAddrProxy = a_API->SPU2ReadMemAddr;
+    SPU2WriteMemAddrProxy = a_API->SPU2WriteMemAddr;
+    SPU2irqCallbackProxy = a_API->SPU2irqCallback;
+    SPU2setClockPtrProxy = a_API->SPU2setClockPtr;
+    SPU2asyncProxy = a_API->SPU2async;
 }
 
 PCSX2_EXPORT void STDAPICALLTYPE setDEV9(PCSX2Lib::API::DEV9_API *a_API)
@@ -206,10 +203,6 @@ PCSX2_EXPORT void STDAPICALLTYPE setFW(PCSX2Lib::API::FW_API *a_API)
 {
     if (a_API == nullptr)
         return;
-
-    FWread32 = a_API->FWread32;
-    FWwrite32 = a_API->FWwrite32;
-    FWirqCallback = a_API->FWirqCallback;
 }
 
 PCSX2_EXPORT void STDAPICALLTYPE setUSB(PCSX2Lib::API::USB_API *a_API)
@@ -242,8 +235,25 @@ PCSX2_EXPORT void STDAPICALLTYPE setPAD(PCSX2Lib::API::PAD_API *a_API)
 
 PCSX2_EXPORT void STDAPICALLTYPE setGS(PCSX2Lib::API::GS_API *a_API)
 {
-    if (a_API == nullptr)
-        return;
+    if (a_API == nullptr) {
+
+        GScallbackopen = nullptr;
+        GSvsync = nullptr;
+        GSgifTransfer = nullptr;
+        GSirqCallback = nullptr;
+        GSsetBaseMem = nullptr;
+        GSsetGameCRC = nullptr;
+        GSsetFrameSkip = nullptr;
+        GSsetVsync = nullptr;
+        GSreset = nullptr;
+        GSinitReadFIFO = nullptr;
+        GSreadFIFO = nullptr;
+        GSinitReadFIFO2 = nullptr;
+        GSreadFIFO2 = nullptr;
+        GSgifSoftReset = nullptr;
+    
+		return;
+	}
 
 
     GScallbackopen = a_API->GScallbackopen;
@@ -1123,11 +1133,11 @@ PCSX2_EXPORT void STDAPICALLTYPE DetectCpuAndUserModeFunc()
 {
     AffinityAssert_AllowFrom_MainUI();
 
-#ifdef _M_X86
     x86caps.Identify();
     x86caps.CountCores();
     x86caps.SIMD_EstablishMXCSRmask();
 
+#ifdef _M_X86
     if (!x86caps.hasStreamingSIMD2Extensions) {
         // This code will probably never run if the binary was correctly compiled for SSE2
         // SSE2 is required for any decent speed and is supported by more than decade old x86 CPUs
@@ -1135,26 +1145,6 @@ PCSX2_EXPORT void STDAPICALLTYPE DetectCpuAndUserModeFunc()
             .SetDiagMsg(L"Critical Failure: SSE2 Extensions not available.")
             .SetUserMsg(_("SSE2 extensions are not available.  PCSX2 requires a cpu that supports the SSE2 instruction set."));
     }
-
-#elif __ANDROID__
-#ifdef __i386__
-	x86caps.Identify();
-	x86caps.CountCores();
-	x86caps.SIMD_EstablishMXCSRmask();
-
-	if (!x86caps.hasStreamingSIMD2Extensions) {
-		// This code will probably never run if the binary was correctly compiled for SSE2
-		// SSE2 is required for any decent speed and is supported by more than decade old x86 CPUs
-		throw Exception::HardwareDeficiency()
-			.SetDiagMsg(L"Critical Failure: SSE2 Extensions not available.")
-			.SetUserMsg(_("SSE2 extensions are not available.  PCSX2 requires a cpu that supports the SSE2 instruction set."));
-	}
-#else
-	throw Exception::HardwareDeficiency()
-			.SetDiagMsg(L"CPU is not supportes!!!!")
-			.SetUserMsg(L"CPU is not supportes!!!!);
-#endif
-
 #endif
 }
 
@@ -1172,7 +1162,9 @@ PCSX2_EXPORT void STDAPICALLTYPE SysThreadBase_ResumeFunc()
 
 PCSX2_EXPORT void STDAPICALLTYPE SysThreadBase_SuspendFunc()
 {
-    GetCoreThread().Suspend(true);
+    //GetCoreThread().Suspend(true);
+
+	GetCoreThread().Pause();
 }
 
 PCSX2_EXPORT void STDAPICALLTYPE SysThreadBase_ResetFunc()
@@ -1255,6 +1247,13 @@ PCSX2_EXPORT void STDAPICALLTYPE MTGS_SuspendFunc()
     GetMTGS().Suspend();
 }
 
+extern void MTGS_ResetQuick();
+
+PCSX2_EXPORT void STDAPICALLTYPE MTGS_ResetFunc()
+{
+    MTGS_ResetQuick();
+}
+
 PCSX2_EXPORT void STDAPICALLTYPE MTGS_CancelFunc()
 {
     GetMTGS().Cancel();
@@ -1286,12 +1285,12 @@ PCSX2_EXPORT bool STDAPICALLTYPE openPlugin_SPU2Func()
 #ifdef ENABLE_NEW_IOPDMA_SPU2
     SPU2irqCallback(spu2Irq);
 #else
-    SPU2irqCallback(spu2Irq, spu2DMA4Irq, spu2DMA7Irq);
-    if (SPU2setDMABaseAddr != NULL)
-        SPU2setDMABaseAddr((uptr)iopMem->Main);
+    SPU2irqCallbackProxy(spu2Irq, spu2DMA4Irq, spu2DMA7Irq);
+    if (SPU2setDMABaseAddrProxy != NULL)
+        SPU2setDMABaseAddrProxy((uptr)iopMem->Main);
 #endif
-    if (SPU2setClockPtr != NULL)
-        SPU2setClockPtr(&psxRegs.cycle);
+    if (SPU2setClockPtrProxy != NULL)
+        SPU2setClockPtrProxy(&psxRegs.cycle);
     return true;
 }
 
@@ -1315,8 +1314,6 @@ PCSX2_EXPORT void STDAPICALLTYPE openPlugin_USBFunc()
 
 PCSX2_EXPORT void STDAPICALLTYPE openPlugin_FWFunc()
 {
-    if (FWirqCallback != nullptr)
-        FWirqCallback(fwIrq);
 }
 
 PCSX2_EXPORT void STDAPICALLTYPE ForgetLoadedPatchesFunc()

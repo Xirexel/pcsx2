@@ -18,7 +18,7 @@
 using namespace x86Emitter;
 
 typedef xRegisterSSE xmm;
-typedef xRegisterLong x32;
+typedef xRegister32 x32;
 
 struct microVU;
 
@@ -145,14 +145,24 @@ static const char branchSTR[16][8] = {
 #define gprT1  eax // eax - Temp Reg
 #define gprT2  ecx // ecx - Temp Reg
 #define gprT3  edx // edx - Temp Reg
+#define gprT1q rax // eax - Temp Reg
+#define gprT2q rcx // ecx - Temp Reg
+#define gprT3q rdx // edx - Temp Reg
 #define gprT1b ax  // Low 16-bit of gprT1 (eax)
 #define gprT2b cx  // Low 16-bit of gprT2 (ecx)
 #define gprT3b dx  // Low 16-bit of gprT3 (edx)
 
+#ifdef __M_X86_64
+#define gprF0  ebx // Status Flag 0
+#define gprF1 r12d // Status Flag 1
+#define gprF2 r13d // Status Flag 2
+#define gprF3 r14d // Status Flag 3
+#else
 #define gprF0  ebx // Status Flag 0
 #define gprF1  ebp // Status Flag 1
 #define gprF2  esi // Status Flag 2
 #define gprF3  edi // Status Flag 3
+#endif
 
 // Function Params
 #define mP microVU& mVU, int recPass
@@ -219,7 +229,6 @@ typedef u32 (__fastcall *mVUCall)(void*, void*);
 #define setCode()	 { mVU.code = curI; }
 #define bSaveAddr	 (((xPC + 16) & (mVU.microMemSize-8)) / 8)
 #define shufflePQ	 (((mVU.p) ? 0xb0 : 0xe0) | ((mVU.q) ? 0x01 : 0x04))
-#define cmpOffset(x) ((u8*)&(((u8*)x)[it[0].start]))
 #define Rmem		 &mVU.regs().VI[REG_R].UL
 #define aWrap(x, m)	 ((x > m) ? 0 : x)
 #define shuffleSS(x) ((x==1)?(0x27):((x==2)?(0xc6):((x==4)?(0xe1):(0xe4))))

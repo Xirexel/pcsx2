@@ -11,6 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\pcsx2\FW.cpp" />
+    <ClCompile Include="..\..\pcsx2\IPU\IPUdither.cpp" />
     <ClCompile Include="Extend.cpp" />
     <ClCompile Include="Extend\AppConfig.cpp" />
     <ClCompile Include="Extend\CDVD\CDVD.cpp" />
@@ -26,6 +28,7 @@
     <ClCompile Include="Extend\ps2\BiosTools.cpp" />
     <ClCompile Include="Extend\R3000AInterpreter.cpp" />
     <ClCompile Include="Extend\Sio.cpp" />
+    <ClCompile Include="Extend\SPU2\spu2.cpp" />
     <ClCompile Include="Extend\System\SysCoreThread.cpp" />
     <ClCompile Include="Extend\System\SysThreadBase.cpp" />
   </ItemGroup>
@@ -63,18 +66,6 @@
     <ClCompile Include="..\..\pcsx2\x86\newVif_Dynarec.cpp" />
     <ClCompile Include="..\..\pcsx2\x86\newVif_Unpack.cpp" />
     <ClCompile Include="..\..\pcsx2\x86\newVif_UnpackSSE.cpp" />
-    <ClCompile Include="..\..\pcsx2\x86\sVU_Lower.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\pcsx2\x86\sVU_Micro.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\pcsx2\x86\sVU_Upper.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\pcsx2\x86\sVU_zerorec.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\pcsx2\windows\FlatFileReaderWindows.cpp" />
@@ -239,7 +230,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PCSX2LIB_EXPORTS;DISABLE_RECORDING;SSE2_MIN;_M_X86;PCSX2_DEBUG;_HAS_EXCEPTIONS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PCSX2LIB_EXPORTS;SSE2_MIN;_M_X86;PCSX2_DEBUG;_HAS_EXCEPTIONS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>.\;.\Extend;$(SolutionDir)..\pcsx2\x86;$(SolutionDir)..\pcsx2;$(SolutionDir)Common\pthreads4w\include;$(SolutionDir)..\3rdparty;$(SolutionDir)\3rdparty\soundtouch\;$(SolutionDir)Common\Framework;$(SolutionDir)..\pcsx2\System;$(SolutionDir)Emitters;$(SolutionDir)..\common\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -256,7 +247,7 @@
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <LargeAddressAware>true</LargeAddressAware>
-      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Omega Red\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -290,7 +281,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>PCSX2Lib.def</ModuleDefinitionFile>
-      <OutputFile>$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(SolutionDir)Omega Red\bin\$(Configuration)\$(ProcessorArchitecture)\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -300,9 +291,6 @@
       <Command>"$(SolutionDir)..\common\vsprops\preBuild.cmd"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <Manifest Include="PCSX2Lib.manifest" />
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\MemoryManager\MemoryManager.vcxproj">
       <Project>{1691294c-24f6-452d-9554-feb49c1c1c22}</Project>

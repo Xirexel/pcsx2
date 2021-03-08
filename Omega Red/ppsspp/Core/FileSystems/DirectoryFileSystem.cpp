@@ -30,6 +30,7 @@
 #include "Core/HLE/sceKernel.h"
 #include "Core/HW/MemoryStick.h"
 #include "Core/CoreTiming.h"
+#include "Core/System.h"
 #include "Core/Host.h"
 #include "Core/Replay.h"
 #include "Core/Reporting.h"
@@ -98,7 +99,7 @@ static bool FixFilenameCase(const std::string &path, std::string &filename)
 	return retValue;
 }
 
-bool FixPathCase(std::string& basePath, std::string &path, FixPathCaseBehavior behavior)
+bool FixPathCase(const std::string &basePath, std::string &path, FixPathCaseBehavior behavior)
 {
 	size_t len = path.size();
 
@@ -158,25 +159,25 @@ DirectoryFileSystem::~DirectoryFileSystem() {
 	CloseAll();
 }
 
-std::string DirectoryFileHandle::GetLocalPath(std::string& basePath, std::string localpath)
+std::string DirectoryFileHandle::GetLocalPath(const std::string &basePath, std::string localpath)
 {
 	if (localpath.empty())
 		return basePath;
 
 	if (localpath[0] == '/')
-		localpath.erase(0,1);
-	//Convert slashes
+		localpath.erase(0, 1);
+
+	std::string result = basePath + localpath;
 #ifdef _WIN32
-	for (size_t i = 0; i < localpath.size(); i++) {
-		if (localpath[i] == '/')
-			localpath[i] = '\\';
+	for (char &c : result) {
+		if (c == '/')
+			c = '\\';
 	}
 #endif
-	return basePath + localpath;
+	return result;
 }
 
-bool DirectoryFileHandle::Open(std::string &basePath, std::string &fileName, FileAccess access, u32 &error)
-{
+bool DirectoryFileHandle::Open(const std::string &basePath, std::string &fileName, FileAccess access, u32 &error) {
 	error = 0;
 
 #if HOST_IS_CASE_SENSITIVE
@@ -190,7 +191,7 @@ bool DirectoryFileHandle::Open(std::string &basePath, std::string &fileName, Fil
 	// else we try fopen first (in case we're lucky) before simulating case insensitivity
 #endif
 
-	std::string fullName = GetLocalPath(basePath,fileName);
+	std::string fullName = GetLocalPath(basePath, fileName);
 	VERBOSE_LOG(FILESYS,"Actually opening %s", fullName.c_str());
 
 	// On the PSP, truncating doesn't lose data.  If you seek later, you'll recover it.
@@ -212,7 +213,7 @@ bool DirectoryFileHandle::Open(std::string &basePath, std::string &fileName, Fil
 	}
 	if (access & FILEACCESS_WRITE) {
 		desired   |= GENERIC_WRITE;
-		sharemode |= FILE_SHARE_WRITE;
+		sharemode |= FILE_SHARE_WRITE | FILE_SHARE_READ;
 	}
 	if (access & FILEACCESS_CREATE) {
 		if (access & FILEACCESS_EXCL) {
@@ -250,7 +251,7 @@ bool DirectoryFileHandle::Open(std::string &basePath, std::string &fileName, Fil
 
 		if (w32err == ERROR_DISK_FULL || w32err == ERROR_NOT_ENOUGH_QUOTA) {
 			// This is returned when the disk is full.
-			I18NCategory *err = GetI18NCategory("Error");
+			auto err = GetI18NCategory("Error");
 			host->NotifyUserMessage(err->T("Disk full while writing data"));
 			error = SCE_KERNEL_ERROR_ERRNO_NO_PERM;
 		} else if (!success) {
@@ -314,13 +315,18 @@ bool DirectoryFileHandle::Open(std::string &basePath, std::string &fileName, Fil
 		}
 	} else if (errno == ENOSPC) {
 		// This is returned when the disk is full.
-		I18NCategory *err = GetI18NCategory("Error");
+		auto err = GetI18NCategory("Error");
 		host->NotifyUserMessage(err->T("Disk full while writing data"));
 		error = SCE_KERNEL_ERROR_ERRNO_NO_PERM;
 	} else {
 		error = SCE_KERNEL_ERROR_ERRNO_FILE_NOT_FOUND;
 	}
 #endif
+
+	// Try to detect reads/writes to PSP/GAME to avoid them in replays.
+	if (fullName.find("/PSP/GAME/") != fullName.npos || fullName.find("\\PSP\\GAME\\") != fullName.npos) {
+		inGameDir_ = true;
+	}
 
 	return success;
 }
@@ -333,7 +339,7 @@ size_t DirectoryFileHandle::Read(u8* pointer, s64 size)
 		// On a PSP. it actually is truncated, but the data wasn't erased.
 		off_t off = (off_t)Seek(0, FILEMOVE_CURRENT);
 		if (needsTrunc_ <= off) {
-			return replay_ ? ReplayApplyDiskRead(pointer, 0, (uint32_t)size, CoreTiming::GetGlobalTimeUs()) : 0;
+			return replay_ ? ReplayApplyDiskRead(pointer, 0, (uint32_t)size, inGameDir_, CoreTiming::GetGlobalTimeUs()) : 0;
 		}
 		if (needsTrunc_ < off + size) {
 			size = needsTrunc_ - off;
@@ -344,7 +350,7 @@ size_t DirectoryFileHandle::Read(u8* pointer, s64 size)
 #else
 	bytesRead = read(hFile, pointer, size);
 #endif
-	return replay_ ? ReplayApplyDiskRead(pointer, (uint32_t)bytesRead, (uint32_t)size, CoreTiming::GetGlobalTimeUs()) : bytesRead;
+	return replay_ ? ReplayApplyDiskRead(pointer, (uint32_t)bytesRead, (uint32_t)size, inGameDir_, CoreTiming::GetGlobalTimeUs()) : bytesRead;
 }
 
 size_t DirectoryFileHandle::Write(const u8* pointer, s64 size)
@@ -371,9 +377,13 @@ size_t DirectoryFileHandle::Write(const u8* pointer, s64 size)
 		}
 	}
 
+	if (replay_) {
+		bytesWritten = ReplayApplyDiskWrite(pointer, (uint64_t)bytesWritten, (uint64_t)size, &diskFull, inGameDir_, CoreTiming::GetGlobalTimeUs());
+	}
+
 	if (diskFull) {
 		ERROR_LOG(FILESYS, "Disk full");
-		I18NCategory *err = GetI18NCategory("Error");
+		auto err = GetI18NCategory("Error");
 		host->NotifyUserMessage(err->T("Disk full while writing data"));
 		// We only return an error when the disk is actually full.
 		// When writing this would cause the disk to be full, so it wasn't written, we return 0.
@@ -432,7 +442,8 @@ void DirectoryFileHandle::Close()
 		if (SetEndOfFile(hFile) == 0) {
 			ERROR_LOG_REPORT(FILESYS, "Failed to truncate file.");
 		}
-#else
+#elif !PPSSPP_PLATFORM(SWITCH)
+		// Note: it's not great that Switch cannot truncate appropriately...
 		if (ftruncate(hFile, (off_t)needsTrunc_) != 0) {
 			ERROR_LOG_REPORT(FILESYS, "Failed to truncate file.");
 		}
@@ -597,7 +608,7 @@ bool DirectoryFileSystem::RemoveFile(const std::string &filename) {
 	return ReplayApplyDisk(ReplayAction::FILE_REMOVE, retValue, CoreTiming::GetGlobalTimeUs()) != 0;
 }
 
-u32 DirectoryFileSystem::OpenFile(std::string filename, FileAccess access, const char *devicename) {
+int DirectoryFileSystem::OpenFile(std::string filename, FileAccess access, const char *devicename) {
 	OpenFileEntry entry;
 	u32 err = 0;
 	bool success = entry.hFile.Open(basePath, filename, access, err);
@@ -784,10 +795,17 @@ static std::string SimulateVFATBug(std::string filename) {
 	// These are the characters allowed in DOS filenames.
 	static const char *FAT_UPPER_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&'(){}-_`~";
 	static const char *FAT_LOWER_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&'(){}-_`~";
+	static const char *LOWER_CHARS = "abcdefghijklmnopqrstuvwxyz";
+
+	// To avoid logging/comparing, skip all this if it has no lowercase chars to begin with.
+	size_t lowerchar = filename.find_first_of(LOWER_CHARS);
+	if (lowerchar == filename.npos) {
+		return filename;
+	}
 
 	bool apply_hack = false;
 	size_t dot_pos = filename.find('.');
-	if (dot_pos == filename.npos) {
+	if (dot_pos == filename.npos && filename.length() <= 8) {
 		size_t badchar = filename.find_first_not_of(FAT_LOWER_CHARS);
 		if (badchar == filename.npos) {
 			// It's all lowercase.  Convert to upper.
@@ -814,6 +832,7 @@ static std::string SimulateVFATBug(std::string filename) {
 	}
 
 	if (apply_hack) {
+		VERBOSE_LOG(FILESYS, "Applying VFAT hack to filename: %s", filename.c_str());
 		// In this situation, NT would write UPPERCASE, and just set a flag to say "actually lowercase".
 		// That VFAT flag isn't read by the PSP firmware, so let's pretend to "not read it."
 		std::transform(filename.begin(), filename.end(), filename.begin(), toupper);
@@ -839,6 +858,7 @@ std::vector<PSPFileInfo> DirectoryFileSystem::GetDirListing(std::string path) {
 		return ReplayApplyDiskListing(myVector, CoreTiming::GetGlobalTimeUs());
 	}
 
+	bool hideISOFiles = PSP_CoreParameter().compat.flags().HideISOFiles;
 	while (true) {
 		PSPFileInfo entry;
 		if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
@@ -855,10 +875,16 @@ std::vector<PSPFileInfo> DirectoryFileSystem::GetDirListing(std::string path) {
 		else
 			entry.size = findData.nFileSizeLow | ((u64)findData.nFileSizeHigh<<32);
 		entry.name = SimulateVFATBug(ConvertWStringToUTF8(findData.cFileName));
+
+		bool hideFile = false;
+		if (hideISOFiles && (endsWithNoCase(entry.name, ".cso") || endsWithNoCase(entry.name, ".iso"))) {
+			// Workaround for DJ Max Portable, see compat.ini.
+			hideFile = true;
+		}
 		tmFromFiletime(entry.atime, findData.ftLastAccessTime);
 		tmFromFiletime(entry.ctime, findData.ftCreationTime);
 		tmFromFiletime(entry.mtime, findData.ftLastWriteTime);
-		if (!listingRoot || (wcscmp(findData.cFileName, L"..") && wcscmp(findData.cFileName, L".")))
+		if (!hideFile && (!listingRoot || (wcscmp(findData.cFileName, L"..") && wcscmp(findData.cFileName, L"."))))
 			myVector.push_back(entry);
 
 		int retval = FindNextFile(hFind, &findData);
@@ -884,6 +910,7 @@ std::vector<PSPFileInfo> DirectoryFileSystem::GetDirListing(std::string path) {
 		return ReplayApplyDiskListing(myVector, CoreTiming::GetGlobalTimeUs());
 	}
 
+	bool hideISOFiles = PSP_CoreParameter().compat.flags().HideISOFiles;
 	while ((dirp = readdir(dp)) != NULL) {
 		PSPFileInfo entry;
 		struct stat s;
@@ -896,10 +923,17 @@ std::vector<PSPFileInfo> DirectoryFileSystem::GetDirListing(std::string path) {
 		entry.access = s.st_mode & 0x1FF;
 		entry.name = SimulateVFATBug(dirp->d_name);
 		entry.size = s.st_size;
+
+		bool hideFile = false;
+		if (hideISOFiles && (endsWithNoCase(entry.name, ".cso") || endsWithNoCase(entry.name, ".iso"))) {
+			// Workaround for DJ Max Portable, see compat.ini.
+			hideFile = true;
+		}
+
 		localtime_r((time_t*)&s.st_atime,&entry.atime);
 		localtime_r((time_t*)&s.st_ctime,&entry.ctime);
 		localtime_r((time_t*)&s.st_mtime,&entry.mtime);
-		if (!listingRoot || (strcmp(dirp->d_name, "..") && strcmp(dirp->d_name, ".")))
+		if (!hideFile && (!listingRoot || (strcmp(dirp->d_name, "..") && strcmp(dirp->d_name, "."))))
 			myVector.push_back(entry);
 	}
 	closedir(dp);
@@ -1019,10 +1053,10 @@ bool VFSFileSystem::RemoveFile(const std::string &filename) {
 	return false;
 }
 
-u32 VFSFileSystem::OpenFile(std::string filename, FileAccess access, const char *devicename) {
+int VFSFileSystem::OpenFile(std::string filename, FileAccess access, const char *devicename) {
 	if (access != FILEACCESS_READ) {
 		ERROR_LOG(FILESYS, "VFSFileSystem only supports plain reading");
-		return 0;
+		return SCE_KERNEL_ERROR_ERRNO_INVALID_FLAG;
 	}
 
 	std::string fullName = GetLocalPath(filename);
@@ -1033,7 +1067,7 @@ u32 VFSFileSystem::OpenFile(std::string filename, FileAccess access, const char 
 	u8 *data = VFSReadFile(fullNameC, &size);
 	if (!data) {
 		ERROR_LOG(FILESYS, "VFSFileSystem failed to open %s", filename.c_str());
-		return 0;
+		return SCE_KERNEL_ERROR_ERRNO_FILE_NOT_FOUND;
 	}
 
 	OpenFileEntry entry;

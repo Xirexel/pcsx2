@@ -13,6 +13,7 @@
 */
 
 using Omega_Red.Capture;
+using Omega_Red.Emulators;
 using Omega_Red.Models;
 using Omega_Red.Panels;
 using Omega_Red.Properties;
@@ -75,8 +76,12 @@ namespace Omega_Red.Managers
         {            
             if(Value == MediaOutputType.Stream)
             {
-                return MediaRecorderManager.Instance.mInfoPanel;
+                return MediaRecorderManager.Instance.mStreamingCaptureConfigPanel;
             }
+            else if (Value == MediaOutputType.Capture)
+            {
+                return MediaRecorderManager.Instance.mRecordingCaptureConfig;
+            }                                            
 
             return null;
         }
@@ -94,7 +99,11 @@ namespace Omega_Red.Managers
 
     class MediaRecorderManager : IManager
     {
-        public StreamingCaptureConfig mInfoPanel = new StreamingCaptureConfig();
+        public StreamingCaptureConfig mStreamingCaptureConfigPanel = new StreamingCaptureConfig();
+
+        public RecordingCaptureConfig mRecordingCaptureConfig = new RecordingCaptureConfig();
+
+        
 
         private ICollectionView mCustomerView = null;
 
@@ -109,6 +118,10 @@ namespace Omega_Red.Managers
         public event Action<bool> RecordingStateEvent;
 
         public event Action<string> ShowWarningEvent;
+
+        public event Action<string> ShowInfoEvent;
+
+        public bool State { get; private set; } = false;
 
         public string CaptureManagerVersion { get {
                 switch (MediaOutputType)
@@ -176,24 +189,30 @@ namespace Omega_Red.Managers
 
             mCustomerView.SortDescriptions.Add(
             new SortDescription("DateTime", ListSortDirection.Descending));
-
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate()
-            {
-                load();
-            });
-
+            
             mCustomerView.CurrentChanged += mCustomerView_CurrentChanged;
         }
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
         {
-            if(PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Started)
-                PCSX2Controller.Instance.PlayPause();
+            if (Emul.Instance.Status == Emul.StatusEnum.Started)
+                Emul.Instance.pause();
 
             Managers.MediaRecorderManager.Instance.StartStop(false);
 
             if (mCustomerView.CurrentItem != null)
                 LockScreenManager.Instance.showVideo();
+        }
+
+        public void loadAsync()
+        {
+            _mediaRecorderInfoCollection.Clear();
+
+            ThreadStart loadVideosStart = new ThreadStart(load);
+
+            Thread loadVideosThread = new Thread(loadVideosStart);
+
+            loadVideosThread.Start();
         }
 
         private void load()
@@ -231,45 +250,263 @@ namespace Omega_Red.Managers
                             l_MediaRecorderInfo.FileName = fi.Name;
 
                             l_MediaRecorderInfo.DateTime = fi.LastWriteTime;
-                            
-                            _mediaRecorderInfoCollection.Add(l_MediaRecorderInfo);
-                            
+
+                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                            {
+                                _mediaRecorderInfoCollection.Add(l_MediaRecorderInfo);
+                            });
                         }
                     }
                 }
 
             } while (false);
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+            {
+                loadWithPreviewAsync();
+            });
         }
-                
+
+        private void loadWithPreviewAsync()
+        {
+            ThreadStart loadVideosStart = new ThreadStart(loadWithPreview);
+
+            Thread loadVideosThread = new Thread(loadVideosStart);
+
+            loadVideosThread.Start();
+        }
+
+        private void loadWithPreview()
+        {
+            do
+            {
+                foreach (var l_mediaRecorderInfo in _mediaRecorderInfoCollection.Reverse())
+                {
+                    try
+                    {
+                        Thread.Sleep(600);
+
+                        getThumbnail(l_mediaRecorderInfo);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+            } while (false);
+        }
+
+        private async void getThumbnail(MediaRecorderInfo a_MediaRecorderInfo)
+        {
+            try
+            {
+                var l_mediaData = await getThumbnail(a_MediaRecorderInfo.FilePath);
+
+                await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    a_MediaRecorderInfo.SmallImageSource = l_mediaData.Item1;
+
+                    a_MediaRecorderInfo.Duration = l_mediaData.Item2;
+
+                    if (mCustomerView != null)
+                        mCustomerView.Refresh();
+                });
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private async void addVideo(MediaRecorderInfo a_MediaRecorderInfo)
+        {
+            try
+            {
+                var l_mediaData = await getThumbnail(a_MediaRecorderInfo.FilePath);
+
+                a_MediaRecorderInfo.SmallImageSource = l_mediaData.Item1;
+
+                a_MediaRecorderInfo.Duration = l_mediaData.Item2;
+
+                await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    if (a_MediaRecorderInfo.SmallImageSource != null)
+                        _mediaRecorderInfoCollection.Add(a_MediaRecorderInfo);
+                });
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private double GetRandomNumber(double minimum, double maximum)
+        {
+            Random random = new Random();
+            return 0.45 * (maximum - minimum) + minimum;
+            //return random.NextDouble() * (maximum - minimum) + minimum;
+        }
+
+        private async Task<Tuple<System.Windows.Media.ImageSource, string>> getThumbnail(string mediaFile)
+        {
+            System.Windows.Media.ImageSource l_result = null;
+
+            string l_resultDuration = "";
+
+            do
+            {
+                MediaPlayer player = null;
+
+                AutoResetEvent lBlockEvent = new AutoResetEvent(false);
+
+                await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    player = new MediaPlayer { Volume = 0, ScrubbingEnabled = true };
+
+                    player.Open(new Uri(mediaFile));
+
+                    player.Pause();
+
+                    player.MediaOpened += (sender, e) =>
+                    {
+                        if(player.NaturalDuration.HasTimeSpan && player.HasVideo)
+                        {
+                            l_resultDuration = player.NaturalDuration.TimeSpan.ToString(@"hh\:mm\:ss");
+
+                            var randomPosition = GetRandomNumber(0, player.NaturalDuration.TimeSpan.TotalMilliseconds);
+
+                            player.Position = TimeSpan.FromMilliseconds(randomPosition);
+
+
+                            int l_thumbnail_width = 120;
+                            
+                            var l_thumbnail_height = l_thumbnail_width * (double)player.NaturalVideoHeight / (double)player.NaturalVideoWidth;
+                                                        
+                            //120 = thumbnail width, 90 = thumbnail height and 96x96 = horizontal x vertical DPI
+                            //In an real application, you would not probably use hard coded values!
+                            RenderTargetBitmap rtb = new RenderTargetBitmap(l_thumbnail_width, (int)l_thumbnail_height, 96, 96, PixelFormats.Pbgra32);
+                            DrawingVisual dv = new DrawingVisual();
+                            using (DrawingContext dc = dv.RenderOpen())
+                            {
+                                dc.DrawVideo(player, new Rect(0, 0, l_thumbnail_width, l_thumbnail_height));
+                            }
+
+                            rtb.Render(dv);
+                  
+                            l_result = BitmapFrame.Create(rtb).GetCurrentValueAsFrozen() as BitmapFrame;
+                        }
+
+                        lBlockEvent.Set();
+
+                        player.Close();
+                    };
+
+                    player.MediaFailed += (sender, e) =>
+                    {
+                        lBlockEvent.Set();
+
+                        player.Close();
+                    };
+                });
+
+                if (player == null)
+                    break;
+
+                lBlockEvent.WaitOne(TimeSpan.FromSeconds(20));
+
+            } while (false);
+
+            return Tuple.Create(l_result, l_resultDuration);
+        }
+
         public void StartStop(Object aState)
         {
+            StartStop(aState, false);
+        }
+
+        public void StartStop(Object aState, bool aIsBlocked)
+        {
+            AutoResetEvent lBlockEvent = new AutoResetEvent(false);
+            
             var t = new Thread(() =>
             {
                 ChangeLockEvent(true);
 
                 try
                 {
+                    bool l_result = true;
 
                     if (aState is Boolean)
                     {
                         if ((bool)aState)
                         {
+                            string l_title = "";
+
+                            string l_resultMessage = "";
+
                             switch (MediaOutputType)
                             {
                                 case MediaOutputType.Capture:
-                                    MediaCapture.Instance.start();
+                                    l_result = MediaCapture.Instance.start(ref l_resultMessage);
+                                    l_title = "Recording";
                                     break;
                                 case MediaOutputType.Stream:
-                                    MediaStream.Instance.start();
+                                    l_result = MediaStream.Instance.start(ref l_resultMessage);
+                                    l_title = "Streaming";
                                     break;
                                 default:
                                     break;
                             }
+                            
+                            if (RecordingStateEvent != null)
+                                RecordingStateEvent(l_result);
 
-                            MediaSourcesManager.Instance.openSources();
+                            State = l_result;
+
+                            if (l_result)
+                            {
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                {
+                                    l_title += " is started!!!";
+
+                                    try
+                                    {
+                                        var l_Title = new System.Windows.Controls.TextBlock();
+
+                                        l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, l_resultMessage);
+
+                                        l_title = l_Title.Text;
+                                    }
+                                    finally
+                                    {
+                                        ShowInfo(l_title);
+                                    }
+                                });
+
+                                MediaSourcesManager.Instance.openSources();
+                            }
+                            else
+                            {                                
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                {
+                                    l_title += " cannot be started!!!";
+
+                                    try
+                                    {
+                                        var l_Title = new System.Windows.Controls.TextBlock();
+
+                                        l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, l_resultMessage);
+
+                                        l_title = l_Title.Text;
+                                    }
+                                    finally
+                                    {
+                                        ShowWarning(l_title);
+                                    }
+                                });
+                            }
                         }
                         else
                         {
+                            State = false;
 
                             MediaSourcesManager.Instance.closeSources();
 
@@ -279,7 +516,27 @@ namespace Omega_Red.Managers
                                     MediaCapture.Instance.stop();
                                     break;
                                 case MediaOutputType.Stream:
-                                    MediaStream.Instance.stop();
+                                    var l_state = MediaStream.Instance.stop();
+                                    if(l_state)
+                                    {
+                                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                                        {
+                                            var l_title = "Streaming is closed!!!";
+
+                                            try
+                                            {
+                                                var l_Title = new System.Windows.Controls.TextBlock();
+
+                                                l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, "VideoStreamingIsClosedTitle");
+
+                                                l_title = l_Title.Text;
+                                            }
+                                            finally
+                                            {
+                                                ShowInfo(l_title);
+                                            }
+                                        });
+                                    }
                                     break;
                                 default:
                                     break;
@@ -293,12 +550,17 @@ namespace Omega_Red.Managers
                 finally
                 {
                     ChangeLockEvent(false);
+
+                    lBlockEvent.Set();
                 }
             });
 
             t.SetApartmentState(ApartmentState.MTA);
             
             t.Start();
+
+            if(aIsBlocked)
+                lBlockEvent.WaitOne(TimeSpan.FromSeconds(20));
         }
                
         public void getCollectionOfSources(Action<string> method)
@@ -346,7 +608,7 @@ namespace Omega_Red.Managers
                 return;
             }
 
-            var l_isoInfo = PCSX2Controller.Instance.IsoInfo;
+            var l_isoInfo = Emul.Instance.IsoInfo;
 
             if (l_isoInfo == null)
                 return;
@@ -357,7 +619,20 @@ namespace Omega_Red.Managers
 
             if (l_gameData != null)
             {
-                l_add_file_path = l_gameData.FriendlyName + "_" + l_add_file_path;
+                var l_invalidChars = Path.GetInvalidFileNameChars();
+
+                bool l_hasInvalidChar = false;
+
+                foreach (var l_invalidChar in l_invalidChars)
+                {
+                    l_hasInvalidChar = l_gameData.FriendlyName.Contains(l_invalidChar);
+
+                    if (l_hasInvalidChar)
+                        break;
+                }
+
+                if(!l_hasInvalidChar)
+                    l_add_file_path = l_gameData.FriendlyName + "_" + l_add_file_path;
             }
 
             if (File.Exists(Settings.Default.VideosFolder + l_add_file_path))
@@ -394,9 +669,24 @@ namespace Omega_Red.Managers
 
             l_MediaRecorderInfo.DateTime = DateTime.Now;
 
+            addVideo(l_MediaRecorderInfo);
+
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-            {
-                _mediaRecorderInfoCollection.Add(l_MediaRecorderInfo);
+            {                
+                string l_title = l_MediaRecorderInfo.FileName;
+
+                try
+                {
+                    var l_Title = new System.Windows.Controls.TextBlock();
+
+                    l_Title.SetResourceReference(System.Windows.Controls.TextBlock.TextProperty, "VideoFileRecordedInfoTitle");
+
+                    l_title += l_Title.Text;
+                }
+                finally
+                {
+                    ShowInfo(l_title);
+                }
             });
         }
 
@@ -416,6 +706,10 @@ namespace Omega_Red.Managers
         public bool accessLoadItem(object a_Item)
         {
             return true;
+        }
+
+        public void registerItem(object a_Item)
+        {
         }
 
         public System.ComponentModel.ICollectionView Collection
@@ -647,7 +941,15 @@ namespace Omega_Red.Managers
                 {
                     ShowWarningEvent(a_message);
                 });
-
         }
+
+        private void ShowInfo(string a_message)
+        {
+            if (ShowInfoEvent != null)
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
+                {
+                    ShowInfoEvent(a_message);
+                });
+        }        
     }
 }

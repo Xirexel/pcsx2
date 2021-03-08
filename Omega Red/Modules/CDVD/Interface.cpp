@@ -6,9 +6,9 @@
 #include "CDVD.h"
 
 
-PCSX2_EXPORT_C_(void*) getAPI()
+PCSX2_EXPORT_C_(PCSX2Lib::API::CDVD_API*) getAPI()
 {
-	return &CDVDapi_Iso;
+	return (PCSX2Lib::API::CDVD_API*)&CDVDapi_Iso;
 }
 
 PCSX2_EXPORT_C execute(const wchar_t* a_command, wchar_t** a_result)

@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Properties;
 using Omega_Red.Tools;
@@ -27,6 +28,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using static Omega_Red.Emulators.Emul;
 
 namespace Omega_Red.ViewModels
 {
@@ -40,7 +42,19 @@ namespace Omega_Red.ViewModels
 
             ConfigManager.Instance.SwitchCaptureConfigEvent += Instance_SwitchCaptureConfigEvent;            
 
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_ChangeStatusEvent;
+
+            ConfigManager.Instance.FrameRateEvent += (a_framerate) => { FrameRate = a_framerate; };
+                        
+            MediaRecorderManager.Instance.RecordingStateEvent += (a_state) => {
+
+                Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, (System.Threading.ThreadStart)delegate ()
+                {
+                    checkIsStopped();
+
+                    IsCaptureStopped = !a_state;
+                });
+            };
         }
 
         private void Instance_SwitchCaptureConfigEvent(object obj)
@@ -48,12 +62,34 @@ namespace Omega_Red.ViewModels
             CaptureConfig = obj;
         }
 
-        private void Instance_ChangeStatusEvent(PCSX2Controller.StatusEnum obj)
+        private void Instance_ChangeStatusEvent(Emul.StatusEnum obj)
         {
-            if (PCSX2Controller.Instance.IsoInfo != null && PCSX2Controller.Instance.IsoInfo.GameType == Models.GameType.PSP)
+            if (Emul.Instance.IsoInfo != null && Emul.Instance.IsoInfo.GameType == GameType.PSP)
                 VisibilityDiskState = Visibility.Collapsed;
             else
                 VisibilityDiskState = Visibility.Visible;
+
+
+
+            VisibilityTexturePackMode = Visibility.Collapsed;
+
+            if (obj == Emul.StatusEnum.Stopped ||
+                obj == Emul.StatusEnum.Initilized)
+                VisibilityTexturePackMode = Visibility.Visible;
+
+            checkIsStopped();
+        }
+
+        private void checkIsStopped()
+        {
+
+            IsStopped = false;
+
+            if ((Emul.Instance.Status == Emul.StatusEnum.Stopped ||
+                Emul.Instance.Status == Emul.StatusEnum.Initilized) 
+                &&
+                !MediaRecorderManager.Instance.State)
+                IsStopped = true;
         }
 
         void Instance_SwitchTopmostEvent(bool obj)
@@ -81,6 +117,16 @@ namespace Omega_Red.ViewModels
         {
             get { return ConfigManager.Instance.DisplayModeCollection; }
         }
+               
+        public ICollectionView SkipFrameModeCollection
+        {
+            get { return ConfigManager.Instance.SkipFrameModeCollection; }
+        }
+
+        public ICollectionView ResolutionModeCollection
+        {
+            get { return ConfigManager.Instance.ResolutionModeCollection; }
+        }
 
         public ICollectionView ControlModeCollection
         {
@@ -97,7 +143,14 @@ namespace Omega_Red.ViewModels
         {
             get { return ConfigManager.Instance.ColourSchemaCollection; }
         }
+
+        public ICollectionView TexturePackModeCollection
+        {
+            get { return ConfigManager.Instance.TexturePackModeCollection; }
+        }
+
         
+
 
         public ICollectionView MediaOutputTypeCollection
         {
@@ -145,30 +198,29 @@ namespace Omega_Red.ViewModels
                     App.Current.MainWindow.Topmost = value;
 
                     Settings.Default.Topmost = value;
-
-                    Settings.Default.Save();
                 }
 
                 RaisePropertyChangedEvent("Topmost");
             }
         }
 
-        public bool DisableWideScreen
+        public bool EnableWideScreen
         {
-            get {
+            get
+            {
 
-                return Settings.Default.DisableWideScreen;
+                Emul.Instance.setVideoAspectRatio(!Settings.Default.DisableWideScreen ? AspectRatio.Ratio_16_9 : AspectRatio.Ratio_4_3);
+
+                return !Settings.Default.DisableWideScreen;
             }
             set
             {
 
-                Settings.Default.DisableWideScreen = value;
+                Settings.Default.DisableWideScreen = !value;
 
-                Settings.Default.Save();
+                Emul.Instance.setVideoAspectRatio(value ? AspectRatio.Ratio_16_9 : AspectRatio.Ratio_4_3);
 
-                PCSX2Controller.Instance.setVideoAspectRatio(value ? AspectRatio.Ratio_4_3 : AspectRatio.Ratio_16_9);
-
-                RaisePropertyChangedEvent("DisableWideScreen");
+                RaisePropertyChangedEvent("EnableWideScreen");
             }
         }
 
@@ -226,13 +278,11 @@ namespace Omega_Red.ViewModels
 
                 l_checkBox.Checked += (object sender, RoutedEventArgs e)=> {
 
-                    Tools.ModuleControl.Instance.setIsWired(true);
 
                 };
 
                 l_checkBox.Unchecked += (object sender, RoutedEventArgs e) => {
 
-                    Tools.ModuleControl.Instance.setIsWired(false);
 
                 };
 
@@ -244,21 +294,15 @@ namespace Omega_Red.ViewModels
         {
             get
             {
-                ModuleControl.Instance.setVolume(Settings.Default.SoundLevel);
-
-                PPSSPPControl.Instance.setAudioVolume(Settings.Default.SoundLevel);
+                Emul.Instance.setAudioVolume(Settings.Default.SoundLevel);
 
                 return Settings.Default.SoundLevel;
             }
             set
             {
                 Settings.Default.SoundLevel = value;
-
-                ModuleControl.Instance.setVolume(Settings.Default.SoundLevel);
-
-                PPSSPPControl.Instance.setAudioVolume(Settings.Default.SoundLevel);
-
-                Settings.Default.Save();
+                
+                Emul.Instance.setAudioVolume(Settings.Default.SoundLevel);
 
                 RaisePropertyChangedEvent("SoundLevel");
             }
@@ -268,21 +312,15 @@ namespace Omega_Red.ViewModels
         {
             get
             {
-                ModuleControl.Instance.setIsMuted(Settings.Default.IsMuted);
-
-                PPSSPPControl.Instance.setIsMuted(Settings.Default.IsMuted);
+                Emul.Instance.setIsMuted(Settings.Default.IsMuted);
 
                 return Settings.Default.IsMuted;
             }
             set
             {
                 Settings.Default.IsMuted = value;
-
-                ModuleControl.Instance.setIsMuted(Settings.Default.IsMuted);
-
-                PPSSPPControl.Instance.setIsMuted(Settings.Default.IsMuted);
-
-                Settings.Default.Save();
+                
+                Emul.Instance.setIsMuted(Settings.Default.IsMuted);
 
                 RaisePropertyChangedEvent("IsMuted");
             }
@@ -290,25 +328,28 @@ namespace Omega_Red.ViewModels
 
         public Visibility VisibilityState
         {
-            get { return App.m_AppType == App.AppType.Screen ? Visibility.Visible : Visibility.Collapsed; }
+            get { return Visibility.Visible; }
         }
+
+        public Visibility VisibilityVideoRecordingState
+        {
+            get { return Visibility.Visible; }
+        }
+
         
+
         public bool IsFXAA
         {
             get
             {
-                ModuleControl.Instance.setIsFXAA(Settings.Default.IsFXAA);
+                //ModuleControl.Instance.setIsFXAA(Settings.Default.IsFXAA);
 
                 return Settings.Default.IsFXAA;
             }
             set
             {
                 Settings.Default.IsFXAA = value;
-
-                Settings.Default.Save();
-
-                ModuleControl.Instance.setIsFXAA(Settings.Default.IsFXAA);
-
+                
                 RaisePropertyChangedEvent("IsFXAA");
             }
         }
@@ -346,5 +387,84 @@ namespace Omega_Red.ViewModels
             }
         }
 
+
+        private Visibility mVisibilityTexturePackMode = Visibility.Visible;
+
+        public Visibility VisibilityTexturePackMode
+        {
+            get
+            {
+                return mVisibilityTexturePackMode;
+            }
+            set
+            {
+                mVisibilityTexturePackMode = value;
+
+                RaisePropertyChangedEvent("VisibilityTexturePackMode");
+            }
+        }
+
+
+        private bool mIsStopped = false;
+
+        public bool IsStopped
+        {
+            get
+            {
+                return mIsStopped;
+            }
+            set
+            {
+                mIsStopped = value;
+
+                RaisePropertyChangedEvent("IsStopped");
+            }
+        }
+
+        private bool mIsCaptureStopped = true;
+
+        public bool IsCaptureStopped
+        {
+            get
+            {
+                return mIsCaptureStopped;
+            }
+            set
+            {
+                mIsCaptureStopped = value;
+
+                RaisePropertyChangedEvent("IsCaptureStopped");
+            }
+        }
+
+        public bool ShowFrameRate
+        {
+            get
+            {
+                return Settings.Default.ShowFrameRate;
+            }
+            set
+            {
+                Settings.Default.ShowFrameRate = value;
+
+                RaisePropertyChangedEvent("ShowFrameRate");
+            }
+        }
+
+        private string mFrameRate = "";
+
+        public string FrameRate
+        {
+            get
+            {
+                return mFrameRate;
+            }
+            set
+            {
+                mFrameRate = value;
+
+                RaisePropertyChangedEvent("FrameRate");
+            }
+        }
     }
 }

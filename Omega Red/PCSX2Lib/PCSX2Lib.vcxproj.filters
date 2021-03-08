@@ -25,6 +25,9 @@
     <Filter Include="Source Files\Extend\GUI">
       <UniqueIdentifier>{eeda91b9-8f7b-422d-adb9-6885f8cfe6c8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Extend\SPU2">
+      <UniqueIdentifier>{78b81104-e01d-41fe-93d4-297d12c92ca0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ExportDef.h">
@@ -165,18 +168,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\pcsx2\x86\newVif_UnpackSSE.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pcsx2\x86\sVU_Lower.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pcsx2\x86\sVU_Micro.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pcsx2\x86\sVU_Upper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pcsx2\x86\sVU_zerorec.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\pcsx2\windows\FlatFileReaderWindows.cpp">
@@ -455,9 +446,15 @@
     <ClCompile Include="Extend\Interface.cpp">
       <Filter>Source Files\Extend</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Manifest Include="PCSX2Lib.manifest" />
+    <ClCompile Include="..\..\pcsx2\IPU\IPUdither.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pcsx2\FW.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Extend\SPU2\spu2.cpp">
+      <Filter>Source Files\Extend\SPU2</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="PCSX2Lib.def">

@@ -178,13 +178,14 @@ void Threading::Mutex::AcquireWithoutYield()
 bool Threading::Mutex::AcquireWithoutYield(const wxTimeSpan &timeout)
 {
     wxDateTime megafail(wxDateTime::UNow() + timeout);
-    const timespec fail = {megafail.GetTicks(), (long)megafail.GetMillisecond() * 1000000};
+    const timespec fail = {megafail.GetTicks(), megafail.GetMillisecond() * 1000000};
     return xpthread_mutex_timedlock(&m_mutex, &fail) == 0;
 }
 
 void Threading::Mutex::Release()
 {
-    pthread_mutex_unlock(&m_mutex);
+    if (m_mutex != nullptr)
+		pthread_mutex_unlock(&m_mutex);
 }
 
 bool Threading::Mutex::TryAcquire()

@@ -68,8 +68,12 @@ void MSW_OutputDebugString(const wxString &text)
     if (hasDebugger)
         OutputDebugString(text);
 #else
+
+#ifndef ANDROID_ABI_V8A
     fputs(text.utf8_str(), stdout_fp);
     fflush(stdout_fp);
+#endif
+
 #endif
 }
 
@@ -185,7 +189,7 @@ static void __concall ConsoleStdout_DoSetColor(ConsoleColors color)
 
 static void __concall ConsoleStdout_SetTitle(const wxString &title)
 {
-#if defined(__unix__)
+#if defined(__unix__) && !defined(ANDROID_ABI_V8A)
     fputs("\033]0;", stdout_fp);
     fputs(title.utf8_str(), stdout_fp);
     fputs("\007", stdout_fp);

@@ -41,7 +41,15 @@
 
 #pragma once
 
+#ifdef ANDROID_ABI_V8A
+#ifdef ENABLE_TOOLS
+    #include "emitter/tools.h"
+#else
 #include "../../../../common/include/x86emitter/x86emitter.h"
+#endif
+#else
+#include "../../../../common/include/x86emitter/x86emitter.h"
+#endif
 
 //#include "x86types.h"
 //#include "tools.h"

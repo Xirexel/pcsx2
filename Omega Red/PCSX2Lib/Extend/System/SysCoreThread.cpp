@@ -42,10 +42,10 @@
 
 #pragma comment(lib, "Avrt.lib")
 
+#include "x86emitter/x86_intrin.h"
 #endif
 
 
-#include "x86emitter/x86_intrin.h"
 
 #include "../Extend.h"
 

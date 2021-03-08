@@ -158,9 +158,17 @@ static const __aligned16 MVtab MV_10 [] = {
 };
 
 
-static const DMVtab DMV_2 [] = {
-    { 0, 1}, { 0, 1}, { 1, 2}, {-1, 2}
-};
+#if !defined(__ANDROID__) || (defined(__ANDROID__) && defined(ANDROID_ABI_X86))
+	static const DMVtab DMV_2 [] = {
+		{ 0, 1}, { 0, 1}, { 1, 2}, { -1, 2}
+	};
+#else
+	static const DMVtab DMV_2 [] = {
+		{ 0, 1}, { 0, 1}, { 1, 2}, { 0xFF, 2}
+	};
+#endif
+
+
 
 
 static const __aligned16 CBPtab CBP_7 [] = {

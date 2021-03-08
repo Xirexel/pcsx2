@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 3.4.1)
 set (AudioRenderer_DIR ${MODULES_DIR}/AudioRenderer)
 
 include_directories(
+        ${EMITTER_DIR}
         ${EXTEND_DIR}
         ${PCSX2LIB_DIR}
         ${PUGIXML_DIR}

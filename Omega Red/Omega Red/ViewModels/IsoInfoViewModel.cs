@@ -13,8 +13,10 @@
 */
 
 using Microsoft.Win32;
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Models;
+using Omega_Red.Panels;
 using Omega_Red.Properties;
 using Omega_Red.SocialNetworks.Google;
 using Omega_Red.Tools;
@@ -50,7 +52,7 @@ namespace Omega_Red.ViewModels
 
         public IsoInfoViewModel()
         {
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
 
             if (Collection != null)
                 Collection.CollectionChanged += Collection_CollectionChanged;
@@ -106,11 +108,18 @@ namespace Omega_Red.ViewModels
 
         private bool m_IsEnabled = true;
 
-        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
-            IsEnabled = a_Status == PCSX2Controller.StatusEnum.Stopped
-                || a_Status == PCSX2Controller.StatusEnum.Initilized
-                || a_Status == PCSX2Controller.StatusEnum.NoneInitilized;
+            CurrentGameTitle = "";
+
+            IsEnabled = a_Status == Emul.StatusEnum.Stopped
+                || a_Status == Emul.StatusEnum.Initilized
+                || a_Status == Emul.StatusEnum.NoneInitilized;
+
+            if (Emul.Instance.IsoInfo == null)
+                return;
+
+            CurrentGameTitle = ": " + Emul.Instance.IsoInfo.Title;
         }
 
         public bool IsEnabled
@@ -141,74 +150,32 @@ namespace Omega_Red.ViewModels
         {
             get
             {
+                TipInfoPanel l_TipInfoPanel = new TipInfoPanel();
 
-                Border lBackBorder = new Border();
+                l_TipInfoPanel.addHyperLink(@"https://www.google.com.au/search?client=opera&hs=L8e&ei=qVuYXNvvO430rQGIqpz4Dw&q=ps2+iso&oq=ps2+iso&gs_l=psy-ab.3..0i67l4j0l5j0i67.6261.7402..9089...0.0..0.222.916.0j2j3......0....1..gws-wiz.......0i71j35i39j0i131i67.PaCwxXUwLWY");
 
-                TextBlock lTextBlock = new TextBlock();
+                l_TipInfoPanel.addHyperLink(@"https://www.google.com.au/search?client=opera&hs=Soz&q=psp+isos&sa=X&ved=0ahUKEwiGhf78vJzhAhWEbysKHRRpDEsQ7xYIKygA&biw=1496&bih=723");
 
-                lTextBlock.Foreground = System.Windows.Media.Brushes.Black;
 
-                lTextBlock.TextWrapping = TextWrapping.Wrap;
+                var l_TipTitle = App.Current.Resources["IsoTipTitle"];
 
-                lBackBorder.Child = lTextBlock;
+                if(l_TipTitle != null)
+                    l_TipInfoPanel.setTipTitle(l_TipTitle.ToString());
 
-                lBackBorder.Margin = new Thickness(5);
+                return l_TipInfoPanel;
+            }
+        }
 
-                var l_BiosTipTitle = App.Current.Resources["IsoTipTitle"];
+        private string mCurrentGameTitle = "";
 
-                lTextBlock.Inlines.Add(l_BiosTipTitle as string);
+        public string CurrentGameTitle
+        {
+            get { return mCurrentGameTitle; }
+            set
+            {
+                mCurrentGameTitle = value;
 
-                {
-                    var lHyperlink = new Hyperlink();
-
-                    lHyperlink.Inlines.Add(@"https://www.google.com.au/search?client=opera&hs=L8e&ei=qVuYXNvvO430rQGIqpz4Dw&q=ps2+iso&oq=ps2+iso&gs_l=psy-ab.3..0i67l4j0l5j0i67.6261.7402..9089...0.0..0.222.916.0j2j3......0....1..gws-wiz.......0i71j35i39j0i131i67.PaCwxXUwLWY");
-
-                    lHyperlink.Click += delegate (object sender, RoutedEventArgs e)
-                    {
-                        var lHyperlink1 = sender as Hyperlink;
-
-                        if (lHyperlink1 == null)
-                            return;
-
-                        var lRun = lHyperlink1.Inlines.FirstInline as Run;
-
-                        if (lRun == null)
-                            return;
-
-                        Native.openURL(lRun.Text); 
-                    };
-
-                    lTextBlock.Inlines.Add(new LineBreak());
-
-                    lTextBlock.Inlines.Add(lHyperlink);
-                }
-
-                {
-                    var lHyperlink = new Hyperlink();
-
-                    lHyperlink.Inlines.Add(@"https://www.google.com.au/search?client=opera&hs=Soz&q=psp+isos&sa=X&ved=0ahUKEwiGhf78vJzhAhWEbysKHRRpDEsQ7xYIKygA&biw=1496&bih=723");
-
-                    lHyperlink.Click += delegate (object sender, RoutedEventArgs e)
-                    {
-                        var lHyperlink1 = sender as Hyperlink;
-
-                        if (lHyperlink1 == null)
-                            return;
-
-                        var lRun = lHyperlink1.Inlines.FirstInline as Run;
-
-                        if (lRun == null)
-                            return;
-
-                        Native.openURL(lRun.Text);
-                    };
-
-                    lTextBlock.Inlines.Add(new LineBreak());
-
-                    lTextBlock.Inlines.Add(lHyperlink);
-                }
-
-                return lBackBorder;
+                RaisePropertyChangedEvent("CurrentGameTitle");
             }
         }
     }

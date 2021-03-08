@@ -114,7 +114,7 @@ int IPU1dma()
 
 	//We need to make sure GIF has flushed before sending IPU data, it seems to REALLY screw FFX videos
 
-	if(!ipu1ch.chcr.STR || IPU1Status.DMAMode == 2)
+	if(!ipu1ch.chcr.STR || IPU1Status.DMAMode == DMA_MODE_INTERLEAVE)
 	{
 		//We MUST stop the IPU from trying to fill the FIFO with more data if the DMA has been suspended
 		//if we don't, we risk causing the data to go out of sync with the fifo and we end up losing some!
@@ -226,8 +226,9 @@ void IPU0dma()
 	ipu0ch.qwc -= readsize; // note: qwc is u16
 
 	
-		if (dmacRegs.ctrl.STS == STS_fromIPU)   // STS == fromIPU
+		if (dmacRegs.ctrl.STS == STS_fromIPU && ipu0ch.qwc == 0)   // STS == fromIPU
 		{
+			//DevCon.Warning("fromIPU Stall Control");
 			dmacRegs.stadr.ADDR = ipu0ch.madr;
 			switch (dmacRegs.ctrl.STD)
 			{
@@ -271,6 +272,10 @@ __fi void dmaIPU0() // fromIPU
 		hwDmacIrq(DMAC_FROM_IPU);
 	}
 	//if (dmacRegs.ctrl.STS == STS_fromIPU) DevCon.Warning("DMA Stall enabled on IPU0");
+
+	if (dmacRegs.ctrl.STS == STS_fromIPU)   // STS == fromIPU - Initial settings
+		dmacRegs.stadr.ADDR = ipu0ch.madr;
+
 	IPU_INT_FROM( 64 );
 
 
@@ -409,6 +414,6 @@ IPU_FORCEINLINE void ipu1Interrupt()
 
 	DMA_LOG("IPU1 DMA End");
 	ipu1ch.chcr.STR = false;
-	IPU1Status.DMAMode = 2;
+	IPU1Status.DMAMode = DMA_MODE_INTERLEAVE;
 	hwDmacIrq(DMAC_TO_IPU);
 }

@@ -64,7 +64,7 @@ if(CMAKE_CROSSCOMPILING)
     endif()
 else()
     if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-        set(wxWidgets_CONFIG_EXECUTABLE "/usr/local/bin/wxgtk2u-3.0-config")
+        set(wxWidgets_CONFIG_EXECUTABLE "/usr/local/bin/wxgtk3u-3.0-config")
     endif()
     if(EXISTS "/usr/bin/wx-config-3.0")
         set(wxWidgets_CONFIG_EXECUTABLE "/usr/bin/wx-config-3.0")
@@ -87,6 +87,8 @@ endif()
 ## Use CheckLib package to find module
 include(CheckLib)
 if(Linux)
+    check_lib(EGL EGL EGL/egl.h)
+    check_lib(X11_XCB X11-xcb X11/Xlib-xcb.h)
     check_lib(AIO aio libaio.h)
     # There are two udev pkg config files - udev.pc (wrong), libudev.pc (correct)
     # When cross compiling, pkg-config will be skipped so we have to look for
@@ -98,14 +100,9 @@ if(Linux)
         check_lib(LIBUDEV libudev libudev.h)
     endif()
 endif()
-if(EGL_API)
-    check_lib(EGL EGL EGL/egl.h)
-    check_lib(X11_XCB X11-xcb X11/Xlib-xcb.h)
+if(PORTAUDIO_API)
+    check_lib(PORTAUDIO portaudio portaudio.h pa_linux_alsa.h)
 endif()
-if(OPENCL_API)
-    check_lib(OPENCL OpenCL CL/cl.hpp)
-endif()
-check_lib(PORTAUDIO portaudio portaudio.h pa_linux_alsa.h)
 check_lib(SOUNDTOUCH SoundTouch soundtouch/SoundTouch.h)
 
 if(SDL2_API)
@@ -191,6 +188,20 @@ if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIRS})
 endif()
 
+find_package(HarfBuzz)
+
+if(HarfBuzz_FOUND)
+include_directories(${HarfBuzz_INCLUDE_DIRS})
+endif()
+
+set(ACTUALLY_ENABLE_TESTS ${ENABLE_TESTS})
+if(ENABLE_TESTS)
+	if(NOT EXISTS "${CMAKE_SOURCE_DIR}/3rdparty/gtest/CMakeLists.txt")
+		message(WARNING "ENABLE_TESTS was on but gtest was not found, unit tests will not be enabled")
+		set(ACTUALLY_ENABLE_TESTS Off)
+	endif()
+endif()
+
 #----------------------------------------
 #  Use  project-wide include directories
 #----------------------------------------
@@ -214,7 +225,7 @@ if(GCC_VERSION VERSION_EQUAL "7.0" OR GCC_VERSION VERSION_EQUAL "7.1")
     GCC7_BUG()
 endif()
 
-if(GCC_VERSION GREATER_EQUAL "9.0" AND GCC_VERSION LESS "9.2")
+if((GCC_VERSION VERSION_EQUAL "9.0" OR GCC_VERSION VERSION_GREATER "9.0") AND GCC_VERSION LESS "9.2")
     message(WARNING "
     It looks like you are compiling with 9.0.x or 9.1.x. Using these versions is not recommended,
     as there is a bug known to cause the compiler to segfault while compiling. See patch

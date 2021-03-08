@@ -16,9 +16,14 @@ android {
         }
     }
     buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        jnidebug {
+
+            // This copies the debuggable attribute and debug signing configurations.
+            initWith debug
+
+            applicationIdSuffix ".jnidebug"
+            jniDebuggable true
+            debuggable true
         }
     }
     externalNativeBuild {
@@ -27,6 +32,7 @@ android {
         }
     }
     sourceSets { main { res.srcDirs = ['src/main/res', 'src/main/res/values-ru'] } }
+    ndkVersion '21.3.6528147'
 }
 
 dependencies {

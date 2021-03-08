@@ -6,6 +6,7 @@
 #include "gfx/d3d9_state.h"
 
 #include "base/logging.h"
+#include "base/display.h"
 #include "util/text/utf8.h"
 #include "i18n/i18n.h"
 
@@ -55,12 +56,16 @@ static void GetRes(HWND hWnd, int &xres, int &yres) {
 }
 
 void D3D9Context::SwapInterval(int interval) {
-	// Dummy
+	swapInterval_ = interval;
 }
 
 bool D3D9Context::Init(HINSTANCE hInst, HWND wnd, std::string *error_message) {
 	bool windowed = true;
 	hWnd_ = wnd;
+
+	// D3D9 has no need for display rotation.
+	g_display_rotation = DisplayRotation::ROTATE_0;
+	g_display_rot_matrix.setIdentity();
 
 	DIRECT3DCREATE9EX g_pfnCreate9ex;
 
@@ -154,7 +159,7 @@ bool D3D9Context::Init(HINSTANCE hInst, HWND wnd, std::string *error_message) {
 	presentParams_.hDeviceWindow = wnd;
 	presentParams_.EnableAutoDepthStencil = true;
 	presentParams_.AutoDepthStencilFormat = D3DFMT_D24S8;
-	presentParams_.PresentationInterval = (g_Config.bVSync) ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
+	presentParams_.PresentationInterval = swapInterval_ == 1 ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
 
 	if (has9Ex_) {
 		if (windowed && IsWin7OrLater()) {
@@ -200,16 +205,19 @@ void D3D9Context::Resize() {
 	// This should only be called from the emu thread.
 	int xres, yres;
 	GetRes(hWnd_, xres, yres);
+	uint32_t newInterval = swapInterval_ == 1 ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;;
 	bool w_changed = presentParams_.BackBufferWidth != xres;
 	bool h_changed = presentParams_.BackBufferHeight != yres;
+	bool i_changed = presentParams_.PresentationInterval != newInterval;
 
-	if (device_ && (w_changed || h_changed)) {
+	if (device_ && (w_changed || h_changed || i_changed)) {
 		draw_->HandleEvent(Draw::Event::LOST_BACKBUFFER, 0, 0, nullptr);
 		presentParams_.BackBufferWidth = xres;
 		presentParams_.BackBufferHeight = yres;
+		presentParams_.PresentationInterval = newInterval;
 		HRESULT hr = device_->Reset(&presentParams_);
 		if (FAILED(hr)) {
-      // Had to remove DXGetErrorStringA calls here because dxerr.lib is deprecated and will not link with VS 2015.
+			// Had to remove DXGetErrorStringA calls here because dxerr.lib is deprecated and will not link with VS 2015.
 			PanicAlert("Unable to reset D3D9 device");
 		}
 		draw_->HandleEvent(Draw::Event::GOT_BACKBUFFER, 0, 0, nullptr);

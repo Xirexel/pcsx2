@@ -18,7 +18,14 @@
 #include "System.h"
 
 #include "Utilities/PersistentThread.h"
+#ifdef ANDROID_ABI_V8A
+#ifdef ENABLE_TOOLS
+	#include "emitter/tools.h"
+#endif
+#else
 #include "x86emitter/tools.h"
+#endif
+#include "IPC.h"
 
 
 using namespace Threading;
@@ -112,8 +119,9 @@ public:
 
 	virtual void Suspend( bool isBlocking = true );
 	virtual void Resume();
-	virtual void Pause();
+	virtual void Pause(bool debug = false);
 	virtual void PauseSelf();
+	virtual void PauseSelfDebug();
 
 protected:
 	virtual void OnStart();
@@ -123,6 +131,7 @@ protected:
 	// Resume() has a lot of checks and balances to prevent re-entrance and race conditions.
 	virtual void OnResumeReady() {}
 	virtual void OnPause() {}
+	virtual void OnPauseDebug() {}
 
 	virtual bool StateCheckInThread();
 	virtual void OnCleanupInThread();
@@ -167,6 +176,17 @@ protected:
 	bool			m_resetProfilers;
 	bool			m_resetVsyncTimers;
 	bool			m_resetVirtualMachine;
+
+	// Stores the state of the socket IPC thread.
+	std::unique_ptr<SocketIPC> m_socketIpc;
+
+	// Current state of the IPC thread
+	enum StateIPC 
+	{
+		OFF,
+		ON
+	};
+	StateIPC m_IpcState = OFF;
 
 	// Indicates if the system has an active virtual machine state.  Pretty much always
 	// true anytime between plugins being initialized and plugins being shutdown.  Gets
@@ -251,3 +271,5 @@ protected:
 // them to extend the class and override virtual methods).
 //
 extern SysCoreThread& GetCoreThread();
+
+extern bool g_CDVDReset;

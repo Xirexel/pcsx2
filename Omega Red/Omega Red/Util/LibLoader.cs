@@ -27,48 +27,51 @@ namespace Omega_Red.Util
         private LibLoader() { }
 
         public bool isLoaded { get { return m_handle.ToInt64() != 0; } }
-
-        private TempFile m_TempFile = null;
-
+        
         public Action Release = null;
 
         public void release()
         {
-            if (m_handle != IntPtr.Zero && m_TempFile != null)
+            try
             {
-                if (Release != null)
-                    Release();
+                if (m_handle != IntPtr.Zero)
+                {
+                    if (Release != null)
+                        Release();
 
-                Win32NativeMethods.FreeLibrary(m_handle);
+                    Win32NativeMethods.FreeLibrary(m_handle);
 
-                m_handle = IntPtr.Zero;
-
-                m_TempFile.Dispose();
+                    m_handle = IntPtr.Zero;
+                }
             }
-
-            m_TempFile = null;
+            catch (Exception)
+            {
+            }
         }
 
-        public static LibLoader create(string a_module_name)
+        public static LibLoader create(string a_module_name, bool external = false)
         {
             LibLoader l_LibLoader = new LibLoader();
 
             do
             {
+                string l_path = "";
 
-                var l_TempFile = TempFile.createInstance(a_module_name);
+                if (!external)
+                {
+                    l_path = a_module_name + ".dll";
+                }
+                else
+                {
+                    l_path = a_module_name;
+                }
+                
+                var l_handle = Win32NativeMethods.LoadLibrary(l_path);
 
-                if (l_TempFile == null)
-                    break;
-
-                var l_handle = Win32NativeMethods.LoadLibrary(l_TempFile.Path);
-
-                if (l_handle == null)
+                if (l_handle == IntPtr.Zero)
                     break;
 
                 l_LibLoader.m_handle = l_handle;
-
-                l_LibLoader.m_TempFile = l_TempFile;
                                 
             } while (false);
 
@@ -77,7 +80,7 @@ namespace Omega_Red.Util
 
         ~LibLoader()
         {
-            if (m_handle != IntPtr.Zero && m_TempFile != null)
+            if (m_handle != IntPtr.Zero)
             {
                 if (Release != null)
                     Release();
@@ -85,8 +88,6 @@ namespace Omega_Red.Util
                 Win32NativeMethods.FreeLibrary(m_handle);
 
                 m_handle = IntPtr.Zero;
-
-                m_TempFile.Dispose();
             }
         }
 

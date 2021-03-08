@@ -99,7 +99,7 @@ void SysThreadBase::Suspend( bool isBlocking )
 			case ExecMode_Pausing:
 			case ExecMode_Paused:
 				if( !isBlocking )
-					throw L"Cannot suspend in non-blocking fashion: Another thread is pausing the VM state.";// Exception::CancelEvent( L"Cannot suspend in non-blocking fashion: Another thread is pausing the VM state." );
+					throw Exception::CancelEvent( L"Cannot suspend in non-blocking fashion: Another thread is pausing the VM state." );
 	
 				m_ExecMode = ExecMode_Closing;
 				m_sem_Resume.Post();
@@ -126,30 +126,36 @@ void SysThreadBase::Suspend( bool isBlocking )
 //   The previous suspension state; true if the thread was running or false if it was
 //   closed, not running, or paused.
 //
-void SysThreadBase::Pause()
+void SysThreadBase::Pause(bool debug)
 {
-	if( IsSelf() || !IsRunning() ) return;
+    if (IsSelf() || !IsRunning())
+        return;
 
-	// shortcut ExecMode check to avoid deadlocking on redundant calls to Suspend issued
-	// from Resume or OnResumeReady code.
-	if( (m_ExecMode == ExecMode_Closed) || (m_ExecMode == ExecMode_Paused) ) return;
+    // shortcut ExecMode check to avoid deadlocking on redundant calls to Suspend issued
+    // from Resume or OnResumeReady code.
+    if ((m_ExecMode == ExecMode_Closed) || (m_ExecMode == ExecMode_Paused))
+        return;
 
-	{
-		ScopedLock locker( m_ExecModeMutex );
+    {
+        ScopedLock locker(m_ExecModeMutex);
 
-		// Check again -- status could have changed since above.
-		if( (m_ExecMode == ExecMode_Closed) || (m_ExecMode == ExecMode_Paused) ) return;
+        // Check again -- status could have changed since above.
+        if ((m_ExecMode == ExecMode_Closed) || (m_ExecMode == ExecMode_Paused))
+            return;
 
-		if( m_ExecMode == ExecMode_Opened )
-			m_ExecMode = ExecMode_Pausing;
+        if (m_ExecMode == ExecMode_Opened)
+            m_ExecMode = ExecMode_Pausing;
 
-		pxAssertDev( m_ExecMode == ExecMode_Pausing, "ExecMode should be nothing other than Pausing..." );
+        pxAssertDev(m_ExecMode == ExecMode_Pausing, "ExecMode should be nothing other than Pausing...");
 
-		OnPause();
-		m_sem_event.Post();
-	}
+        if (debug)
+            OnPauseDebug();
+        else
+            OnPause();
+        m_sem_event.Post();
+    }
 
-	m_RunningLock.Wait();
+    m_RunningLock.Wait();
 }
 
 void SysThreadBase::PauseSelf()
@@ -165,6 +171,22 @@ void SysThreadBase::PauseSelf()
 		OnPause();
 		m_sem_event.Post();
 	}
+}
+
+void SysThreadBase::PauseSelfDebug()
+{
+    if (!IsSelf() || !IsRunning())
+        return;
+
+    {
+        ScopedLock locker(m_ExecModeMutex);
+
+        if (m_ExecMode == ExecMode_Opened)
+            m_ExecMode = ExecMode_Pausing;
+
+        OnPauseDebug();
+        m_sem_event.Post();
+    }
 }
 
 // Resumes the core execution state, or does nothing is the core is already running.  If

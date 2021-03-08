@@ -1,0 +1,124 @@
+﻿/* 
+  Localizable.strings
+  Pcsx
+
+  Created by C.W. Betts on 4/23/11.
+  Copyright 2011 __MyCompanyName__. All rights reserved.
+*/
+
+//Commented out strings are those that need to be translated
+
+//libpcsxrcore strings
+"Error Opening CDR Plugin" = "Error Opening CDR Plugin";
+"Error Opening SPU Plugin" = "Hiba a hang plugin megnyitáskor";
+"Error Opening GPU Plugin" = "Hiba a kép plugin megnyitáskor";
+"Error Opening PAD1 Plugin" = "Hiba az egyes irányító plugin megnyitásakor";
+"Error Opening PAD2 Plugin" = "Hiba a kettes irányító plugin megnyitásakor";
+"Error opening SIO1 plugin!" = "Hiba a hang plugin megnyitáskor";
+"Error Closing CDR Plugin" = "Hiba a CD-ROM plugin bezárásakor";
+"Error Closing SPU Plugin" = "Hiba a hang plugin bezárásakor";
+//"Error Closing PAD1 Plugin" = "Hiba az egyes irányító plugin bezárásakor"; //Commented-out on the .po file
+//"Error Closing PAD2 Plugin" = "Hiba a kettes irányító plugin bezárásakor"; //Commented-out on the .po file
+"Error Closing GPU Plugin" = "Hiba a kép plugin bezárásakor";
+"Error closing SIO1 plugin!" = "Hiba a hang plugin bezárásakor";
+"CDRinit error: %d" = "CD-ROM inicializálási hiba: %d";
+"GPUinit error: %d" = "Kép plugin inicializálási hiba: %d";
+"SPUinit error: %d" = "Hang plugin inicializálási hiba: %d";
+"PAD1init error: %d" = "Egyes irányító plugin inicializálási hiba: %d";
+"PAD2init error: %d" = "Kettes irányító plugin inicializálási hiba: %d";
+"NETinit error: %d" = "Internetes plugin inicializálási hiba: %d";
+"SIO1init error: %d!" = "Hang plugin inicializálási hiba: %d";
+"Could not open BIOS:\"%s\". Enabling HLE Bios!\n" = "BIOS nem nyitható meg:\"%s\". HLE Bios használata!\n";
+"Error allocating memory!" = "Memóriafoglalási hiba!";
+"Running PCSXR Version %s (%s).\n" = "PCSXR %s (%s) verzió fut.\n";
+"No memory card value was specified - creating a default card %s\n" = "Nincs megadva memóriakártyához tartozó érték - alapértelmezett kártya létrehozása %s\n";
+"Memory card %s failed to load!\n" = "%s. memóriakártya betöltése sikertelen!\n";
+"Loading memory card %s\n" = "%s. memóriakártya betöltése\n";
+"The memory card %s doesn't exist - creating it\n" = "Nincs %s. memóriakártya - létrehozása folyamatban\n";
+"Track %.2d (%s) - Start %.2d:%.2d:%.2d, Length %.2d:%.2d:%.2d\n" = "Sáv %.2d (%s) - Kezdet %.2d:%.2d:%.2d, Hosszúság %.2d:%.2d:%.2d\n";
+"Loaded CD Image: %s" = "Betöltött CD képfájl: %s";
+"Cheats saved to: %s\n" = "Csalások mentve ide: %s\n";
+"Cheats loaded from: %s\n" = "Csalások betöltve innen: %s\n";
+"Error allocating memory" = "Memóriafoglalási hiba";
+"Unable to start debug server.\n" = "Hibakereső szervert nem lehetett elindítani.\n";
+"Debugger started.\n" = "Hibakereső elindítva.\n";
+"Debugger stopped.\n" = "Hibakereső leállítva.\n";
+"CD-ROM Label: %.32s\n" = "CD-ROM címke: %.32s\n";
+"CD-ROM ID: %.9s\n" = "CD-ROM azonosító: %.9s\n";
+//"CD-ROM EXE Name: %.255s\n" = "CD-ROM címke: %.32s\n";
+"Error opening file: %s.\n" = "Hiba a fájl megnyitása közben: %s.\n";
+"Unknown CPE opcode %02x at position %08x.\n" = "Ismeretlen CPE művelet-kód: %02x ezen a helyen: %08x.\n";
+"\ncould not open: %s\n" = "\nA könyvtár nem nyitható meg: '%s'\n";
+"New Memory Card.mcd" = "Új memória kártya.mcr";
+"Loaded PPF %d.0 patch: %s.\n" = "PPF %d.0 patch betöltve: %s.\n";
+
+//Emu Thread
+"*PCSXR*: Loaded State" = "*PCSXR*: Betöltött elmentett állás";
+"*PCSXR*: Error Saving State %d" = "*PCSXR*: Hiba az állás mentése közben %d";
+"*PCSXR*: Saved State %d" = "*PCSXR*: Elmentett állás %d";
+
+"*PCSXR*: Error Loading State %d" = "*PCSXR*: Hiba a mentett állás betöltése közben %d";
+"*PCSXR*: Sio Irq Always Enabled" = "*PCSXR*: Sio IRQ mindig bekapcsolva";
+"*PCSXR*: Sio Irq Not Always Enabled" = "*PCSXR*: Sio IRQ nincs mindig bekapcsolva";
+
+
+// Cocoa Code
+//"Plugin Initialization Failed!" = "Plugin Initialization Failed!";
+//"Pcsxr failed to initialize the selected %@ plugin (error=%i).\nThe plugin might not work with your system." = "Pcsxr failed to initialize the selected %1$@ plugin (error=%2$i).\nThe plugin might not work with your system.";
+//"Error!" = "Error!";
+//"Installation Succesfull" = "Installation Succesfull";
+//"Installation Failed!" = "Installation Failed!";
+//"The installation of the specified plugin was succesfull. In order to use it, please restart the application." = "The installation of the specified plugin was succesfull. In order to use it, please restart the application.";
+//"The installation of the specified plugin failed. Please try again, or make a manual install." ="The installation of the specified plugin failed. Please try again, or make a manual install.";
+//"Missing plugins!" = "Missing plugins!";
+//"Pcsxr is missing one or more critical plugins. You will need to install these in order to play games." = "Pcsx is missing one or more critical plugins. You will need to install these in order to play games.";
+//"Missing BIOS!" = "Missing BIOS!";
+//"Pcsxr wasn't able to locate any Playstation BIOS ROM files. This means that it will run in BIOS simulation mode which is less stable and compatible than using a real Playstation BIOS.\nIf you have a BIOS available, please copy it to\n%@" = "Pcsxr wasn't able to locate any Playstation BIOS ROM files. This means that it will run in BIOS simulation mode which is less stable and compatible than using a real Playstation BIOS.\nIf you have a BIOS available, please copy it to:\n%@";
+
+"Error opening file" = "Hiba a fájl megnyitása közben";
+//"Unable to open %@: %@" = "Unable to open %1$@: %2$@";
+//"PSX Mem moved Desc" = "Memory Cards Moved";
+//"Psx Mem Moved" = "The memory card folder has been moved to your \"Documents\" folder\n\nThis message will not show up again.";
+
+//Memory card management
+"Format Card" = "Kártya formázása";
+//"Free Size" = "Free Size";
+"Format" = "Formázod a memória kártyát?";
+"Formatting a memory card will remove all data on it.\n\nThis cannot be undone." = "Ha leformázod a memória kártyát, akkor a kártya üres lesz és minden meglévő adat el fog veszni.";
+//"Delete Block" = "Delete Block";
+//"Deleting a block will remove all saved data on that block.\n\nThis cannot be undone." = "Deleting a memory card object will set the blocks to not be readable by the emulator, and may result in the data being overwritten in the future.";
+"No Free Space" = "Nincs szabad hely a memória kártyán";
+//"Memory card %d doesn't have %d free consecutive blocks on it. Please remove some blocks on that card to continue" = "Memory card %1$d doesn't have %2$d free consecutive blocks on it. Please remove some blocks on that card to continue.";
+//"Memory card %i does not have enough free consecutive blocks.\n\nIn order to copy over \"%@ (%@),\" memory card %i must be compressed. Compressing memory cards will make deleted blocks unrecoverable.\n\nDo you want to continue?" = "Memory card %1$i does not have enough free consecutive blocks.\n\nIn order to copy over \"%2$@ (%3$@),\" memory card %4$i must be compressed. Compressing memory cards will make deleted blocks unrecoverable.\n\nDo you want to continue?";
+
+//Cheat manager
+//"Save Cheats" = "Save Cheats";
+//"The cheat codes have not been applied. Unapplied cheats will not run nor be saved. Do you wish to save?" = "The cheat codes have not been applied. Unapplied cheats will not run nor be saved. Do you wish to save?";
+//"Unsaved Changes" = "Unsaved Changes";
+"(Untitled)" = "(Cím nélküli)";
+
+//General buttons
+"Okay" = "Rendben";
+"Cancel" = "Mégsem";
+"Yes" = "Igen";
+"No" = "Nem";
+//"Delete" = "Delete";
+
+//not-so-general buttons
+//"Show Folder" = "Show Folder";
+
+//BIOS file opener
+//"PlayStation BIOS File" = "PlayStation BIOS File";
+//"The file \"%@\" seems to be a BIOS file. Do you want PCSX-R to copy it to the proper location?" = "The file “%1$@\” seems to be a BIOS file. Do you want PCSX-R to copy it to the proper location?";
+//"BIOS_Copy" = "Copy";
+//"BIOS_Move" = "Move";
+//"BIOS Already Exists" = "BIOS Already Exists";
+//"There already exists a BIOS file at \"%1$@\": not copying the file at \"%2$@\".\n\nIf you do want to use the BIOS file at \"%2$@\", delete the BIOS at \"%1$@\"." = "There already exists a BIOS file at “%1$@”: not copying the file at “%2$@”.\n\nIf you do want to use the BIOS file at “%2$@”, delete the BIOS at “%1$@”.";
+//"There already exists a BIOS file at \"%1$@\": not moving the file at \"%2$@\".\n\nIf you do want to use the BIOS file at \"%2$@\", delete the BIOS at \"%1$@\"." = "There already exists a BIOS file at “%1$@”: not moving the file at “%2$@”.\n\nIf you do want to use the BIOS file at “%2$@”, delete the BIOS at “%1$@”.";
+
+//Mem card flags
+"MemCard_Deleted" = "Törölve";
+"MemCard_Free" = "Üres";
+"MemCard_Used" = "Foglalt";
+//"MemCard_Link" = "Link";
+//"MemCard_EndLink" = "End Link";

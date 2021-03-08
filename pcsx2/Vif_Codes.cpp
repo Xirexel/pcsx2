@@ -36,7 +36,7 @@ vifOp(vifCode_Null);
 
 __ri void vifExecQueue(int idx)
 {
-	if (!GetVifX.queued_program)
+	if (!GetVifX.queued_program || (VU0.VI[REG_VPU_STAT].UL & 1 << (idx * 8)))
 		return;
 
 	GetVifX.queued_program = false;
@@ -59,6 +59,8 @@ __ri void vifExecQueue(int idx)
 }
 
 static __fi void vifFlush(int idx) {
+	vifExecQueue(idx);
+
 	if (!idx) vif0FLUSH();
 	else      vif1FLUSH();
 
@@ -115,10 +117,11 @@ void ExecuteVU(int idx)
 	}
 	else if((vifX.cmd & 0x7f) == 0x14 || (vifX.cmd & 0x7f) == 0x15)
 	{
-		vuExecMicro(idx, (u16)(vifXRegs.code) << 3);
+		vuExecMicro(idx, (u16)(vifXRegs.code));
 		vifX.cmd = 0;
 		vifX.pass = 0;
 	}
+	vifExecQueue(idx);
 }
 
 //------------------------------------------------------------------
@@ -343,7 +346,7 @@ vifOp(vifCode_MSCAL) {
 
 		if(!vifX.waitforvu)
 		{
-			vuExecMicro(idx, (u16)(vifXRegs.code) << 3); 
+			vuExecMicro(idx, (u16)(vifXRegs.code)); 
 			vifX.cmd = 0;
 			vifX.pass = 0;
 			if(GetVifX.vifpacketsize > 1)
@@ -374,7 +377,7 @@ vifOp(vifCode_MSCALF) {
 		}
 		if(!vifX.waitforvu)
 		{
-			vuExecMicro(idx, (u16)(vifXRegs.code) << 3);
+			vuExecMicro(idx, (u16)(vifXRegs.code));
 			vifX.cmd = 0;
 			vifX.pass = 0;
 			vifExecQueue(idx);
@@ -430,13 +433,6 @@ vifOp(vifCode_Nop) {
 		GetVifX.cmd = 0;
 		GetVifX.pass = 0;
 		vifExecQueue(idx);
-
-		//If the top bit was set to interrupt, we don't want it to take commands from a bad code if it's interpreted as a nop by us.
-		//Onimusha - Blade Warriors
-		if ((vifXRegs.code & 0x80000000) && (vifXRegs.code & 0xFF0000) != 0 && vifXch.qwc > 0 /*Not tag*/)
-		{
-			GetVifX.irq = 0;
-		}
 
 		if (GetVifX.vifpacketsize > 1)
 		{

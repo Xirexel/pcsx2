@@ -1,0 +1,48 @@
+﻿<UserControl x:Class="Omega_Red.Panels.RecordingCaptureConfig"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Omega_Red.Panels"
+             xmlns:p="clr-namespace:Omega_Red.Properties"   
+             xmlns:viewModel="clr-namespace:Omega_Red.ViewModels"
+             mc:Ignorable="d"  
+             x:Name="m_Control">
+    <Grid>
+        <Grid.DataContext>
+            <viewModel:RecordControlViewModel/>
+        </Grid.DataContext>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid Margin="0,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <TextBlock  VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource VideoStreamBitRateTitle}" Margin="5"/>
+            <ComboBox IsSynchronizedWithCurrentItem="True" VerticalAlignment="Center" ItemsSource="{Binding VideoBitRateCollection}" Grid.Column="1"/>
+        </Grid>
+        <Grid Margin="0,5" Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <TextBlock  VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource AudioStreamBitRateTitle}" Margin="5"/>
+            <ComboBox IsSynchronizedWithCurrentItem="True" VerticalAlignment="Center" ItemsSource="{Binding AudioBitRateCollection}" Grid.Column="1"/>
+        </Grid>
+
+
+        <StackPanel Grid.Row="2" Margin="0,10,0,0">
+            <TextBlock HorizontalAlignment="Center"  VerticalAlignment="Center" TextWrapping="Wrap" Text="{DynamicResource RecordServiceTitle}" Margin="5"/>
+            <ComboBox x:Name="m_FileSizeCmbBx" IsEditable="False" SelectionChanged="M_FileSizeCmbBx_SelectionChanged" SelectedIndex="{Binding Source={x:Static p:Settings.Default}, Path=RecordingFileSizeMode, Mode=TwoWay}">
+                <ComboBoxItem Content="{DynamicResource UnlimitedTitle}" Tag="-1"/>
+                <ComboBoxItem Content="{DynamicResource S_1_4_GbTitle}" Tag="1400"/>
+                <ComboBoxItem Content="{DynamicResource S_700_MbTitle}" Tag="700"/>
+            </ComboBox>
+        </StackPanel>
+    </Grid>
+</UserControl>

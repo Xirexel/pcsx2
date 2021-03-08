@@ -34,6 +34,16 @@ extern void SignalExit(int sig);
 
 static const uptr m_pagemask = getpagesize() - 1;
 
+void pxOnAssert(DiagnosticOrigin const&, FastFormatUnicode const&)
+{
+
+}
+
+void pxOnAssert(DiagnosticOrigin const&, char const*)
+{
+
+}
+
 // Linux implementation of SIGSEGV handler.  Bind it using sigaction().
 static void SysPageFaultSignalFilter(int signal, siginfo_t *siginfo, void *)
 {
@@ -144,28 +154,6 @@ static bool _memprotect(void *baseaddr, size_t size, const PageProtectionMode &m
 void *HostSys::MmapReservePtr(void *base, size_t size)
 {
     PageSizeAssertionTest(size);
-
-
-	uintptr_t max_base_addr = 0xCFFF0000;
-	uintptr_t min_base_addr = 0x51000000; // 0xA1000000;
-
-	uintptr_t stride = 0x400000;
-
-	for (uintptr_t base_addr = min_base_addr; base_addr < max_base_addr; base_addr += stride) {
-
-		auto lbase = (u8 *)base_addr;
-
-		auto lptr = mmap(lbase, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-
-		sptr lsptr = (sptr)lptr;
-
-		if(lsptr > 0)
-		{
-			return lptr;
-		}
-
-		munmap(lptr, size);
-	}
 
     // On linux a reserve-without-commit is performed by using mmap on a read-only
     // or anonymous source, with PROT_NONE (no-access) permission.  Since the mapping

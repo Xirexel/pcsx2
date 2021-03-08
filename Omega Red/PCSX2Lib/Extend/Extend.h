@@ -17,3 +17,4 @@ extern SysMainMemory& GetVmReserve();
 extern std::unique_ptr<SysCpuProviderPack> m_CpuProviders;
 
 extern void setInnerMcd(void* aMcd);
+

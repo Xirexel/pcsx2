@@ -21,10 +21,8 @@
 #include "profiler/profiler.h"
 
 #include "base/display.h"
-#include "base/timeutil.h"
 #include "math/lin/matrix4x4.h"
 #include "math/dataconv.h"
-#include "ext/native/file/vfs.h"
 #include "ext/native/thin3d/thin3d.h"
 
 #include "Common/Vulkan/VulkanContext.h"
@@ -32,7 +30,6 @@
 #include "Common/Vulkan/VulkanImage.h"
 #include "thin3d/VulkanRenderManager.h"
 #include "Common/ColorConv.h"
-#include "Core/Host.h"
 #include "Core/MemMap.h"
 #include "Core/Config.h"
 #include "Core/ConfigValues.h"
@@ -40,17 +37,12 @@
 #include "Core/Reporting.h"
 #include "Core/HLE/sceDisplay.h"
 #include "GPU/ge_constants.h"
+#include "GPU/GPUInterface.h"
 #include "GPU/GPUState.h"
 
-#include "GPU/Common/ShaderTranslation.h"
-#include "GPU/Common/PostShader.h"
 #include "GPU/Common/TextureDecoder.h"
 #include "GPU/Common/FramebufferCommon.h"
 #include "GPU/Debugger/Stepping.h"
-
-#include "GPU/GPUInterface.h"
-#include "GPU/GPUState.h"
-#include "Common/Vulkan/VulkanImage.h"
 #include "GPU/Vulkan/FramebufferVulkan.h"
 #include "GPU/Vulkan/DrawEngineVulkan.h"
 #include "GPU/Vulkan/TextureCacheVulkan.h"
@@ -84,6 +76,7 @@ void main() {
 FramebufferManagerVulkan::FramebufferManagerVulkan(Draw::DrawContext *draw, VulkanContext *vulkan) :
 	FramebufferManagerCommon(draw),
 	vulkan_(vulkan) {
+	presentation_->SetLanguage(GLSL_VULKAN);
 
 	InitDeviceObjects();
 
@@ -92,9 +85,7 @@ FramebufferManagerVulkan::FramebufferManagerVulkan(Draw::DrawContext *draw, Vulk
 }
 
 FramebufferManagerVulkan::~FramebufferManagerVulkan() {
-	delete[] convBuf_;
-
-	DestroyDeviceObjects();
+	DeviceLost();
 }
 
 void FramebufferManagerVulkan::SetTextureCache(TextureCacheVulkan *tc) {
@@ -134,28 +125,27 @@ void FramebufferManagerVulkan::InitDeviceObjects() {
 }
 
 void FramebufferManagerVulkan::DestroyDeviceObjects() {
-	delete drawPixelsTex_;
-	drawPixelsTex_ = nullptr;
-
-	if (fsBasicTex_ != VK_NULL_HANDLE)
+	if (fsBasicTex_ != VK_NULL_HANDLE) {
+		vulkan2D_->PurgeFragmentShader(fsBasicTex_);
 		vulkan_->Delete().QueueDeleteShaderModule(fsBasicTex_);
-	if (vsBasicTex_ != VK_NULL_HANDLE)
+	}
+	if (vsBasicTex_ != VK_NULL_HANDLE) {
+		vulkan2D_->PurgeVertexShader(vsBasicTex_);
 		vulkan_->Delete().QueueDeleteShaderModule(vsBasicTex_);
-	if (stencilFs_ != VK_NULL_HANDLE)
+	}
+	if (stencilFs_ != VK_NULL_HANDLE) {
+		vulkan2D_->PurgeFragmentShader(stencilFs_);
 		vulkan_->Delete().QueueDeleteShaderModule(stencilFs_);
-	if (stencilVs_ != VK_NULL_HANDLE)
+	}
+	if (stencilVs_ != VK_NULL_HANDLE) {
+		vulkan2D_->PurgeVertexShader(stencilVs_);
 		vulkan_->Delete().QueueDeleteShaderModule(stencilVs_);
+	}
 
 	if (linearSampler_ != VK_NULL_HANDLE)
 		vulkan_->Delete().QueueDeleteSampler(linearSampler_);
 	if (nearestSampler_ != VK_NULL_HANDLE)
 		vulkan_->Delete().QueueDeleteSampler(nearestSampler_);
-
-	if (postVs_)
-		vulkan_->Delete().QueueDeleteShaderModule(postVs_);
-	if (postFs_)
-		vulkan_->Delete().QueueDeleteShaderModule(postFs_);
-	pipelinePostShader_ = VK_NULL_HANDLE;  // actual pipeline should get destroyed by vulkan2d.
 }
 
 void FramebufferManagerVulkan::NotifyClear(bool clearColor, bool clearAlpha, bool clearDepth, uint32_t color, float depth) {
@@ -184,87 +174,6 @@ void FramebufferManagerVulkan::Init() {
 	FramebufferManagerCommon::Init();
 	// Workaround for upscaling shaders where we force x1 resolution without saving it
 	Resized();
-}
-
-void FramebufferManagerVulkan::MakePixelTexture(const u8 *srcPixels, GEBufferFormat srcPixelFormat, int srcStride, int width, int height, float &u1, float &v1) {
-	if (drawPixelsTex_) {
-		delete drawPixelsTex_;
-		drawPixelsTex_ = nullptr;
-	}
-
-	VkCommandBuffer initCmd = (VkCommandBuffer)draw_->GetNativeObject(Draw::NativeObject::INIT_COMMANDBUFFER);
-
-	// There's only ever a few of these alive, don't need to stress the allocator with these big ones.
-	drawPixelsTex_ = new VulkanTexture(vulkan_);
-	drawPixelsTex_->SetTag("DrawPixels");
-	if (!drawPixelsTex_->CreateDirect(initCmd, nullptr, width, height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)) {
-		// out of memory?
-		delete drawPixelsTex_;
-		drawPixelsTex_ = nullptr;
-		overrideImageView_ = VK_NULL_HANDLE;
-		return;
-	}
-	// Initialize backbuffer texture for DrawPixels
-	drawPixelsTexFormat_ = srcPixelFormat;
-
-	// TODO: We can just change the texture format and flip some bits around instead of this.
-	// Could share code with the texture cache perhaps.
-	// TODO: Could also convert directly into the pushbuffer easily.
-	const uint8_t *data = srcPixels;
-	if (srcPixelFormat != GE_FORMAT_8888 || srcStride != width) {
-		u32 neededSize = width * height * 4;
-		if (!convBuf_ || convBufSize_ < neededSize) {
-			delete[] convBuf_;
-			convBuf_ = new u8[neededSize];
-			convBufSize_ = neededSize;
-		}
-		data = convBuf_;
-		for (int y = 0; y < height; y++) {
-			const u16_le *src16 = (const u16_le *)srcPixels + srcStride * y;
-			const u32_le *src32 = (const u32_le *)srcPixels + srcStride * y;
-			u32 *dst = (u32 *)convBuf_ + width * y;
-			switch (srcPixelFormat) {
-			case GE_FORMAT_565:
-				ConvertRGBA565ToRGBA8888((u32 *)dst, src16, width);
-				break;
-
-			case GE_FORMAT_5551:
-				ConvertRGBA5551ToRGBA8888((u32 *)dst, src16, width);
-				break;
-
-			case GE_FORMAT_4444:
-				ConvertRGBA4444ToRGBA8888((u32 *)dst, src16, width);
-				break;
-
-			case GE_FORMAT_8888:
-				memcpy(dst, src32, 4 * width);
-				break;
-
-			case GE_FORMAT_INVALID:
-				_dbg_assert_msg_(G3D, false, "Invalid pixelFormat passed to DrawPixels().");
-				break;
-			}
-		}
-	}
-
-	VkBuffer buffer;
-	size_t offset = push_->Push(data, width * height * 4, &buffer);
-	drawPixelsTex_->UploadMip(initCmd, 0, width, height, buffer, (uint32_t)offset, width);
-	drawPixelsTex_->EndCreate(initCmd);
-
-	overrideImageView_ = drawPixelsTex_->GetImageView();
-}
-
-void FramebufferManagerVulkan::SetViewport2D(int x, int y, int w, int h) {
-	Draw::Viewport vp;
-	vp.MinDepth = 0.0;
-	vp.MaxDepth = 1.0;
-	vp.TopLeftX = (float)x;
-	vp.TopLeftY = (float)y;
-	vp.Width = (float)w;
-	vp.Height = (float)h;
-	// Since we're about to override it.
-	draw_->SetViewports(1, &vp);
 }
 
 void FramebufferManagerVulkan::DrawActiveTexture(float x, float y, float w, float h, float destW, float destH, float u0, float v0, float u1, float v1, int uvRotation, int flags) {
@@ -305,8 +214,8 @@ void FramebufferManagerVulkan::DrawActiveTexture(float x, float y, float w, floa
 
 	if ((flags & DRAWTEX_TO_BACKBUFFER) && g_display_rotation != DisplayRotation::ROTATE_0) {
 		for (int i = 0; i < 4; i++) {
+			Lin::Vec3 v(vtx[i].x, vtx[i].y, 0.0f);
 			// backwards notation, should fix that...
-			Vec3 v(vtx[i].x, vtx[i].y, 0.0f);
 			v = v * g_display_rot_matrix;
 			vtx[i].x = v.x;
 			vtx[i].y = v.y;
@@ -319,42 +228,17 @@ void FramebufferManagerVulkan::DrawActiveTexture(float x, float y, float w, floa
 
 	VulkanRenderManager *renderManager = (VulkanRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
 
-	VkImageView view = overrideImageView_ ? overrideImageView_ : (VkImageView)draw_->GetNativeObject(Draw::NativeObject::BOUND_TEXTURE0_IMAGEVIEW);
-	if ((flags & DRAWTEX_KEEP_TEX) == 0)
-		overrideImageView_ = VK_NULL_HANDLE;
+	VkImageView view = (VkImageView)draw_->GetNativeObject(Draw::NativeObject::BOUND_TEXTURE0_IMAGEVIEW);
 	VkDescriptorSet descSet = vulkan2D_->GetDescriptorSet(view, (flags & DRAWTEX_LINEAR) ? linearSampler_ : nearestSampler_, VK_NULL_HANDLE, VK_NULL_HANDLE);
 	VkBuffer vbuffer;
 	VkDeviceSize offset = push_->Push(vtx, sizeof(vtx), &vbuffer);
 	renderManager->BindPipeline(cur2DPipeline_);
-	if (cur2DPipeline_ == pipelinePostShader_) {
-		renderManager->PushConstants(vulkan2D_->GetPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, (int)sizeof(postShaderUniforms_), &postShaderUniforms_);
-	}
 	renderManager->Draw(vulkan2D_->GetPipelineLayout(), descSet, 0, nullptr, vbuffer, offset, 4);
 }
 
 void FramebufferManagerVulkan::Bind2DShader() {
 	VkRenderPass rp = (VkRenderPass)draw_->GetNativeObject(Draw::NativeObject::COMPATIBLE_RENDERPASS);
 	cur2DPipeline_ = vulkan2D_->GetPipeline(rp, vsBasicTex_, fsBasicTex_);
-}
-
-void FramebufferManagerVulkan::BindPostShader(const PostShaderUniforms &uniforms) {
-	if (!pipelinePostShader_) {
-		if (usePostShader_) {
-			CompilePostShader();
-		}
-		if (!usePostShader_) {
-			SetNumExtraFBOs(0);
-			Bind2DShader();
-			return;
-		} else {
-			SetNumExtraFBOs(1);
-		}
-	}
-
-	postShaderUniforms_ = uniforms;
-	cur2DPipeline_ = pipelinePostShader_;
-
-	gstate_c.Dirty(DIRTY_VERTEXSHADER_STATE);
 }
 
 int FramebufferManagerVulkan::GetLineWidth() {
@@ -381,9 +265,14 @@ void FramebufferManagerVulkan::ReformatFramebufferFrom(VirtualFramebuffer *vfb, 
 	// to exactly reproduce in 4444 and 8888 formats.
 
 	if (old == GE_FORMAT_565) {
-		// TODO: To match other backends, would be ideal to clear alpha only and not color.
-		// But probably doesn't matter that much...
-		draw_->BindFramebufferAsRenderTarget(vfb->fbo, { Draw::RPAction::CLEAR, Draw::RPAction::KEEP, Draw::RPAction::CLEAR });
+		// We have to bind here instead of clear, since it can be that no framebuffer is bound.
+		// The backend can sometimes directly optimize it to a clear.
+		draw_->BindFramebufferAsRenderTarget(vfb->fbo, { Draw::RPAction::CLEAR, Draw::RPAction::KEEP, Draw::RPAction::CLEAR }, "ReformatFramebuffer"); 
+		// draw_->Clear(Draw::FBChannel::FB_COLOR_BIT | Draw::FBChannel::FB_STENCIL_BIT, 0, 0.0f, 0);
+
+		// Need to dirty anything that has command buffer dynamic state, in case we started a new pass above.
+		// Should find a way to feed that information back, maybe... Or simply correct the issue in the rendermanager.
+		gstate_c.Dirty(DIRTY_DEPTHSTENCIL_STATE | DIRTY_VIEWPORTSCISSOR_STATE | DIRTY_BLEND_STATE);
 	}
 }
 
@@ -394,7 +283,7 @@ void FramebufferManagerVulkan::BlitFramebufferDepth(VirtualFramebuffer *src, Vir
 	bool matchingRenderSize = src->renderWidth == dst->renderWidth && src->renderHeight == dst->renderHeight;
 	if (matchingDepthBuffer && matchingRenderSize && matchingSize) {
 		// TODO: Currently, this copies depth AND stencil, which is a problem.  See #9740.
-		draw_->CopyFramebufferImage(src->fbo, 0, 0, 0, 0, dst->fbo, 0, 0, 0, 0, src->renderWidth, src->renderHeight, 1, Draw::FB_DEPTH_BIT);
+		draw_->CopyFramebufferImage(src->fbo, 0, 0, 0, 0, dst->fbo, 0, 0, 0, 0, src->renderWidth, src->renderHeight, 1, Draw::FB_DEPTH_BIT, "BlitFramebufferDepth");
 		dst->last_frame_depth_updated = gpuStats.numFlips;
 	} else if (matchingDepthBuffer && matchingSize) {
 		/*
@@ -425,7 +314,7 @@ VkImageView FramebufferManagerVulkan::BindFramebufferAsColorTexture(int stage, V
 			VirtualFramebuffer copyInfo = *framebuffer;
 			copyInfo.fbo = renderCopy;
 			CopyFramebufferForColorTexture(&copyInfo, framebuffer, flags);
-			RebindFramebuffer();
+			RebindFramebuffer("RebindFramebuffer - BindFramebufferAsColorTexture");
 			draw_->BindFramebufferAsTexture(renderCopy, stage, Draw::FB_COLOR_BIT, 0);
 		} else {
 			draw_->BindFramebufferAsTexture(framebuffer->fbo, stage, Draw::FB_COLOR_BIT, 0);
@@ -441,19 +330,6 @@ VkImageView FramebufferManagerVulkan::BindFramebufferAsColorTexture(int stage, V
 	}
 }
 
-bool FramebufferManagerVulkan::CreateDownloadTempBuffer(VirtualFramebuffer *nvfb) {
-	nvfb->colorDepth = Draw::FBO_8888;
-
-	nvfb->fbo = draw_->CreateFramebuffer({ nvfb->bufferWidth, nvfb->bufferHeight, 1, 1, true, (Draw::FBColorDepth)nvfb->colorDepth });
-	if (!(nvfb->fbo)) {
-		ERROR_LOG(FRAMEBUF, "Error creating FBO! %i x %i", nvfb->renderWidth, nvfb->renderHeight);
-		return false;
-	}
-
-	draw_->BindFramebufferAsRenderTarget(nvfb->fbo, { Draw::RPAction::CLEAR, Draw::RPAction::CLEAR, Draw::RPAction::CLEAR });
-	return true;
-}
-
 void FramebufferManagerVulkan::UpdateDownloadTempBuffer(VirtualFramebuffer *nvfb) {
 	// Nothing to do here.
 }
@@ -461,8 +337,10 @@ void FramebufferManagerVulkan::UpdateDownloadTempBuffer(VirtualFramebuffer *nvfb
 void FramebufferManagerVulkan::BlitFramebuffer(VirtualFramebuffer *dst, int dstX, int dstY, VirtualFramebuffer *src, int srcX, int srcY, int w, int h, int bpp) {
 	if (!dst->fbo || !src->fbo || !useBufferedRendering_) {
 		// This can happen if they recently switched from non-buffered.
-		if (useBufferedRendering_)
-			draw_->BindFramebufferAsRenderTarget(nullptr, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::KEEP });
+		if (useBufferedRendering_) {
+			draw_->BindFramebufferAsRenderTarget(nullptr, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::KEEP }, "BlitFramebuffer_Fail");
+			gstate_c.Dirty(DIRTY_VIEWPORTSCISSOR_STATE);
+		}
 		return;
 	}
 
@@ -481,8 +359,10 @@ void FramebufferManagerVulkan::BlitFramebuffer(VirtualFramebuffer *dst, int dstX
 		h -= srcY + h - src->bufferHeight;
 	}
 
-	if (w == 0 || h == 0)
+	if (w <= 0 || h <= 0) {
+		// The whole rectangle got clipped.
 		return;
+	}
 
 	float srcXFactor = (float)src->renderWidth / (float)src->bufferWidth;
 	float srcYFactor = (float)src->renderHeight / (float)src->bufferHeight;
@@ -521,9 +401,9 @@ void FramebufferManagerVulkan::BlitFramebuffer(VirtualFramebuffer *dst, int dstX
 	const bool xOverlap = src == dst && srcX2 > dstX1 && srcX1 < dstX2;
 	const bool yOverlap = src == dst && srcY2 > dstY1 && srcY1 < dstY2;
 	if (sameSize && sameDepth && srcInsideBounds && dstInsideBounds && !(xOverlap && yOverlap)) {
-		draw_->CopyFramebufferImage(src->fbo, 0, srcX1, srcY1, 0, dst->fbo, 0, dstX1, dstY1, 0, dstX2 - dstX1, dstY2 - dstY1, 1, Draw::FB_COLOR_BIT);
+		draw_->CopyFramebufferImage(src->fbo, 0, srcX1, srcY1, 0, dst->fbo, 0, dstX1, dstY1, 0, dstX2 - dstX1, dstY2 - dstY1, 1, Draw::FB_COLOR_BIT, "BlitFramebuffer_Copy");
 	} else {
-		draw_->BlitFramebuffer(src->fbo, srcX1, srcY1, srcX2, srcY2, dst->fbo, dstX1, dstY1, dstX2, dstY2, Draw::FB_COLOR_BIT, Draw::FB_BLIT_NEAREST);
+		draw_->BlitFramebuffer(src->fbo, srcX1, srcY1, srcX2, srcY2, dst->fbo, dstX1, dstY1, dstX2, dstY2, Draw::FB_COLOR_BIT, Draw::FB_BLIT_NEAREST, "BlitFramebuffer_Blit");
 	}
 }
 
@@ -537,130 +417,13 @@ void FramebufferManagerVulkan::EndFrame() {
 void FramebufferManagerVulkan::DeviceLost() {
 	DestroyAllFBOs();
 	DestroyDeviceObjects();
+	presentation_->DeviceLost();
 }
 
 void FramebufferManagerVulkan::DeviceRestore(VulkanContext *vulkan, Draw::DrawContext *draw) {
 	vulkan_ = vulkan;
 	draw_ = draw;
+	presentation_->DeviceRestore(draw);
 
 	InitDeviceObjects();
-}
-
-void FramebufferManagerVulkan::DestroyAllFBOs() {
-	currentRenderVfb_ = 0;
-	displayFramebuf_ = 0;
-	prevDisplayFramebuf_ = 0;
-	prevPrevDisplayFramebuf_ = 0;
-
-	for (size_t i = 0; i < vfbs_.size(); ++i) {
-		VirtualFramebuffer *vfb = vfbs_[i];
-		INFO_LOG(FRAMEBUF, "Destroying FBO for %08x : %i x %i x %i", vfb->fb_address, vfb->width, vfb->height, vfb->format);
-		DestroyFramebuf(vfb);
-	}
-	vfbs_.clear();
-
-	for (size_t i = 0; i < bvfbs_.size(); ++i) {
-		VirtualFramebuffer *vfb = bvfbs_[i];
-		DestroyFramebuf(vfb);
-	}
-	bvfbs_.clear();
-
-	for (auto &tempFB : tempFBOs_) {
-		tempFB.second.fbo->Release();
-	}
-	tempFBOs_.clear();
-
-	SetNumExtraFBOs(0);
-}
-
-void FramebufferManagerVulkan::Resized() {
-	FramebufferManagerCommon::Resized();
-
-	if (UpdateSize()) {
-		DestroyAllFBOs();
-	}
-
-	// Might have a new post shader - let's compile it.
-	CompilePostShader();
-}
-
-void FramebufferManagerVulkan::CompilePostShader() {
-	if (postVs_) {
-		vulkan_->Delete().QueueDeleteShaderModule(postVs_);
-	}
-	if (postFs_) {
-		vulkan_->Delete().QueueDeleteShaderModule(postFs_);
-	}
-
-	const ShaderInfo *shaderInfo = nullptr;
-	if (g_Config.sPostShaderName == "Off") {
-		usePostShader_ = false;
-		return;
-	}
-
-	usePostShader_ = false;
-
-	ReloadAllPostShaderInfo();
-	shaderInfo = GetPostShaderInfo(g_Config.sPostShaderName);
-	std::string errorVSX, errorFSX;
-	std::string vsSource;
-	std::string fsSource;
-	if (shaderInfo) {
-		postShaderAtOutputResolution_ = shaderInfo->outputResolution;
-		size_t sz;
-		char *vs = (char *)VFSReadFile(shaderInfo->vertexShaderFile.c_str(), &sz);
-		if (!vs)
-			return;
-		char *fs = (char *)VFSReadFile(shaderInfo->fragmentShaderFile.c_str(), &sz);
-		if (!fs) {
-			free(vs);
-			return;
-		}
-		std::string vsSourceGLSL = vs;
-		std::string fsSourceGLSL = fs;
-		free(vs);
-		free(fs);
-		TranslatedShaderMetadata metaVS, metaFS;
-		if (!TranslateShader(&vsSource, GLSL_VULKAN, &metaVS, vsSourceGLSL, GLSL_140, Draw::ShaderStage::VERTEX, &errorVSX))
-			return;
-		if (!TranslateShader(&fsSource, GLSL_VULKAN, &metaFS, fsSourceGLSL, GLSL_140, Draw::ShaderStage::FRAGMENT, &errorFSX))
-			return;
-	} else {
-		return;
-	}
-
-	// TODO: Delete the old pipeline?
-
-	std::string errorVS;
-	std::string errorFS;
-	postVs_ = CompileShaderModule(vulkan_, VK_SHADER_STAGE_VERTEX_BIT, vsSource.c_str(), &errorVS);
-	postFs_ = CompileShaderModule(vulkan_, VK_SHADER_STAGE_FRAGMENT_BIT, fsSource.c_str(), &errorFS);
-
-	VkRenderPass backbufferRP = (VkRenderPass)draw_->GetNativeObject(Draw::NativeObject::BACKBUFFER_RENDERPASS);
-
-	if (postVs_ && postFs_) {
-		pipelinePostShader_ = vulkan2D_->GetPipeline(backbufferRP, postVs_, postFs_, true, Vulkan2D::VK2DDepthStencilMode::NONE);
-		usePostShader_ = true;
-	} else {
-		ELOG("Failed to compile.");
-		pipelinePostShader_ = VK_NULL_HANDLE;
-		usePostShader_ = false;
-
-		std::string firstLine;
-		std::string errorString = errorVS + "\n" + errorFS;
-		size_t start = 0;
-		for (size_t i = 0; i < errorString.size(); i++) {
-			if (errorString[i] == '\n' && i == start) {
-				start = i + 1;
-			} else if (errorString[i] == '\n') {
-				firstLine = errorString.substr(start, i - start);
-				break;
-			}
-		}
-		if (!firstLine.empty()) {
-			host->NotifyUserMessage("Post-shader error: " + firstLine + "...", 10.0f, 0xFF3090FF);
-		} else {
-			host->NotifyUserMessage("Post-shader error, see log for details", 10.0f, 0xFF3090FF);
-		}
-	}
 }

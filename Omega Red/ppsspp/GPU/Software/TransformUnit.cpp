@@ -27,6 +27,7 @@
 #include "GPU/Software/TransformUnit.h"
 #include "GPU/Software/Clipper.h"
 #include "GPU/Software/Lighting.h"
+#include "GPU/Software/RasterizerRectangle.h"
 
 #define TRANSFORM_BUF_SIZE (65536 * 48)
 
@@ -319,8 +320,7 @@ void TransformUnit::SubmitPrimitive(void* vertices, void* indices, GEPrimitiveTy
 
 	VertexReader vreader(buf, vtxfmt, vertex_type);
 
-	const int max_vtcs_per_prim = 3;
-	static VertexData data[max_vtcs_per_prim];
+	static VertexData data[4];  // Normally max verts per prim is 3, but we temporarily need 4 to detect rectangles from strips.
 	// This is the index of the next vert in data (or higher, may need modulus.)
 	static int data_index = 0;
 
@@ -438,6 +438,26 @@ void TransformUnit::SubmitPrimitive(void* vertices, void* indices, GEPrimitiveTy
 		{
 			// Don't draw a triangle when loading the first two vertices.
 			int skip_count = data_index >= 2 ? 0 : 2 - data_index;
+
+			// If index count == 4, check if we can convert to a rectangle.
+			// This is for Darkstalkers (and should speed up many 2D games).
+			if (vertex_count == 4 && gstate.isModeThrough()) {
+				for (int vtx = 0; vtx < 4; ++vtx) {
+					if (indices) {
+						vreader.Goto(ConvertIndex(vtx) - index_lower_bound);
+					}
+					else {
+						vreader.Goto(vtx);
+					}
+					data[vtx] = ReadVertex(vreader);
+				}
+
+				// If a strip is effectively a rectangle, draw it as such!
+				if (Rasterizer::DetectRectangleFromThroughModeStrip(data)) {
+					Clipper::ProcessRect(data[0], data[3]);
+					break;
+				}
+			}
 
 			for (int vtx = 0; vtx < vertex_count; ++vtx) {
 				if (indices) {

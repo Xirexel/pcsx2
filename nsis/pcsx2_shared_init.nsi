@@ -8,12 +8,7 @@ RequestExecutionLevel user
 !define OUTFILE_POSTFIX "setup"
 OutFile "pcsx2-${APP_VERSION}-${OUTFILE_POSTFIX}.exe"
 
-Var UserPrivileges
-Var IsAdmin
-Var DirectXSetupError
-
 ; Dialogs and Controls
-Var hwnd
 Var PreInstall_Dialog
 Var PreInstall_DlgBack
 Var PreInstall_DlgNext
@@ -35,37 +30,15 @@ Page Custom IsUserAdmin
 Page Custom PreInstallDialog
 Page Custom InstallMode InstallModeLeave
 
-Function IsUserAdmin
-!include WinVer.nsh
-# No user should ever have to experience this pain ;)
-  ${IfNot} ${AtLeastWinVista}
-    MessageBox MB_OK "Your operating system is unsupported by PCSX2. Please upgrade your operating system or install PCSX2 1.4.0."
-    Quit
-  ${EndIf}
-
-ClearErrors
-UserInfo::GetName
-  Pop $R8
-
-UserInfo::GetOriginalAccountType
-Pop $UserPrivileges
-
-  # GetOriginalAccountType will check the tokens of the original user of the
-  # current thread/process. If the user tokens were elevated or limited for
-  # this process, GetOriginalAccountType will return the non-restricted
-  # account type.
-  # On Vista with UAC, for example, this is not the same value when running
-  # with `RequestExecutionLevel user`. GetOriginalAccountType will return
-  # "admin" while GetAccountType will return "user".
-  ;UserInfo::GetOriginalAccountType
-  ;Pop $R2
-
-${If} $UserPrivileges == "Admin"
-    StrCpy $IsAdmin 1
-    ${ElseIf} $UserPrivileges == "User"
-    StrCpy $IsAdmin 0
+; Function located in SharedDefs
+Section ""
+Call IsUserAdmin
+IfSilent 0 +5
+Call TempFilesOut
+${If} $option_portable == 0
+  Call StartFullInstaller
 ${EndIf}
-FunctionEnd
+SectionEnd
 
 Function PreInstallDialog
 
@@ -85,60 +58,42 @@ FunctionEnd
 
 Function NSD_Timer.Callback
 ${NSD_KillTimer} NSD_Timer.Callback
-    SendMessage $hwnd ${PBM_SETRANGE32} 0 100
 
-!include WinVer.nsh
-!include "X64.nsh" 
+;-----------------------------------------
+; Copy installer files to a temp directory instead of repacking twice (for each installer)
+    ${NSD_CreateLabel} 0 45 80% 10u "Unpacking files. Maybe it's time to upgrade that computer!"
+    Call TempFilesOut
+    ${NSD_CreateLabel} 0 45 100% 10u "Moving on"
+;-----------------------------------------
 
-# If the user is running at least Windows 8.1
-# or has no admin rights, don't waste time trying
-# to install the DX and VS2015 runtimes.
-# (head straight to the first installer section)
-${If} ${AtLeastWin8.1}
-${OrIf} $IsAdmin == 0
-Call PreInstall_UsrWait
-SendMessage $HWNDPARENT ${WM_COMMAND} 1 0
-${EndIf}
-
-# Check if the VC 2015 runtimes are installed
-${If} ${RunningX64}
-ReadRegDword $R0 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86" "Installed"
-${Else}
-   ReadRegDword $R0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86" "Installed"
-${EndIf}
-    Pop $R0
-
-# If the runtimes are already here, check for DX.
-${If} $R0 == "1"
-Goto ExecDxSetup
-${EndIf}
-
-# Download and install the VC 2015 redistributable from the internet
-${NSD_CreateLabel} 0 45 100% 10u "Downloading Visual C++ 2015 package"
-Pop $hwnd
-inetc::get "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x86.exe" "$TEMP\vcredist_2015_Update_1_x86.exe" /SILENT /CONNECTTIMEOUT 30 /RECEIVETIMEOUT 30 /END
-    ${NSD_CreateLabel} 0 45 100% 10u "Installing Visual C++ 2015 package"
-    Pop $hwnd
-    ExecWait '"$TEMP\vcredist_2015_Update_1_x86.exe /S"'
-    SendMessage $hwnd ${PBM_SETPOS} 40 0
-    Delete "$TEMP\vcredist_2015_Update_1_x86.exe"
-
-
-# Download and install DirectX
-ExecDxSetup:
-${NSD_CreateLabel} 0 45 100% 10u "Installing DXWebSetup package"
-Pop $hwnd
-SendMessage $hwnd ${PBM_SETPOS} 80 0
-
-SetOutPath "$TEMP"
-File "dxwebsetup.exe"
-ExecWait '"$TEMP\dxwebsetup.exe" /Q' $DirectXSetupError
-
-SendMessage $hwnd ${PBM_SETPOS} 100 0
-Delete "$TEMP\dxwebsetup.exe"
-Sleep 20
     Call PreInstall_UsrWait
 SendMessage $HWNDPARENT ${WM_COMMAND} 1 0
+FunctionEnd
+
+Function TempFilesOut
+  SetOutPath "$TEMP\PCSX2 ${APP_VERSION}"
+    File ..\bin\pcsx2.exe
+    File ..\bin\GameIndex.dbf
+    File ..\bin\cheats_ws.zip
+    File ..\bin\PCSX2_keys.ini.default
+  SetOutPath "$TEMP\PCSX2 ${APP_VERSION}\Docs"
+    File ..\bin\docs\*
+
+  SetOutPath "$TEMP\PCSX2 ${APP_VERSION}\Shaders"
+    File ..\bin\shaders\GSdx.fx
+    File ..\bin\shaders\GSdx_FX_Settings.ini
+
+  SetOutPath "$TEMP\PCSX2 ${APP_VERSION}\Plugins"
+    File /nonfatal ..\bin\Plugins\gsdx32-sse2.dll
+    File /nonfatal ..\bin\Plugins\gsdx32-sse4.dll
+    File /nonfatal ..\bin\Plugins\gsdx32-avx2.dll
+    File /nonfatal ..\bin\Plugins\spu2-x.dll
+    File /nonfatal ..\bin\Plugins\lilypad.dll
+    File /nonfatal ..\bin\Plugins\USBnull.dll
+    File /nonfatal ..\bin\Plugins\DEV9null.dll
+
+  SetOutPath "$TEMP\PCSX2 ${APP_VERSION}\Langs"
+    File /nonfatal /r ..\bin\Langs\*.mo
 FunctionEnd
 
 Function PreInstall_UsrWait
@@ -207,11 +162,19 @@ ${NSD_GetState} $InstallMode_Normal $0
 ${NSD_GetState} $InstallMode_Portable $1
 
 ${If} ${BST_CHECKED} == $0
-SetOutPath "$TEMP"
-File "pcsx2-${APP_VERSION}-include_standard.exe"
-ExecShell open "$TEMP\pcsx2-${APP_VERSION}-include_standard.exe"
-Quit
+Call StartFullInstaller
 ${EndIf}
+FunctionEnd
+
+Function StartFullInstaller
+  ;Checks if install directory is changed from default with /D, and if not, changes to standard full install directory.
+  ${If} $INSTDIR == "$DOCUMENTS\PCSX2 ${APP_VERSION}"
+  StrCpy $INSTDIR "$PROGRAMFILES\PCSX2"
+  ${EndIf}
+  SetOutPath "$TEMP"
+  File "pcsx2-${APP_VERSION}-include_standard.exe"
+  ExecShell open "$TEMP\pcsx2-${APP_VERSION}-include_standard.exe" "$cmdLineParams /D=$INSTDIR"
+  Quit
 FunctionEnd
 
 ; ----------------------------------
@@ -228,14 +191,15 @@ FunctionEnd
 !include "ApplyExeProps.nsh"
 
 ; The default installation directory for the portable binary.
-InstallDir "$DOCUMENTS\$R8\PCSX2 ${APP_VERSION}"
+InstallDir "$DOCUMENTS\PCSX2 ${APP_VERSION}"
 
-; Files to be installed are housed here
+; Path references for the core files here
 !include "SharedCore.nsh"
 
 Section "" INST_PORTABLE
 SetOutPath "$INSTDIR"
 File portable.ini
+RMDir /r "$TEMP\PCSX2 ${APP_VERSION}"
 SectionEnd
 
 Section "" SID_PCSX2

@@ -1,4 +1,5 @@
-﻿using Omega_Red.Properties;
+﻿using Omega_Red.Emulators;
+using Omega_Red.Properties;
 using Omega_Red.Tools;
 using Omega_Red.Util;
 using System;
@@ -30,25 +31,39 @@ namespace Omega_Red
     /// </summary>
     public partial class App : Application
     {
-        public enum AppType
-        {
-            Screen,
-            OffScreen
-        }
-
         public static bool m_is_exit = false;
+        
+        public const string m_MainFolderName = "OmegaRed";
 
-        public static AppType m_AppType = AppType.Screen;
-               
+        private static string m_MainStoreDirectoryPath = "";
+        public static IntPtr CurrentWindowHandler { get; set; }
+
+        public static string MainStoreDirectoryPath { get {
+
+                if(string.IsNullOrWhiteSpace(m_MainStoreDirectoryPath))
+                {
+                    var lDirectory = Path.GetDirectoryName(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+
+                    var lMainDirInfo = Directory.GetParent(lDirectory);
+
+                    lMainDirInfo = Directory.GetParent(lMainDirInfo.FullName);
+
+                    m_MainStoreDirectoryPath = lMainDirInfo.FullName;
+                }
+
+                return m_MainStoreDirectoryPath;
+            } }
+
         public App()
         {
-            var lDirectory = Path.GetDirectoryName(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+            string l_arch = "x86";
 
-            var lMainDirInfo = Directory.GetParent(lDirectory);
+            if (IntPtr.Size == 8)
+                l_arch = "x64";
 
-            lMainDirInfo = Directory.GetParent(lMainDirInfo.FullName);
-
-            if (File.Exists(lMainDirInfo.FullName + @"\Config.xml"))
+            Win32NativeMethods.SetDllDirectory(@".\" + l_arch);
+            
+            if (File.Exists(MainStoreDirectoryPath + @"\Config.xml"))
             {
                 if (File.Exists(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath))
                     File.Delete(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
@@ -59,18 +74,8 @@ namespace Omega_Red
                     System.IO.Directory.CreateDirectory(lMainDirectory);
                 }
 
-                File.Copy(lMainDirInfo.FullName + @"\Config.xml", ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+                File.Copy(MainStoreDirectoryPath + @"\Config.xml", ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
             }
-
-            Settings.Default.PropertyChanged += (sender, e) =>
-            {
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
-                {
-                    ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).SaveAs(
-                        lMainDirInfo.FullName + @"\Config.xml", ConfigurationSaveMode.Full);
-                });
-
-            };
 
             Startup += (object sender, StartupEventArgs e)=>
             {                
@@ -78,16 +83,6 @@ namespace Omega_Red
 
                 using (Process p = Process.GetCurrentProcess())
                     p.PriorityClass = ProcessPriorityClass.RealTime;
-
-                for (int i = 0; i != e.Args.Length; ++i)
-                {
-                    if (e.Args[i] == "/OffScreen")
-                    {
-                        m_AppType = AppType.OffScreen;
-
-                        this.StartupUri = new Uri("pack://application:,,,/Omega Red;component/OffScreenWindow.xaml");
-                    }
-                }
             };
 
             InitializeComponent();
@@ -95,35 +90,31 @@ namespace Omega_Red
         
         private void Application_Exit(object sender, ExitEventArgs e)
         {
+            Managers.PadControlManager.Instance.stopTimer();
+
+            Emul.Instance.stop(false);
+
+            Managers.IsoManager.Instance.save();
+
+            Omega_Red.Properties.Settings.Default.Save();
+
+            saveCopy();
+
             m_is_exit = true;
 
             Capture.MediaCapture.Instance.stop();
 
-            Capture.OffScreenStream.Instance.stopServer();
+            Capture.MediaStream.Instance.stop(true);
+        }
 
-            PCSX2Controller.Instance.Stop(true);
-            
-            Thread.Sleep(1500);
+        public static void saveCopy()
+        {
+            if (File.Exists(MainStoreDirectoryPath + @"\Config.xml"))
+            {
+                File.Delete(MainStoreDirectoryPath + @"\Config.xml");
+            }
 
-            PCSX2LibNative.Instance.SysThreadBase_CancelFunc();
-
-            Thread.Sleep(1500);
-
-            PCSX2LibNative.Instance.MTVU_CancelFunc();
-
-            PCSX2LibNative.Instance.MTGS_CancelFunc();
-
-            ModuleControl.Instance.shutdown();
-
-            PCSX2LibNative.Instance.resetCallbacksFunc();
-
-            ModuleManager.Instance.release();
-
-            Thread.Sleep(1500);
-
-            PCSX2LibNative.Instance.release();
-
-            PPSSPPNative.Instance.release();
+            File.Copy(ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath, MainStoreDirectoryPath + @"\Config.xml");
         }
     }
 }

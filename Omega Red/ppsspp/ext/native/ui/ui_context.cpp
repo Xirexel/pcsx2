@@ -3,6 +3,8 @@
 #include <algorithm>
 
 #include "base/display.h"
+#include "base/NativeApp.h"
+#include "base/logging.h"
 #include "ui/ui.h"
 #include "ui/view.h"
 #include "ui/ui_context.h"
@@ -34,22 +36,19 @@ void UIContext::Init(Draw::DrawContext *thin3d, Draw::Pipeline *uipipe, Draw::Pi
 }
 
 void UIContext::BeginFrame() {
-	//if (!uitexture_) {
-	//	uitexture_ = CreateTextureFromFile(draw_, "ui_atlas.zim", ImageFileType::ZIM, false);
-	//	if (!uitexture_) {
-	//		PanicAlert("Failed to load ui_atlas.zim.\n\nPlace it in the directory \"assets\" under your PPSSPP directory.");
-	//		FLOG("Failed to load ui_atlas.zim");
-	//	}
-	//}
-	//uidrawbufferTop_->SetCurZ(0.0f);
-	//uidrawbuffer_->SetCurZ(0.0f);
-	//ActivateTopScissor();
+	if (!uitexture_) {
+		uitexture_ = CreateTextureFromFile(draw_, "ui_atlas.zim", ImageFileType::ZIM, false);
+		if (!uitexture_) {
+			//PanicAlert("Failed to load ui_atlas.zim.\n\nPlace it in the directory \"assets\" under your PPSSPP directory.");
+		}
+	}
+	uidrawbufferTop_->SetCurZ(0.0f);
+	uidrawbuffer_->SetCurZ(0.0f);
+	ActivateTopScissor();
 }
 
 void UIContext::Begin() {
-	//draw_->BindSamplerStates(0, 1, &sampler_);
-	//draw_->BindTexture(0, uitexture_->GetTexture());
-	//UIBegin(ui_pipeline_);
+	BeginPipeline(ui_pipeline_, sampler_);
 }
 
 void UIContext::BeginNoTex() {
@@ -58,13 +57,14 @@ void UIContext::BeginNoTex() {
 }
 
 void UIContext::BeginPipeline(Draw::Pipeline *pipeline, Draw::SamplerState *samplerState) {
-	//draw_->BindSamplerStates(0, 1, &sampler_);
-	//draw_->BindTexture(0, uitexture_->GetTexture());
-	//UIBegin(pipeline);
+	draw_->BindSamplerStates(0, 1, &samplerState);
+	RebindTexture();
+	UIBegin(pipeline);
 }
 
 void UIContext::RebindTexture() const {
-	//draw_->BindTexture(0, uitexture_->GetTexture());
+	if (uitexture_)
+		draw_->BindTexture(0, uitexture_->GetTexture());
 }
 
 void UIContext::Flush() {
@@ -104,6 +104,25 @@ Bounds UIContext::GetScissorBounds() {
 		return scissorStack_.back();
 	else
 		return bounds_;
+}
+
+Bounds UIContext::GetLayoutBounds() const {
+	Bounds bounds = GetBounds();
+
+	float left = System_GetPropertyFloat(SYSPROP_DISPLAY_SAFE_INSET_LEFT);
+	float right = System_GetPropertyFloat(SYSPROP_DISPLAY_SAFE_INSET_RIGHT);
+	float top = System_GetPropertyFloat(SYSPROP_DISPLAY_SAFE_INSET_TOP);
+	float bottom = System_GetPropertyFloat(SYSPROP_DISPLAY_SAFE_INSET_BOTTOM);
+
+	// ILOG("Insets: %f %f %f %f", left, right, top, bottom);
+
+	// Adjust left edge to compensate for cutouts (notches) if any.
+	bounds.x += left;
+	bounds.w -= (left + right);
+	bounds.y += top;
+	bounds.h -= (top + bottom);
+
+	return bounds;
 }
 
 void UIContext::ActivateTopScissor() {
@@ -221,6 +240,8 @@ void UIContext::FillRect(const UI::Drawable &drawable, const Bounds &bounds) {
 
 void UIContext::PushTransform(const UITransform &transform) {
 	Flush();
+
+	using namespace Lin;
 
 	Matrix4x4 m = Draw()->GetDrawMatrix();
 	const Vec3 &t = transform.translate;

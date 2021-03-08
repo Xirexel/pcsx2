@@ -28,430 +28,428 @@
 #include "resource.h"
 #include "GSTables.h"
 
+#pragma comment(lib, "DXGI.lib")
+#pragma comment(lib, "D3D11.lib")
+#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "Comctl32.lib")
+
 bool GSDeviceProxy::CreateTextureFX()
 {
-    HRESULT hr;
+	HRESULT hr;
 
-    D3D11_BUFFER_DESC bd;
+	D3D11_BUFFER_DESC bd;
 
-    memset(&bd, 0, sizeof(bd));
+	memset(&bd, 0, sizeof(bd));
 
-    bd.ByteWidth = sizeof(VSConstantBuffer);
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bd.ByteWidth = sizeof(VSConstantBuffer);
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
-    hr = m_dev->CreateBuffer(&bd, NULL, &m_vs_cb);
+	hr = m_dev->CreateBuffer(&bd, NULL, &m_vs_cb);
 
-    if (FAILED(hr))
-        return false;
+	if (FAILED(hr)) return false;
 
-    memset(&bd, 0, sizeof(bd));
+	memset(&bd, 0, sizeof(bd));
 
-    bd.ByteWidth = sizeof(GSConstantBuffer);
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bd.ByteWidth = sizeof(GSConstantBuffer);
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
-    hr = m_dev->CreateBuffer(&bd, NULL, &m_gs_cb);
+	hr = m_dev->CreateBuffer(&bd, NULL, &m_gs_cb);
 
-    if (FAILED(hr))
-        return false;
+	if (FAILED(hr)) return false;
 
-    memset(&bd, 0, sizeof(bd));
+	memset(&bd, 0, sizeof(bd));
 
-    bd.ByteWidth = sizeof(PSConstantBuffer);
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bd.ByteWidth = sizeof(PSConstantBuffer);
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
-    hr = m_dev->CreateBuffer(&bd, NULL, &m_ps_cb);
+	hr = m_dev->CreateBuffer(&bd, NULL, &m_ps_cb);
 
-    if (FAILED(hr))
-        return false;
+	if (FAILED(hr)) return false;
 
-    D3D11_SAMPLER_DESC sd;
+	D3D11_SAMPLER_DESC sd;
 
-    memset(&sd, 0, sizeof(sd));
+	memset(&sd, 0, sizeof(sd));
 
-    sd.Filter = theApp.GetConfigI("MaxAnisotropy") && !theApp.GetConfigB("paltex") ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_POINT;
-    sd.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sd.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sd.MinLOD = -FLT_MAX;
-    sd.MaxLOD = FLT_MAX;
-    sd.MaxAnisotropy = theApp.GetConfigI("MaxAnisotropy");
-    sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sd.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	sd.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sd.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sd.MinLOD = -FLT_MAX;
+	sd.MaxLOD = FLT_MAX;
+	sd.MaxAnisotropy = D3D11_MIN_MAXANISOTROPY;
+	sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
-    hr = m_dev->CreateSamplerState(&sd, &m_palette_ss);
+	hr = m_dev->CreateSamplerState(&sd, &m_palette_ss);
 
-    if (FAILED(hr))
-        return false;
+	if (FAILED(hr)) return false;
 
-    hr = m_dev->CreateSamplerState(&sd, &m_rt_ss);
+	// create layout
 
-    if (FAILED(hr))
-        return false;
+	VSSelector sel;
+	VSConstantBuffer cb;
 
-    // create layout
+	SetupVS(sel, &cb);
 
-    VSSelector sel;
-    VSConstantBuffer cb;
+	GSConstantBuffer gcb;
 
-    SetupVS(sel, &cb);
+	SetupGS(GSSelector(1), &gcb);
 
-    GSConstantBuffer gcb;
+	//
 
-    SetupGS(GSSelector(1), &gcb);
-
-    //
-
-    return true;
+	return true;
 }
+
 
 #include "resource1.h"
 
 
 void GSDeviceProxy::CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11DomainShader **ds)
 {
-    HRESULT hr;
+	HRESULT hr;
 
-    std::vector<D3D_SHADER_MACRO> m;
+	//std::vector<D3D_SHADER_MACRO> m;
 
-    PrepareShaderMacro(m, macro);
+	//PrepareShaderMacro(m, macro);
 
-    CComPtr<ID3DBlob> shader, error;
+	//CComPtr<ID3DBlob> shader, error;
 
-    hr = s_pD3DCompile(source, size, fn, &m[0], s_old_d3d_compiler_dll ? nullptr : include, entry, "ds_5_0", 0, 0, &shader, &error);
+	//hr = s_pD3DCompile(source, size, fn, &m[0], s_old_d3d_compiler_dll ? nullptr : include, entry, "ds_5_0", 0, 0, &shader, &error);
 
-    if (error) {
-        printf("%s\n", (const char *)error->GetBufferPointer());
-    }
+	//if (error) {
+	//	printf("%s\n", (const char *)error->GetBufferPointer());
+	//}
 
-    if (FAILED(hr)) {
-        throw GSDXRecoverableError();
-    }
+	//if (FAILED(hr)) {
+	//	throw GSDXRecoverableError();
+	//}
 
-    hr = m_dev->CreateDomainShader((void *)shader->GetBufferPointer(), shader->GetBufferSize(), NULL, ds);
+	//hr = m_dev->CreateDomainShader((void *)shader->GetBufferPointer(), shader->GetBufferSize(), NULL, ds);
 
-    if (FAILED(hr)) {
-        throw GSDXRecoverableError();
-    }
+	//if (FAILED(hr)) {
+	//	throw GSDXRecoverableError();
+	//}
 }
 
 void GSDeviceProxy::CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11HullShader **hs)
 {
-    HRESULT hr;
+	HRESULT hr;
 
-    std::vector<D3D_SHADER_MACRO> m;
+	std::vector<D3D_SHADER_MACRO> m;
 
-    PrepareShaderMacro(m, macro);
+	//PrepareShaderMacro(m, macro);
 
-    CComPtr<ID3DBlob> shader, error;
+	//CComPtr<ID3DBlob> shader, error;
 
-    hr = s_pD3DCompile(source, size, fn, &m[0], s_old_d3d_compiler_dll ? nullptr : include, entry, "hs_5_0", 0, 0, &shader, &error);
+	//hr = s_pD3DCompile(source, size, fn, &m[0], s_old_d3d_compiler_dll ? nullptr : include, entry, "hs_5_0", 0, 0, &shader, &error);
 
-    if (error) {
-        printf("%s\n", (const char *)error->GetBufferPointer());
-    }
+	//if (error) {
+	//	printf("%s\n", (const char *)error->GetBufferPointer());
+	//}
 
-    if (FAILED(hr)) {
-        throw GSDXRecoverableError();
-    }
+	//if (FAILED(hr)) {
+	//	throw GSDXRecoverableError();
+	//}
 
-    hr = m_dev->CreateHullShader((void *)shader->GetBufferPointer(), shader->GetBufferSize(), NULL, hs);
+	//hr = m_dev->CreateHullShader((void *)shader->GetBufferPointer(), shader->GetBufferSize(), NULL, hs);
 
-    if (FAILED(hr)) {
-        throw GSDXRecoverableError();
-    }
+	//if (FAILED(hr)) {
+	//	throw GSDXRecoverableError();
+	//}
 }
 
-
-
-void GSDeviceProxy::SetupVS(VSSelector sel, const VSConstantBuffer *cb)
+void GSDeviceProxy::SetupVS(VSSelector sel, const VSConstantBuffer* cb)
 {
-    auto i = std::as_const(m_vs).find(sel);
+	auto i = std::as_const(m_vs).find(sel);
 
-    if (i == m_vs.end()) {
-        ShaderMacro sm(m_shader.model);
+	if (i == m_vs.end())
+	{
+		ShaderMacro sm(m_shader.model);
 
-        sm.AddMacro("VS_BPPZ", sel.bppz);
-        sm.AddMacro("VS_TME", sel.tme);
-        sm.AddMacro("VS_FST", sel.fst);
+		sm.AddMacro("VS_TME", sel.tme);
+		sm.AddMacro("VS_FST", sel.fst);
 
-        D3D11_INPUT_ELEMENT_DESC layout[] =
-            {
-                {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-                {"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0},
-                {"TEXCOORD", 1, DXGI_FORMAT_R32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
-                {"POSITION", 0, DXGI_FORMAT_R16G16_UINT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
-                {"POSITION", 1, DXGI_FORMAT_R32_UINT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0},
-                {"TEXCOORD", 2, DXGI_FORMAT_R16G16_UINT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
-                {"COLOR", 1, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0},
-            };
+		D3D11_INPUT_ELEMENT_DESC layout[] =
+		{
+			{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"TEXCOORD", 1, DXGI_FORMAT_R32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"POSITION", 0, DXGI_FORMAT_R16G16_UINT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"POSITION", 1, DXGI_FORMAT_R32_UINT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"TEXCOORD", 2, DXGI_FORMAT_R16G16_UINT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"COLOR", 1, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		};
 
-        GSVertexShader11Proxy vs;
+		GSVertexShader11Proxy vs;
 
-        std::vector<char> shader;
-        theApp.LoadResource(IDR_TFX_FX, shader);
-        CreateShader(shader, "tfx.fx", nullptr, "vs_main", sm.GetPtr(), &vs.vs, layout, countof(layout), &vs.il);
+		std::vector<char> shader;
+		theApp.LoadResource(IDR_TFX_FX, shader);
+		CreateShader(shader, "tfx.fx", nullptr, "vs_main", sm.GetPtr(), &vs.vs, layout, countof(layout), &vs.il);
 
-		std::vector<char> tessellationShader;
-        theApp.LoadResource(IDR_TESS_FX, tessellationShader);
+		m_vs[sel] = vs;
 
+		i = m_vs.find(sel);
+	}
 
-        if (m_hs == nullptr)
-            CompileShader(tessellationShader.data(), tessellationShader.size(), "Tessellation.fx", nullptr, "hs_main", sm.GetPtr(), &m_hs);
+	if (m_vs_cb_cache.Update(cb))
+	{
+		ID3D11DeviceContext* ctx = m_ctx;
 
-        if (m_ds == nullptr)
-            CompileShader(tessellationShader.data(), tessellationShader.size(), "Tessellation.fx", nullptr, "ds_main", sm.GetPtr(), &m_ds);
+		ctx->UpdateSubresource(m_vs_cb, 0, NULL, cb, 0, 0);
+	}
 
-        m_vs[sel] = vs;
+	VSSetShader(i->second.vs, m_vs_cb);
 
-        i = m_vs.find(sel);
-    }
-
-    if (m_vs_cb_cache.Update(cb)) {
-        ID3D11DeviceContext *ctx = m_ctx;
-
-        ctx->UpdateSubresource(m_vs_cb, 0, NULL, cb, 0, 0);
-    }
-
-    VSSetShader(i->second.vs, m_vs_cb);
-
-    IASetInputLayout(i->second.il);
+	IASetInputLayout(i->second.il);
 }
 
-void GSDeviceProxy::SetupGS(GSSelector sel, const GSConstantBuffer *cb)
+void GSDeviceProxy::SetupGS(GSSelector sel, const GSConstantBuffer* cb)
 {
-    CComPtr<ID3D11GeometryShader> gs;
+	CComPtr<ID3D11GeometryShader> gs;
 
-    bool Unscale_GSShader = (sel.point == 1 || sel.line == 1);
-    if ((sel.prim > 0 && (sel.iip == 0 || sel.prim == 3)) || Unscale_GSShader) // geometry shader works in every case, but not needed
-    {
-        auto i = std::as_const(m_gs).find(sel);
+	const bool unscale_pt_ln = (sel.point == 1 || sel.line == 1);
+	// Geometry shader is disabled if sprite conversion is done on the cpu (sel.cpu_sprite).
+	if ((sel.prim > 0 && sel.cpu_sprite == 0 && (sel.iip == 0 || sel.prim == 3)) || unscale_pt_ln)
+	{
+		const auto i = std::as_const(m_gs).find(sel);
 
-        if (i != m_gs.end()) {
-            gs = i->second;
-        } else {
-            ShaderMacro sm(m_shader.model);
+		if (i != m_gs.end())
+		{
+			gs = i->second;
+		}
+		else
+		{
+			ShaderMacro sm(m_shader.model);
 
-            sm.AddMacro("GS_IIP", sel.iip);
-            sm.AddMacro("GS_PRIM", sel.prim);
-            sm.AddMacro("GS_POINT", sel.point);
-            sm.AddMacro("GS_LINE", sel.line);
+			sm.AddMacro("GS_IIP", sel.iip);
+			sm.AddMacro("GS_PRIM", sel.prim);
+			sm.AddMacro("GS_POINT", sel.point);
+			sm.AddMacro("GS_LINE", sel.line);
 
-            std::vector<char> shader;
-            theApp.LoadResource(IDR_TFX_FX, shader);
-            CreateShader(shader, "tfx.fx", nullptr, "gs_main", sm.GetPtr(), &gs);
+			std::vector<char> shader;
+			theApp.LoadResource(IDR_TFX_FX, shader);
+			CreateShader(shader, "tfx.fx", nullptr, "gs_main", sm.GetPtr(), &gs);
 
-            m_gs[sel] = gs;
-        }
-    }
+			m_gs[sel] = gs;
+		}
+	}
 
 
-    if (m_gs_cb_cache.Update(cb)) {
-        ID3D11DeviceContext *ctx = m_ctx;
+	if (m_gs_cb_cache.Update(cb))
+	{
+		ID3D11DeviceContext* ctx = m_ctx;
 
-        ctx->UpdateSubresource(m_gs_cb, 0, NULL, cb, 0, 0);
-    }
-		
+		ctx->UpdateSubresource(m_gs_cb, 0, NULL, cb, 0, 0);
+	}
+
 	GSSetShader(gs, m_gs_cb);
 }
 
-void GSDeviceProxy::SetupPS(PSSelector sel, const PSConstantBuffer *cb, PSSamplerSelector ssel)
+void GSDeviceProxy::SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSelector ssel)
 {
-    auto i = std::as_const(m_ps).find(sel);
+	auto i = std::as_const(m_ps).find(sel);
 
-    if (i == m_ps.end()) {
-        ShaderMacro sm(m_shader.model);
+	if (i == m_ps.end())
+	{
+		ShaderMacro sm(m_shader.model);
 
-        sm.AddMacro("PS_SCALE_FACTOR", std::max(1, m_upscale_multiplier));
-        sm.AddMacro("PS_FST", sel.fst);
-        sm.AddMacro("PS_WMS", sel.wms);
-        sm.AddMacro("PS_WMT", sel.wmt);
-        sm.AddMacro("PS_FMT", sel.fmt);
-        sm.AddMacro("PS_AEM", sel.aem);
-        sm.AddMacro("PS_TFX", sel.tfx);
-        sm.AddMacro("PS_TCC", sel.tcc);
-        sm.AddMacro("PS_ATST", sel.atst);
-        sm.AddMacro("PS_FOG", sel.fog);
-        sm.AddMacro("PS_CLR1", sel.clr1);
-        sm.AddMacro("PS_FBA", sel.fba);
-        sm.AddMacro("PS_FBMASK", sel.fbmask);
-        sm.AddMacro("PS_LTF", sel.ltf);
-        sm.AddMacro("PS_TCOFFSETHACK", sel.tcoffsethack);
-        sm.AddMacro("PS_POINT_SAMPLER", sel.point_sampler);
-        sm.AddMacro("PS_SHUFFLE", sel.shuffle);
-        sm.AddMacro("PS_READ_BA", sel.read_ba);
-        sm.AddMacro("PS_CHANNEL_FETCH", sel.channel);
-        sm.AddMacro("PS_TALES_OF_ABYSS_HLE", sel.tales_of_abyss_hle);
-        sm.AddMacro("PS_URBAN_CHAOS_HLE", sel.urban_chaos_hle);
-        sm.AddMacro("PS_DFMT", sel.dfmt);
-        sm.AddMacro("PS_DEPTH_FMT", sel.depth_fmt);
-        sm.AddMacro("PS_PAL_FMT", sel.fmt >> 2);
-        sm.AddMacro("PS_INVALID_TEX0", sel.invalid_tex0);
-        sm.AddMacro("PS_HDR", sel.hdr);
-        sm.AddMacro("PS_COLCLIP", sel.colclip);
-        sm.AddMacro("PS_BLEND_A", sel.blend_a);
-        sm.AddMacro("PS_BLEND_B", sel.blend_b);
-        sm.AddMacro("PS_BLEND_C", sel.blend_c);
-        sm.AddMacro("PS_BLEND_D", sel.blend_d);
+		sm.AddMacro("PS_SCALE_FACTOR", std::max(1, m_upscale_multiplier));
+		sm.AddMacro("PS_FST", sel.fst);
+		sm.AddMacro("PS_WMS", sel.wms);
+		sm.AddMacro("PS_WMT", sel.wmt);
+		sm.AddMacro("PS_FMT", sel.fmt);
+		sm.AddMacro("PS_AEM", sel.aem);
+		sm.AddMacro("PS_TFX", sel.tfx);
+		sm.AddMacro("PS_TCC", sel.tcc);
+		sm.AddMacro("PS_ATST", sel.atst);
+		sm.AddMacro("PS_FOG", sel.fog);
+		sm.AddMacro("PS_CLR1", sel.clr1);
+		sm.AddMacro("PS_FBA", sel.fba);
+		sm.AddMacro("PS_FBMASK", sel.fbmask);
+		sm.AddMacro("PS_LTF", sel.ltf);
+		sm.AddMacro("PS_TCOFFSETHACK", sel.tcoffsethack);
+		sm.AddMacro("PS_POINT_SAMPLER", sel.point_sampler);
+		sm.AddMacro("PS_SHUFFLE", sel.shuffle);
+		sm.AddMacro("PS_READ_BA", sel.read_ba);
+		sm.AddMacro("PS_CHANNEL_FETCH", sel.channel);
+		sm.AddMacro("PS_TALES_OF_ABYSS_HLE", sel.tales_of_abyss_hle);
+		sm.AddMacro("PS_URBAN_CHAOS_HLE", sel.urban_chaos_hle);
+		sm.AddMacro("PS_DFMT", sel.dfmt);
+		sm.AddMacro("PS_DEPTH_FMT", sel.depth_fmt);
+		sm.AddMacro("PS_PAL_FMT", sel.fmt >> 2);
+		sm.AddMacro("PS_INVALID_TEX0", sel.invalid_tex0);
+		sm.AddMacro("PS_HDR", sel.hdr);
+		sm.AddMacro("PS_COLCLIP", sel.colclip);
+		sm.AddMacro("PS_BLEND_A", sel.blend_a);
+		sm.AddMacro("PS_BLEND_B", sel.blend_b);
+		sm.AddMacro("PS_BLEND_C", sel.blend_c);
+		sm.AddMacro("PS_BLEND_D", sel.blend_d);
+		sm.AddMacro("PS_DITHER", sel.dither);
+		sm.AddMacro("PS_ZCLAMP", sel.zclamp);
 
-        CComPtr<ID3D11PixelShader> ps;
+		CComPtr<ID3D11PixelShader> ps;
 
-        std::vector<char> shader;
-        theApp.LoadResource(IDR_TFX_FX, shader);
-        CreateShader(shader, "tfx.fx", nullptr, "ps_main", sm.GetPtr(), &ps);
+		std::vector<char> shader;
+		theApp.LoadResource(IDR_TFX_FX, shader);
+		CreateShader(shader, "tfx.fx", nullptr, "ps_main", sm.GetPtr(), &ps);
 
-        m_ps[sel] = ps;
+		m_ps[sel] = ps;
 
-        i = m_ps.find(sel);
-    }
+		i = m_ps.find(sel);
+	}
 
-    if (m_ps_cb_cache.Update(cb)) {
-        ID3D11DeviceContext *ctx = m_ctx;
+	if (m_ps_cb_cache.Update(cb))
+	{
+		ID3D11DeviceContext* ctx = m_ctx;
 
-        ctx->UpdateSubresource(m_ps_cb, 0, NULL, cb, 0, 0);
-    }
+		ctx->UpdateSubresource(m_ps_cb, 0, NULL, cb, 0, 0);
+	}
 
-    CComPtr<ID3D11SamplerState> ss0, ss1;
+	CComPtr<ID3D11SamplerState> ss0, ss1;
 
-    if (sel.tfx != 4) {
-        if (!(sel.fmt < 3 && sel.wms < 3 && sel.wmt < 3)) {
-            ssel.ltf = 0;
-        }
+	if (sel.tfx != 4)
+	{
+		if (!(sel.fmt < 3 && sel.wms < 3 && sel.wmt < 3))
+		{
+			ssel.ltf = 0;
+		}
 
-        auto i = std::as_const(m_ps_ss).find(ssel);
+		auto i = std::as_const(m_ps_ss).find(ssel);
 
-        if (i != m_ps_ss.end()) {
-            ss0 = i->second;
-        } else {
-            D3D11_SAMPLER_DESC sd, af;
+		if (i != m_ps_ss.end())
+		{
+			ss0 = i->second;
+		}
+		else
+		{
+			D3D11_SAMPLER_DESC sd, af;
 
-            memset(&sd, 0, sizeof(sd));
+			memset(&sd, 0, sizeof(sd));
 
-            af.Filter = theApp.GetConfigI("MaxAnisotropy") && !theApp.GetConfigB("paltex") ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-            sd.Filter = ssel.ltf ? af.Filter : D3D11_FILTER_MIN_MAG_MIP_POINT;
+			af.Filter = m_aniso_filter ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+			sd.Filter = ssel.ltf ? af.Filter : D3D11_FILTER_MIN_MAG_MIP_POINT;
 
-            sd.AddressU = ssel.tau ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
-            sd.AddressV = ssel.tav ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
-            sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-            sd.MinLOD = -FLT_MAX;
-            sd.MaxLOD = FLT_MAX;
-            sd.MaxAnisotropy = theApp.GetConfigI("MaxAnisotropy");
-            sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
+			sd.AddressU = ssel.tau ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
+			sd.AddressV = ssel.tav ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
+			sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+			sd.MinLOD = -FLT_MAX;
+			sd.MaxLOD = FLT_MAX;
+			sd.MaxAnisotropy = m_aniso_filter;
+			sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
-            m_dev->CreateSamplerState(&sd, &ss0);
+			m_dev->CreateSamplerState(&sd, &ss0);
 
-            m_ps_ss[ssel] = ss0;
-        }
+			m_ps_ss[ssel] = ss0;
+		}
 
-        if (sel.fmt >= 3) {
-            ss1 = m_palette_ss;
-        }
-    }
+		if (sel.fmt >= 3)
+		{
+			ss1 = m_palette_ss;
+		}
+	}
 
-    PSSetSamplerState(ss0, ss1);
+	PSSetSamplerState(ss0, ss1);
 
-    PSSetShader(i->second, m_ps_cb);
+	PSSetShader(i->second, m_ps_cb);
 }
 
 void GSDeviceProxy::SetupOM(OMDepthStencilSelector dssel, OMBlendSelector bsel, uint8 afix)
 {
-    auto i = std::as_const(m_om_dss).find(dssel);
+	auto i = std::as_const(m_om_dss).find(dssel);
 
-    if (i == m_om_dss.end()) {
-        D3D11_DEPTH_STENCIL_DESC dsd;
+	if (i == m_om_dss.end())
+	{
+		D3D11_DEPTH_STENCIL_DESC dsd;
 
-        memset(&dsd, 0, sizeof(dsd));
+		memset(&dsd, 0, sizeof(dsd));
 
-        if (dssel.date) {
-            dsd.StencilEnable = true;
-            dsd.StencilReadMask = 1;
-            dsd.StencilWriteMask = 1;
-            dsd.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-            dsd.FrontFace.StencilPassOp = dssel.date_one ? D3D11_STENCIL_OP_ZERO : D3D11_STENCIL_OP_KEEP;
-            dsd.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-            dsd.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-            dsd.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-            dsd.BackFace.StencilPassOp = dssel.date_one ? D3D11_STENCIL_OP_ZERO : D3D11_STENCIL_OP_KEEP;
-            dsd.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-            dsd.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-        }
+		if (dssel.date)
+		{
+			dsd.StencilEnable = true;
+			dsd.StencilReadMask = 1;
+			dsd.StencilWriteMask = 1;
+			dsd.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+			dsd.FrontFace.StencilPassOp = dssel.date_one ? D3D11_STENCIL_OP_ZERO : D3D11_STENCIL_OP_KEEP;
+			dsd.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+			dsd.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+			dsd.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+			dsd.BackFace.StencilPassOp = dssel.date_one ? D3D11_STENCIL_OP_ZERO : D3D11_STENCIL_OP_KEEP;
+			dsd.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+			dsd.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+		}
 
-        if (dssel.ztst != ZTST_ALWAYS || dssel.zwe) {
-            static const D3D11_COMPARISON_FUNC ztst[] =
-                {
-                    D3D11_COMPARISON_NEVER,
-                    D3D11_COMPARISON_ALWAYS,
-                    D3D11_COMPARISON_GREATER_EQUAL,
-                    D3D11_COMPARISON_GREATER};
+		if (dssel.ztst != ZTST_ALWAYS || dssel.zwe)
+		{
+			static const D3D11_COMPARISON_FUNC ztst[] =
+			{
+				D3D11_COMPARISON_NEVER,
+				D3D11_COMPARISON_ALWAYS,
+				D3D11_COMPARISON_GREATER_EQUAL,
+				D3D11_COMPARISON_GREATER
+			};
 
-            dsd.DepthEnable = true;
-            dsd.DepthWriteMask = dssel.zwe ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-            dsd.DepthFunc = ztst[dssel.ztst];
-        }
+			dsd.DepthEnable = true;
+			dsd.DepthWriteMask = dssel.zwe ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+			dsd.DepthFunc = ztst[dssel.ztst];
+		}
 
-        CComPtr<ID3D11DepthStencilState> dss;
+		CComPtr<ID3D11DepthStencilState> dss;
 
-        m_dev->CreateDepthStencilState(&dsd, &dss);
+		m_dev->CreateDepthStencilState(&dsd, &dss);
 
-        m_om_dss[dssel] = dss;
+		m_om_dss[dssel] = dss;
 
-        i = m_om_dss.find(dssel);
-    }
+		i = m_om_dss.find(dssel);
+	}
 
-    OMSetDepthStencilState(i->second, 1);
+	OMSetDepthStencilState(i->second, 1);
 
-    auto j = std::as_const(m_om_bs).find(bsel);
+	auto j = std::as_const(m_om_bs).find(bsel);
 
-    if (j == m_om_bs.end()) {
-        D3D11_BLEND_DESC bd;
+	if (j == m_om_bs.end())
+	{
+		D3D11_BLEND_DESC bd;
 
-        memset(&bd, 0, sizeof(bd));
+		memset(&bd, 0, sizeof(bd));
 
-        bd.RenderTarget[0].BlendEnable = bsel.abe;
+		bd.RenderTarget[0].BlendEnable = bsel.abe;
 
-        if (bsel.abe) {
-            int i = ((bsel.a * 3 + bsel.b) * 3 + bsel.c) * 3 + bsel.d;
+		if (bsel.abe)
+		{
+			int i = ((bsel.a * 3 + bsel.b) * 3 + bsel.c) * 3 + bsel.d;
 
-            HWBlend blend = GetBlend(i);
-            bd.RenderTarget[0].BlendOp = (D3D11_BLEND_OP)blend.op;
-            bd.RenderTarget[0].SrcBlend = (D3D11_BLEND)blend.src;
-            bd.RenderTarget[0].DestBlend = (D3D11_BLEND)blend.dst;
-            bd.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-            bd.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-            bd.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+			HWBlend blend = GetBlend(i);
+			bd.RenderTarget[0].BlendOp = (D3D11_BLEND_OP)blend.op;
+			bd.RenderTarget[0].SrcBlend = (D3D11_BLEND)blend.src;
+			bd.RenderTarget[0].DestBlend = (D3D11_BLEND)blend.dst;
+			bd.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			bd.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+			bd.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 
-            if (bsel.accu_blend) {
-                bd.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-                bd.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-            }
-        }
+			if (bsel.accu_blend)
+			{
+				bd.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+				bd.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+			}
+		}
 
-        if (bsel.wr)
-            bd.RenderTarget[0].RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_RED;
-        if (bsel.wg)
-            bd.RenderTarget[0].RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_GREEN;
-        if (bsel.wb)
-            bd.RenderTarget[0].RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_BLUE;
-        if (bsel.wa)
-            bd.RenderTarget[0].RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_ALPHA;
+		if (bsel.wr) bd.RenderTarget[0].RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_RED;
+		if (bsel.wg) bd.RenderTarget[0].RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_GREEN;
+		if (bsel.wb) bd.RenderTarget[0].RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_BLUE;
+		if (bsel.wa) bd.RenderTarget[0].RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_ALPHA;
 
-        CComPtr<ID3D11BlendState> bs;
+		CComPtr<ID3D11BlendState> bs;
 
-        m_dev->CreateBlendState(&bd, &bs);
+		m_dev->CreateBlendState(&bd, &bs);
 
-        m_om_bs[bsel] = bs;
+		m_om_bs[bsel] = bs;
 
-        j = m_om_bs.find(bsel);
-    }
+		j = m_om_bs.find(bsel);
+	}
 
-    OMSetBlendState(j->second, (float)(int)afix / 0x80);
-}
-
-
-
-void GSDeviceProxy::SetExclusive(bool isExcl)
-{
+	OMSetBlendState(j->second, (float)(int)afix / 0x80);
 }
 
 void GSDeviceProxy::Flip()
@@ -465,73 +463,46 @@ void GSDeviceProxy::Flip()
 
 void GSDeviceProxy::BeforeDraw()
 {
-    // DX can't read from the FB
-    // So let's copy it and send that to the shader instead
+	// DX can't read from the FB
+	// So let's copy it and send that to the shader instead
 
-    auto bits = m_state.ps_sr_bitfield;
-    m_state.ps_sr_bitfield = 0;
+	auto bits = m_state.ps_sr_bitfield;
+	m_state.ps_sr_bitfield = 0;
 
-    unsigned long i;
-    while (_BitScanForward(&i, bits)) {
-        GSTexture11 *tex = m_state.ps_sr_texture[i];
+	unsigned long i;
+	while (_BitScanForward(&i, bits))
+	{
+		GSTexture11* tex = m_state.ps_sr_texture[i];
 
-        if (tex->Equal(m_state.rt_texture) || tex->Equal(m_state.rt_ds)) {
+		if (tex->Equal(m_state.rt_texture) || tex->Equal(m_state.rt_ds))
+		{
 #ifdef _DEBUG
-            OutputDebugString(format("WARNING: FB read detected on slot %i, copying...", i).c_str());
+			OutputDebugString(format("WARNING: FB read detected on slot %i, copying...", i).c_str());
 #endif
-            GSTexture *cp = nullptr;
+			GSTexture* cp = nullptr;
 
-            CloneTexture(tex, &cp);
+			CloneTexture(tex, &cp);
 
-            PSSetShaderResource(i, cp);
-        }
+			PSSetShaderResource(i, cp);
+		}
 
-        bits ^= 1u << i;
-    }
+		bits ^= 1u << i;
+	}
 
-    PSUpdateShaderState();
-
-    //if (m_is_wired != FALSE) {
-
-    //    D3D11_PRIMITIVE_TOPOLOGY lTopology;
-
-    //    m_ctx->IAGetPrimitiveTopology(&lTopology);
-
-    //    if (lTopology == D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST ||
-    //        lTopology == D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST)
-    //        m_ctx->RSSetState(m_wired_rs);
-    //    else
-    //        m_ctx->RSSetState(m_solid_rs);
-    //} else
-    //    m_ctx->RSSetState(m_solid_rs);
+	PSUpdateShaderState();
 }
 
 void GSDeviceProxy::AfterDraw()
 {
-    unsigned long i;
-    while (_BitScanForward(&i, m_state.ps_sr_bitfield)) {
+	unsigned long i;
+	while (_BitScanForward(&i, m_state.ps_sr_bitfield))
+	{
 #ifdef _DEBUG
-        OutputDebugString(format("WARNING: Cleaning up copied texture on slot %i", i).c_str());
+		OutputDebugString(format("WARNING: Cleaning up copied texture on slot %i", i).c_str());
 #endif
-        Recycle(m_state.ps_sr_texture[i]);
-        PSSetShaderResource(i, NULL);
-    }
-
-	
-	//if (m_is_wired != FALSE) {
-
- //       D3D11_PRIMITIVE_TOPOLOGY lTopology;
-
- //       m_ctx->IAGetPrimitiveTopology(&lTopology);
-
- //       if (lTopology == D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST ||
- //           lTopology == D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST)
- //           m_ctx->RSSetState(m_wired_rs);
- //       else
- //           m_ctx->RSSetState(m_solid_rs);
- //   } else
- //       m_ctx->RSSetState(m_solid_rs);
-
+		Recycle(m_state.ps_sr_texture[i]);
+		PSSetShaderResource(i, NULL);
+	}
 }
 
 bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, void *capturehandle, void *directXDeviceNative)
@@ -640,21 +611,31 @@ bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle
 
     l_Resource.Release();
 
-    hr = m_dev->OpenSharedResource(capturehandle, IID_PPV_ARGS(&l_Resource));
+	if (capturehandle != nullptr) {
 
-    if (FAILED(hr))
-        return false;
+        hr = m_dev->OpenSharedResource(capturehandle, IID_PPV_ARGS(&l_Resource));
 
-    hr = l_Resource->QueryInterface(IID_PPV_ARGS(&m_CaptureTexture));
+        if (FAILED(hr))
+            return false;
 
-    if (FAILED(hr))
-        return false;
+        hr = l_Resource->QueryInterface(IID_PPV_ARGS(&m_CaptureTexture));
+
+        if (FAILED(hr))
+            return false;
+	}
 
     if (!wnd->Create("GS", l_Desc.Width, l_Desc.Height)) {
         return -1;
     }
 
+	if (l_Desc.Height > 720) {
 
+        auto l_upscale_multiplier = ceilf(((float)l_Desc.Height) / 720.0f) * 2.0f;
+
+        m_upscale_multiplier = (int)l_upscale_multiplier;
+
+        theApp.SetConfig("upscale_multiplier", m_upscale_multiplier);
+	}
 
     D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS options;
 
@@ -828,18 +809,18 @@ bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle
 
     memset(&sd, 0, sizeof(sd));
 
-    sd.Filter = theApp.GetConfigI("MaxAnisotropy") && !theApp.GetConfigB("paltex") ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sd.Filter = m_aniso_filter ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sd.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
     sd.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
     sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     sd.MinLOD = -FLT_MAX;
     sd.MaxLOD = FLT_MAX;
-    sd.MaxAnisotropy = theApp.GetConfigI("MaxAnisotropy");
+    sd.MaxAnisotropy = m_aniso_filter;
     sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
     hr = m_dev->CreateSamplerState(&sd, &m_convert.ln);
 
-    sd.Filter = theApp.GetConfigI("MaxAnisotropy") && !theApp.GetConfigB("paltex") ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_POINT;
+    sd.Filter = m_aniso_filter ? D3D11_FILTER_ANISOTROPIC : D3D11_FILTER_MIN_MAG_MIP_POINT;
 
     hr = m_dev->CreateSamplerState(&sd, &m_convert.pt);
 
@@ -878,11 +859,7 @@ bool GSDeviceProxy::Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle
 
     // Exclusive/Fullscreen flip, issued for legacy (managed) windows only.  GSopen2 style
     // emulators will issue the flip themselves later on.
-
-    if (m_wnd->IsManaged()) {
-        SetExclusive(!theApp.GetConfigB("windowed"));
-    }
-	
+		
     return true;
 }
 
@@ -896,7 +873,12 @@ bool GSDeviceProxy::Reset(int w, int h)
     else
         return false;
 
-    return true;
+	ClearRenderTarget(m_backbuffer, 0);
+
+    Flip();
+
+	if (m_ctx)
+		m_ctx->Flush();
 
     return true;
 }

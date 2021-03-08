@@ -32,9 +32,10 @@ static void recReset(int idx) {
 
 void dVifReserve(int idx) {
 	if(!nVif[idx].recReserve)
-		nVif[idx].recReserve = new RecompiledCodeReserve(pxsFmt(L"VIF%u Unpack Recompiler Cache", idx), _8mb);
+		nVif[idx].recReserve = new RecompiledCodeReserve(pxsFmt(L"VIF%u Unpack Recompiler Cache", idx), _32mb);
 
-	nVif[idx].recReserve->Reserve( 8 * _1mb, idx ? HostMemoryMap::VIF1rec : HostMemoryMap::VIF0rec );
+	auto offset = idx ? HostMemoryMap::VIF1recOffset : HostMemoryMap::VIF0recOffset;
+	nVif[idx].recReserve->Reserve(GetVmMemory().MainMemory(), offset, 8 * _1mb);
 }
 
 void dVifReset(int idx) {
@@ -183,7 +184,7 @@ void VifUnpackSSE_Dynarec::ModUnpack( int upknum, bool PostOp )
 
 		case 8: if(PostOp) { UnpkLoopIteration++; UnpkLoopIteration = UnpkLoopIteration & 0x1; } break;
 		case 9:	if (!PostOp) { UnpkLoopIteration++; } break;
-		case 10: 	break;
+		case 10:if (!PostOp) { UnpkLoopIteration++; } break;
 
 		case 12: 	break;
 		case 13: 	break;
@@ -220,10 +221,10 @@ void VifUnpackSSE_Dynarec::CompileRoutine() {
 	while (vNum) {
 
 
-		ShiftDisplacementWindow( dstIndirect, ecx );
+		ShiftDisplacementWindow( dstIndirect, arg1reg );
 
 		if(UnpkNoOfIterations == 0)
-			ShiftDisplacementWindow( srcIndirect, edx ); //Don't need to do this otherwise as we arent reading the source.
+			ShiftDisplacementWindow( srcIndirect, arg2reg ); //Don't need to do this otherwise as we arent reading the source.
 
 
 		if (vCL < cycleSize) {

@@ -22,20 +22,27 @@ using System.Threading.Tasks;
 using Omega_Red.Properties;
 using System.IO.Compression;
 using Omega_Red.Managers;
+using SevenZipExtractor;
+using System.Windows;
+using System.Windows.Threading;
+using System.Threading;
+using Omega_Red.Emulators;
 
 namespace Omega_Red.Tools
 {
     class BiosControl
     {
-        private const int m_biosSize = 512 * 1024;
+        static public event Action<string> ShowErrorEvent;
 
-        private const int m_nvmSize = 1024;
+        public const int m_biosSize = 512 * 1024;
+
+        public const int m_nvmSize = 1024;
 
         public const int m_ROMsize = 1024 * 1024 * 4;
 
         // NVM (eeprom) layout info
         [StructLayout(LayoutKind.Sequential)]
-        private struct NVMLayout
+        public struct NVMLayout
         {
 	        public int biosVer;	// bios version that this eeprom layout is for
             public int config0;	// offset of 1st config block
@@ -89,7 +96,21 @@ namespace Omega_Red.Tools
                 return l_result;
             }
         }
-        
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RomBlock
+        {
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            public byte[] fileName;
+
+            public string getFileName()
+            {
+                var l_result = System.Text.Encoding.ASCII.GetString(fileName);
+
+                return l_result;
+            }
+        }
+
         private static T ByteToType<T>(BinaryReader a_stream)
         {
 
@@ -197,13 +218,153 @@ namespace Omega_Red.Tools
             return l_result;
         }
 
+        public static bool IsPSXBIOS(
+                BinaryReader stream,
+                ref string zone,
+                ref string version,
+                ref int versionInt,
+                ref string data,
+                ref string build)
+        {
+
+            bool l_result = false;
+
+            do
+            {
+
+                int l_index;
+                
+                RomBlock l_RomBlock = new RomBlock();
+
+                for (l_index = 0; l_index < stream.BaseStream.Length; l_index += l_RomBlock.fileName.Length)
+                {
+                    l_RomBlock = ByteToType<RomBlock>(stream);
+
+                    if (l_RomBlock.getFileName().Contains("PS-X Realtime"))
+                        break; /* found romdir */
+                }
+
+                if (l_index == stream.BaseStream.Length)
+                {
+                    break;
+                }
+
+                stream.BaseStream.Seek(0x7FF30, SeekOrigin.Begin);
+
+                l_RomBlock = ByteToType<RomBlock>(stream);
+
+                zone = "Unknown";
+
+                if (l_RomBlock.getFileName().Contains("System ROM Ver"))
+                {
+                    if(stream.ReadByte() == 0x73 
+                        && stream.ReadByte() == 0x69
+                        && stream.ReadByte() == 0x6F
+                        && stream.ReadByte() == 0x6E)
+                    {
+                        List<byte> l_bytes = new List<byte>();
+
+                        var l_byte = stream.ReadByte();
+
+                        bool l_start = false;
+
+                        while (true)
+                        {
+                            if (l_start)
+                                l_bytes.Add(l_byte);
+
+                            if (l_byte == 0x20)
+                            {
+                                l_start = true;
+                            }
+
+                            l_byte = stream.ReadByte();
+
+                            if (l_start && l_byte == 0x20)
+                                break;
+                        }
+
+                        var l_version = System.Text.Encoding.ASCII.GetString(l_bytes.ToArray());
+                        
+                        var l_split_version = l_version.Split('.');
+
+                        if(l_split_version != null &&
+                            l_split_version.Length == 2)
+                        {
+                            int l_temp = 0;
+
+                            version = "v";
+
+                            if (int.TryParse(l_split_version[0], out l_temp))
+                            {
+                                versionInt = l_temp << 8;
+
+                                version += string.Format("{0:00}", l_temp);
+                            }
+
+                            version += ".";
+
+                            if (int.TryParse(l_split_version[1], out l_temp))
+                            {
+                                versionInt |= l_temp;
+
+                                version += string.Format("{0:00}", l_temp);
+                            }
+                        }
+
+                        l_bytes.Clear();
+
+                        l_bytes.AddRange(stream.ReadBytes(8));
+
+                        byte l_zoneByte = stream.ReadByte();
+
+                        if(l_zoneByte == 0x20)
+                        {
+                            l_bytes.Insert(6, Convert.ToByte('9'));
+
+                            l_bytes.Insert(6, Convert.ToByte('1'));
+
+                            l_zoneByte = stream.ReadByte();
+                        }
+                        else
+                        {
+                            l_bytes.Add(l_zoneByte);
+
+                            l_bytes.Add(stream.ReadByte());
+
+                            l_zoneByte = Convert.ToByte('J');
+                        }
+
+                        data = System.Text.Encoding.ASCII.GetString(l_bytes.ToArray());
+
+
+                        switch (Convert.ToChar(l_zoneByte))
+                        {
+                            case 'A': zone = "USA"; break;
+                            case 'E': zone = "Europe"; break;
+                            case 'J':
+                            default: zone = "Japan"; break;
+                        }
+
+                        build = "Console";
+
+                        l_result = true;
+                    }
+                }
+                
+            } while (false);
+
+            return l_result;
+        }
+
         public static bool IsBIOS(
             BinaryReader stream, 
             ref string zone, 
             ref string version, 
             ref int versionInt,
             ref string data, 
-            ref string build)
+            ref string build,
+            ref GameType gameType)
         {
             bool l_result = false;
 
@@ -212,8 +373,23 @@ namespace Omega_Red.Tools
 
                 int l_index;
 
-                RomDir l_RomDir = new RomDir();
+                if (m_biosSize == stream.BaseStream.Length)
+                {
+                    l_result = IsPSXBIOS(
+                        stream,
+                        ref zone,
+                        ref version,
+                        ref versionInt,
+                        ref data,
+                        ref build);
 
+                    gameType = GameType.PS1;
+
+                    break;
+                }
+
+                RomDir l_RomDir = new RomDir();
+                
                 for (l_index = 0; l_index < m_biosSize; l_index++)
                 {
                     l_RomDir = ByteToType<RomDir>(stream);
@@ -296,6 +472,8 @@ namespace Omega_Red.Tools
 
                     l_RomDir = ByteToType<RomDir>(stream);
                 }
+                               
+                gameType = GameType.PS2;
 
             } while (false);
 
@@ -315,7 +493,8 @@ namespace Omega_Red.Tools
             ref string version,
             ref int versionInt,
             ref string data,
-            ref string build)
+            ref string build,
+            ref GameType gameType)
         {
             bool l_result = false;
 
@@ -345,7 +524,8 @@ namespace Omega_Red.Tools
                                 ref version,
                                 ref versionInt,
                                 ref data,
-                                ref build);
+                                ref build,
+                                ref gameType);
                         }
                     }
                 }
@@ -458,7 +638,16 @@ namespace Omega_Red.Tools
 
             return l_result;
         }
-        
+
+        static private void showErrorEvent(string a_message)
+        {
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
+            {
+                if (ShowErrorEvent != null)
+                    ShowErrorEvent(a_message);
+            });
+        }
+
         // Loads the configured bios rom file into PS2 memory.  PS2 memory must be allocated prior to
         // this method being called.
         //
@@ -469,76 +658,92 @@ namespace Omega_Red.Tools
         // Exceptions:
         //   BadStream - Thrown if the primary bios file (usually .bin) is not found, corrupted, etc.
         //
-        static public void LoadBIOS(IntPtr a_FirstArg, Int32 a_SecondArg)
+        static public bool LoadBIOS(IntPtr a_FirstArg, Int32 a_SecondArg, GameType a_gameType)
         {
-	        //u8 ROM[Ps2MemSize::Rom];
+            bool l_result = false;
 	
 	        try
 	        {
-                if (PCSX2Controller.Instance.BiosInfo == null)
-                    return;
-
-                var l_filePath = PCSX2Controller.Instance.BiosInfo.FilePath;
-
-
-                if (!File.Exists(l_filePath))
+                do
                 {
-                    var l_splitsFilePath = l_filePath.Split(new char[] { '|' });
 
-                    if (l_splitsFilePath == null || l_splitsFilePath.Length != 2)
-                        return;
+                    if (Emul.Instance.BiosInfo == null)
+                        break;
 
-                    if (!File.Exists(l_splitsFilePath[0]))
-                        return;
+                    if (Emul.Instance.BiosInfo.GameType != a_gameType)
+                        break;
 
-                    using (FileStream zipToOpen = new FileStream(l_splitsFilePath[0], FileMode.Open))
+                    var l_filePath = Emul.Instance.BiosInfo.FilePath;
+
+
+                    if (!File.Exists(l_filePath))
                     {
-                        using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
+                        var l_splitsFilePath = l_filePath.Split(new char[] { '|' });
+
+                        if (l_splitsFilePath == null || l_splitsFilePath.Length != 2)
+                            break;
+
+                        if (!File.Exists(l_splitsFilePath[0]))
+                            break;
+
+                        try
                         {
-                            var l_entry = archive.GetEntry(l_splitsFilePath[1]);
-
-                            if (l_entry != null)
+                            using (ArchiveFile archive = new ArchiveFile(l_splitsFilePath[0]))
                             {
-                                using (BinaryReader reader = new BinaryReader(l_entry.Open()))
-                                {
-                                    try
-                                    {
-                                        byte[] l_memory = reader.ReadBytes(a_SecondArg);
+                                var l_entry = archive.Entries.FirstOrDefault(p => p.FileName == l_splitsFilePath[1]);
 
-                                        Marshal.Copy(l_memory, 0, a_FirstArg, Math.Min(a_SecondArg, l_memory.Length));
-                                    }
-                                    catch (Exception)
+                                if (l_entry != null)
+                                {
+                                    using (MemoryStream l_memoryStream = new MemoryStream())
                                     {
+                                        try
+                                        {
+                                            l_entry.Extract(l_memoryStream);
+
+                                            l_memoryStream.Position = 0;
+
+                                            byte[] l_memory = l_memoryStream.ToArray();
+
+                                            Marshal.Copy(l_memory, 0, a_FirstArg, Math.Min(a_SecondArg, l_memory.Length));
+                                        }
+                                        catch (Exception exc)
+                                        {
+                                            showErrorEvent(exc.Message);
+                                        }
                                     }
                                 }
                             }
                         }
-
+                        catch (Exception exc)
+                        {
+                            showErrorEvent(exc.Message);
+                        }
                     }
-                }
-                else
-                {
-                    var filesize = new System.IO.FileInfo(l_filePath).Length;
-
-                    if (filesize <= 0)
+                    else
                     {
-                        throw new FileNotFoundException();
+                        var filesize = new System.IO.FileInfo(l_filePath).Length;
+
+                        if (filesize <= 0)
+                        {
+                            throw new FileNotFoundException();
+                        }
+
+                        using (var l_FileStream = File.Open(l_filePath, FileMode.Open))
+                        {
+                            if (l_FileStream == null)
+                                break;
+
+                            byte[] l_memory = new byte[l_FileStream.Length];
+
+                            l_FileStream.Read(l_memory, 0, l_memory.Length);
+
+                            Marshal.Copy(l_memory, 0, a_FirstArg, Math.Min(a_SecondArg, l_memory.Length));
+                        }
                     }
 
-                    using( var l_FileStream = File.Open(l_filePath, FileMode.Open))
-                    {
-                        if (l_FileStream == null)
-                            return;
+                    l_result = true;
 
-                        byte[] l_memory = new byte[l_FileStream.Length];
-
-                        l_FileStream.Read(l_memory, 0, l_memory.Length);
-
-                        Marshal.Copy(l_memory, 0, a_FirstArg, Math.Min(a_SecondArg, l_memory.Length));
-                    }
-                }
-                
-
+                } while (false);
 
 
 
@@ -567,7 +772,7 @@ namespace Omega_Red.Tools
                 //        break;
                 //    }
                 //}
-	        }
+            }
 	        catch (Exception )
 	        {
                 //// Rethrow as a Bios Load Failure, so that the user interface handling the exceptions
@@ -576,21 +781,23 @@ namespace Omega_Red.Tools
                 //    .SetDiagMsg( ex.DiagMsg() )
                 //    .SetUserMsg( ex.UserMsg() );
 	        }
+
+            return l_result;
         }
 
         public static void CDVDGetMechaVer(IntPtr buffer)
         {
-            if (PCSX2Controller.Instance.BiosInfo == null)
+            if (Emul.Instance.BiosInfo == null)
                 return;
 
-            if (PCSX2Controller.Instance.BiosInfo.MEC == null ||
-                PCSX2Controller.Instance.BiosInfo.MEC.Length < 4)
+            if (Emul.Instance.BiosInfo.MEC == null ||
+                Emul.Instance.BiosInfo.MEC.Length < 4)
             {
-                PCSX2Controller.Instance.BiosInfo.MEC = new byte[4];
+                Emul.Instance.BiosInfo.MEC = new byte[4];
 
                 byte[] version = { 0x3, 0x6, 0x2, 0x0 };
 
-                using (MemoryStream l_memoryStream = new MemoryStream(PCSX2Controller.Instance.BiosInfo.MEC))
+                using (MemoryStream l_memoryStream = new MemoryStream(Emul.Instance.BiosInfo.MEC))
                 {
                     l_memoryStream.Write(version, 0, version.Length);
                 }
@@ -598,7 +805,7 @@ namespace Omega_Red.Tools
                 BiosManager.Instance.save();
             }
 
-            using (var l_MECFileStream = new MemoryStream(PCSX2Controller.Instance.BiosInfo.MEC))
+            using (var l_MECFileStream = new MemoryStream(Emul.Instance.BiosInfo.MEC))
             {
                 if (l_MECFileStream == null)
                     return;
@@ -611,7 +818,7 @@ namespace Omega_Red.Tools
             }
 
 
-            //var l_filePath = PCSX2Controller.Instance.BiosInfo.FilePath;
+            //var l_filePath = Emul.Instance.BiosInfo.FilePath;
 
             //if (!File.Exists(l_filePath))
             //    return;
@@ -656,19 +863,19 @@ namespace Omega_Red.Tools
 
         public static void NVMFile(IntPtr buffer, Int32 offset, Int32 bytes, Boolean read)
         {
-            if (PCSX2Controller.Instance.BiosInfo == null)
+            if (Emul.Instance.BiosInfo == null)
                 return;
 
-            if(PCSX2Controller.Instance.BiosInfo.NVM == null ||
-                PCSX2Controller.Instance.BiosInfo.NVM.Length < m_nvmSize)
+            if(Emul.Instance.BiosInfo.NVM == null ||
+                Emul.Instance.BiosInfo.NVM.Length < m_nvmSize)
             {
-                PCSX2Controller.Instance.BiosInfo.NVM = new byte[m_nvmSize];
+                Emul.Instance.BiosInfo.NVM = new byte[m_nvmSize];
 
                 NVMLayout nvmLayout = getNvmLayout();
 
                 byte[] ILinkID_Data = { 0x00, 0xAC, 0xFF, 0xFF, 0xFF, 0xFF, 0xB9, 0x86 };
 
-                using (MemoryStream l_memoryStream = new MemoryStream(PCSX2Controller.Instance.BiosInfo.NVM))
+                using (MemoryStream l_memoryStream = new MemoryStream(Emul.Instance.BiosInfo.NVM))
                 {
                     l_memoryStream.Seek(nvmLayout.ilinkId, SeekOrigin.Begin);
 
@@ -689,7 +896,7 @@ namespace Omega_Red.Tools
 
                 //foreach (var item in ILinkID_Data)
                 //{
-                //    PCSX2Controller.Instance.BiosInfo.NVM[lposition++] = item;
+                //    Emul.Instance.BiosInfo.NVM[lposition++] = item;
                 //}
                                
 
@@ -698,7 +905,7 @@ namespace Omega_Red.Tools
             }
 
 
-            //var l_filePath = PCSX2Controller.Instance.BiosInfo.FilePath;
+            //var l_filePath = Emul.Instance.BiosInfo.FilePath;
 
             //if (!File.Exists(l_filePath))
             //    return;
@@ -736,7 +943,7 @@ namespace Omega_Red.Tools
 
             //var l_NVMFileStream = File.Open(l_NVMFilePath, FileMode.Open);
 
-            using (var l_NVMFileStream = new MemoryStream(PCSX2Controller.Instance.BiosInfo.NVM))
+            using (var l_NVMFileStream = new MemoryStream(Emul.Instance.BiosInfo.NVM))
             {
                 if (l_NVMFileStream == null)
                     return;
@@ -769,14 +976,14 @@ namespace Omega_Red.Tools
             //    read ? L"read from" : L"write to", WX_STR(fname), ret, bytes);
         }
 
-        private static NVMLayout getNvmLayout()
+        public static NVMLayout getNvmLayout()
         {
             NVMLayout nvmLayout = null;
 
             int BiosVersion = 0;
 
-            if (PCSX2Controller.Instance.BiosInfo != null)
-                BiosVersion = PCSX2Controller.Instance.BiosInfo.VersionInt;
+            if (Emul.Instance.BiosInfo != null)
+                BiosVersion = Emul.Instance.BiosInfo.VersionInt;
 
             if (nvmlayouts[1].biosVer <= BiosVersion)
                 nvmLayout = nvmlayouts[1];

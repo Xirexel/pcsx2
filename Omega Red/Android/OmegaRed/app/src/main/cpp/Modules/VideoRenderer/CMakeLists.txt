@@ -13,6 +13,7 @@ include_directories(
         ${PCSX2LIB_DIR}
         ${PUGIXML_DIR}
         ${EXTEND_DIR}
+        ${EMITTER_DIR}
         ${PCSX2_DIR}/../common/include
 #        ${VideoRenderer_DIR}
         )

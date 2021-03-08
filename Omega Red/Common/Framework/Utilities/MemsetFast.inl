@@ -15,7 +15,17 @@
 
 #pragma once
 
+#if !defined(__ANDROID__) || (defined(__ANDROID__) && defined(ANDROID_ABI_X86))
+
 #include <xmmintrin.h>
+
+#else
+
+#include "simd/simd_intrin.h"
+
+#endif
+
+
 
 #define StoreDestIdx(idx) \
     case idx:             \

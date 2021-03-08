@@ -14,7 +14,7 @@
 
 
 #include "Stub.h"
-#include "Pcsx2Types.h"
+//#include "Pcsx2Types.h"
 #include <wx/string.h>
 #include "Utilities/StringHelpers.h"
 

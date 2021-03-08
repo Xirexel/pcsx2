@@ -33,7 +33,7 @@ QTM_USE_NAMESPACE
 #include "thin3d/thin3d.h"
 #include "base/NativeApp.h"
 #include "net/resolve.h"
-#include "base/NKCodeFromQt.h"
+#include "NKCodeFromQt.h"
 
 #include "Common/GraphicsContext.h"
 #include "Core/Core.h"
@@ -53,6 +53,7 @@ public:
 		draw_ = Draw::T3DCreateGLContext();
 		SetGPUBackend(GPUBackend::OPENGL);
 		renderManager_ = (GLRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
+		renderManager_->SetInflightFrames(g_Config.iInflightFrames);
 		bool success = draw_->CreatePresets();
 		_assert_msg_(G3D, success, "Failed to compile preset shaders");
 	}
@@ -145,6 +146,21 @@ private:
 
 	std::thread emuThread;
 	std::atomic<int> emuThreadState;
+};
+
+class QTCamera : public QObject {
+	Q_OBJECT
+public:
+	QTCamera() {}
+	~QTCamera() {};
+
+signals:
+	void onStartCamera(int width, int height);
+	void onStopCamera();
+
+public slots:
+	void startCamera(int width, int height);
+	void stopCamera();
 };
 
 extern MainUI* emugl;

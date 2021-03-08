@@ -22,22 +22,46 @@ set (MODULES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../Modules)
 
 add_definitions(-DDISABLE_RECORDING -DPUGIXML_WCHAR_MODE)
 
-if(${ANDROID_ABI} STREQUAL "x86")
-    add_definitions(-DANDROID_ABI_X86)
+#if(${ANDROID_ABI} STREQUAL "x86")
+#    add_definitions(-DANDROID_ABI_X86)
+#
+#    set(SVU_ZEROREC_SRC
+#            ${CMAKE_CURRENT_SOURCE_DIR}/CPU/x86/aVUzerorec.S
+#            )
+#endif()
+
+#if(${ANDROID_ABI} STREQUAL "armeabi-v7a")
+#    add_definitions(-DANDROID_ABI_V7A)
+#endif()
+
+
+if(${ANDROID_ABI} STREQUAL "arm64-v8a")
+    add_definitions(-DANDROID_ABI_V8A)
+    add_definitions(-D__M_X86_64)
+    add_definitions(-D_M_X86_64)
+    set (EMITTER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Emitters/arm64v8aEmitter/)
 endif()
 
+#if((${ANDROID_ABI} STREQUAL "armeabi-v7a")
+#        OR
+#    (${ANDROID_ABI} STREQUAL "arm64-v8a")
+#        )
+#    set(SVU_ZEROREC_SRC
+#            ${CMAKE_CURRENT_SOURCE_DIR}/CPU/x86/sVU_zerorec_stub.cpp
+#            )
+#endif()
+
+message(ANDROID_ABI = ${ANDROID_ABI})
 if(
-(${ANDROID_ABI} STREQUAL "x86")
+#(${ANDROID_ABI} STREQUAL "x86")
+#        OR
+(${ANDROID_ABI} STREQUAL "arm64-v8a")
 )
 
     message(ANDROID_ABI = ${ANDROID_ABI})
 
-    set(SVU_ZEROREC_SRC
-            ${CMAKE_CURRENT_SOURCE_DIR}/CPU/x86/aVUzerorec.S
-            )
 
-
-
+    add_subdirectory(SIMDEmitter)
     add_subdirectory(libaio)
     add_subdirectory(Framework)
     add_subdirectory(Utilities)

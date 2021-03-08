@@ -21,7 +21,6 @@
 #include "..\Config.h"
 #include "resource.h"
 #include "..\DEV9.h"
-#include "pcap.h"
 #include "..\pcap_io.h"
 #include "..\net.h"
 #include "tap.h"
@@ -173,8 +172,7 @@ UINT DEV9ThreadProc() {
 }*/
 NetAdapter* GetNetAdapter()
 {
-	NetAdapter* na;
-	na = (config.Eth[0]=='t') ? static_cast<NetAdapter*>(new TAPAdapter()) : static_cast<NetAdapter*>(new PCAPAdapter());
+	NetAdapter* na = static_cast<NetAdapter*>(new TAPAdapter());
 
 	if (!na->isInitialised())
 	{

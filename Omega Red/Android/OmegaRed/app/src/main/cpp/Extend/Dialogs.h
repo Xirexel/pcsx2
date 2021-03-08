@@ -1,5 +1,5 @@
 //
-// Created by Xirexel on 7/30/2019.
+// Created by Evgeny Pereguda on 7/30/2019.
 //
 
 #ifndef OMEGARED_DIALOGS_H

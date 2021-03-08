@@ -4,37 +4,118 @@
                     xmlns:panels="clr-namespace:Omega_Red.Panels"
                     xmlns:tools="clr-namespace:Omega_Red.Tools">
 
-    
+
 
     <ItemsPanelTemplate x:Key="ButtonItemsPanel">
-        <StackPanel/>
+        <StackPanel Background="Transparent"/>
     </ItemsPanelTemplate>
 
     <ItemsPanelTemplate x:Key="TouchItemsPanel">
-        <WrapPanel/>
+        <WrapPanel Background="Transparent"/>
     </ItemsPanelTemplate>
 
 
     <Style x:Key="ItemListView" TargetType="ListView">
         <Setter Property="Focusable" Value="False"/>
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="ScrollViewer.CanContentScroll" Value="False"/>
         <Setter Property="SelectionMode" Value="Single"/>
         <Setter Property="IsSynchronizedWithCurrentItem" Value="True"/>
         <Setter Property="ItemsPanel" Value="{Binding ItemsPanelTemplateSelector}"/>
+        <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
     </Style>
 
     <Style x:Key="InfoListView" TargetType="ListView">
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="ScrollViewer.CanContentScroll" Value="False"/>
         <Setter Property="ItemsSource" Value="{Binding Collection}"/>
         <Setter Property="ItemTemplateSelector" Value="{Binding DataTemplateSelector}"/>
         <Setter Property="SelectionMode" Value="Single"/>
         <Setter Property="IsSynchronizedWithCurrentItem" Value="True"/>
         <Setter Property="ItemsPanel" Value="{Binding ItemsPanelTemplateSelector}"/>
+        <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+
+    <ControlTemplate x:Key="GameTypeGroupItem" TargetType="{x:Type GroupItem}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Border BorderBrush="{DynamicResource StandardBorderBrush}" 
+                     BorderThickness="0,0,0,1"
+                     Margin="0,0,0,2">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontWeight="Bold" Foreground="{DynamicResource MainForegroundBrush}"
+                                 Text="{DynamicResource GroupTitle}"/>
+                    <TextBlock x:Name="m_TitleTextBlock" FontWeight="Bold" Text="{Binding Path=Name}" 
+                                            Foreground="{DynamicResource MainForegroundBrush}"
+                                 Margin="5,0,0,0"/>
+                    <TextBlock Margin="2,0,5,0" FontWeight="Bold" Foreground="{DynamicResource MainForegroundBrush}"
+                                 Text=":"/>
+                    <TextBlock FontWeight="Bold" Foreground="{DynamicResource MainForegroundBrush}"
+                                 Text="{Binding Path=ItemCount}"/>
+                </StackPanel>
+            </Border>
+            <ItemsPresenter Grid.Row="1"/>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <DataTrigger Binding="{Binding Path=Name}" Value="{x:Null}">
+                <Setter TargetName="m_TitleTextBlock" Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ContainerFileGroupItem" TargetType="{x:Type GroupItem}">
+        <Border BorderBrush="{DynamicResource StandardBorderBrush}" 
+                          BorderThickness="1" CornerRadius="5" Margin="0,1,4,1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Border BorderBrush="{DynamicResource StandardBorderBrush}" 
+                              BorderThickness="0,0,0,1">
+                    <StackPanel Margin="3,0" Orientation="Horizontal">
+                        <TextBlock FontWeight="Bold" Foreground="{DynamicResource MainForegroundBrush}"
+                                     Text="{DynamicResource GroupTitle}"/>
+                        <TextBlock x:Name="m_TitleTextBlock" FontWeight="Bold" Text="{Binding Path=Name}" 
+                                                Foreground="{DynamicResource MainForegroundBrush}"
+                                     Margin="5,0,0,0"/>
+                        <TextBlock Margin="2,0,5,0" FontWeight="Bold" Foreground="{DynamicResource MainForegroundBrush}"
+                                     Text=":"/>
+                        <TextBlock FontWeight="Bold" Foreground="{DynamicResource MainForegroundBrush}"
+                                     Text="{Binding Path=ItemCount}"/>
+                    </StackPanel>
+                </Border>
+                <ItemsPresenter Grid.Row="1"/>
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <DataTrigger Binding="{Binding Path=Name}" Value="{x:Null}">
+                <Setter TargetName="m_TitleTextBlock" Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style TargetType="{x:Type GroupItem}">
+        <Setter Property="Margin" Value="0,0,0,5"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Path=Name, Converter={converters:TypeNameConverter}}" Value="GameType">
+                <Setter Property="Template" Value="{DynamicResource GameTypeGroupItem}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Path=Name, Converter={converters:TypeNameConverter}}" Value="ContainerFile">
+                <Setter Property="Template" Value="{DynamicResource ContainerFileGroupItem}" />
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <Style TargetType="{x:Type ListViewItem}" >
         <Setter Property="Focusable" Value="{Binding Focusable}"/>
         <Setter Property="FontSize" Value="{DynamicResource StandardFontSize}"/>
+        <Setter Property="Foreground" Value="{DynamicResource MainForegroundBrush}"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Template">
             <Setter.Value>
@@ -43,7 +124,10 @@
                         <converters:VisibilityConverter x:Key="m_VisibilityConverter" />
                     </ControlTemplate.Resources>
                     <Border Margin="6" x:Name="Border" Padding="0,5,0,5" SnapsToDevicePixels="true"
-                       Background="#F0F0FF" CornerRadius="{DynamicResource StandardCornerRadius}" BorderThickness="1"
+                            Background="{DynamicResource MainBackgroundBrush}" 
+                            CornerRadius="{DynamicResource StandardCornerRadius}" 
+                            BorderThickness="{DynamicResource StandardBorderThickness}"
+                            BorderBrush="{DynamicResource StandardBorderBrush}"
                             Visibility="{Binding ElementName=m_Content, Path=Content, Converter={StaticResource m_VisibilityConverter}}">
                         <ContentPresenter x:Name="m_Content"/>
                     </Border>
@@ -53,31 +137,23 @@
                             <Setter TargetName="Border" Property="BorderBrush" Value="DarkBlue"/>
                             <Setter TargetName="Border" Property="Background">
                                 <Setter.Value>
-                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                        <GradientStop Color="#FFBED7FE" Offset="0.1"/>
-                                        <GradientStop Color="#FF6C82CC" Offset="0.51"/>
-                                        <GradientStop Color="#FF5567A1" Offset="0.986"/>
-                                    </LinearGradientBrush>
+                                    <SolidColorBrush Color="#FF5567A1"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="Focusable" Value="True"/>
+                            </MultiTrigger.Conditions>
                             <Setter Property="Foreground" Value="DarkBlue" />
                             <Setter TargetName="Border" Property="BorderBrush" Value="DarkOrange"/>
                             <Setter TargetName="Border" Property="Background">
                                 <Setter.Value>
-                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                        <GradientStop Color="#FFFFD5A0" Offset="0.3"/>
-                                        <GradientStop Color="#FFFFA335" Offset="0.51"/>
-                                        <GradientStop Color="#FFFFC14A" Offset="0.986"/>
-                                    </LinearGradientBrush>
+                                    <SolidColorBrush Color="#FFFFC14A"/>
                                 </Setter.Value>
                             </Setter>
-                        </Trigger>
-                        <!--<Trigger  Property="" Value="Collapsed">
-                            <Setter TargetName="Border" Property="Padding" Value="0"/>
-                            <Setter TargetName="Border" Property="Margin" Value="0"/>
-                        </Trigger>-->
+                        </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -90,7 +166,13 @@
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
-            <Image Margin="5" x:Name="m_icon" Source="../Assests/Images/Unknown.png"/>
+            <Border Margin="5"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}">
+                <Image Margin="5" x:Name="m_icon" Source="pack://application:,,,/Omega Red;component/Assests/Images/Unknown.png"/>
+            </Border>
             <StackPanel Margin="5,0" Grid.Column="1">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{DynamicResource ZoneTitle}" />
@@ -126,28 +208,28 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding Zone}" Value="Test">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Test.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Test.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="Europe">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Europe.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Europe.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="Japan">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Japan.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Japan.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="USA">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/USA.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/USA.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="Free">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Free.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Free.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="China">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/China.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/China.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="HK">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/HK.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/HK.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Zone}" Value="T10K">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/T10K.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/T10K.png" />
             </DataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
@@ -156,7 +238,7 @@
         <Grid  Width="{DynamicResource ItemWidth}">
             <Grid.Resources>
                 <converters:CompatibilityConverter x:Key="m_CompatibilityConverter" />
-                <converters:WideScreenConverter x:Key="m_WideScreenConverter" />                
+                <converters:WideScreenConverter x:Key="m_WideScreenConverter" />
             </Grid.Resources>
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
@@ -167,7 +249,7 @@
                 <ColumnDefinition Width="auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Margin="5,0, 5, 0">
-                <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
+                <TextBlock FontWeight="Bold" Text="{Binding Title}" TextWrapping="Wrap" />
                 <TextBlock Margin="0,5,0,0" Text="{Binding DiscSerial,
                                 
                                 Converter={StaticResource m_CompatibilityConverter}                                
@@ -193,7 +275,13 @@
                     <ColumnDefinition Width="auto"/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <Image Margin="5" RenderOptions.BitmapScalingMode="Fant" x:Name="m_icon" Source="../Assests/Images/ISO.png"/>
+                <Border Margin="5"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}">
+                    <Image Margin="5" RenderOptions.BitmapScalingMode="Fant" x:Name="m_icon" Source="pack://application:,,,/Omega Red;component/Assests/Images/ISO.png"/>
+                </Border>
                 <StackPanel Margin="5,0" Grid.Column="1">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{DynamicResource TypeISOTitle}" />
@@ -204,62 +292,48 @@
                         <TextBlock Text="{Binding GameDiscType}" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource DiscRegionTypeTitle}" />
+                        <TextBlock x:Name="m_DiscRegionTypeTitleTextBlock" Text="{DynamicResource DiscRegionTypeTitle}" />
                         <TextBlock Text="{Binding DiscRegionType}" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource VersionTitle}" />
+                        <TextBlock x:Name="m_VersionTitleTextBlock" Text="{DynamicResource VersionTitle}" />
                         <TextBlock Text="{Binding SoftwareVersion}" TextWrapping="Wrap" />
                     </StackPanel>
                     <TextBlock Visibility="{Binding ElfCRC, Converter={StaticResource m_WideScreenConverter}}" 
                                Text="{DynamicResource WideScreenTitle}" 
                                TextWrapping="Wrap" />
                 </StackPanel>
-                <Border  Visibility="{Binding IsVisibilityGoogleAccount}" 
-                        IsEnabled="{Binding GoogleAccountIsEnabled}"                        
-                        VerticalAlignment="Top"
-                        Grid.Column="1"  
-                        DataContext="{Binding RelativeSource={RelativeSource  
-                            FindAncestor, 
-                            AncestorType={x:Type UserControl}, 
-                            AncestorLevel=1}, Path=DataContext}">
-                    <Button Style="{DynamicResource DriveBtn}">
-                        <Image Source="/Assests/Images/Google_Drive.png" 
-                                       Stretch="Uniform" 
-                                       Height="64" 
-                                       Width="64"/>
-                    </Button>
-                </Border>
             </Grid>
-
-            <Border x:Name="mProgressBannerBorder" Grid.RowSpan="2" Visibility="Collapsed" Grid.ColumnSpan="2" Background="#70000000">
-                <Grid>
-                    <Viewbox>
-                        <panels:ProgressBanner/>
-                    </Viewbox>
-                    <StackPanel Margin="0,0,5,0" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock x:Name="mUploadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource UploadingProgressTitle}"/>
-                        <TextBlock x:Name="mDownloadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource DownloadingProgressTitle}"/>
-                        <TextBlock Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" FontSize="{DynamicResource AboutFontSize}" x:Name="mProgressTextBlock"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </Grid>        
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding DiscRegionType}" Value="">
+                <Setter TargetName="m_DiscRegionTypeTitleTextBlock" Property="Visibility"  Value="Hidden" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding SoftwareVersion}" Value="">
+                <Setter TargetName="m_VersionTitleTextBlock" Property="Visibility"  Value="Hidden" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
     </DataTemplate>
 
     <DataTemplate x:Key="StateInfoItem">
-        <Grid  Width="{DynamicResource ItemWidth}">
-            <Grid Grid.Row="1" Grid.ColumnSpan="2" Height="125">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto"/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <Grid x:Name="m_BackGrid" Height="129" VerticalAlignment="Top" Width="{DynamicResource ItemWidth}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Border Margin="5"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}">
                 <Image Margin="5" RenderOptions.BitmapScalingMode="Fant" x:Name="m_icon" Stretch="Uniform" Source="{Binding ImageSource}"/>
-                <Border
+            </Border>
+            <Border
                     x:Name="mAutoTitleBorder"
                     Opacity="{DynamicResource StandardOpacity}"
                     BorderBrush="{DynamicResource StandardBorderBrush}"
@@ -268,9 +342,9 @@
                     CornerRadius="{DynamicResource StandardCornerRadius}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top">
-                    <TextBlock Margin="5" Foreground="{DynamicResource MainForegroundBrush}" Text="{DynamicResource AutosaveTitle}" FontWeight="Bold"/>
-                </Border>
-                <Border
+                <TextBlock Margin="5" Foreground="{DynamicResource MainForegroundBrush}" Text="{DynamicResource AutosaveTitle}" FontWeight="Bold"/>
+            </Border>
+            <Border
                     x:Name="mQuickTitleBorder"
                     Opacity="{DynamicResource StandardOpacity}"
                     BorderBrush="{DynamicResource StandardBorderBrush}"
@@ -279,14 +353,38 @@
                     CornerRadius="{DynamicResource StandardCornerRadius}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top">
-                    <TextBlock Margin="5" Foreground="{DynamicResource MainForegroundBrush}" Text="{DynamicResource QuicksaveTitle}" FontWeight="Bold"/>
-                </Border>
-                <StackPanel Margin="0,0" Grid.Column="1" HorizontalAlignment="Left">
-                    <TextBlock FontSize="14" Text="{Binding Date}" TextWrapping="Wrap" />
-                    <TextBlock x:Name="mDurationTitle" FontSize="14" Visibility="Visible"  Margin="0, 3, 0 , 0" Text="{DynamicResource DurationTitle}" />
-                    <TextBlock FontSize="14" Text="{Binding Duration}" />
+                <TextBlock Margin="5" TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource MainForegroundBrush}" Text="{DynamicResource QuicksaveTitle}" FontWeight="Bold"/>
+            </Border>
+            <StackPanel Margin="0,0" Grid.Column="1" Grid.RowSpan="3" HorizontalAlignment="Left" x:Name="m_Onlinesave_StackPanel">
+                <TextBlock FontSize="14" Text="{Binding Date}" TextWrapping="Wrap" />
+                <TextBlock x:Name="mDurationTitle" FontSize="14" Visibility="Visible"  Margin="0, 3, 0 , 0" Text="{DynamicResource DurationTitle}" />
+                <TextBlock FontSize="14" Text="{Binding Duration}" />
+            </StackPanel>
+
+            <Border Margin="5, 0" Grid.RowSpan="3" Grid.ColumnSpan="2" x:Name="m_Drivesave_Border"
+                    Opacity="{DynamicResource StandardOpacity}"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Bottom">
+                <StackPanel Margin="5,0">
+                    <TextBlock Foreground="{DynamicResource MainForegroundBrush}" Margin="5" Text="{DynamicResource DrivesaveTitle}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="Bold"/>
+                    <Grid HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock VerticalAlignment="Top" Foreground="{DynamicResource MainForegroundBrush}" FontSize="14" Text="{Binding Date}" TextWrapping="Wrap" />
+                        <StackPanel Grid.Column="1" Margin="5,0,0,0" VerticalAlignment="Top">
+                            <TextBlock Foreground="{DynamicResource MainForegroundBrush}" FontSize="14" Visibility="Visible"  Text="{DynamicResource DurationTitle}" />
+                            <TextBlock Foreground="{DynamicResource MainForegroundBrush}" FontSize="14" Text="{Binding Duration}" />
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
-                <Button Grid.Column="1"                                
+            </Border>
+            <Button Grid.Column="1"                                
                         Style="{DynamicResource RemoveBtn}"                                 
                         CommandParameter="{Binding RelativeSource={RelativeSource  
                             FindAncestor, 
@@ -296,7 +394,7 @@
                             FindAncestor, 
                             AncestorType={x:Type UserControl}, 
                             AncestorLevel=1}, Path=DataContext}"/>
-                <Border Visibility="{Binding IsVisibilityGoogleAccount}" 
+            <Border Visibility="{Binding IsVisibilityGoogleAccount}" 
                         IsEnabled="{Binding GoogleAccountIsEnabled}" 
                         VerticalAlignment="Bottom"
                         Grid.Column="1"    
@@ -304,7 +402,7 @@
                             FindAncestor, 
                             AncestorType={x:Type UserControl}, 
                             AncestorLevel=1}, Path=DataContext}">
-                    <Button Style="{DynamicResource DriveBtn}"                                 
+                <Button Style="{DynamicResource DriveBtn}"                                 
                         CommandParameter="{Binding RelativeSource={RelativeSource  
                             FindAncestor, 
                             AncestorType={x:Type Grid}, 
@@ -313,155 +411,18 @@
                             FindAncestor, 
                             AncestorType={x:Type UserControl}, 
                             AncestorLevel=1}, Path=DataContext}">
-                        <Image Source="/Assests/Images/Google_Drive.png" 
+                    <Image Source="pack://application:,,,/Omega Red;component/Assests/Images/Google_Drive.png" 
                                        Stretch="Uniform" 
                                        Height="64" 
                                        Width="64"/>
-                    </Button>
-                </Border>
-                <Grid Grid.Row="1" Grid.ColumnSpan="2" x:Name="m_Access_Control_Grid" Visibility="Collapsed">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <Border VerticalAlignment="Center" HorizontalAlignment="Center" 
-                            Visibility="{Binding Visibility}">
-                        <Button Style="{DynamicResource IconBtn}" 
-                            
-                            Command="{Binding LoadCommand}"                                
-                                
-                            CommandParameter="{Binding RelativeSource={RelativeSource  
-                                   FindAncestor, 
-                                   AncestorType={x:Type Grid}, 
-                                   AncestorLevel=1}, Path=DataContext}"
-                                                                
-                            DataContext="{Binding RelativeSource={RelativeSource  
-                                   FindAncestor, 
-                                   AncestorType={x:Type UserControl}, 
-                                   AncestorLevel=1}, Path=DataContext}"                             
-                            >
-                            <Image IsEnabled="{Binding RelativeSource={RelativeSource  
-                                   FindAncestor, 
-                                   AncestorType={x:Type Button}, 
-                                   AncestorLevel=1}, Path=IsEnabled}" 
-                                   Source="../Assests/Images/LoadState.png" 
-                                   Stretch="Uniform" 
-                                   Height="30" 
-                                   Width="30"/>
-                        </Button>
-                    </Border>
-                    <Border VerticalAlignment="Center" 
-                            HorizontalAlignment="Center" 
-                            Grid.Column="1"
-                            x:Name="m_SaveBorder">
-                        <Button Style="{DynamicResource IconBtn}"                   
-                                Command="{Binding SaveCommand}"                           
-                                                            
-                                CommandParameter="{Binding RelativeSource={RelativeSource  
-                                   FindAncestor, 
-                                   AncestorType={x:Type Grid}, 
-                                   AncestorLevel=1}, Path=DataContext}"
-                                
-                                DataContext="{Binding RelativeSource={RelativeSource  
-                                   FindAncestor, 
-                                   AncestorType={x:Type UserControl}, 
-                                   AncestorLevel=1}, Path=DataContext}"                             
-                            >
-                            <Image IsEnabled="{Binding RelativeSource={RelativeSource  
-                                   FindAncestor, 
-                                   AncestorType={x:Type Button}, 
-                                   AncestorLevel=1}, Path=IsEnabled}" 
-                               Source="../Assests/Images/SaveState.png" 
-                               Stretch="Uniform" 
-                               Height="30" 
-                               Width="30"/>
-                        </Button>
-                    </Border>
-                </Grid>
-                <Border Grid.Row="1" Grid.ColumnSpan="2" x:Name="m_Drivesave_Border"
-                    Opacity="{DynamicResource StandardOpacity}"
-                    BorderBrush="{DynamicResource StandardBorderBrush}"
-                    Background="{DynamicResource MainBackgroundBrush}"
-                    BorderThickness="{DynamicResource StandardBorderThickness}"
-                    CornerRadius="{DynamicResource StandardCornerRadius}"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-                    <TextBlock Margin="5" Foreground="{DynamicResource MainForegroundBrush}" Text="{DynamicResource DrivesaveTitle}" FontWeight="Bold"/>                    
-                </Border>
-                <Border x:Name="mProgressBannerBorder" Grid.RowSpan="2" Visibility="Collapsed" Grid.ColumnSpan="2" Background="#70000000">
-                    <Grid>
-                        <Viewbox>
-                            <panels:ProgressBanner/>
-                        </Viewbox>
-                        <StackPanel Margin="0,0,5,0" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock x:Name="mUploadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource UploadingProgressTitle}"/>
-                            <TextBlock x:Name="mDownloadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource DownloadingProgressTitle}"/>
-                            <TextBlock Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" FontSize="{DynamicResource AboutFontSize}" x:Name="mProgressTextBlock"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </Grid>
-        </Grid>
-        <DataTemplate.Triggers>
-            <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/None.png" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Duration}" Value="{x:Null}">
-                <Setter TargetName="mDurationTitle" Property="Visibility" Value="Hidden"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding IsAutosave}" Value="False">
-                <Setter TargetName="mAutoTitleBorder" Property="Visibility" Value="Hidden"/>
-                <Setter TargetName="m_SaveBorder" Property="Visibility" Value="Visible"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding IsAutosave}" Value="True">
-                <Setter TargetName="m_SaveBorder" Property="Visibility" Value="Hidden"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding IsQuicksave}" Value="False">
-                <Setter TargetName="mQuickTitleBorder" Property="Visibility" Value="Hidden"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding IsQuicksave}" Value="True">
-                <Setter TargetName="m_SaveBorder" Property="Visibility" Value="Hidden"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding IsCloudOnlysave}" Value="True">
-                <Setter TargetName="m_Access_Control_Grid" Property="Visibility" Value="Hidden"/>
-                <Setter TargetName="m_Drivesave_Border" Property="Visibility" Value="Visible"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding IsCloudOnlysave}" Value="False">
-                <Setter TargetName="m_Drivesave_Border" Property="Visibility" Value="Hidden"/>
-                <Setter TargetName="m_Access_Control_Grid" Property="Visibility" Value="Visible"/>
-            </DataTrigger>  
-        </DataTemplate.Triggers>
-    </DataTemplate>
-
-    <DataTemplate x:Key="AutoStateInfoItem">
-        <Grid  Width="{DynamicResource ItemWidth}">
-            <Grid Grid.Row="1" Grid.ColumnSpan="2" Height="125">
+                </Button>
+            </Border>
+            <Grid Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,7" x:Name="m_Access_Control_Grid" Visibility="Collapsed">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Image Margin="5" RenderOptions.BitmapScalingMode="Fant" x:Name="m_icon" Stretch="Uniform" Source="{Binding ImageSource}"/>
-                <Border
-                    x:Name="mAutoTitleBorder"
-                    Opacity="{DynamicResource StandardOpacity}"
-                    BorderBrush="{DynamicResource StandardBorderBrush}"
-                    Background="{DynamicResource MainBackgroundBrush}"
-                    BorderThickness="{DynamicResource StandardBorderThickness}"
-                    CornerRadius="{DynamicResource StandardCornerRadius}"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top">
-                    <TextBlock Margin="5" Foreground="{DynamicResource MainForegroundBrush}" Text="{DynamicResource AutosaveTitle}" FontWeight="Bold"/>
-                </Border>
-                <StackPanel Margin="0,0" Grid.Column="1" HorizontalAlignment="Left">
-                    <TextBlock Text="{Binding Date}" TextWrapping="Wrap" />
-                    <TextBlock x:Name="mDurationTitle" Visibility="Visible"  Margin="0, 3, 0 , 0" Text="{DynamicResource DurationTitle}" />
-                    <TextBlock Text="{Binding Duration}" />
-                </StackPanel>
-                <Border x:Name="m_Access_Border" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,20,5" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                <Border VerticalAlignment="Center" HorizontalAlignment="Center" 
                             Visibility="{Binding Visibility}">
                     <Button Style="{DynamicResource IconBtn}" 
                             
@@ -481,29 +442,219 @@
                                    FindAncestor, 
                                    AncestorType={x:Type Button}, 
                                    AncestorLevel=1}, Path=IsEnabled}" 
-                                   Source="../Assests/Images/LoadState.png" 
+                                   Source="pack://application:,,,/Omega Red;component/Assests/Images/LoadState.png" 
                                    Stretch="Uniform" 
                                    Height="30" 
                                    Width="30"/>
                     </Button>
                 </Border>
-                <Border x:Name="mProgressBannerBorder" Grid.RowSpan="2" Grid.ColumnSpan="2" CornerRadius="5" Visibility="Collapsed" Background="#70000000">
-                    <Grid>
-                        <Viewbox>
-                            <panels:ProgressBanner/>
-                        </Viewbox>
-                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock x:Name="mUploadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource UploadingProgressTitle}"/>
-                            <TextBlock x:Name="mDownloadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource DownloadingProgressTitle}"/>
-                            <TextBlock Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" FontSize="{DynamicResource AboutFontSize}" x:Name="mProgressTextBlock"/>
-                        </StackPanel>
-                    </Grid>
+                <Border VerticalAlignment="Center" 
+                            HorizontalAlignment="Center" 
+                            Grid.Column="1"
+                            x:Name="m_SaveBorder">
+                    <Button Style="{DynamicResource IconBtn}"                   
+                                Command="{Binding SaveCommand}"                           
+                                                            
+                                CommandParameter="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Grid}, 
+                                   AncestorLevel=1}, Path=DataContext}"
+                                
+                                DataContext="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type UserControl}, 
+                                   AncestorLevel=1}, Path=DataContext}"                             
+                            >
+                        <Image IsEnabled="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Button}, 
+                                   AncestorLevel=1}, Path=IsEnabled}" 
+                               Source="pack://application:,,,/Omega Red;component/Assests/Images/SaveState.png" 
+                               Stretch="Uniform" 
+                               Height="30" 
+                               Width="30"/>
+                    </Button>
                 </Border>
             </Grid>
+            <Border Margin="5" Grid.Row="1" Grid.ColumnSpan="2" x:Name="m_CloudSaveInfo" Visibility="Collapsed"      
+                    Opacity="{DynamicResource StandardOpacity}"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center">
+                <StackPanel Margin="5">
+                    <TextBlock Foreground="{DynamicResource MainForegroundBrush}" Margin="5" Text="{DynamicResource DrivesaveTitle}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="Bold"/>
+                    <Grid HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock VerticalAlignment="Top" Foreground="{DynamicResource MainForegroundBrush}" FontSize="14" Text="{Binding CloudSaveDate}" TextWrapping="Wrap" />
+                        <StackPanel Grid.Column="1" Margin="5,0,0,0" VerticalAlignment="Top">
+                            <TextBlock Foreground="{DynamicResource MainForegroundBrush}" FontSize="14" Visibility="Visible"  Text="{DynamicResource DurationTitle}" />
+                            <TextBlock Foreground="{DynamicResource MainForegroundBrush}" FontSize="14" Text="{Binding CloudSaveDuration}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            <Border x:Name="mProgressBannerBorder" Grid.RowSpan="3" Visibility="Collapsed" Grid.ColumnSpan="2" Background="#70000000">
+                <Grid>
+                    <Viewbox>
+                        <panels:ProgressBanner/>
+                    </Viewbox>
+                    <StackPanel Margin="0,0,5,0" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock x:Name="mUploadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource UploadingProgressTitle}"/>
+                        <TextBlock x:Name="mDownloadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource DownloadingProgressTitle}"/>
+                        <TextBlock Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" FontSize="{DynamicResource AboutFontSize}" x:Name="mProgressTextBlock"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/None.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/None.png" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Duration}" Value="{x:Null}">
+                <Setter TargetName="mDurationTitle" Property="Visibility" Value="Hidden"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsAutosave}" Value="False">
+                <Setter TargetName="mAutoTitleBorder" Property="Visibility" Value="Hidden"/>
+                <Setter TargetName="m_SaveBorder" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsAutosave}" Value="True">
+                <Setter TargetName="m_SaveBorder" Property="Visibility" Value="Hidden"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsQuicksave}" Value="False">
+                <Setter TargetName="mQuickTitleBorder" Property="Visibility" Value="Hidden"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsQuicksave}" Value="True">
+                <Setter TargetName="m_SaveBorder" Property="Visibility" Value="Hidden"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsCloudOnlysave}" Value="True">
+                <Setter TargetName="m_Drivesave_Border" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="m_Access_Control_Grid" Property="Visibility" Value="Hidden"/>
+                <Setter TargetName="m_Onlinesave_StackPanel" Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsCloudOnlysave}" Value="False">
+                <Setter TargetName="m_Drivesave_Border" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="m_Access_Control_Grid" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="m_Onlinesave_StackPanel" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsCloudsave}" Value="True"/>
+                    <Condition Binding="{Binding IsCloudOnlysave}" Value="False"/>
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="m_BackGrid" Property="Height" Value="220"/>
+                <Setter TargetName="m_CloudSaveInfo" Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
+
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <DataTemplate x:Key="AutoStateInfoItem">
+        <Grid Height="129" Width="{DynamicResource ItemWidth}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Margin="5"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}">
+                <Image Margin="5" RenderOptions.BitmapScalingMode="Fant" x:Name="m_icon" Stretch="Uniform" Source="{Binding ImageSource}"/>
+            </Border>
+            <Border
+                    x:Name="mAutoTitleBorder"
+                    Opacity="{DynamicResource StandardOpacity}"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top">
+                <TextBlock Margin="5" Foreground="{DynamicResource MainForegroundBrush}" Text="{DynamicResource AutosaveTitle}" FontWeight="Bold"/>
+            </Border>
+            <StackPanel Margin="5,0" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Left" x:Name="m_Onlinesave_StackPanel">
+                <TextBlock Text="{Binding Date}" TextWrapping="Wrap" />
+                <TextBlock x:Name="mDurationTitle" Visibility="Visible"  Margin="0, 3, 0 , 0" Text="{DynamicResource DurationTitle}" />
+                <TextBlock Text="{Binding Duration}" />
+            </StackPanel>
+
+            <Border Margin="2,0,10,0" Grid.RowSpan="3" Grid.ColumnSpan="2" x:Name="m_Drivesave_Border"
+                    Opacity="{DynamicResource StandardOpacity}"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Bottom">
+                <StackPanel Margin="5,0">
+                    <TextBlock Foreground="{DynamicResource MainForegroundBrush}" Margin="5" Text="{DynamicResource DrivesaveTitle}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="Bold"/>
+                    <Grid HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock VerticalAlignment="Top" Foreground="{DynamicResource MainForegroundBrush}" FontSize="14" Text="{Binding Date}" TextWrapping="Wrap" />
+                        <StackPanel Grid.Column="1" Margin="5,0,0,0" VerticalAlignment="Top">
+                            <TextBlock Foreground="{DynamicResource MainForegroundBrush}" FontSize="14" Visibility="Visible"  Text="{DynamicResource DurationTitle}" />
+                            <TextBlock Foreground="{DynamicResource MainForegroundBrush}" FontSize="14" Text="{Binding Duration}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            <Border x:Name="m_Access_Border" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,20,5" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                            Visibility="{Binding Visibility}">
+                <Button Style="{DynamicResource IconBtn}" 
+                            
+                            Command="{Binding LoadCommand}"                                
+                                
+                            CommandParameter="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Grid}, 
+                                   AncestorLevel=1}, Path=DataContext}"
+                                                                
+                            DataContext="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type UserControl}, 
+                                   AncestorLevel=1}, Path=DataContext}"                             
+                            >
+                    <Image IsEnabled="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Button}, 
+                                   AncestorLevel=1}, Path=IsEnabled}" 
+                                   Source="pack://application:,,,/Omega Red;component/Assests/Images/LoadState.png" 
+                                   Stretch="Uniform" 
+                                   Height="30" 
+                                   Width="30"/>
+                </Button>
+            </Border>
+            <Border x:Name="mProgressBannerBorder" Grid.RowSpan="2" Grid.ColumnSpan="2" CornerRadius="5" Visibility="Collapsed" Background="#70000000">
+                <Grid>
+                    <Viewbox>
+                        <panels:ProgressBanner/>
+                    </Viewbox>
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock x:Name="mUploadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource UploadingProgressTitle}"/>
+                        <TextBlock x:Name="mDownloadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource DownloadingProgressTitle}"/>
+                        <TextBlock Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" FontSize="{DynamicResource AboutFontSize}" x:Name="mProgressTextBlock"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/None.png" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Duration}" Value="{x:Null}">
                 <Setter TargetName="mDurationTitle" Property="Visibility" Value="Hidden"/>
@@ -513,12 +664,53 @@
             </DataTrigger>
             <DataTrigger Binding="{Binding IsCloudOnlysave}" Value="True">
                 <Setter TargetName="m_Access_Border" Property="Visibility" Value="Hidden"/>
+                <Setter TargetName="m_Drivesave_Border" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="m_Onlinesave_StackPanel" Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsCloudOnlysave}" Value="False">
+                <Setter TargetName="m_Drivesave_Border" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="m_Access_Border" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="m_Onlinesave_StackPanel" Property="Visibility" Value="Visible"/>
             </DataTrigger>
         </DataTemplate.Triggers>
-    </DataTemplate>    
+    </DataTemplate>
+
+    <DataTemplate x:Key="QuickStateInfoItem">
+        <Grid Height="90" Width="{DynamicResource ItemWidth}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <Border Margin="5"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}">
+                <Image Margin="5" RenderOptions.BitmapScalingMode="Fant" x:Name="m_icon" Stretch="Uniform" Source="{Binding ImageSource}"/>
+            </Border>
+
+            <StackPanel Margin="5,0" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Left" x:Name="m_Onlinesave_StackPanel">
+                <TextBlock Text="{Binding Date}" TextWrapping="Wrap" />
+                <TextBlock x:Name="mDurationTitle" Visibility="Visible"  Margin="0, 3, 0 , 0" Text="{DynamicResource DurationTitle}" />
+                <TextBlock Text="{Binding Duration}" />
+            </StackPanel>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/None.png" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Duration}" Value="{x:Null}">
+                <Setter TargetName="mDurationTitle" Property="Visibility" Value="Hidden"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
 
     <DataTemplate x:Key="ScreenshotInfoItem">
-        <Grid Height="105" Width="{DynamicResource ItemWidth}">
+        <Grid Height="105" Width="{DynamicResource ImageItemWidth}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
@@ -545,25 +737,31 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding SmallImageSource}" Value="{ x:Null}">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Media.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Media.png" />
             </DataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
 
     <DataTemplate x:Key="MemoryCardInfoItem">
-        <Grid Margin="5">
+        <Grid x:Name="m_BackGrid" Margin="5" Width="{DynamicResource ItemWidth}" VerticalAlignment="Top" Height="125">
             <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
+                <RowDefinition/>
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
                 <ColumnDefinition Width="auto"/>
             </Grid.ColumnDefinitions>
-            
-            
-            <TextBlock Text="{Binding FileName}" TextWrapping="Wrap" />
-            <StackPanel Grid.ColumnSpan="2" Grid.Row="1" Margin="0, 5, 0, 0" Orientation="Vertical">
+
+
+            <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{DynamicResource MemoryCardInfoTitle}" />
+                    <TextBlock x:Name="m_NumberTextBlock" Text="{Binding Number}"/>
+                </StackPanel>
+                <TextBlock Text="{Binding FileName}" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel x:Name="m_DateStackPanel" Grid.ColumnSpan="2" Grid.Row="1" Margin="0, 5, 0, 0" Orientation="Vertical">
                 <TextBlock Text="{DynamicResource LastDateTitle}"/>
                 <TextBlock Text="{Binding Date}" TextWrapping="Wrap" />
             </StackPanel>
@@ -581,7 +779,81 @@
                                    AncestorLevel=1}, Path=DataContext}" 
                                  />
             </Border>
+
+            <Border Margin="0, 0, 0,-5" Grid.ColumnSpan="2" Grid.Row="1" x:Name="m_Drivesave_Border"     
+                    Opacity="{DynamicResource StandardOpacity}"
+                    BorderBrush="{DynamicResource StandardBorderBrush}"
+                    Background="{DynamicResource MainBackgroundBrush}"
+                    BorderThickness="{DynamicResource StandardBorderThickness}"
+                    CornerRadius="{DynamicResource StandardCornerRadius}"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Bottom">
+                <StackPanel Margin="5">
+                    <TextBlock Foreground="{DynamicResource MainForegroundBrush}" Text="{DynamicResource DrivesaveTitle}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="Bold"/>
+
+                    <StackPanel Grid.ColumnSpan="2" Grid.Row="1" Margin="0, 5, 0, 0" Orientation="Vertical">
+                        <TextBlock Text="{DynamicResource LastDateTitle}"/>
+                        <TextBlock Text="{Binding CloudSaveDate}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Visibility="{Binding IsVisibilityGoogleAccount}" 
+                        IsEnabled="{Binding GoogleAccountIsEnabled}" 
+                        Margin="0, 0,-5,-5"
+                        VerticalAlignment="Bottom"
+                        Grid.Column="1"  
+                        Grid.Row="1"
+                        DataContext="{Binding RelativeSource={RelativeSource  
+                            FindAncestor, 
+                            AncestorType={x:Type UserControl}, 
+                            AncestorLevel=1}, Path=DataContext}">
+                <Button Style="{DynamicResource DriveBtn}"                                 
+                        CommandParameter="{Binding RelativeSource={RelativeSource  
+                            FindAncestor, 
+                            AncestorType={x:Type Grid}, 
+                            AncestorLevel=1}}"                                
+                        DataContext="{Binding RelativeSource={RelativeSource  
+                            FindAncestor, 
+                            AncestorType={x:Type UserControl}, 
+                            AncestorLevel=1}, Path=DataContext}">
+                    <Image Source="pack://application:,,,/Omega Red;component/Assests/Images/Google_Drive.png" 
+                                       Stretch="Uniform" 
+                                       Height="64" 
+                                       Width="64"/>
+                </Button>
+            </Border>
+
+            <Border x:Name="mProgressBannerBorder" Grid.RowSpan="2" Visibility="Collapsed" Margin="-5" Grid.ColumnSpan="2" Background="#70000000">
+                <Grid>
+                    <Viewbox>
+                        <panels:ProgressBanner/>
+                    </Viewbox>
+                    <StackPanel Margin="0,0,5,0" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock x:Name="mUploadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource UploadingProgressTitle}"/>
+                        <TextBlock x:Name="mDownloadProgressTitleTextBlock" Visibility="Collapsed" Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="{DynamicResource ProgressFontSize}" Text="{DynamicResource DownloadingProgressTitle}"/>
+                        <TextBlock Foreground="{DynamicResource MainForegroundBrush}" TextAlignment="Center" FontSize="{DynamicResource AboutFontSize}" x:Name="mProgressTextBlock"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsCloudOnlysave}" Value="True">
+                <Setter TargetName="m_Drivesave_Border" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="m_DateStackPanel" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="m_BackGrid" Property="Height" Value="145"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsCloudOnlysave}" Value="False">
+                <Setter TargetName="m_DateStackPanel" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="m_Drivesave_Border" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="m_BackGrid" Property="Height" Value="105"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Index}" Value="-1">
+                <Setter TargetName="m_NumberTextBlock" Property="Text" Value="{DynamicResource SharedTitle}"/>
+            </DataTrigger>
+
+
+        </DataTemplate.Triggers>
     </DataTemplate>
 
     <DataTemplate x:Key="MediaSourceInfoItem">
@@ -718,7 +990,7 @@
             </ComboBox>
 
             <Grid Grid.ColumnSpan="2" Visibility="{Binding ElementName=ChkBx, Path=IsChecked, Converter={StaticResource m_InverseBooleanToVisibilityConverter}}">
-                
+
                 <Grid x:Name="mVideoLockGrid" Visibility="Hidden">
                     <Grid Background="#88ffffff"
                                 Visibility="{Binding LockVideoSourceVisibility}"
@@ -743,7 +1015,7 @@
             </Grid>
 
             <TextBlock Tag="{Binding Variable, Mode=TwoWay}" x:Name="m_VariableTxtBlk" Visibility="Hidden"/>
-            
+
             <Border BorderBrush="{DynamicResource StandardBorderBrush}"
                     CornerRadius="{DynamicResource StandardCornerRadius}"
                     BorderThickness="{DynamicResource StandardBorderThickness}"
@@ -767,11 +1039,11 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding Type}" Value="Video">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/WebCam.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/WebCam.png" />
                 <Setter TargetName="mVideoLockGrid" Property="Visibility" Value="Visible"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Type}" Value="Audio">
-                <Setter TargetName="m_icon" Property="Source" Value="../Assests/Images/Mic.png" />
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Mic.png" />
                 <Setter TargetName="mAudioLockGrid" Property="Visibility" Value="Visible"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Type}" Value="Image">
@@ -779,7 +1051,7 @@
                 <Setter TargetName="mRemoveBtn" Property="Visibility" Value="Visible"/>
                 <Setter TargetName="mVideoLockGrid" Property="Visibility" Value="Visible"/>
                 <Setter TargetName="m_Title" Property="Grid.ColumnSpan" Value="1"/>
-            </DataTrigger>            
+            </DataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
 
@@ -818,7 +1090,7 @@
                 <RowDefinition Height="auto"/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
-            
+
             <Button Style="{DynamicResource RemoveBtn}"                                 
                         CommandParameter="{Binding RelativeSource={RelativeSource  
                             FindAncestor, 
@@ -830,6 +1102,40 @@
                             AncestorLevel=1}, Path=DataContext}"/>
             <TextBlock Grid.Row="1"  Text="{Binding Title}" FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10" TextWrapping="Wrap" TextAlignment="Center"/>
         </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="VideoInfoItem">
+        <Grid Height="105" Width="{DynamicResource ImageItemWidth}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <Image Margin="5" x:Name="m_icon" Stretch="Uniform" Source="{Binding SmallImageSource}"/>
+            <Button Grid.Column="0"
+                                
+                                Style="{DynamicResource RemoveBtn}" 
+                                
+                                CommandParameter="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type Grid}, 
+                                   AncestorLevel=1}, Path=DataContext}"
+                                
+                                DataContext="{Binding RelativeSource={RelativeSource  
+                                   FindAncestor, 
+                                   AncestorType={x:Type ContentControl}, 
+                                   AncestorLevel=3}, Path=DataContext}" 
+                                 />
+            <TextBlock Margin="2,0" Background="#A0000000" Padding="5,2.5" Foreground="White" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Bottom"/>
+            <TextBlock Margin="2,0" Background="#A0000000" Padding="5,2.5" Foreground="White" Text="{Binding Duration}" TextTrimming="CharacterEllipsis" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding SmallImageSource}" Value="{ x:Null}">
+                <Setter TargetName="m_icon" Property="Source" Value="pack://application:,,,/Omega Red;component/Assests/Images/Media.png" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
     </DataTemplate>
 
 </ResourceDictionary>

@@ -12,6 +12,7 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,7 @@ namespace Omega_Red.Models
 {
     public enum SaveStateType
     {
+        PCSX,
         PCSX2,
         PPSSPP
     }
@@ -44,6 +46,12 @@ namespace Omega_Red.Models
         public bool     IsCurrent { get; set; }
         public Visibility Visibility { get; set; }
         public System.Windows.Media.ImageSource ImageSource { get; set; }
-        public SaveStateType Type { get; set; }
+        public GameType Type { get; set; }
+        public object Item { get; set; }
+        public string DiscSerial { get; set; }
+
+
+        public string CloudSaveDate { get; set; }
+        public string CloudSaveDuration { get; set; }
     }
 }

@@ -152,7 +152,7 @@ void DrawEngineGLES::ApplyDrawState(int prim) {
 		}
 	}
 
-	bool useBufferedRendering = g_Config.iRenderingMode != FB_NON_BUFFERED_MODE;
+	bool useBufferedRendering = framebufferManager_->UseBufferedRendering();
 
 	if (gstate_c.IsDirty(DIRTY_BLEND_STATE)) {
 		gstate_c.Clean(DIRTY_BLEND_STATE);
@@ -184,7 +184,7 @@ void DrawEngineGLES::ApplyDrawState(int prim) {
 						fboTexBound_ = true;
 						fboTexNeedBind_ = false;
 
-						framebufferManager_->RebindFramebuffer();
+						framebufferManager_->RebindFramebuffer("RebindFramebuffer - ApplyDrawState");
 						// Must dirty blend state here so we re-copy next time.  Example: Lunar's spell effects.
 						gstate_c.Dirty(DIRTY_BLEND_STATE);
 					}
@@ -320,8 +320,8 @@ void DrawEngineGLES::ApplyDrawState(int prim) {
 	}
 }
 
-void DrawEngineGLES::ApplyDrawStateLate(bool setStencil, int stencilValue) {
-	if (setStencil) {
+void DrawEngineGLES::ApplyDrawStateLate(bool setStencilValue, int stencilValue) {
+	if (setStencilValue) {
 		render_->SetStencilFunc(GL_TRUE, GL_ALWAYS, stencilValue, 255);
 	}
 

@@ -31,6 +31,13 @@
 #endif
 #endif
 
+#ifdef ANDROID_ABI_V8A
+#include "emitter/../include/Pcsx2Types.h"
+//#include "emitter/tools.h"
+#else
+#include "Pcsx2Types.h"
+#endif
+
 #include "Pcsx2Types.h"
 
 #if !defined(__ANDROID__) || (defined(__ANDROID__) && (defined(ANDROID_ABI_X86)))
@@ -208,9 +215,9 @@ static const int __pagesize = PCSX2_PAGESIZE;
 // warnings when a static inlined function isn't used in the scope of a single file (which
 // happens *by design* like all the friggen time >_<)
 
-#ifndef __fastcall
-#define __fastcall __attribute__((fastcall))
-#endif
+//#ifndef __fastcall
+//#define __fastcall __attribute__((fastcall))
+//#endif
 #define _inline __inline__ __attribute__((unused))
 #ifdef NDEBUG
 #define __forceinline __attribute__((always_inline, unused))

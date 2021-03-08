@@ -34,7 +34,6 @@ namespace Omega_Red.Util.Interop
         }
 
 
-
         // This is a helper method that accesses the COM objects v-table and
         // turns it into a delegate.
         public static bool GetComMethod<T, U>(T comObj, int slot, out U method) where U : class

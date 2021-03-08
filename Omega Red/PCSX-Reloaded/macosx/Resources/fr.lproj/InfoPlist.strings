@@ -1,0 +1,14 @@
+﻿/* Localized versions of Info.plist keys */
+
+//Commented out strings are those that need to be translated
+
+CFBundleName = "PCSX-R";
+CFBundleShortVersionString = "PCSX-Reloaded 1.9.95";
+//CFBundleGetInfoString = "PlayStation Emulator based on PCSX-df Project.";
+//NSHumanReadableCopyright = "Copyright © 2003-2005 PCSX Team, Gil Pedersen, Nicolas Pepin-Perreault.\nCopyright © 2009-2014 PCSX-Reloaded Team.";
+"Playstation Emulator Plug-in" = "PlayStation Emulator Greffon"; //Incomplete/mangled translation
+//"Playstation BIOS Image" = "PlayStation BIOS Image";
+"PCSXR Memory Card" = "Format de carte mémoire PSX";
+//"PCSXR Freeze State" = "PCSXR Freeze State";
+"Playstation Cheat" = "Codes de triche PCSXR";
+"PlayStation Disc" =  "Images de disques PSX";

@@ -14,7 +14,6 @@
  */
 
 #pragma once
-
 #include "Dependencies.h"
 #include "SafeArray.h"
 #include "ScopedAlloc.h"

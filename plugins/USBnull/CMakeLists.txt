@@ -49,6 +49,7 @@ set(USBnullFinalSources
 
 set(USBnullFinalLibs
 	${GTK2_LIBRARIES}
+	${wxWidgets_LIBRARIES}
 )
 
 if(BUILTIN_USB)
@@ -56,3 +57,5 @@ if(BUILTIN_USB)
 else()
     add_pcsx2_plugin(${Output} "${USBnullFinalSources}" "${USBnullFinalLibs}" "${USBnullFinalFlags}")
 endif()
+
+target_compile_features(${Output} PRIVATE cxx_std_17)

@@ -158,10 +158,6 @@ EXPORT_C_(int) GSinit()
 
 	s_hr = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
-	if (!GSDeviceProxy::LoadD3DCompiler())
-	{
-		return -1;
-	}
 #endif
 
 	return 0;
@@ -184,9 +180,7 @@ EXPORT_C GSshutdown()
 
 		s_hr = E_FAIL;
 	}
-
-	GSDeviceProxy::FreeD3DCompiler();
-
+	
 #endif
 }
 
@@ -253,7 +247,7 @@ static int _GSopen(void** dsp, const char* title, GSRendererType renderer, int t
 			{
 				case GSRendererType::OGL_HW:
 				case GSRendererType::OGL_SW:
-				case GSRendererType::OGL_OpenCL:
+				//case GSRendererType::OGL_OpenCL:
 #if defined(EGL_SUPPORTED) && defined(__unix__)
 					// Note: EGL code use GLX otherwise maybe it could be also compatible with Windows
 					// Yes OpenGL code isn't complicated enough !
@@ -334,17 +328,17 @@ static int _GSopen(void** dsp, const char* title, GSRendererType renderer, int t
 
 		switch (renderer)
 		{
-		case GSRendererType::DX1011_SW:
+		//case GSRendererType::DX1011_SW:
 		case GSRendererType::OGL_SW:
 			renderer_mode = "(Software renderer)";
 			break;
 		case GSRendererType::Null:
 			renderer_mode = "(Null renderer)";
 			break;
-		case GSRendererType::DX1011_OpenCL:
-		case GSRendererType::OGL_OpenCL:
-			renderer_mode = "(OpenCL)";
-			break;
+		//case GSRendererType::DX1011_OpenCL:
+		//case GSRendererType::OGL_OpenCL:
+		//	renderer_mode = "(OpenCL)";
+		//	break;
 		default:
 			renderer_mode = "(Hardware renderer)";
 			break;
@@ -427,12 +421,12 @@ EXPORT_C_(int) GSopen2(void** dsp, uint32 flags)
 	if (renderer != GSRendererType::Undefined && stored_toggle_state != toggle_state)
 	{
 #ifdef _WIN32
-		GSRendererType best_sw_renderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_SW : GSRendererType::Null;
+		GSRendererType best_sw_renderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_HW : GSRendererType::Null;
 
 		switch (renderer) {
 			// Use alternative renderer (SW if currently using HW renderer, and vice versa, keeping the same API and API version)
-		case GSRendererType::DX1011_SW: renderer = GSRendererType::DX1011_HW; break;
-		case GSRendererType::DX1011_HW: renderer = GSRendererType::DX1011_SW; break;
+		//case GSRendererType::DX1011_SW: renderer = GSRendererType::DX1011_HW; break;
+		//case GSRendererType::DX1011_HW: renderer = GSRendererType::DX1011_SW; break;
 		case GSRendererType::OGL_SW: renderer = GSRendererType::OGL_HW; break;
 		case GSRendererType::OGL_HW: renderer = GSRendererType::OGL_SW; break;
 		default: renderer = best_sw_renderer; break;// If wasn't using one of the above mentioned ones, use best SW renderer.
@@ -483,7 +477,7 @@ EXPORT_C_(int) GSopen(void** dsp, const char* title, int mt)
 
 #ifdef _WIN32
 
-		renderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_SW : GSRendererType::Null;
+		renderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_HW : GSRendererType::Null;
 
 #endif
 
@@ -775,17 +769,17 @@ EXPORT_C_(int) GStest()
 
 	s_hr = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
-	if(!GSUtil::CheckDirectX())
-	{
-		if(SUCCEEDED(s_hr))
-		{
-			::CoUninitialize();
-		}
+	//if(!GSUtil::CheckDirectX())
+	//{
+	//	if(SUCCEEDED(s_hr))
+	//	{
+	//		::CoUninitialize();
+	//	}
 
-		s_hr = E_FAIL;
+	//	s_hr = E_FAIL;
 
-		return -1;
-	}
+	//	return -1;
+	//}
 
 	if(SUCCEEDED(s_hr))
 	{

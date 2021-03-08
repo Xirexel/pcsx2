@@ -47,7 +47,7 @@ set(dev9nullFinalSources
 )
 
 set(dev9nullFinalLibs
-	${GTK2_LIBRARIES}
+	${wxWidgets_LIBRARIES}
 )
 
 if(BUILTIN_DEV9)
@@ -55,3 +55,5 @@ if(BUILTIN_DEV9)
 else()
     add_pcsx2_plugin(${Output} "${dev9nullFinalSources}" "${dev9nullFinalLibs}" "${dev9nullFinalFlags}")
 endif()
+
+target_compile_features(${Output} PRIVATE cxx_std_17)

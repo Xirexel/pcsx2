@@ -1,5 +1,5 @@
 //
-// Created by Xirexel on 7/7/2019.
+// Created by Evgeny Pereguda on 7/7/2019.
 //
 
 #include <jni.h>
@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Interface.h"
+#include "../SIMDEmitter/SIMDEmitter.h"
 
 
 extern std::wstring Java_To_WStr(JNIEnv *env, jstring string);
@@ -23,7 +24,7 @@ static jobject g_PCSX2LibNative = nullptr;
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_registerPCSX2Lib(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_registerPCSX2Lib(JNIEnv *env,
 																	   jobject instance) {
 
 	env->GetJavaVM(&s_JavaVM);
@@ -34,15 +35,19 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_registerPCSX2Lib(JNIEnv *env,
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeDetectCpuAndUserMode(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeDetectCpuAndUserMode(JNIEnv *env,
 																				 jobject instance) {
+#if (defined(__ANDROID__) && !defined(ANDROID_ABI_X86))
+	SIMDEmitter::init();
+#endif
+
 	DetectCpuAndUserModeFunc();
 }
 
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeAllocateCoreStuffs(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeAllocateCoreStuffs(JNIEnv *env,
 																			   jobject instance,
 																			   jstring a_config_) {
 	AllocateCoreStuffsFunc(Java_To_WStr(env, a_config_).data());
@@ -51,7 +56,7 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeAllocateCoreStuffs(JNIEnv *
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeSetElfPathFunc(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeSetElfPathFunc(JNIEnv *env,
 																		   jobject instance,
 																		   jstring a_config_) {
 	const char *a_config = env->GetStringUTFChars(a_config_, 0);
@@ -64,56 +69,56 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeSetElfPathFunc(JNIEnv *env,
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetSPU2(JNIEnv *env, jobject instance,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetSPU2(JNIEnv *env, jobject instance,
 															  jlong a_ptr) {
 	setSPU2((PCSX2Lib::API::SPU2_API*)a_ptr);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetCDVD(JNIEnv *env, jobject instance,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetCDVD(JNIEnv *env, jobject instance,
 															  jlong a_ptr) {
 	setCDVD((PCSX2Lib::API::CDVD_API*)a_ptr);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetGS(JNIEnv *env, jobject instance,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetGS(JNIEnv *env, jobject instance,
 															  jlong a_ptr) {
 	setGS((PCSX2Lib::API::GS_API*)a_ptr);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetDEV9(JNIEnv *env, jobject instance,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetDEV9(JNIEnv *env, jobject instance,
 															  jlong a_ptr) {
 	setDEV9((PCSX2Lib::API::DEV9_API*)a_ptr);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetMcd(JNIEnv *env, jobject instance,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetMcd(JNIEnv *env, jobject instance,
 															  jlong a_ptr) {
 	setMcd((PCSX2Lib::API::MCD_API*)a_ptr);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetPAD(JNIEnv *env, jobject instance,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetPAD(JNIEnv *env, jobject instance,
 															 jlong a_ptr) {
 	setPAD((PCSX2Lib::API::PAD_API*)a_ptr);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetFW(JNIEnv *env, jobject instance,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetFW(JNIEnv *env, jobject instance,
 															jlong a_ptr) {
 	setFW((PCSX2Lib::API::FW_API*)a_ptr);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetUSB(JNIEnv *env, jobject instance,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetUSB(JNIEnv *env, jobject instance,
 															jlong a_ptr) {
 	setUSB((PCSX2Lib::API::USB_API*)a_ptr);
 }
@@ -338,7 +343,7 @@ CALLBACK void SetPluginsInitCallback()
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetPluginsInitCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetPluginsInitCallback(JNIEnv *env,
 																			 jobject instance,
 																			 jstring aMethod) {
 
@@ -356,7 +361,7 @@ CALLBACK void SetPluginsCloseCallback()
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetPluginsCloseCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetPluginsCloseCallback(JNIEnv *env,
 																			  jobject instance,
 																			  jstring aMethod) {
 
@@ -375,7 +380,7 @@ CALLBACK void SetPluginsShutdownCallback()
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetPluginsShutdownCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetPluginsShutdownCallback(JNIEnv *env,
 																				 jobject instance,
 																				 jstring aMethod) {
 
@@ -393,7 +398,7 @@ CALLBACK void SetPluginsOpenCallback()
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetPluginsOpenCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetPluginsOpenCallback(JNIEnv *env,
 																			 jobject instance,
 																			 jstring aMethod) {
 
@@ -412,7 +417,7 @@ CALLBACK bool SetPluginsAreLoadedCallback()
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetPluginsAreLoadedCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetPluginsAreLoadedCallback(JNIEnv *env,
 																				  jobject instance,
 																				  jstring aMethod) {
 
@@ -432,7 +437,7 @@ CALLBACK void SetUI_EnableSysActionsCallback()
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetUIEnableSysActionsCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetUIEnableSysActionsCallback(JNIEnv *env,
 																					jobject instance,
 																					jstring aMethod) {
 
@@ -451,7 +456,7 @@ CALLBACK void SetLoadAllPatchesAndStuffCallback(unsigned int arg1)
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetLoadAllPatchesAndStuffCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetLoadAllPatchesAndStuffCallback(JNIEnv *env,
 																						jobject instance,
 																						jstring aMethod) {
 
@@ -470,7 +475,7 @@ CALLBACK void SetLoadBIOSCallbackCallback(unsigned char* arg1, int arg2)
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetLoadBIOSCallbackCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetLoadBIOSCallbackCallback(JNIEnv *env,
 																				  jobject instance,
 																				  jstring aMethod) {
 
@@ -491,7 +496,7 @@ CALLBACK void SetCDVDNVMCallback(unsigned char* arg1, int arg2, int arg3, bool a
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetCDVDNVMCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetCDVDNVMCallback(JNIEnv *env,
 																		 jobject instance,
 																		 jstring aMethod) {
 
@@ -510,7 +515,7 @@ CALLBACK void SetCDVDGetMechaVerCallback(unsigned char* arg1)
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetCDVDGetMechaVerCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetCDVDGetMechaVerCallback(JNIEnv *env,
 																				 jobject instance,
 																				 jstring aMethod) {
 
@@ -524,13 +529,13 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetCDVDGetMechaVerCallback(JNIEnv
 
 CALLBACK int SetDoFreezeCallback(void* arg1, int arg2, int arg3)
 {
-	return callStaticThreeInteArgMethod(s_DoFreezeCallback, (int)arg1, arg2, arg3);
+	return callStaticThreeInteArgMethod(s_DoFreezeCallback, (long)arg1, arg2, arg3);
 }
 
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetDoFreezeCallback(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SetDoFreezeCallback(JNIEnv *env,
 																		  jobject instance,
 																		  jstring aMethod) {
 
@@ -544,7 +549,7 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SetDoFreezeCallback(JNIEnv *env,
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SysThreadBaseResumeFunc(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_SysThreadBaseResumeFunc(JNIEnv *env,
 																			  jobject instance) {
 
 	SysThreadBase_ResumeFunc();
@@ -554,7 +559,7 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_SysThreadBaseResumeFunc(JNIEnv *e
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeMTGSCancelFunc(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeMTGSCancelFunc(JNIEnv *env,
 																		   jobject instance) {
 
 	MTGS_CancelFunc();
@@ -564,7 +569,7 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeMTGSCancelFunc(JNIEnv *env,
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeMTGSResumeFunc(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeMTGSResumeFunc(JNIEnv *env,
 																		   jobject instance) {
 	MTGS_ResumeFunc();
 }
@@ -573,7 +578,7 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeMTGSResumeFunc(JNIEnv *env,
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginSPU2Func(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginSPU2Func(JNIEnv *env,
 																			   jobject instance) {
 
 	openPlugin_SPU2Func();
@@ -584,7 +589,7 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginSPU2Func(JNIEnv *
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginDEV9Func(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginDEV9Func(JNIEnv *env,
 																			   jobject instance) {
 
 
@@ -595,7 +600,7 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginDEV9Func(JNIEnv *
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginUSBFunc(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginUSBFunc(JNIEnv *env,
 																			  jobject instance) {
 
 	openPlugin_USBFunc();
@@ -604,7 +609,7 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginUSBFunc(JNIEnv *e
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginFWFunc(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginFWFunc(JNIEnv *env,
 																			 jobject instance) {
 	openPlugin_FWFunc();
 }
@@ -613,7 +618,7 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeOpenPluginFWFunc(JNIEnv *en
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeMTGSWaitForOpenFunc(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeMTGSWaitForOpenFunc(JNIEnv *env,
 																				jobject instance) {
 
 	MTGS_WaitForOpenFunc();
@@ -624,7 +629,7 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeMTGSWaitForOpenFunc(JNIEnv 
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeApplySettingsFunc(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeApplySettingsFunc(JNIEnv *env,
 																			  jobject instance,
 																			  jstring aXmlPcsx2Config) {
 	auto l_XmlPcsx2Config = Java_To_WStr(env, aXmlPcsx2Config);
@@ -637,11 +642,19 @@ Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeApplySettingsFunc(JNIEnv *e
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_PCSX2LibNative_NativeVTLBAllocPpmapFinc(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_NativeVTLBAllocPpmapFinc(JNIEnv *env,
 																			   jobject instance) {
 
 	VTLB_Alloc_PpmapFinc();
 }
 
+extern void Test();
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_evgenypereguda_omegared_PCSX2_PCSX2LibNative_CPUTestFinc(JNIEnv *env,
+jobject instance) {
+	Test();
+}
 
 

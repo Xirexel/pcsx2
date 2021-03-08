@@ -22,16 +22,24 @@
 #include "stdafx.h"
 #include "GSdx.h"
 #include "GSOsdManager.h"
+#ifdef _WIN32
+  #include "resource.h"
+#endif
 
 void GSOsdManager::LoadFont() {
 	FT_Error error = FT_New_Face(m_library, theApp.GetConfigS("osd_fontname").c_str(), 0, &m_face);
 	if (error) {
-		m_face = NULL;
-		fprintf(stderr, "Failed to init the freetype face\n");
-		if(error == FT_Err_Unknown_File_Format)
-			fprintf(stderr, "\tFreetype unknown file format\n");
-
-		return;
+		FT_Error error_load_res = 1;
+		if(theApp.LoadResource(IDR_FONT_ROBOTO, resource_data_buffer))
+			error_load_res = FT_New_Memory_Face(m_library, (const FT_Byte*)resource_data_buffer.data(), resource_data_buffer.size(), 0, &m_face);
+		
+		if (error_load_res) {
+			m_face = NULL;
+			fprintf(stderr, "Failed to init freetype face from external and internal resource\n");
+			if(error == FT_Err_Unknown_File_Format)
+				fprintf(stderr, "\tFreetype unknown file format for external file\n");
+			return;
+		}
 	}
 
 	LoadSize();
@@ -49,7 +57,7 @@ void GSOsdManager::LoadSize() {
 	/* This is not exact, I'm sure there's some convoluted way to determine these
 	 * from FreeType but they don't make it easy. */
 	m_atlas_w = m_size * 96; // random guess
-	m_atlas_h = m_size; // another random guess
+	m_atlas_h = m_size + 10; // another random guess
 }
 
 GSOsdManager::GSOsdManager() : m_atlas_h(0)

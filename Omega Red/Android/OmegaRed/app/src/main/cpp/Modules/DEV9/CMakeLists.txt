@@ -8,6 +8,8 @@ cmake_minimum_required(VERSION 3.4.1)
 set (DEV9_DIR ${MODULES_DIR}/DEV9)
 
 include_directories(
+        ${FRAMEWORK_DIR}
+        ${EMITTER_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${PUGIXML_DIR}
         ${EXTEND_DIR}

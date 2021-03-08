@@ -33,17 +33,6 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
-  <ImportGroup Label="PropertySheets">
-    <Import Project="..\..\..\plugins\GSdx\vsprops\ProjectRootDir.props" />
-    <Import Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Debug'" Project="..\..\..\plugins\GSdx\vsprops\sse2.props" />
-    <Import Condition="'$(Configuration)'=='Release SSE4' Or '$(Configuration)'=='Debug SSE4'" Project="..\..\..\plugins\GSdx\vsprops\sse4.props" />
-    <Import Condition="'$(Configuration)'=='Release AVX2' Or '$(Configuration)'=='Debug AVX2'" Project="..\..\..\plugins\GSdx\vsprops\avx2.props" />
-    <Import Project="..\..\..\plugins\GSdx\vsprops\common.props" />
-    <Import Condition="$(Configuration.Contains(Debug))" Project="..\..\..\plugins\GSdx\vsprops\debug.props" />
-    <Import Condition="$(Configuration.Contains(Release))" Project="..\..\..\plugins\GSdx\vsprops\release.props" />
-    <Import Condition="'$(Platform)'=='Win32'" Project="..\..\..\plugins\GSdx\vsprops\x86.props" />
-    <Import Condition="'$(Platform)'=='x64'" Project="..\..\..\plugins\GSdx\vsprops\x64.props" />
-  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
@@ -54,11 +43,11 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\common\include;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common\zlib;$(SolutionDir)..\3rdparty;$(SolutionDir)..\3rdparty\freetype\include;$(SolutionDir)..\3rdparty\xz\xz\src\liblzma\api;$(SolutionDir)..\3rdparty\baseclasses;$(SolutionDir)..\plugins\GSdx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\common\include;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common\zlib;$(SolutionDir)..\3rdparty;$(SolutionDir)..\3rdparty\freetype\include;$(SolutionDir)..\3rdparty\xz\xz\src\liblzma\api;$(SolutionDir)..\3rdparty\baseclasses;$(SolutionDir)..\plugins\GSdx;./;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MultiThreadedDebug</RuntimeLibrary>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PUGIXML_WCHAR_MODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\common\include;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common\zlib;$(SolutionDir)..\3rdparty;$(SolutionDir)..\3rdparty\freetype\include;$(SolutionDir)..\3rdparty\xz\xz\src\liblzma\api;$(SolutionDir)..\3rdparty\baseclasses;$(SolutionDir)..\plugins\GSdx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)PCSX2Lib;$(SolutionDir)PCSX2Lib\Extend;$(SolutionDir)..\common\include;$(SolutionDir)Common\PugiXML;$(SolutionDir)Common\zlib;$(SolutionDir)..\3rdparty;$(SolutionDir)..\3rdparty\freetype\include;$(SolutionDir)..\3rdparty\xz\xz\src\liblzma\api;$(SolutionDir)..\3rdparty\baseclasses;$(SolutionDir)..\plugins\GSdx;./;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MultiThreaded</RuntimeLibrary>
       <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</IntrinsicFunctions>
       <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</IntrinsicFunctions>
@@ -67,8 +56,8 @@
       <ModuleDefinitionFile>VideoRenderer.def</ModuleDefinitionFile>
       <TargetMachine Condition="'$(Platform)'=='Win32'">MachineX86</TargetMachine>
       <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
-      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(ProjectName)$(TargetExt)</OutputFile>
-      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)Omega Red\Modules\$(ProcessorArchitecture)\$(ProjectName)$(TargetExt)</OutputFile>
+      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)Omega Red\bin\$(Configuration)\$(ProcessorArchitecture)\$(ProjectName)$(TargetExt)</OutputFile>
+      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)Omega Red\bin\$(Configuration)\$(ProcessorArchitecture)\$(ProjectName)$(TargetExt)</OutputFile>
     </Link>
     <PreBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SolutionDir)..\common\vsprops\preBuild.cmd"</Command>
@@ -78,6 +67,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\plugins\GSdx\Window\GSDialog.cpp" />
     <ClCompile Include="Extend\GS.cpp" />
     <ClCompile Include="Extend\GSCapture.cpp" />
     <ClCompile Include="Extend\GSDeviceProxy_add.cpp" />
@@ -86,14 +76,12 @@
     <ClCompile Include="Extend\GSPng.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\GSAlignedClass.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\GSBlock.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\Window\GSCaptureDlg.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\GSClut.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\GSCodeBuffer.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\GSCrc.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Common\GSDevice.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\DX11\GSDevice11.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Null\GSDeviceNull.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\Window\GSDialog.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Common\GSDirtyRect.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\GSDrawingContext.cpp" />
     <!--ClCompile Include="..\..\..\plugins\GSdx\Renderers\SW\GSDrawScanline.cpp" />
@@ -111,7 +99,6 @@
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Common\GSOsdManager.cpp" />
     <!--ClCompile Include="..\..\..\plugins\GSdx\Renderers\SW\GSRasterizer.cpp" /-->
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Common\GSRenderer.cpp" />
-    <ClCompile Include="..\..\..\plugins\GSdx\Renderers\OpenCL\GSRendererCL.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\HW\GSRendererHW.cpp" />
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Null\GSRendererNull.cpp" />
     <!--ClCompile Include="..\..\..\plugins\GSdx\Renderers\SW\GSRendererSW.cpp" /-->

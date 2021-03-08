@@ -1,3 +1,6 @@
+#include <unordered_map>
+
+#include "base/timeutil.h"
 #include "DataFormat.h"
 #include "VulkanQueueRunner.h"
 #include "VulkanRenderManager.h"
@@ -158,7 +161,6 @@ void VulkanQueueRunner::InitBackbufferRenderPass() {
 	dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	dep.srcAccessMask = 0;
 	dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 	VkRenderPassCreateInfo rp_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
 	rp_info.attachmentCount = 2;
@@ -375,21 +377,25 @@ VkRenderPass VulkanQueueRunner::GetRenderPass(const RPKey &key) {
 	return pass;
 }
 
-void VulkanQueueRunner::RunSteps(VkCommandBuffer cmd, std::vector<VKRStep *> &steps) {
+void VulkanQueueRunner::RunSteps(VkCommandBuffer cmd, std::vector<VKRStep *> &steps, QueueProfileContext *profile) {
+	if (profile)
+		profile->cpuStartTime = real_time_now();
 	// Optimizes renderpasses, then sequences them.
 	// Planned optimizations: 
 	//  * Create copies of render target that are rendered to multiple times and textured from in sequence, and push those render passes
 	//    as early as possible in the frame (Wipeout billboards).
 
-	for (int j = 0; j < (int)steps.size() - 1; j++) {
+	for (int j = 0; j < (int)steps.size(); j++) {
 		if (steps[j]->stepType == VKRStepType::RENDER &&
+			steps[j]->render.framebuffer &&
 			steps[j]->render.finalColorLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
 			// Just leave it at color_optimal.
 			steps[j]->render.finalColorLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		}
+	}
 
+	for (int j = 0; j < (int)steps.size() - 1; j++) {
 		// Push down empty "Clear/Store" renderpasses, and merge them with the first "Load/Store" to the same framebuffer.
-		// Actually let's just bother with the first one for now. This affects Wipeout Pure.
 		if (steps.size() > 1 && steps[j]->stepType == VKRStepType::RENDER &&
 			steps[j]->render.numDraws == 0 &&
 			steps[j]->render.numReads == 0 &&
@@ -397,8 +403,8 @@ void VulkanQueueRunner::RunSteps(VkCommandBuffer cmd, std::vector<VKRStep *> &st
 			steps[j]->render.stencil == VKRRenderPassAction::CLEAR &&
 			steps[j]->render.depth == VKRRenderPassAction::CLEAR) {
 
-			// Drop the first step, and merge it into the next step that touches the same framebuffer.
-			for (size_t i = j + 1; i < steps.size(); i++) {
+			// Drop the clear step, and merge it into the next step that touches the same framebuffer.
+			for (int i = j + 1; i < (int)steps.size(); i++) {
 				if (steps[i]->stepType == VKRStepType::RENDER &&
 					steps[i]->render.framebuffer == steps[j]->render.framebuffer) {
 					if (steps[i]->render.color != VKRRenderPassAction::CLEAR) {
@@ -436,10 +442,21 @@ void VulkanQueueRunner::RunSteps(VkCommandBuffer cmd, std::vector<VKRStep *> &st
 		if (hacksEnabled_ & QUEUE_HACK_SONIC) {
 			ApplySonicHack(steps);
 		}
+		if (hacksEnabled_ & QUEUE_HACK_RENDERPASS_MERGE) {
+			ApplyRenderPassMerge(steps);
+		}
 	}
 
+	bool emitLabels = vulkan_->DeviceExtensions().EXT_debug_utils;
 	for (size_t i = 0; i < steps.size(); i++) {
 		const VKRStep &step = *steps[i];
+
+		if (emitLabels) {
+			VkDebugUtilsLabelEXT labelInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
+			labelInfo.pLabelName = step.tag;
+			vkCmdBeginDebugUtilsLabelEXT(cmd, &labelInfo);
+		}
+
 		switch (step.stepType) {
 		case VKRStepType::RENDER:
 			PerformRenderPass(step, cmd);
@@ -459,11 +476,30 @@ void VulkanQueueRunner::RunSteps(VkCommandBuffer cmd, std::vector<VKRStep *> &st
 		case VKRStepType::RENDER_SKIP:
 			break;
 		}
+
+		if (profile && profile->timestampDescriptions.size() + 1 < MAX_TIMESTAMP_QUERIES) {
+			vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, profile->queryPool, (uint32_t)profile->timestampDescriptions.size());
+			profile->timestampDescriptions.push_back(StepToString(step));
+		}
+
+		if (emitLabels) {
+			vkCmdEndDebugUtilsLabelEXT(cmd);
+		}
+	}
+
+	// Deleting all in one go should be easier on the instruction cache than deleting
+	// them as we go - and easier to debug because we can look backwards in the frame.
+	for (size_t i = 0; i < steps.size(); i++) {
 		delete steps[i];
 	}
+
+	if (profile)
+		profile->cpuEndTime = real_time_now();
 }
 
 void VulkanQueueRunner::ApplyMGSHack(std::vector<VKRStep *> &steps) {
+	// Really need a sane way to express transforms of steps.
+
 	// We want to turn a sequence of copy,render(1),copy,render(1),copy,render(1) to copy,copy,copy,render(n).
 
 	for (int i = 0; i < (int)steps.size() - 3; i++) {
@@ -530,6 +566,82 @@ void VulkanQueueRunner::ApplyMGSHack(std::vector<VKRStep *> &steps) {
 			// We're done.
 			break;
 		}
+	}
+
+	// There's also a post processing effect using depals that's just brutal in some parts
+	// of the game.
+	for (int i = 0; i < (int)steps.size() - 3; i++) {
+		int last = -1;
+		if (!(steps[i]->stepType == VKRStepType::RENDER &&
+			steps[i + 1]->stepType == VKRStepType::RENDER &&
+			steps[i + 2]->stepType == VKRStepType::RENDER &&
+			steps[i]->render.numDraws == 1 &&
+			steps[i + 1]->render.numDraws == 1 &&
+			steps[i + 2]->render.numDraws == 1 &&
+			steps[i]->render.color == VKRRenderPassAction::DONT_CARE &&
+			steps[i + 1]->render.color == VKRRenderPassAction::KEEP &&
+			steps[i + 2]->render.color == VKRRenderPassAction::DONT_CARE))
+			continue;
+		VKRFramebuffer *depalFramebuffer = steps[i]->render.framebuffer;
+		VKRFramebuffer *targetFramebuffer = steps[i + 1]->render.framebuffer;
+		// OK, found the start of a post-process sequence. Let's scan until we find the end.
+		for (int j = i; j < steps.size() - 3; j++) {
+			if (((j - i) & 1) == 0) {
+				// This should be a depal draw.
+				if (steps[j]->render.numDraws != 1)
+					break;
+				if (steps[j]->render.color != VKRRenderPassAction::DONT_CARE)
+					break;
+				if (steps[j]->render.framebuffer != depalFramebuffer)
+					break;
+				last = j;
+			} else {
+				// This should be a target draw.
+				if (steps[j]->render.numDraws != 1)
+					break;
+				if (steps[j]->render.color != VKRRenderPassAction::KEEP)
+					break;
+				if (steps[j]->render.framebuffer != targetFramebuffer)
+					break;
+				last = j;
+			}
+		}
+
+		if (last == -1)
+			continue;
+
+		// Combine the depal renders.
+		for (int j = i + 2; j <= last + 1; j += 2) {
+			for (int k = 0; k < (int)steps[j]->commands.size(); k++) {
+				switch (steps[j]->commands[k].cmd) {
+				case VKRRenderCommand::DRAW:
+				case VKRRenderCommand::DRAW_INDEXED:
+					steps[i]->commands.push_back(steps[j]->commands[k]);
+					break;
+				default:
+					break;
+				}
+			}
+			steps[j]->stepType = VKRStepType::RENDER_SKIP;
+		}
+
+		// Combine the target renders.
+		for (int j = i + 3; j <= last; j += 2) {
+			for (int k = 0; k < (int)steps[j]->commands.size(); k++) {
+				switch (steps[j]->commands[k].cmd) {
+				case VKRRenderCommand::DRAW:
+				case VKRRenderCommand::DRAW_INDEXED:
+					steps[i + 1]->commands.push_back(steps[j]->commands[k]);
+					break;
+				default:
+					break;
+				}
+			}
+			steps[j]->stepType = VKRStepType::RENDER_SKIP;
+		}
+
+		// We're done - we only expect one of these sequences per frame.
+		break;
 	}
 }
 
@@ -614,10 +726,130 @@ void VulkanQueueRunner::ApplySonicHack(std::vector<VKRStep *> &steps) {
 	}
 }
 
+std::string VulkanQueueRunner::StepToString(const VKRStep &step) const {
+	char buffer[256];
+	switch (step.stepType) {
+	case VKRStepType::RENDER:
+	{
+		int w = step.render.framebuffer ? step.render.framebuffer->width : vulkan_->GetBackbufferWidth();
+		int h = step.render.framebuffer ? step.render.framebuffer->height : vulkan_->GetBackbufferHeight();
+		snprintf(buffer, sizeof(buffer), "RenderPass %s (draws: %d, %dx%d, fb: %p, )", step.tag, step.render.numDraws, w, h, step.render.framebuffer);
+		break;
+	}
+	case VKRStepType::COPY:
+		snprintf(buffer, sizeof(buffer), "Copy '%s' (%dx%d)", step.tag, step.copy.srcRect.extent.width, step.copy.srcRect.extent.height);
+		break;
+	case VKRStepType::BLIT:
+		snprintf(buffer, sizeof(buffer), "Blit '%s' (%dx%d->%dx%d)", step.tag, step.blit.srcRect.extent.width, step.blit.srcRect.extent.height, step.blit.dstRect.extent.width, step.blit.dstRect.extent.height);
+		break;
+	case VKRStepType::READBACK:
+		snprintf(buffer, sizeof(buffer), "Readback '%s' (%dx%d, fb: %p)", step.tag, step.readback.srcRect.extent.width, step.readback.srcRect.extent.height, step.readback.src);
+		break;
+	case VKRStepType::READBACK_IMAGE:
+		snprintf(buffer, sizeof(buffer), "ReadbackImage '%s' (%dx%d)", step.tag, step.readback_image.srcRect.extent.width, step.readback_image.srcRect.extent.height);
+		break;
+	case VKRStepType::RENDER_SKIP:
+		snprintf(buffer, sizeof(buffer), "(SKIPPED RenderPass) %s", step.tag);
+		break;
+	default:
+		buffer[0] = 0;
+		break;
+	}
+	return std::string(buffer);
+}
+
+// Ideally, this should be cheap enough to be applied to all games. At least on mobile, it's pretty
+// much a guaranteed neutral or win in terms of GPU power. However, dependency calculation really
+// must be perfect!
+void VulkanQueueRunner::ApplyRenderPassMerge(std::vector<VKRStep *> &steps) {
+	// First let's count how many times each framebuffer is rendered to.
+	// If it's more than one, let's do our best to merge them. This can help God of War quite a bit.
+	std::unordered_map<VKRFramebuffer *, int> counts;
+	for (int i = 0; i < (int)steps.size(); i++) {
+		if (steps[i]->stepType == VKRStepType::RENDER) {
+			counts[steps[i]->render.framebuffer]++;
+		}
+	}
+
+	auto mergeRenderSteps = [](VKRStep *dst, VKRStep *src) {
+		// OK. Now, if it's a render, slurp up all the commands and kill the step.
+		// Also slurp up any pretransitions.
+		dst->preTransitions.insert(dst->preTransitions.end(), src->preTransitions.begin(), src->preTransitions.end());
+		dst->commands.insert(dst->commands.end(), src->commands.begin(), src->commands.end());
+		// So we don't consider it for other things, maybe doesn't matter.
+		src->dependencies.clear();
+		src->stepType = VKRStepType::RENDER_SKIP;
+	};
+	auto renderHasClear = [](const VKRStep *step) {
+		const auto &r = step->render;
+		return r.color == VKRRenderPassAction::CLEAR || r.depth == VKRRenderPassAction::CLEAR || r.stencil == VKRRenderPassAction::CLEAR;
+	};
+
+	// Now, let's go through the steps. If we find one that is rendered to more than once,
+	// we'll scan forward and slurp up any rendering that can be merged across.
+	for (int i = 0; i < (int)steps.size(); i++) {
+		if (steps[i]->stepType == VKRStepType::RENDER && counts[steps[i]->render.framebuffer] > 1) {
+			auto fb = steps[i]->render.framebuffer;
+			TinySet<VKRFramebuffer *, 8> touchedFramebuffers;  // must be the same fast-size as the dependencies TinySet for annoying reasons.
+			for (int j = i + 1; j < (int)steps.size(); j++) {
+				// If any other passes are reading from this framebuffer as-is, we cancel the scan.
+				if (steps[j]->dependencies.contains(fb)) {
+					// Reading from itself means a KEEP, which is okay.
+					if (steps[j]->stepType != VKRStepType::RENDER || steps[j]->render.framebuffer != fb)
+						break;
+				}
+				switch (steps[j]->stepType) {
+				case VKRStepType::RENDER:
+					if (steps[j]->render.framebuffer == fb) {
+						// Prevent Unknown's example case from https://github.com/hrydgard/ppsspp/pull/12242
+						if (renderHasClear(steps[j]) || steps[j]->dependencies.contains(touchedFramebuffers)) {
+							goto done_fb;
+						} else {
+							// Safe to merge, great.
+							mergeRenderSteps(steps[i], steps[j]);
+						}
+					} else {
+						// Remember the framebuffer this wrote to. We can't merge with later passes that depend on these.
+						touchedFramebuffers.insert(steps[j]->render.framebuffer);
+					}
+					break;
+				case VKRStepType::COPY:
+					if (steps[j]->copy.dst == fb) {
+						// Without framebuffer "renaming", we can't merge past a clobbered fb.
+						goto done_fb;
+					}
+					touchedFramebuffers.insert(steps[j]->copy.dst);
+					break;
+				case VKRStepType::BLIT:
+					if (steps[j]->blit.dst == fb) {
+						// Without framebuffer "renaming", we can't merge past a clobbered fb.
+						goto done_fb;
+					}
+					touchedFramebuffers.insert(steps[j]->blit.dst);
+					break;
+				case VKRStepType::READBACK:
+					// Not sure this has much effect, when executed READBACK is always the last step
+					// since we stall the GPU and wait immediately after.
+					break;
+				case VKRStepType::RENDER_SKIP:
+				case VKRStepType::READBACK_IMAGE:
+					break;
+				default:
+					// We added a new step?  Might be unsafe.
+					goto done_fb;
+				}
+			}
+			done_fb:
+				;
+		}
+	}
+}
+
 void VulkanQueueRunner::LogSteps(const std::vector<VKRStep *> &steps) {
 	ILOG("=======================================");
 	for (size_t i = 0; i < steps.size(); i++) {
 		const VKRStep &step = *steps[i];
+		ILOG("%s", StepToString(step).c_str());
 		switch (step.stepType) {
 		case VKRStepType::RENDER:
 			LogRenderPass(step);
@@ -641,9 +873,22 @@ void VulkanQueueRunner::LogSteps(const std::vector<VKRStep *> &steps) {
 	}
 }
 
+const char *RenderPassActionName(VKRRenderPassAction a) {
+	switch (a) {
+	case VKRRenderPassAction::CLEAR:
+		return "CLEAR";
+	case VKRRenderPassAction::DONT_CARE:
+		return "DONT_CARE";
+	case VKRRenderPassAction::KEEP:
+		return "KEEP";
+	}
+	return "?";
+}
+
 void VulkanQueueRunner::LogRenderPass(const VKRStep &pass) {
-	int fb = (int)(intptr_t)(pass.render.framebuffer ? pass.render.framebuffer->framebuf : 0);
-	ILOG("RenderPass Begin(%x)", fb);
+	const auto &r = pass.render;
+	int fb = (int)(intptr_t)(r.framebuffer ? r.framebuffer->framebuf : 0);
+	ILOG("RenderPass Begin(%x, %s, %s, %s)", fb, RenderPassActionName(r.color), RenderPassActionName(r.depth), RenderPassActionName(r.stencil));
 	for (auto &cmd : pass.commands) {
 		switch (cmd.cmd) {
 		case VKRRenderCommand::REMOVED:
@@ -654,7 +899,7 @@ void VulkanQueueRunner::LogRenderPass(const VKRStep &pass) {
 			ILOG("  BindPipeline(%x)", (int)(intptr_t)cmd.pipeline.pipeline);
 			break;
 		case VKRRenderCommand::BLEND:
-			ILOG("  Blend(%f, %f, %f, %f)", cmd.blendColor.color[0], cmd.blendColor.color[1], cmd.blendColor.color[2], cmd.blendColor.color[3]);
+			ILOG("  BlendColor(%08x)", cmd.blendColor.color);
 			break;
 		case VKRRenderCommand::CLEAR:
 			ILOG("  Clear");
@@ -685,20 +930,20 @@ void VulkanQueueRunner::LogRenderPass(const VKRStep &pass) {
 	ILOG("RenderPass End(%x)", fb);
 }
 
-void VulkanQueueRunner::LogCopy(const VKRStep &pass) {
-	ILOG("Copy()");
+void VulkanQueueRunner::LogCopy(const VKRStep &step) {
+	ILOG("%s", StepToString(step).c_str());
 }
 
-void VulkanQueueRunner::LogBlit(const VKRStep &pass) {
-	ILOG("Blit()");
+void VulkanQueueRunner::LogBlit(const VKRStep &step) {
+	ILOG("%s", StepToString(step).c_str());
 }
 
-void VulkanQueueRunner::LogReadback(const VKRStep &pass) {
-	ILOG("Readback");
+void VulkanQueueRunner::LogReadback(const VKRStep &step) {
+	ILOG("%s", StepToString(step).c_str());
 }
 
-void VulkanQueueRunner::LogReadbackImage(const VKRStep &pass) {
-	ILOG("ReadbackImage");
+void VulkanQueueRunner::LogReadbackImage(const VKRStep &step) {
+	ILOG("%s", StepToString(step).c_str());
 }
 
 void VulkanQueueRunner::PerformRenderPass(const VKRStep &step, VkCommandBuffer cmd) {
@@ -715,6 +960,9 @@ void VulkanQueueRunner::PerformRenderPass(const VKRStep &step, VkCommandBuffer c
 			VkPipelineStageFlags dstStage{};
 			switch (barrier.oldLayout) {
 			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+				barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+				srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+				break;
 			case VK_IMAGE_LAYOUT_UNDEFINED:
 				barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 				srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -756,6 +1004,22 @@ void VulkanQueueRunner::PerformRenderPass(const VKRStep &step, VkCommandBuffer c
 		return;
 	}
 
+	if (step.render.framebuffer && step.render.framebuffer->color.layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+		VkImageMemoryBarrier barrier{};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		barrier.subresourceRange.layerCount = 1;
+		barrier.subresourceRange.levelCount = 1;
+		barrier.image = step.render.framebuffer->color.image;
+		barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+	}
+
 	// This is supposed to bind a vulkan render pass to the command buffer.
 	PerformBindFramebufferAsRenderTarget(step, cmd);
 
@@ -768,9 +1032,11 @@ void VulkanQueueRunner::PerformRenderPass(const VKRStep &step, VkCommandBuffer c
 
 	auto &commands = step.commands;
 
-	// TODO: Dynamic state commands (SetViewport, SetScissor, SetBlendConstants, SetStencil*) are only
-	// valid when a pipeline is bound with those as dynamic state. So we need to add some state tracking here
-	// for this to be correct. This is a bit of a pain but also will let us eliminate redundant calls.
+	// We can do a little bit of state tracking here to eliminate some calls into the driver.
+	// The stencil ones are very commonly mostly redundant so let's eliminate them where possible.
+	int lastStencilWriteMask = -1;
+	int lastStencilCompareMask = -1;
+	int lastStencilReference = -1;
 
 	for (const auto &c : commands) {
 		switch (c.cmd) {
@@ -781,29 +1047,73 @@ void VulkanQueueRunner::PerformRenderPass(const VKRStep &step, VkCommandBuffer c
 			if (c.pipeline.pipeline != lastPipeline) {
 				vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, c.pipeline.pipeline);
 				lastPipeline = c.pipeline.pipeline;
+				// Reset dynamic state so it gets refreshed with the new pipeline.
+				lastStencilWriteMask = -1;
+				lastStencilCompareMask = -1;
+				lastStencilReference = -1;
 			}
 			break;
 
 		case VKRRenderCommand::VIEWPORT:
-			vkCmdSetViewport(cmd, 0, 1, &c.viewport.vp);
+			if (fb != nullptr) {
+				vkCmdSetViewport(cmd, 0, 1, &c.viewport.vp);
+			} else {
+				const VkViewport &vp = c.viewport.vp;
+				DisplayRect<float> rc{ vp.x, vp.y, vp.width, vp.height };
+				RotateRectToDisplay(rc, (float)vulkan_->GetBackbufferWidth(), (float)vulkan_->GetBackbufferHeight());
+				VkViewport final_vp;
+				final_vp.x = rc.x;
+				final_vp.y = rc.y;
+				final_vp.width = rc.w;
+				final_vp.height = rc.h;
+				final_vp.maxDepth = vp.maxDepth;
+				final_vp.minDepth = vp.minDepth;
+				vkCmdSetViewport(cmd, 0, 1, &final_vp);
+			}
 			break;
 
 		case VKRRenderCommand::SCISSOR:
-			vkCmdSetScissor(cmd, 0, 1, &c.scissor.scissor);
+		{
+			if (fb != nullptr) {
+				vkCmdSetScissor(cmd, 0, 1, &c.scissor.scissor);
+			} else {
+				// Rendering to backbuffer. Might need to rotate.
+				const VkRect2D &rc = c.scissor.scissor;
+				DisplayRect<int> rotated_rc{ rc.offset.x, rc.offset.y, (int)rc.extent.width, (int)rc.extent.height };
+				RotateRectToDisplay(rotated_rc, vulkan_->GetBackbufferWidth(), vulkan_->GetBackbufferHeight());
+				_dbg_assert_(G3D, rotated_rc.x >= 0);
+				_dbg_assert_(G3D, rotated_rc.y >= 0);
+				VkRect2D finalRect = VkRect2D{ { rotated_rc.x, rotated_rc.y }, { (uint32_t)rotated_rc.w, (uint32_t)rotated_rc.h} };
+				vkCmdSetScissor(cmd, 0, 1, &finalRect);
+			}
 			break;
+		}
 
 		case VKRRenderCommand::BLEND:
-			vkCmdSetBlendConstants(cmd, c.blendColor.color);
+		{
+			float bc[4];
+			Uint8x4ToFloat4(bc, c.blendColor.color);
+			vkCmdSetBlendConstants(cmd, bc);
 			break;
+		}
 
 		case VKRRenderCommand::PUSH_CONSTANTS:
 			vkCmdPushConstants(cmd, c.push.pipelineLayout, c.push.stages, c.push.offset, c.push.size, c.push.data);
 			break;
 
 		case VKRRenderCommand::STENCIL:
-			vkCmdSetStencilWriteMask(cmd, VK_STENCIL_FRONT_AND_BACK, c.stencil.stencilWriteMask);
-			vkCmdSetStencilCompareMask(cmd, VK_STENCIL_FRONT_AND_BACK, c.stencil.stencilCompareMask);
-			vkCmdSetStencilReference(cmd, VK_STENCIL_FRONT_AND_BACK, c.stencil.stencilRef);
+			if (lastStencilWriteMask != c.stencil.stencilWriteMask) {
+				lastStencilWriteMask = (int)c.stencil.stencilWriteMask;
+				vkCmdSetStencilWriteMask(cmd, VK_STENCIL_FRONT_AND_BACK, c.stencil.stencilWriteMask);
+			}
+			if (lastStencilCompareMask != c.stencil.stencilCompareMask) {
+				lastStencilCompareMask = c.stencil.stencilCompareMask;
+				vkCmdSetStencilCompareMask(cmd, VK_STENCIL_FRONT_AND_BACK, c.stencil.stencilCompareMask);
+			}
+			if (lastStencilReference != c.stencil.stencilRef) {
+				lastStencilReference = c.stencil.stencilRef;
+				vkCmdSetStencilReference(cmd, VK_STENCIL_FRONT_AND_BACK, c.stencil.stencilRef);
+			}
 			break;
 
 		case VKRRenderCommand::DRAW_INDEXED:
@@ -818,11 +1128,12 @@ void VulkanQueueRunner::PerformRenderPass(const VKRStep &step, VkCommandBuffer c
 			if (c.draw.vbuffer) {
 				vkCmdBindVertexBuffers(cmd, 0, 1, &c.draw.vbuffer, &c.draw.voffset);
 			}
-			vkCmdDraw(cmd, c.draw.count, 1, 0, 0);
+			vkCmdDraw(cmd, c.draw.count, 1, c.draw.offset, 0);
 			break;
 
 		case VKRRenderCommand::CLEAR:
 		{
+			// If we get here, we failed to merge a clear into a render pass load op. This is bad for perf.
 			int numAttachments = 0;
 			VkClearRect rc{};
 			rc.baseArrayLayer = 0;
@@ -874,6 +1185,8 @@ void VulkanQueueRunner::PerformBindFramebufferAsRenderTarget(const VKRStep &step
 	int w;
 	int h;
 	if (step.render.framebuffer) {
+		_dbg_assert_(G3D, step.render.finalColorLayout != VK_IMAGE_LAYOUT_UNDEFINED);
+
 		VKRFramebuffer *fb = step.render.framebuffer;
 		framebuf = fb->framebuf;
 		w = fb->width;
@@ -1272,7 +1585,7 @@ void VulkanQueueRunner::PerformReadback(const VKRStep &step, VkCommandBuffer cmd
 
 void VulkanQueueRunner::PerformReadbackImage(const VKRStep &step, VkCommandBuffer cmd) {
 	// TODO: Clean this up - just reusing `SetupTransitionToTransferSrc`.
-	VKRImage srcImage;
+	VKRImage srcImage{};
 	srcImage.image = step.readback_image.image;
 	srcImage.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 

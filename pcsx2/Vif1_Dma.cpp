@@ -25,7 +25,7 @@ u32 g_vif1Cycles = 0;
 
 __fi void vif1FLUSH()
 {
-	if(vif1Regs.stat.VEW)
+	if (VU0.VI[REG_VPU_STAT].UL & 0x500) // T bit stop or Busy
 	{
 		vif1.waitforvu = true;
 		vif1.vifstalled.enabled = VifStallEnable(vif1ch);
@@ -164,7 +164,7 @@ __fi void vif1SetupTransfer()
 	if (!vif1.done && ((dmacRegs.ctrl.STD == STD_VIF1) && (ptag->ID == TAG_REFS)))   // STD == VIF1
 	{
 		// there are still bugs, need to also check if gif->madr +16*qwc >= stadr, if not, stall
-		if ((vif1ch.madr + vif1ch.qwc * 16) >= dmacRegs.stadr.ADDR)
+		if ((vif1ch.madr + vif1ch.qwc * 16) > dmacRegs.stadr.ADDR)
 		{
 			//DevCon.Warning("VIF1 DMA Stall");
 			// stalled
@@ -196,8 +196,8 @@ __fi void vif1SetupTransfer()
 		}
 		else
 		{
-			//Some games (like killzone) do Tags mid unpack, the nops will just write blank data
-			//to the VU's, which breaks stuff, this is where the 128bit packet will fail, so we ignore the first 2 words
+			// Some games (like killzone) do Tags mid unpack, the nops will just write blank data
+			// to the VU's, which breaks stuff, this is where the 128bit packet will fail, so we ignore the first 2 words
 			vif1.irqoffset.value = 2;
 			vif1.irqoffset.enabled = true;
 			ret = VIF1transfer((u32*)&masked_tag + 2, 2, true);  //Transfer Tag
@@ -206,8 +206,9 @@ __fi void vif1SetupTransfer()
 				
 		if (!ret && vif1.irqoffset.enabled)
 		{
-			vif1.inprogress &= ~1; //Better clear this so it has to do it again (Jak 1)
-			return;        //IRQ set by VIFTransfer
+			vif1.inprogress &= ~1; // Better clear this so it has to do it again (Jak 1)
+			vif1ch.qwc = 0; // Gumball 3000 pauses the DMA when the tag stalls so we need to reset the QWC, it'll be gotten again later
+			return;        // IRQ set by VIFTransfer
 		}
 	}
 	vif1.irqoffset.value = 0;
@@ -230,6 +231,12 @@ __fi void vif1SetupTransfer()
 
 __fi void vif1VUFinish()
 {
+	if (VU0.VI[REG_VPU_STAT].UL & 0x400)
+	{
+		CPU_INT(VIF_VU1_FINISH, 128);
+		return;
+	}
+
 	if (VU0.VI[REG_VPU_STAT].UL & 0x100)
 	{
 		int _cycles = VU1.cycle;
@@ -324,7 +331,8 @@ __fi void vif1Interrupt()
 	if (vif1.irq && vif1.vifstalled.enabled && vif1.vifstalled.value == VIF_IRQ_STALL)
 	{
 		VIF_LOG("VIF IRQ Firing");
-		vif1Regs.stat.INT = true;
+		if (!vif1Regs.stat.ER1)
+			vif1Regs.stat.INT = true;
 		
 		//Yakuza watches VIF_STAT so lets do this here.
 		if (((vif1Regs.code >> 24) & 0x7f) != 0x7) {
@@ -343,6 +351,7 @@ __fi void vif1Interrupt()
 			vif1Regs.stat.FQC = std::min((u16)0x10, vif1ch.qwc);
 			if((vif1ch.qwc > 0 || !vif1.done) && !CHECK_VIF1STALLHACK)	
 			{
+				vif1Regs.stat.VPS = VPS_DECODING; //If there's more data you need to say it's decoding the next VIF CMD (Onimusha - Blade Warriors)
 				VIF_LOG("VIF1 Stalled");
 				return;
 			}
@@ -376,9 +385,9 @@ __fi void vif1Interrupt()
     if (!vif1.done)
     {
 
-            if (!(dmacRegs.ctrl.DMAE))
+            if (!(dmacRegs.ctrl.DMAE) || vif1Regs.stat.VSS) //Stopped or DMA Disabled
             {
-                    Console.WriteLn("vif1 dma masked");
+                    //Console.WriteLn("vif1 dma masked");
                     return;
             }
 
@@ -397,8 +406,8 @@ __fi void vif1Interrupt()
 		return; //Dont want to end if vif is stalled.
 	}
 #ifdef PCSX2_DEVBUILD
-	if (vif1ch.qwc > 0) Console.WriteLn("VIF1 Ending with %x QWC left", vif1ch.qwc);
-	if (vif1.cmd != 0) Console.WriteLn("vif1.cmd still set %x tag size %x", vif1.cmd, vif1.tag.size);
+	if (vif1ch.qwc > 0) DevCon.WriteLn("VIF1 Ending with %x QWC left", vif1ch.qwc);
+	if (vif1.cmd != 0) DevCon.WriteLn("vif1.cmd still set %x tag size %x", vif1.cmd, vif1.tag.size);
 #endif
 
 	if((vif1ch.chcr.DIR == VIF_NORMAL_TO_MEM_MODE) && vif1.GSLastDownloadSize <= 16)
@@ -427,13 +436,6 @@ void dmaVIF1()
 	        vif1ch.tadr, vif1ch.asr0, vif1ch.asr1);
 
 	g_vif1Cycles = 0;
-
-#ifdef PCSX2_DEVBUILD
-	if (dmacRegs.ctrl.STD == STD_VIF1)
-	{
-		//DevCon.WriteLn("VIF Stall Control Source = %x, Drain = %x", (psHu32(0xe000) >> 4) & 0x3, (psHu32(0xe000) >> 6) & 0x3);
-	}
-#endif
 
 	if (vif1ch.qwc > 0)   // Normal Mode
 	{
@@ -471,10 +473,10 @@ void dmaVIF1()
 	}
 	else
 	{
-		if(vif1.irqoffset.enabled && !vif1.done) DevCon.Warning("Warning! VIF1 starting a new Chain transfer with vif offset set (Possible force stop?)");
+		vif1.inprogress &= ~0x1;
 		vif1.dmamode = VIF_CHAIN_MODE;
 		vif1.done = false;
-		vif1.inprogress &= ~0x1;
+		
 	}
 
 	if (vif1ch.chcr.DIR) vif1Regs.stat.FQC = std::min((u16)0x10, vif1ch.qwc);

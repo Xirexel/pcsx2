@@ -6,32 +6,43 @@
              xmlns:viewModels="clr-namespace:Omega_Red.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
+             Padding="1"
+             Background="{DynamicResource PanelBackgroundBrush}"
              d:DesignHeight="800" d:DesignWidth="300">
     <UserControl.Resources>
         <Style TargetType="StackPanel">
             <Setter Property="MinHeight" Value="40"/>
         </Style>
-        <Style TargetType="Border">
-            <Setter Property="MinWidth" Value="280"/>
-            <Setter Property="Margin" Value="6"/>
-            <Setter Property="Padding" Value="0,5,0,5"/>
-            <Setter Property="SnapsToDevicePixels" Value="true"/>
-            <Setter Property="Background" Value="#F0F0FF"/>
-            <Setter Property="CornerRadius" Value="{DynamicResource StandardCornerRadius}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
+        <Style TargetType="WrapPanel">
+            <Setter Property="Control.Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+        </Style>        
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <WrapPanel Background="{DynamicResource LockScreenForegroundBrush}">
+    <ScrollViewer BorderThickness="{DynamicResource StandardBorderThickness}" 
+                  BorderBrush="{DynamicResource StandardBorderBrush}"
+                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <WrapPanel>
+            <WrapPanel.Resources>
+                <Style TargetType="Border">
+                    <Setter Property="MinWidth" Value="280"/>
+                    <Setter Property="Margin" Value="6"/>
+                    <Setter Property="Padding" Value="0,5,0,5"/>
+                    <Setter Property="SnapsToDevicePixels" Value="true"/>
+                    <Setter Property="Background" Value="{DynamicResource MainBackgroundBrush}"/>
+                    <Setter Property="CornerRadius" Value="{DynamicResource StandardCornerRadius}"/>
+                    <Setter Property="BorderThickness" Value="{DynamicResource StandardBorderThickness}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource StandardBorderBrush}"/>
+                    <Setter Property="Control.Foreground" Value="{DynamicResource MainForegroundBrush}"/>
+                </Style>
+            </WrapPanel.Resources>
             <Border>
                 <StackPanel Margin="5">
-                    <TextBlock Text="{DynamicResource SocialNetworksTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
+                    <TextBlock Text="{DynamicResource SocialNetworksTitle}" TextAlignment="Center" Margin="5"/>
                     <Grid Margin="5,0,5,0">
                         <Grid.DataContext>
                             <viewModels:SocialNetworksViewModel/>
                         </Grid.DataContext>
                         <CheckBox Style="{DynamicResource StateCheckBox}" Background="Transparent" IsChecked="{Binding GoogleAccountIsChecked}">
-                            <Image Source="/Assests/Images/Register_google.png" 
+                            <Image Source="pack://application:,,,/Omega Red;component/Assests/Images/Register_google.png" 
                                        Stretch="Uniform" 
                                        Height="64" 
                                        Width="64"/>
@@ -41,19 +52,38 @@
             </Border>
             <Border>
                 <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
-                    <TextBlock Text="{DynamicResource DisplayModeTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
+                    <TextBlock Text="{DynamicResource DisplayModeTitle}" TextAlignment="Center"  Margin="5"/>
                     <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding DisplayModeCollection}" Margin="5,0,5,5"/>
                 </StackPanel>
             </Border>
             <Border>
                 <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
-                    <TextBlock Text="{DynamicResource ControlModeTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
-                    <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ControlModeCollection}" Margin="5,0,5,5"/>
+                    <TextBlock Text="{DynamicResource SkipFrameModeTitle}" TextAlignment="Center"  Margin="5"/>
+                    <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding SkipFrameModeCollection}" Margin="5,0,5,5"/>
                 </StackPanel>
             </Border>
             <Border>
                 <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
-                    <TextBlock Text="{DynamicResource CaptureModeTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
+                    <CheckBox Margin="5" IsChecked="{Binding ShowFrameRate}" VerticalContentAlignment="Center">
+                        <TextBlock Text="{DynamicResource ShowFrameRateTitle}" TextWrapping="Wrap" TextAlignment="Center" Margin="5"/>
+                    </CheckBox>
+                </StackPanel>
+            </Border>
+            <Border>
+                <StackPanel Margin="5" Visibility="{Binding VisibilityState}" IsEnabled="{Binding IsStopped}">
+                    <TextBlock Text="{DynamicResource ResolutionModeTitle}" TextAlignment="Center"  Margin="5"/>
+                    <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ResolutionModeCollection}" Margin="5,0,5,5"/>
+                </StackPanel>
+            </Border>
+            <Border>
+                <StackPanel Margin="5" Visibility="{Binding VisibilityState}">
+                    <TextBlock Text="{DynamicResource ControlModeTitle}" TextAlignment="Center"  Margin="5"/>
+                    <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ControlModeCollection}" Margin="5,0,5,5"/>
+                </StackPanel>
+            </Border>
+            <Border Visibility="{Binding VisibilityVideoRecordingState}">
+                <StackPanel Margin="5" Visibility="{Binding VisibilityState}" IsEnabled="{Binding IsCaptureStopped}">
+                    <TextBlock Text="{DynamicResource CaptureModeTitle}" TextAlignment="Center"  Margin="5"/>
                     <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding MediaOutputTypeCollection}" Margin="5,0,5,5"/>
                     <ContentPresenter Content="{Binding CaptureConfig}" Margin="5,0,5,5"/>
                 </StackPanel>
@@ -61,15 +91,15 @@
             <Border>
             <StackPanel Margin="5" VerticalAlignment="Center" Visibility="{Binding VisibilityState}">
                 <CheckBox Margin="5" IsChecked="{Binding Topmost}" VerticalContentAlignment="Center">
-                    <TextBlock Text="{DynamicResource TopmostTitle}" TextWrapping="Wrap" TextAlignment="Center" Foreground="Black"/>
+                    <TextBlock Text="{DynamicResource TopmostTitle}" TextWrapping="Wrap" TextAlignment="Center" />
                 </CheckBox>
                 </StackPanel>
             </Border>
-            <Border>
+            <Border Visibility="{Binding VisibilityVideoRecordingState}">
                 <StackPanel Margin="5" VerticalAlignment="Center" Visibility="{Binding VisibilityState}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="{DynamicResource CompressionQualityTitle}" TextAlignment="Center" Foreground="Black" Margin="2,5"/>
-                        <TextBlock Text="{Binding Source={x:Static p:Settings.Default}, Path=CompressionQuality, StringFormat={}{0:#,#.0}, Mode=OneWay}" Foreground="Black" Margin="2,5"/>
+                    <TextBlock Text="{DynamicResource CompressionQualityTitle}" TextAlignment="Center"  Margin="2,5"/>
+                        <TextBlock Text="{Binding Source={x:Static p:Settings.Default}, Path=CompressionQuality, StringFormat={}{0:#,#.0}, Mode=OneWay}"  Margin="2,5"/>
                 </StackPanel>
                 <Slider ValueChanged="Slider_ValueChanged" TouchDown="Slider_TouchDown"  Value="{Binding Source={x:Static p:Settings.Default}, Path=CompressionQuality, Mode=TwoWay}"  Minimum="10" Maximum="99" Margin="10,0"/>
                 </StackPanel>
@@ -77,34 +107,34 @@
             <Border>
                 <StackPanel Margin="5" VerticalAlignment="Center" Visibility="{Binding VisibilityState}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <TextBlock Text="{DynamicResource TouchPadScaleTitle}" TextAlignment="Left" TextWrapping="Wrap" Width="150" Foreground="Black" Margin="5"/>
-                        <TextBlock Text="{Binding Source={x:Static p:Settings.Default}, Path=TouchPadScale, StringFormat={}{0:#,#.0}, Mode=OneWay}" Foreground="Black" VerticalAlignment="Bottom" Margin="5"/>
+                    <TextBlock Text="{DynamicResource TouchPadScaleTitle}" TextAlignment="Left" TextWrapping="Wrap" Width="150"  Margin="5"/>
+                        <TextBlock Text="{Binding Source={x:Static p:Settings.Default}, Path=TouchPadScale, StringFormat={}{0:#,#.0}, Mode=OneWay}"  VerticalAlignment="Bottom" Margin="5"/>
                 </StackPanel>
                     <Slider ValueChanged="Slider_ValueChanged" TouchDown="Slider_TouchDown" Value="{Binding TouchPadScale, Mode=TwoWay}"  Minimum="50" Maximum="300" Margin="10,0"/>
                 </StackPanel>
             </Border>
             <Border Visibility="{Binding VisibilityDiskState}">
                 <StackPanel Margin="5" VerticalAlignment="Center">
-                <CheckBox Margin="5" IsChecked="{Binding DisableWideScreen}" VerticalContentAlignment="Center">
-                    <TextBlock Text="{DynamicResource DisableWideScreenTitle}" TextWrapping="Wrap" TextAlignment="Center" Foreground="Black"/>
+                <CheckBox Margin="5" IsChecked="{Binding EnableWideScreen}" VerticalContentAlignment="Center">
+                    <TextBlock Text="{DynamicResource EnableWideScreenTitle}" TextWrapping="Wrap" TextAlignment="Center" />
                 </CheckBox>
                 </StackPanel>
             </Border>
             <Border>
                 <StackPanel Margin="5">
-                <TextBlock Text="{DynamicResource LanguageTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
+                <TextBlock Text="{DynamicResource LanguageTitle}" TextAlignment="Center"  Margin="5"/>
                 <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding LanguageCollection}" Margin="5,0,5,5"/>
                 </StackPanel>
             </Border>
             <Border>
                 <StackPanel Margin="5">
-                <TextBlock Text="{DynamicResource ColourSchemaTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
+                <TextBlock Text="{DynamicResource ColourSchemaTitle}" TextAlignment="Center"  Margin="5"/>
                 <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding ColourSchemaCollection}" Margin="5,0,5,5"/>
                 </StackPanel>
             </Border>
             <!--<Border>
                 <StackPanel Margin="5">
-                <TextBlock Text="{DynamicResource RenderingSchemaTitle}" TextAlignment="Center" Foreground="Black" Margin="5"/>
+                <TextBlock Text="{DynamicResource RenderingSchemaTitle}" TextAlignment="Center"  Margin="5"/>
                 <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding RenderingSchemaCollection}" Margin="5,0,5,5"/>
                 <ContentPresenter Content="{Binding RenderingConfig}" Margin="5,0,5,5"/>
                 </StackPanel>
@@ -112,10 +142,16 @@
             <Border>
                 <StackPanel Margin="5" VerticalAlignment="Center">
                 <CheckBox Margin="5" IsChecked="{Binding IsFXAA}" VerticalContentAlignment="Center">
-                    <TextBlock Text="{DynamicResource IsFXAATitle}" TextWrapping="Wrap" TextAlignment="Center" Foreground="Black"/>
+                    <TextBlock Text="{DynamicResource IsFXAATitle}" TextWrapping="Wrap" TextAlignment="Center" />
                 </CheckBox>
                 </StackPanel>
             </Border>
+            <!--<Border Visibility="{Binding VisibilityTexturePackMode}">
+                <StackPanel Margin="5">
+                    <TextBlock Text="{DynamicResource TexturePackModeTitle}" TextAlignment="Center"  Margin="5"/>
+                    <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding TexturePackModeCollection}" Margin="5,0,5,5"/>
+                </StackPanel>
+            </Border>-->
         </WrapPanel>
     </ScrollViewer>
 </UserControl>

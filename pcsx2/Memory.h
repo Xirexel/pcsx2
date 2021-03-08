@@ -21,7 +21,11 @@
 
 #include "vtlb.h"
 
+#ifdef ANDROID_ABI_V8A
+#include "simd/simd_intrin.h"
+#else
 #include "x86emitter/x86_intrin.h"
+#endif
 
 // [TODO] This *could* be replaced with an assignment operator on u128 that implicitly
 // uses _mm_store and _mm_load internally.  However, there are alignment concerns --
@@ -81,14 +85,14 @@ static __fi void ZeroQWC( u128& dest )
 #define psR1u32(mem)	(*(u32*)&eeMem->ROM1[(mem) & 0x3ffff])
 #define psR1u64(mem)	(*(u64*)&eeMem->ROM1[(mem) & 0x3ffff])
 
-#define psR2s8(mem)		(*(s8 *)&eeMem->ROM2[(mem) & 0x3ffff])
-#define psR2s16(mem)	(*(s16*)&eeMem->ROM2[(mem) & 0x3ffff])
-#define psR2s32(mem)	(*(s32*)&eeMem->ROM2[(mem) & 0x3ffff])
-#define psR2s64(mem)	(*(s64*)&eeMem->ROM2[(mem) & 0x3ffff])
-#define psR2u8(mem)		(*(u8 *)&eeMem->ROM2[(mem) & 0x3ffff])
-#define psR2u16(mem)	(*(u16*)&eeMem->ROM2[(mem) & 0x3ffff])
-#define psR2u32(mem)	(*(u32*)&eeMem->ROM2[(mem) & 0x3ffff])
-#define psR2u64(mem)	(*(u64*)&eeMem->ROM2[(mem) & 0x3ffff])
+#define psR2s8(mem)		(*(s8 *)&eeMem->ROM2[(mem) & 0x7ffff])
+#define psR2s16(mem)	(*(s16*)&eeMem->ROM2[(mem) & 0x7ffff])
+#define psR2s32(mem)	(*(s32*)&eeMem->ROM2[(mem) & 0x7ffff])
+#define psR2s64(mem)	(*(s64*)&eeMem->ROM2[(mem) & 0x7ffff])
+#define psR2u8(mem)		(*(u8 *)&eeMem->ROM2[(mem) & 0x7ffff])
+#define psR2u16(mem)	(*(u16*)&eeMem->ROM2[(mem) & 0x7ffff])
+#define psR2u32(mem)	(*(u32*)&eeMem->ROM2[(mem) & 0x7ffff])
+#define psR2u64(mem)	(*(u64*)&eeMem->ROM2[(mem) & 0x7ffff])
 
 #define psERs8(mem)		(*(s8 *)&eeMem->EROM[(mem) & 0x3ffff])
 #define psERs16(mem)	(*(s16*)&eeMem->EROM[(mem) & 0x3ffff])

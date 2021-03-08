@@ -15,9 +15,11 @@
 // Official git repository and contact information can be found at
 // https://github.com/hrydgard/ppsspp and http://www.ppsspp.org/.
 
+#include <algorithm>
+#include "base/NativeApp.h"
 #include "i18n/i18n.h"
 #include "math/math_util.h"
-#include <algorithm>
+#include "util/text/utf8.h"
 
 #include "Core/Dialog/PSPOskDialog.h"
 #include "Core/Util/PPGeDraw.h"
@@ -28,10 +30,6 @@
 #include "Core/Reporting.h"
 #include "Common/ChunkFile.h"
 #include "GPU/GPUState.h"
-
-#if defined(USING_WIN_UI)
-#include "base/NativeApp.h"
-#endif
 
 #ifndef _WIN32
 #include <ctype.h>
@@ -73,73 +71,73 @@ const int kor_lconsCom[] = {18,0,2,21,3,4,26,3,5,0,7,8,15,7,9,16,7,10,18,7,11,24
 // Korean (Hangul) last consonant Separation key
 const int kor_lconsSpr[] = {2,1,9,4,4,12,5,4,18,8,8,0,9,8,6,10,8,7,11,8,9,12,8,16,13,8,17,14,8,18,17,17,9};
 
-static const wchar_t oskKeys[OSK_KEYBOARD_COUNT][5][14] =
+static const char16_t oskKeys[OSK_KEYBOARD_COUNT][5][14] =
 {
 	{
 		// Latin Lowercase
-		{L"1234567890-+"},
-		{L"qwertyuiop[]"},
-		{L"asdfghjkl;@~"},
-		{L"zxcvbnm,./?\\"},
+		{u"1234567890-+"},
+		{u"qwertyuiop[]"},
+		{u"asdfghjkl;@~"},
+		{u"zxcvbnm,./?\\"},
 	},
 	{
 		// Latin Uppercase
-		{L"!@#$%^&*()_+"},
-		{L"QWERTYUIOP{}"},
-		{L"ASDFGHJKL:\"`"},
-		{L"ZXCVBNM<>/?|"},
+		{u"!@#$%^&*()_+"},
+		{u"QWERTYUIOP{}"},
+		{u"ASDFGHJKL:\"`"},
+		{u"ZXCVBNM<>/?|"},
 	},
 	{
 		// Hiragana
-		{L"あかさたなはまやらわぁゃっ"},
-		{L"いきしちにひみ　り　ぃ　　"},
-		{L"うくすつぬふむゆるをぅゅ゛"},
-		{L"えけせてねへめ　れ　ぇ　゜"},
-		{L"おこそとのほもよろんぉょー"},
+		{u"あかさたなはまやらわぁゃっ"},
+		{u"いきしちにひみ　り　ぃ　　"},
+		{u"うくすつぬふむゆるをぅゅ゛"},
+		{u"えけせてねへめ　れ　ぇ　゜"},
+		{u"おこそとのほもよろんぉょー"},
 	},
 	{
 		// Katakana
-		{L"アカサタナハマヤラワァャッ"},
-		{L"イキシチニヒミ　リ　ィ　　"},
-		{L"ウクスツヌフムユルヲゥュ゛"},
-		{L"エケセテネヘメ　レ　ェ　゜"},
-		{L"オコソトノホモヨロンォョー"},
+		{u"アカサタナハマヤラワァャッ"},
+		{u"イキシチニヒミ　リ　ィ　　"},
+		{u"ウクスツヌフムユルヲゥュ゛"},
+		{u"エケセテネヘメ　レ　ェ　゜"},
+		{u"オコソトノホモヨロンォョー"},
 	},
 	{
 		// Korean(Hangul)
-		{L"1234567890-+"},
-		{L"ㅃㅉㄸㄲㅆ!@#$%^&"},
-		{L"ㅂㅈㄷㄱㅅㅛㅕㅑㅐㅔ[]"},
-		{L"ㅁㄴㅇㄹㅎㅗㅓㅏㅣ;@~"},
-		{L"ㅋㅌㅊㅍㅠㅜㅡ<>/?|"},
+		{u"1234567890-+"},
+		{u"ㅃㅉㄸㄲㅆ!@#$%^&"},
+		{u"ㅂㅈㄷㄱㅅㅛㅕㅑㅐㅔ[]"},
+		{u"ㅁㄴㅇㄹㅎㅗㅓㅏㅣ;@~"},
+		{u"ㅋㅌㅊㅍㅠㅜㅡ<>/?|"},
 	},
 	{
 		// Russian Lowercase
-		{L"1234567890-+"},
-		{L"йцукенгшщзхъ"},
-		{L"фывапролджэё"},
-		{L"ячсмитьбю/?|"},
+		{u"1234567890-+"},
+		{u"йцукенгшщзхъ"},
+		{u"фывапролджэё"},
+		{u"ячсмитьбю/?|"},
 	},
 	{
 		// Russian Uppercase
-		{L"!@#$%^&*()_+"},
-		{L"ЙЦУКЕНГШЩЗХЪ"},
-		{L"ФЫВАПРОЛДЖЭЁ"},
-		{L"ЯЧСМИТЬБЮ/?|"},
+		{u"!@#$%^&*()_+"},
+		{u"ЙЦУКЕНГШЩЗХЪ"},
+		{u"ФЫВАПРОЛДЖЭЁ"},
+		{u"ЯЧСМИТЬБЮ/?|"},
 	},
 	{
 		// Latin Full-width Lowercase
-		{ L"１２３４５６７８９０－＋" },
-		{ L"ｑｗｅｒｔｙｕｉｏｐ［］" },
-		{ L"ａｓｄｆｇｈｊｋｌ；＠～" },
-		{ L"ｚｘｃｖｂｎｍ，．／？￥￥" },
+		{ u"１２３４５６７８９０－＋" },
+		{ u"ｑｗｅｒｔｙｕｉｏｐ［］" },
+		{ u"ａｓｄｆｇｈｊｋｌ；＠～" },
+		{ u"ｚｘｃｖｂｎｍ，．／？￥￥" },
 	},
 	{
 		// Latin Full-width Uppercase
-		{ L"！＠＃＄％＾＆＊（）＿＋" },
-		{ L"ＱＷＥＲＴＹＵＩＯＰ｛｝" },
-		{ L"ＡＳＤＦＧＨＪＫＬ：￥”‘" },
-		{ L"ＺＸＣＶＢＮＭ＜＞／？｜" },
+		{ u"！＠＃＄％＾＆＊（）＿＋" },
+		{ u"ＱＷＥＲＴＹＵＩＯＰ｛｝" },
+		{ u"ＡＳＤＦＧＨＪＫＬ：￥”‘" },
+		{ u"ＺＸＣＶＢＮＭ＜＞／？｜" },
 	},
 };
 
@@ -169,7 +167,7 @@ void PSPOskDialog::ConvertUCS2ToUTF8(std::string& _string, const PSPPointer<u16_
 {
 	if (!em_address.IsValid())
 	{
-		_string = "";
+		_string.clear();
 		return;
 	}
 
@@ -196,17 +194,17 @@ void PSPOskDialog::ConvertUCS2ToUTF8(std::string& _string, const PSPPointer<u16_
 	_string = stringBuffer;
 }
 
-void GetWideStringFromPSPPointer(std::wstring& _string, const PSPPointer<u16_le>& em_address)
+void GetWideStringFromPSPPointer(std::u16string& _string, const PSPPointer<u16_le>& em_address)
 {
 	if (!em_address.IsValid())
 	{
-		_string = L"";
+		_string.clear();
 		return;
 	}
 
 	const size_t maxLength = 2047;
-	wchar_t stringBuffer[maxLength + 1];
-	wchar_t *string = stringBuffer;
+	char16_t stringBuffer[maxLength + 1];
+	char16_t *string = stringBuffer;
 
 	u16_le *input = &em_address[0];
 	int c;
@@ -216,7 +214,7 @@ void GetWideStringFromPSPPointer(std::wstring& _string, const PSPPointer<u16_le>
 	_string = stringBuffer;
 }
 
-void PSPOskDialog::ConvertUCS2ToUTF8(std::string& _string, const wchar_t *input)
+void PSPOskDialog::ConvertUCS2ToUTF8(std::string& _string, const char16_t *input)
 {
 	char stringBuffer[2048];
 	char *string = stringBuffer;
@@ -317,7 +315,7 @@ int PSPOskDialog::Init(u32 oskPtr) {
 
 	i_level = 0;
 
-	inputChars = L"";
+	inputChars.clear();
 
 	if (oskParams->fields[0].intext.IsValid()) {
 		auto src = oskParams->fields[0].intext;
@@ -331,13 +329,16 @@ int PSPOskDialog::Init(u32 oskPtr) {
 	// Eat any keys pressed before the dialog inited.
 	UpdateButtons();
 
+	std::lock_guard<std::mutex> guard(nativeMutex_);
+	nativeStatus_ = PSPOskNativeStatus::IDLE;
+
 	StartFade(true);
 	return 0;
 }
 
-std::wstring PSPOskDialog::CombinationKorean(bool isInput)
+std::u16string PSPOskDialog::CombinationKorean(bool isInput)
 {
-	std::wstring string;
+	std::u16string string;
 
 	isCombinated = true;
 
@@ -577,9 +578,9 @@ std::wstring PSPOskDialog::CombinationKorean(bool isInput)
 	return string;
 }
 
-std::wstring PSPOskDialog::CombinationString(bool isInput)
+std::u16string PSPOskDialog::CombinationString(bool isInput)
 {
-	std::wstring string;
+	std::u16string string;
 
 	isCombinated = false;
 
@@ -658,7 +659,7 @@ std::wstring PSPOskDialog::CombinationString(bool isInput)
 				string += inputChars[i];
 			}
 
-			if (string.size() <= FieldMaxLength())
+			if (string.size() < FieldMaxLength())
 			{
 				string += oskKeys[currentKeyboard][selectedRow][selectedCol];
 			}
@@ -751,7 +752,7 @@ void PSPOskDialog::RenderKeyboard()
 	int selectedRow = selectedChar / numKeyCols[currentKeyboard];
 	int selectedCol = selectedChar % numKeyCols[currentKeyboard];
 
-	wchar_t temp[2];
+	char16_t temp[2];
 	temp[1] = '\0';
 
 	std::string buffer;
@@ -765,10 +766,9 @@ void PSPOskDialog::RenderKeyboard()
 	float previewLeftSide = (480.0f - (12.0f * drawLimit)) / 2.0f;
 	float title = (480.0f - (0.5f * drawLimit)) / 2.0f;
 
+	PPGeDrawText(oskDesc.c_str(), title , 20, PPGeAlign::BOX_CENTER, 0.5f, CalcFadedColor(0xFFFFFFFF));
 
-	PPGeDrawText(oskDesc.c_str(), title , 20, PPGE_ALIGN_CENTER, 0.5f, CalcFadedColor(0xFFFFFFFF));
-
-	std::wstring result;
+	std::u16string result;
 
 	result = CombinationString(false);
 
@@ -781,7 +781,7 @@ void PSPOskDialog::RenderKeyboard()
 		{
 			temp[0] = result[drawIndex];
 			ConvertUCS2ToUTF8(buffer, temp);
-			PPGeDrawText(buffer.c_str(), previewLeftSide + (i * characterWidth), 40.0f, PPGE_ALIGN_HCENTER, 0.5f, color);
+			PPGeDrawText(buffer.c_str(), previewLeftSide + (i * characterWidth), 40.0f, PPGeAlign::BOX_HCENTER, 0.5f, color);
 		}
 		else
 		{
@@ -798,21 +798,21 @@ void PSPOskDialog::RenderKeyboard()
 
 					ConvertUCS2ToUTF8(buffer, temp);
 
-					PPGeDrawText(buffer.c_str(), previewLeftSide + (i * characterWidth), 40.0f, PPGE_ALIGN_HCENTER, 0.5f, color);
+					PPGeDrawText(buffer.c_str(), previewLeftSide + (i * characterWidth), 40.0f, PPGeAlign::BOX_HCENTER, 0.5f, color);
 
 					// Also draw the underline for the same reason.
 					color = CalcFadedColor(0xFFFFFFFF);
-					PPGeDrawText("_", previewLeftSide + (i * characterWidth), 40.0f, PPGE_ALIGN_HCENTER, 0.5f, color);
+					PPGeDrawText("_", previewLeftSide + (i * characterWidth), 40.0f, PPGeAlign::BOX_HCENTER, 0.5f, color);
 				}
 				else
 				{
 					ConvertUCS2ToUTF8(buffer, temp);
-					PPGeDrawText(buffer.c_str(), previewLeftSide + (i * characterWidth), 40.0f, PPGE_ALIGN_HCENTER, 0.5f, color);
+					PPGeDrawText(buffer.c_str(), previewLeftSide + (i * characterWidth), 40.0f, PPGeAlign::BOX_HCENTER, 0.5f, color);
 				}
 			}
 			else
 			{
-				PPGeDrawText("_", previewLeftSide + (i * characterWidth), 40.0f, PPGE_ALIGN_HCENTER, 0.5f, color);
+				PPGeDrawText("_", previewLeftSide + (i * characterWidth), 40.0f, PPGeAlign::BOX_HCENTER, 0.5f, color);
 			}
 		}
 	}
@@ -828,15 +828,14 @@ void PSPOskDialog::RenderKeyboard()
 			temp[0] = oskKeys[currentKeyboard][row][col];
 
 			ConvertUCS2ToUTF8(buffer, temp);
-			PPGeDrawText(buffer.c_str(), keyboardLeftSide + (25.0f * col) + characterWidth / 2.0, 70.0f + (25.0f * row), PPGE_ALIGN_HCENTER, 0.6f, color);
+			PPGeDrawText(buffer.c_str(), keyboardLeftSide + (25.0f * col) + characterWidth / 2.0, 70.0f + (25.0f * row), PPGeAlign::BOX_HCENTER, 0.6f, color);
 
 			if (selectedRow == row && col == selectedCol)
-				PPGeDrawText("_", keyboardLeftSide + (25.0f * col) + characterWidth / 2.0, 70.0f + (25.0f * row), PPGE_ALIGN_HCENTER, 0.6f, CalcFadedColor(0xFFFFFFFF));
+				PPGeDrawText("_", keyboardLeftSide + (25.0f * col) + characterWidth / 2.0, 70.0f + (25.0f * row), PPGeAlign::BOX_HCENTER, 0.6f, CalcFadedColor(0xFFFFFFFF));
 		}
 	}
 }
 
-#if defined(USING_WIN_UI)
 // TODO: Why does this have a 2 button press lag/delay when
 // re-opening the dialog box? I don't get it.
 int PSPOskDialog::NativeKeyboard() {
@@ -844,23 +843,52 @@ int PSPOskDialog::NativeKeyboard() {
 		return SCE_ERROR_UTILITY_INVALID_STATUS;
 	}
 
-	std::wstring titleText;
-	GetWideStringFromPSPPointer(titleText, oskParams->fields[0].desc);
+#if defined(USING_WIN_UI) || defined(USING_QT_UI) || PPSSPP_PLATFORM(ANDROID)
+	bool beginInputBox = false;
+	if (nativeStatus_ == PSPOskNativeStatus::IDLE) {
+		std::lock_guard<std::mutex> guard(nativeMutex_);
+		if (nativeStatus_ == PSPOskNativeStatus::IDLE) {
+			nativeStatus_ = PSPOskNativeStatus::WAITING;
+			beginInputBox = true;
+		}
+	}
 
-	std::wstring defaultText;
-	GetWideStringFromPSPPointer(defaultText, oskParams->fields[0].intext);
+	if (beginInputBox) {
+		std::u16string titleText;
+		GetWideStringFromPSPPointer(titleText, oskParams->fields[0].desc);
 
-	if (defaultText.empty())
-		defaultText.assign(L"VALUE");
+		std::u16string defaultText;
+		GetWideStringFromPSPPointer(defaultText, oskParams->fields[0].intext);
 
-	if (System_InputBoxGetWString(titleText.c_str(), defaultText, inputChars)) {
+		if (defaultText.empty())
+			defaultText.assign(u"VALUE");
+
+		// There's already ConvertUCS2ToUTF8 in this file. Should we use that instead of the global ones?
+		System_InputBoxGetString(::ConvertUCS2ToUTF8(titleText), ::ConvertUCS2ToUTF8(defaultText), [&](bool result, const std::string &value) {
+			std::lock_guard<std::mutex> guard(nativeMutex_);
+			if (nativeStatus_ != PSPOskNativeStatus::WAITING) {
+				return;
+			}
+
+			nativeValue_ = value;
+			nativeStatus_ = result ? PSPOskNativeStatus::SUCCESS : PSPOskNativeStatus::FAILURE;
+		});
+	} else if (nativeStatus_ == PSPOskNativeStatus::SUCCESS) {
+		inputChars = ConvertUTF8ToUCS2(nativeValue_);
+		nativeValue_.clear();
+
 		u32 maxLength = FieldMaxLength();
 		if (inputChars.length() > maxLength) {
 			ERROR_LOG(SCEUTILITY, "NativeKeyboard: input text too long(%d characters/glyphs max), truncating to game-requested length.", maxLength);
 			inputChars.erase(maxLength, std::string::npos);
 		}
+		ChangeStatus(SCE_UTILITY_STATUS_FINISHED, 0);
+		nativeStatus_ = PSPOskNativeStatus::DONE;
+	} else if (nativeStatus_ == PSPOskNativeStatus::FAILURE) {
+		ChangeStatus(SCE_UTILITY_STATUS_FINISHED, 0);
+		nativeStatus_ = PSPOskNativeStatus::DONE;
 	}
-	ChangeStatus(SCE_UTILITY_STATUS_FINISHED, 0);
+#endif
 	
 	u16_le *outText = oskParams->fields[0].outtext;
 
@@ -870,7 +898,7 @@ int PSPOskDialog::NativeKeyboard() {
 	// Only write the bytes of the output and the null terminator, don't write the rest.
 	for (size_t i = 0; i < end; ++i) {
 		u16 value = 0;
-		if (i < FieldMaxLength())
+		if (i < FieldMaxLength() && i < inputChars.size())
 			value = inputChars[i];
 		outText[i] = value;
 	}
@@ -880,7 +908,6 @@ int PSPOskDialog::NativeKeyboard() {
 
 	return 0;
 }
-#endif
 
 int PSPOskDialog::Update(int animSpeed) {
 	if (GetStatus() != SCE_UTILITY_STATUS_RUNNING) {
@@ -902,12 +929,10 @@ int PSPOskDialog::Update(int animSpeed) {
 	int selectedRow = selectedChar / numKeyCols[currentKeyboard];
 	int selectedExtra = selectedChar % numKeyCols[currentKeyboard];
 
-	// TODO: Add your platforms here when you have a NativeKeyboard func.
-
-#if defined(USING_WIN_UI)
+#if defined(USING_WIN_UI) || defined(USING_QT_UI) || PPSSPP_PLATFORM(ANDROID)
 	// Windows: Fall back to the OSK/continue normally if we're in fullscreen.
 	// The dialog box doesn't work right if in fullscreen.
-	if(g_Config.bBypassOSKWithKeyboard && !g_Config.bFullScreen)
+	if (g_Config.bBypassOSKWithKeyboard && !g_Config.bFullScreen)
 		return NativeKeyboard();
 #endif
 
@@ -917,24 +942,24 @@ int PSPOskDialog::Update(int animSpeed) {
 	PPGeDrawRect(0, 0, 480, 272, CalcFadedColor(0x63636363));
 	RenderKeyboard();
 
-	I18NCategory *di = GetI18NCategory("Dialog");
+	auto di = GetI18NCategory("Dialog");
 
-	PPGeDrawImage(I_SQUARE, 365, 222, 16, 16, 0, CalcFadedColor(0xFFFFFFFF));
-	PPGeDrawText(di->T("Space"), 390, 222, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
+	PPGeDrawImage(ImageID("I_SQUARE"), 365, 222, 16, 16, 0, CalcFadedColor(0xFFFFFFFF));
+	PPGeDrawText(di->T("Space"), 390, 222, PPGeAlign::BOX_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
 
 	if (g_Config.iButtonPreference != PSP_SYSTEMPARAM_BUTTON_CIRCLE) {
-		PPGeDrawImage(I_CROSS, 45, 222, 16, 16, 0, CalcFadedColor(0xFFFFFFFF));
-		PPGeDrawImage(I_CIRCLE, 45, 247, 16, 16, 0, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawImage(ImageID("I_CROSS"), 45, 222, 16, 16, 0, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawImage(ImageID("I_CIRCLE"), 45, 247, 16, 16, 0, CalcFadedColor(0xFFFFFFFF));
 	} else {
-		PPGeDrawImage(I_CIRCLE, 45, 222, 16, 16, 0, CalcFadedColor(0xFFFFFFFF));
-		PPGeDrawImage(I_CROSS, 45, 247, 16, 16, 0, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawImage(ImageID("I_CIRCLE"), 45, 222, 16, 16, 0, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawImage(ImageID("I_CROSS"), 45, 247, 16, 16, 0, CalcFadedColor(0xFFFFFFFF));
 	}
 
-	PPGeDrawText(di->T("Select"), 75, 222, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
-	PPGeDrawText(di->T("Delete"), 75, 247, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
+	PPGeDrawText(di->T("Select"), 75, 222, PPGeAlign::BOX_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
+	PPGeDrawText(di->T("Delete"), 75, 247, PPGeAlign::BOX_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
 
-	PPGeDrawText("Start", 135, 220, PPGE_ALIGN_LEFT, 0.6f, CalcFadedColor(0xFFFFFFFF));
-	PPGeDrawText(di->T("Finish"), 185, 222, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
+	PPGeDrawText("Start", 135, 220, PPGeAlign::BOX_LEFT, 0.6f, CalcFadedColor(0xFFFFFFFF));
+	PPGeDrawText(di->T("Finish"), 185, 222, PPGeAlign::BOX_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
 
 	auto lookupLangName = [&](int direction) {
 		// First, find the valid one...
@@ -958,20 +983,20 @@ int PSPOskDialog::Update(int animSpeed) {
 	};
 
 	if (OskKeyboardNames[currentKeyboardLanguage] != "ko_KR" && IsKeyboardShiftValid(oskParams->fields[0].inputtype, currentKeyboardLanguage, currentKeyboard)) {
-		PPGeDrawText("Select", 135, 245, PPGE_ALIGN_LEFT, 0.6f, CalcFadedColor(0xFFFFFFFF));
-		PPGeDrawText(di->T("Shift"), 185, 247, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawText("Select", 135, 245, PPGeAlign::BOX_LEFT, 0.6f, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawText(di->T("Shift"), 185, 247, PPGeAlign::BOX_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
 	}
 
 	const char *prevLang = lookupLangName(-1);
 	if (prevLang) {
-		PPGeDrawText("L", 235, 220, PPGE_ALIGN_LEFT, 0.6f, CalcFadedColor(0xFFFFFFFF));
-		PPGeDrawText(prevLang, 255, 222, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawText("L", 235, 220, PPGeAlign::BOX_LEFT, 0.6f, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawText(prevLang, 255, 222, PPGeAlign::BOX_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
 	}
 
 	const char *nextLang = lookupLangName(1);
 	if (nextLang) {
-		PPGeDrawText("R", 235, 245, PPGE_ALIGN_LEFT, 0.6f, CalcFadedColor(0xFFFFFFFF));
-		PPGeDrawText(nextLang, 255, 247, PPGE_ALIGN_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawText("R", 235, 245, PPGeAlign::BOX_LEFT, 0.6f, CalcFadedColor(0xFFFFFFFF));
+		PPGeDrawText(nextLang, 255, 247, PPGeAlign::BOX_LEFT, 0.5f, CalcFadedColor(0xFFFFFFFF));
 	}
 
 	if (IsButtonPressed(CTRL_UP) || IsButtonHeld(CTRL_UP, upBtnFramesHeld, framesHeldThreshold, framesHeldRepeatRate)) {
@@ -1055,9 +1080,9 @@ int PSPOskDialog::Update(int animSpeed) {
 	} else if (IsButtonPressed(CTRL_SQUARE) && inputChars.size() < FieldMaxLength()) {
 		// Use a regular space if the current keyboard isn't Japanese nor full-width English
 		if (currentKeyboardLanguage != OSK_LANGUAGE_JAPANESE && currentKeyboardLanguage != OSK_LANGUAGE_ENGLISH_FW)
-			inputChars += L" ";
+			inputChars += u" ";
 		else
-			inputChars += L"　";
+			inputChars += u"　";
 	}
 
 	EndDraw();
@@ -1070,7 +1095,7 @@ int PSPOskDialog::Update(int animSpeed) {
 	for (size_t i = 0; i < end; ++i)
 	{
 		u16 value = 0;
-		if (i < inputChars.size())
+		if (i < FieldMaxLength() && i < inputChars.size())
 			value = inputChars[i];
 		outText[i] = value;
 	}
@@ -1089,6 +1114,7 @@ int PSPOskDialog::Shutdown(bool force)
 	if (!force) {
 		ChangeStatusShutdown(OSK_SHUTDOWN_DELAY_US);
 	}
+	nativeStatus_ = PSPOskNativeStatus::IDLE;
 
 	return 0;
 }
@@ -1097,7 +1123,7 @@ void PSPOskDialog::DoState(PointerWrap &p)
 {
 	PSPDialog::DoState(p);
 
-	auto s = p.Section("PSPOskDialog", 1);
+	auto s = p.Section("PSPOskDialog", 1, 2);
 	if (!s)
 		return;
 
@@ -1106,7 +1132,14 @@ void PSPOskDialog::DoState(PointerWrap &p)
 	p.Do(oskIntext);
 	p.Do(oskOuttext);
 	p.Do(selectedChar);
-	p.Do(inputChars);
+	if (s >= 2) {
+		p.Do(inputChars);
+	} else {
+		// Discard the wstring.
+		std::wstring wstr;
+		p.Do(wstr);
+	}
+	// Don't need to save state native status or value.
 }
 
 pspUtilityDialogCommon *PSPOskDialog::GetCommonParam()

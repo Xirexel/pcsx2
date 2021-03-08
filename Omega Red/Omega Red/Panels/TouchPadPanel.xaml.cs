@@ -12,8 +12,10 @@
 *  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Omega_Red.Emulators;
 using Omega_Red.Managers;
 using Omega_Red.Tools;
+using Omega_Red.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,11 +38,66 @@ namespace Omega_Red.Panels
     /// <summary>
     /// Interaction logic for PadPanel.xaml
     /// </summary>
-    public partial class TouchPadPanel : UserControl
+    public partial class TouchPadPanel : UserControl, IPadControl
     {
+        public struct XY_Axises
+        {
+            public short m_x_axis;
+
+            public short m_y_axis;
+        }
+
+        public static event Action<uint, uint> VibrationEvent;
+
+        private static Util.XInputNative.XINPUT_STATE m_state = new Util.XInputNative.XINPUT_STATE();
+
+
+        private void setKey(UInt16 a_Key)
+        {
+            m_state.Gamepad.wButtons |= a_Key;
+        }
+
+        static private void setLeftStickAxises(XY_Axises a_Axises)
+        {
+            m_state.Gamepad.sThumbLX = a_Axises.m_x_axis;
+
+            m_state.Gamepad.sThumbLY = a_Axises.m_y_axis;
+        }
+
+        static private void setLeftAnalogTrigger(byte a_value)
+        {
+            m_state.Gamepad.bLeftTrigger = a_value;
+        }
+
+        static private void setRightAnalogTrigger(byte a_value)
+        {
+            m_state.Gamepad.bRightTrigger = a_value;
+        }
+
+        static private void setRightStickAxises(XY_Axises a_Axises)
+        {
+            m_state.Gamepad.sThumbRX = a_Axises.m_x_axis;
+
+            m_state.Gamepad.sThumbRY = a_Axises.m_y_axis;
+        }
+
+        private void removeKey(UInt16 a_Key)
+        {
+            m_state.Gamepad.wButtons &= (ushort)(~a_Key);
+        }
+
         public TouchPadPanel()
         {
             InitializeComponent();
+
+            Models.PadControlInfo l_TouchPadControlInfo = new Models.TouchPadControlInfo()
+            {
+                PadControl = this
+            };
+
+            PadControlManager.Instance.setTouchPadControl(l_TouchPadControlInfo);
+
+            PadInput.Instance.PadControl = this;
 
             PadControlManager.Instance.ShowTouchPadPanelEvent += Instance_ShowTouchPadPanelEvent;
 
@@ -50,9 +107,9 @@ namespace Omega_Red.Panels
 
             this.AddHandler(Button.MouseLeaveEvent, new RoutedEventHandler(Button_Release), true);
 
-            PCSX2Controller.Instance.ChangeStatusEvent += (a_Status)=> {
+            Emul.Instance.ChangeStatusEvent += (a_Status)=> {
 
-                if(a_Status == PCSX2Controller.StatusEnum.Stopped)
+                if(a_Status == Emul.StatusEnum.Stopped)
                 {
                     LimitFrame = false;
 
@@ -62,7 +119,7 @@ namespace Omega_Red.Panels
                     });
                 }
 
-                if (a_Status == PCSX2Controller.StatusEnum.Started)
+                if (a_Status == Emul.StatusEnum.Started)
                 {
                     Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, (ThreadStart)delegate ()
                     {
@@ -177,52 +234,52 @@ namespace Omega_Red.Panels
 
                 UInt16 l_key = UInt16.Parse((e.OriginalSource as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
-                PadInput.Instance.removeKey(l_key);
+                removeKey(l_key);
             }
         }
 
 
 
 
-        public PadInput.XY_Axises LeftStickAxises
+        public XY_Axises LeftStickAxises
         {
-            get { return (PadInput.XY_Axises)GetValue(LeftStickAxisesProperty); }
+            get { return (XY_Axises)GetValue(LeftStickAxisesProperty); }
             set { SetValue(LeftStickAxisesProperty, value); }
         }
 
         // Using a DependencyProperty as the backing store for LeftStickAxises.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty LeftStickAxisesProperty =
-            DependencyProperty.Register("LeftStickAxises", typeof(PadInput.XY_Axises), typeof(TouchPadPanel),
-            new PropertyMetadata(new PadInput.XY_Axises() { m_x_axis = 0, m_y_axis = 0 }, new PropertyChangedCallback(OnLeftStickAxisesChanged)));
+            DependencyProperty.Register("LeftStickAxises", typeof(XY_Axises), typeof(TouchPadPanel),
+            new PropertyMetadata(new XY_Axises() { m_x_axis = 0, m_y_axis = 0 }, new PropertyChangedCallback(OnLeftStickAxisesChanged)));
 
         private static void OnLeftStickAxisesChanged(DependencyObject d,
            DependencyPropertyChangedEventArgs e)
         {
-            var l_XY_Axises = (PadInput.XY_Axises)e.NewValue;
+            var l_XY_Axises = (XY_Axises)e.NewValue;
 
-            PadInput.Instance.setLeftStickAxises(l_XY_Axises);
+            setLeftStickAxises(l_XY_Axises);
         }
 
 
 
 
-        public PadInput.XY_Axises RightStickAxises
+        public XY_Axises RightStickAxises
         {
-            get { return (PadInput.XY_Axises)GetValue(RightStickAxisesProperty); }
+            get { return (XY_Axises)GetValue(RightStickAxisesProperty); }
             set { SetValue(RightStickAxisesProperty, value); }
         }
 
         // Using a DependencyProperty as the backing store for RightStickAxises.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty RightStickAxisesProperty =
-            DependencyProperty.Register("RightStickAxises", typeof(PadInput.XY_Axises), typeof(TouchPadPanel),
-            new PropertyMetadata(new PadInput.XY_Axises() { m_x_axis = 0, m_y_axis = 0 }, new PropertyChangedCallback(OnRightStickAxisesChanged)));
+            DependencyProperty.Register("RightStickAxises", typeof(XY_Axises), typeof(TouchPadPanel),
+            new PropertyMetadata(new XY_Axises() { m_x_axis = 0, m_y_axis = 0 }, new PropertyChangedCallback(OnRightStickAxisesChanged)));
 
         private static void OnRightStickAxisesChanged(DependencyObject d,
            DependencyPropertyChangedEventArgs e)
         {
-            var l_XY_Axises = (PadInput.XY_Axises)e.NewValue;
+            var l_XY_Axises = (XY_Axises)e.NewValue;
 
-            PadInput.Instance.setRightStickAxises(l_XY_Axises);
+            setRightStickAxises(l_XY_Axises);
         }
 
         private void Button_MouseDown(object sender, MouseButtonEventArgs e)
@@ -233,7 +290,7 @@ namespace Omega_Red.Panels
 
                 UInt16 l_key = UInt16.Parse((sender as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
-                PadInput.Instance.setKey(l_key);
+                setKey(l_key);
             }
         }
 
@@ -245,7 +302,7 @@ namespace Omega_Red.Panels
 
                 UInt16 l_key = UInt16.Parse((sender as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
-                PadInput.Instance.setKey(l_key);
+                setKey(l_key);
             }
         }
 
@@ -257,7 +314,7 @@ namespace Omega_Red.Panels
 
                 UInt16 l_key = UInt16.Parse((sender as FrameworkElement).Tag.ToString(), System.Globalization.NumberStyles.HexNumber);
 
-                PadInput.Instance.removeKey(l_key);
+                removeKey(l_key);
             }
         }
 
@@ -285,7 +342,7 @@ namespace Omega_Red.Panels
 
             Console.WriteLine(l_value);
 
-            PadInput.Instance.setLeftAnalogTrigger(l_value);
+            setLeftAnalogTrigger(l_value);
         }
 
 
@@ -307,7 +364,7 @@ namespace Omega_Red.Panels
         {
             var l_value = (byte)e.NewValue;
 
-            PadInput.Instance.setRightAnalogTrigger(l_value);
+            setRightAnalogTrigger(l_value);
         }
 
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
@@ -315,7 +372,7 @@ namespace Omega_Red.Panels
             var lCheckBox = sender as CheckBox;
 
             if(lCheckBox != null)
-                PCSX2Controller.Instance.setLimitFrame(!(bool)lCheckBox.IsChecked);
+                Emul.Instance.setLimitFrame(!(bool)lCheckBox.IsChecked);
         }
 
 
@@ -344,5 +401,215 @@ namespace Omega_Red.Panels
         // Using a DependencyProperty as the backing store for CurrentBorderThickness.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty IsEnabledLimitFrameProperty =
             DependencyProperty.Register("IsEnabledLimitFrame", typeof(bool), typeof(TouchPadPanel), new PropertyMetadata(false));
+
+
+
+
+        private bool mIsPressed = false;
+
+        private bool mIsOpened = false;
+
+        private Point mStartPosition = new Point();
+
+        private Ellipse mTouchMark = null;
+
+        private Canvas mTouchCtr = null;
+
+        private void mTouchCtr_MouseChange(object sender, MouseButtonEventArgs e)
+        {
+            mIsPressed = e.ButtonState == MouseButtonState.Pressed;
+
+            if (mIsPressed)
+            {
+                mStartPosition = e.GetPosition(this);
+
+                e.MouseDevice.Capture(this, CaptureMode.SubTree);
+
+                mTouchCtr = sender as Canvas;
+
+                if (mTouchMark == null)
+                {
+                    mTouchMark = new Ellipse();
+
+                    mTouchMark.Width = 100;
+
+                    mTouchMark.Height = 100;
+
+                    mTouchMark.Fill = new SolidColorBrush(Color.FromArgb(128, 0, 255, 0));
+
+                    var l_position = e.GetPosition(mTouchCtr);
+
+                    Canvas.SetLeft(mTouchMark, l_position.X - mTouchMark.Width / 2);
+
+                    Canvas.SetTop(mTouchMark, l_position.Y - mTouchMark.Height / 2);
+
+                    mTouchCtr.Children.Add(mTouchMark);
+                }
+            }
+            else
+            {
+                if (mTouchMark != null && mTouchCtr != null)
+                {
+                    mTouchCtr.Children.Remove(mTouchMark);
+                }
+
+                mTouchMark = null;
+
+                mTouchCtr = null;
+
+                mStartPosition = new Point();
+
+                if (!mIsOpened)
+                {
+                    var l_MainWindow = App.Current.MainWindow as MainWindow;
+
+                    if(l_MainWindow != null)
+                    {
+                        l_MainWindow.rebindControlPanel();
+
+                        l_MainWindow.rebindMediaPanel();
+                    }
+                }
+
+                e.MouseDevice.Capture(null);
+            }
+
+            mIsOpened = false;
+        }
+
+        private void mTouchCtr_MouseMove(object sender, MouseEventArgs e)
+        {
+            var l_MainWindow = App.Current.MainWindow as MainWindow;
+
+            if (l_MainWindow == null)
+            {
+                return;
+            }
+
+            if (mIsPressed)
+            {
+                var l_position = e.GetPosition(this);
+
+                if (mTouchMark != null && mTouchCtr != null)
+                {
+                    var l_positionCanvas = e.GetPosition(mTouchCtr);
+
+                    Canvas.SetLeft(mTouchMark, l_positionCanvas.X - mTouchMark.Width / 2);
+
+                    Canvas.SetTop(mTouchMark, l_positionCanvas.Y - mTouchMark.Height / 2);
+                }
+
+                var l_x_Delta = l_position.X - mStartPosition.X;
+
+                var l_TouchDragBtnWidth = (double)App.Current.Resources["TouchDragBtnWidth"];
+
+                if (l_x_Delta > 0)
+                {
+                    Canvas.SetRight(l_MainWindow.getMediaGrid(), -l_MainWindow.getMediaPanel().ActualWidth - l_TouchDragBtnWidth - 2);
+
+                    l_MainWindow.rebindMediaPanel();
+
+                    var l_leftProp = l_x_Delta / l_MainWindow.getControlPanel().ActualWidth;
+
+                    if (l_leftProp > 0.45)
+                    {
+                        mIsPressed = false;
+
+                        e.MouseDevice.Capture(null);
+
+
+                        int timestamp = new TimeSpan(DateTime.Now.Ticks).Milliseconds;
+
+                        MouseButton l_mouseButton = MouseButton.Left;
+
+                        MouseButtonEventArgs l_mouseUpEvent = new MouseButtonEventArgs(Mouse.PrimaryDevice, timestamp, l_mouseButton);
+
+                        l_mouseUpEvent.RoutedEvent = CheckBox.CheckedEvent;
+
+                        l_mouseUpEvent.Source = l_MainWindow.getControlChkBtn();
+
+                        l_MainWindow.getControlChkBtn().RaiseEvent(l_mouseUpEvent);
+
+                        l_MainWindow.getControlChkBtn().Command.Execute(true);
+
+
+                        mIsOpened = true;
+                    }
+                    else
+                    {
+                        Canvas.SetLeft(l_MainWindow.getControlGrid(), l_x_Delta - l_MainWindow.getControlPanel().ActualWidth - l_TouchDragBtnWidth);
+                    }
+                }
+                else
+                {
+                    Canvas.SetLeft(l_MainWindow.getControlGrid(), -l_MainWindow.getControlPanel().ActualWidth - l_TouchDragBtnWidth - 2);
+
+                    l_MainWindow.rebindControlPanel();
+
+                    l_x_Delta = Math.Abs(l_x_Delta);
+
+                    var l_leftProp = l_x_Delta / l_MainWindow.getMediaPanel().ActualWidth;
+
+                    if (l_leftProp > 0.45)
+                    {
+                        mIsPressed = false;
+
+                        e.MouseDevice.Capture(null);
+
+
+                        int timestamp = new TimeSpan(DateTime.Now.Ticks).Milliseconds;
+
+                        MouseButton l_mouseButton = MouseButton.Left;
+
+                        MouseButtonEventArgs l_mouseUpEvent = new MouseButtonEventArgs(Mouse.PrimaryDevice, timestamp, l_mouseButton);
+
+                        l_mouseUpEvent.RoutedEvent = CheckBox.CheckedEvent;
+
+                        l_mouseUpEvent.Source = l_MainWindow.getControlChkBtn();
+
+                        l_MainWindow.getMediaChkBtn().RaiseEvent(l_mouseUpEvent);
+
+                        if (l_MainWindow.getMediaChkBtn().Command != null)
+                            l_MainWindow.getMediaChkBtn().Command.Execute(true);
+
+
+                        mIsOpened = true;
+                    }
+                    else
+                    {
+                        Canvas.SetRight(l_MainWindow.getMediaGrid(), l_x_Delta - l_MainWindow.getMediaPanel().ActualWidth - l_TouchDragBtnWidth);
+                    }
+                }
+            }
+        }
+
+        private void mTouchCtr_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (mTouchMark != null && mTouchCtr != null)
+            {
+                mTouchCtr.Children.Remove(mTouchMark);
+            }
+
+            mTouchMark = null;
+
+            mTouchCtr = null;
+        }
+
+        public XInputNative.XINPUT_STATE getState()
+        {
+            return m_state;
+        }
+
+        public void setVibration(uint a_vibrationCombo)
+        {
+            if (!Properties.Settings.Default.IsVisualVibrationEnabled)
+                return;
+
+            uint l_LeftMotorSpeed = a_vibrationCombo & 0xFFFF;
+            uint l_RightMotorSpeed = (a_vibrationCombo >> 16) & 0xFFFF;
+
+            if (VibrationEvent != null)
+                VibrationEvent(l_LeftMotorSpeed, l_RightMotorSpeed);
+        }
     }
 }

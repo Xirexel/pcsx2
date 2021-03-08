@@ -40,7 +40,7 @@ struct TraceLogDescriptor
 
     wxString GetShortName() const
     {
-        pxAssumeDev(Name, "Tracelog descriptors require a valid name!");
+        //pxAssumeDev(Name, "Tracelog descriptors require a valid name!");
         return ShortName ? ShortName : Name;
     }
 };
@@ -88,7 +88,7 @@ public:
 
         BaseTraceLogSource(const TraceLogDescriptor *desc)
     {
-        pxAssumeDev(desc, "Trace logs must have a valid (non-NULL) descriptor.");
+        //pxAssumeDev(desc, "Trace logs must have a valid (non-NULL) descriptor.");
         Enabled = false;
         m_Descriptor = desc;
     }

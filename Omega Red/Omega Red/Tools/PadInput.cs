@@ -18,33 +18,143 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using static Omega_Red.Util.XInputNative;
 
 namespace Omega_Red.Tools
 {
-    public class PadInput
+    public interface IPadControl
     {
-        public struct XY_Axises
-        {
-            public short m_x_axis;
+        XINPUT_STATE getState();
 
-            public short m_y_axis;
+        void setVibration(uint a_vibrationCombo);
+    }
+
+    class PadInput
+    {
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate IntPtr GetTouchPadCallback(UInt32 aPadIndex);
+
+        public class PadControlConfig
+        {
+            public string Title_Key { get; set; }
+            public string Instance_ID { get; set; }
+            public string API { get; set; }
+            public string Type { get; set; }
+            public string Product_ID { get; set; }
+            public string[] Bindings_Data { get; set; }
+            public string[] Force_Feedback_Bindings_Data { get; set; }
         }
 
-        private XINPUT_STATE m_state = new XINPUT_STATE();
+        private PadControlConfig m_PadInputConfig = new PadControlConfig()
+        {
+            Title_Key = "TouchPadTitle",
+            Instance_ID = "Touch Pad 0",
+            API = "18",
+            Type = "3",
+            Product_ID = "TOUCH PAD 0",
+            Bindings_Data = new string[] {
 
+                // old
+                            //"0x00200000, 0, 20, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200001, 0, 22, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200002, 0, 23, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200003, 0, 21, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200004, 0, 19, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200005, 0, 16, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200006, 0, 17, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200007, 0, 18, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200008, 0, 24, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200009, 0, 25, 65536, 0, 0, 1, 0, 1",
+                            //"0x0020000C, 0, 29, 65536, 0, 0, 1, 0, 1",
+                            //"0x0020000D, 0, 30, 65536, 0, 0, 1, 0, 1",
+                            //"0x0020000E, 0, 31, 65536, 0, 0, 1, 0, 1",
+                            //"0x0020000F, 0, 28, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200010, 0, 26, 65536, 0, 0, 1, 0, 1",
+                            //"0x00200011, 0, 27, 65536, 0, 0, 1, 0, 1",
+                            //"0x01020013, 0, 32, 87183, 0, 0, 13172, 1, 1",
+                            //"0x02020013, 0, 35, 65536, 0, 0, 13172, 0, 1",
+                            //"0x01020014, 0, 40, 65536, 0, 0, 13172, 0, 1",
+                            //"0x02020014, 0, 36, 65536, 0, 0, 13172, 0, 1",
+                            //"0x01020015, 0, 36, 87183, 0, 0, 13172, 1, 1",
+                            //"0x02020015, 0, 37, 65536, 0, 0, 13172, 0, 1",
+                            //"0x01020016, 0, 38, 65536, 0, 0, 13172, 0, 1",
+                            //"0x02020016, 0, 39, 65536, 0, 0, 13172, 0, 1"
+
+                                                        
+                            "0x0020000C, 0, 30, 65536, 0, 0, 1, 1",     // cross
+                            "0x0020000D, 0, 29, 65536, 0, 0, 1, 1",     // circle
+                            "0x0020000E, 0, 31, 65536, 0, 0, 1, 1",     // square
+                            "0x0020000F, 0, 28, 65536, 0, 0, 1, 1",     // triangle
+                            "0x00200005, 0, 16, 65536, 0, 0, 1, 0, 1",     // select/back      
+                            "0x00200004, 0, 19, 65536, 0, 0, 1, 0, 1",    // start
+							
+                            "0x00200000, 0, 20, 65536, 0, 0, 1, 0, 1",     // D-Pad Up
+                            "0x00200003, 0, 21, 65536, 0, 0, 1, 0, 1",     // D-Pad Right
+                            "0x00200001, 0, 22, 65536, 0, 0, 1, 0, 1",     // D-Pad Down
+                            "0x00200002, 0, 23, 65536, 0, 0, 1, 0, 1",     // D-Pad Left
+														
+                            "0x01020014, 0, 32, 65536, 0, 0, 13172, 1",	// L-Stick Up
+                            "0x01020013, 0, 33, 65536, 0, 0, 13172, 1",	// L-Stick Right
+                            "0x02020014, 0, 34, 65536, 0, 0, 13172, 1",	// L-Stick Down
+                            "0x02020013, 0, 35, 65536, 0, 0, 13172, 1",	// L-Stick Left
+
+                            "0x01020016, 0, 36, 65536, 0, 0, 13172, 1",	// R-Stick Up
+                            "0x01020015, 0, 37, 65536, 0, 0, 13172, 1",	// R-Stick Right
+                            "0x02020016, 0, 38, 65536, 0, 0, 13172, 1",	// R-Stick Down
+                            "0x02020015, 0, 39, 65536, 0, 0, 13172, 1",	// R-Stick Left
+
+
+                            "0x00200008, 0, 26, 65536, 0, 0, 1, 1",    	// L1
+                            "0x00200010, 0, 24, 65536, 0, 0, 1, 1",		// L2
+                            "0x00200006, 0, 17, 65536, 0, 0, 1, 1",    	// L3
+                            "0x00200009, 0, 27, 65536, 0, 0, 1, 1",    	// R1
+                            "0x00200011, 0, 25, 65536, 0, 0, 1, 1",		// R2
+                            "0x00200007, 0, 18, 65536, 0, 0, 1, 1",    	// R3
+            
+            },
+            Force_Feedback_Bindings_Data = new string[] {
+                            "Constant 0, 0, 0, 1, 0, 65536, 1, 0",
+                            "Constant 0, 1, 0, 1, 0, 0, 1, 65536"}
+        };
+        
+        public PadControlConfig PadInputConfig { get { return m_PadInputConfig; } }
+
+        public IPadControl PadControl { private get; set; }
+        
         private IntPtr m_Ptr = IntPtr.Zero;
 
-        public IntPtr Hanler { get { return m_Ptr; } }
+        private GetTouchPadCallback m_GetTouchPadCallback = null;
+
+        private IntPtr m_TouchPadCallbackHandler = IntPtr.Zero;
+
+        public GetTouchPadCallback TouchPadCallback { get { return m_GetTouchPadCallback; } }
+
+        public IntPtr TouchPadCallbackHandler { get { return m_TouchPadCallbackHandler; } }
+
 
         private static PadInput m_PadInput = new PadInput();
 
         private PadInput() {
 
+            m_GetTouchPadCallback = getTouchPad;
+
+            m_TouchPadCallbackHandler = Marshal.GetFunctionPointerForDelegate(m_GetTouchPadCallback);
+
             int size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(XINPUT_STATE));
 
             m_Ptr = Marshal.AllocHGlobal(size);
+        }
 
-            update();
+        private IntPtr getTouchPad(UInt32 aPadIndex)
+        {
+            var l_state = PadControl.getState();
+
+            if(Managers.AdditionalControlManager.Instance.ButtonCheck(l_state.Gamepad.wButtons, PadControl))
+                return m_Ptr;
+
+            Marshal.StructureToPtr(l_state, m_Ptr, false);
+
+            return m_Ptr;
         }
 
         ~PadInput()
@@ -56,84 +166,5 @@ namespace Omega_Red.Tools
         }
 
         public static PadInput Instance { get { return m_PadInput; } }
-
-        public void setKey(UInt16 a_Key)
-        {
-            m_state.Gamepad.wButtons |= a_Key;
-
-            update();
-        }
-
-        public void setLeftStickAxises(XY_Axises a_Axises)
-        {
-            m_state.Gamepad.sThumbLX = a_Axises.m_x_axis;
-
-            m_state.Gamepad.sThumbLY = a_Axises.m_y_axis;
-            
-            update();
-        }
-
-        public void setLeftAnalogTrigger(byte a_value)
-        {
-            m_state.Gamepad.bLeftTrigger = a_value;
-
-            update();
-        }
-
-        public void setRightAnalogTrigger(byte a_value)
-        {
-            m_state.Gamepad.bRightTrigger = a_value;
-
-            update();
-        }
-
-        public void setRightStickAxises(XY_Axises a_Axises)
-        {
-            m_state.Gamepad.sThumbRX = a_Axises.m_x_axis;
-
-            m_state.Gamepad.sThumbRY = a_Axises.m_y_axis;
-
-            update();
-        }
-
-        public void removeKey(UInt16 a_Key)
-        {
-            m_state.Gamepad.wButtons &= (ushort)(~a_Key);
-
-            update();
-        }
-
-        public void enable(bool a_state)
-        {
-            if(a_state)
-                m_state.dwPacketNumber = 0;
-            else
-                m_state.dwPacketNumber = uint.MaxValue;
-
-            update();
-        }
-
-        private void update()
-        {
-            Marshal.StructureToPtr(m_state, m_Ptr, false);
-        }
-
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        public struct XINPUT_GAMEPAD {
-            public UInt16 wButtons;
-          public byte bLeftTrigger;
-          public byte bRightTrigger;
-          public Int16 sThumbLX;
-          public Int16 sThumbLY;
-          public Int16 sThumbRX;
-          public Int16 sThumbRY;
-        };
-        
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        public struct XINPUT_STATE {
-            public UInt32 dwPacketNumber;
-            public XINPUT_GAMEPAD Gamepad;
-        };
     }
 }

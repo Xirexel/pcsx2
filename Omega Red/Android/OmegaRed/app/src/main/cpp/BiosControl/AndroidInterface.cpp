@@ -1,5 +1,5 @@
 //
-// Created by Xirexel on 7/7/2019.
+// Created by Evgeny Pereguda on 7/7/2019.
 //
 
 #include <jni.h>
@@ -14,7 +14,7 @@ extern std::string Java_To_Str(JNIEnv *env, jstring string);
 
 extern "C"
 JNIEXPORT jstring JNICALL
-Java_com_xirexel_omegared_PCSX2_Tools_BiosControl_IsBIOS(JNIEnv *env, jobject instance,
+Java_com_evgenypereguda_omegared_PCSX2_Tools_BiosControl_IsBIOS(JNIEnv *env, jobject instance,
 																jstring aFilename) {
 
 	auto l_filename = Java_To_Str(env, aFilename);
@@ -48,7 +48,7 @@ Java_com_xirexel_omegared_PCSX2_Tools_BiosControl_IsBIOS(JNIEnv *env, jobject in
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_xirexel_omegared_PCSX2_Tools_BiosControl_getBIOSChecksum(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_Tools_BiosControl_getBIOSChecksum(JNIEnv *env,
 																		 jobject instance,
 																		 jstring aFilename) {
 
@@ -66,7 +66,7 @@ Java_com_xirexel_omegared_PCSX2_Tools_BiosControl_getBIOSChecksum(JNIEnv *env,
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_xirexel_omegared_PCSX2_Tools_BiosControl_LoadBIOS__Ljava_lang_String_2JI(
+Java_com_evgenypereguda_omegared_PCSX2_Tools_BiosControl_LoadBIOS__Ljava_lang_String_2JI(
 	JNIEnv *env, jobject instance, jstring aFilename, jlong arg1, jint arg2) {
 
 	auto l_filename = Java_To_Str(env, aFilename);

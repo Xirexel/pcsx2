@@ -143,10 +143,10 @@ public:
 class BaseBlocks
 {
 protected:
-	typedef std::multimap<u32, uptr>::iterator linkiter_t;
+	typedef std::multimap<u32, std::shared_ptr<x86Emitter::xForwardJumpBase>>::iterator linkiter_t;
 
 	// switch to a hash map later?
-	std::multimap<u32, uptr> links;
+	std::multimap<u32, std::shared_ptr<x86Emitter::xForwardJumpBase>> links;
 	uptr recompiler;
 	BaseBlockArray blocks;
 
@@ -200,7 +200,8 @@ public:
 			//u32 startpc = blocks[idx].startpc;
 			std::pair<linkiter_t, linkiter_t> range = links.equal_range(blocks[idx].startpc);
 			for (linkiter_t i = range.first; i != range.second; ++i)
-				*(u32*)i->second = recompiler - (i->second + 4);
+				i->second->SetTarget(recompiler);
+				//*(u32*)i->second = recompiler - (i->second + 4);
 
 			if( IsDevBuild )
 			{
@@ -219,7 +220,7 @@ public:
 		blocks.erase(first, last + 1);
 	}
 
-	void Link(u32 pc, s32* jumpptr);
+	void Link(u32 pc, std::shared_ptr<x86Emitter::xForwardJumpBase> jumpptr);
 
 	__fi void Reset()
 	{
@@ -230,14 +231,20 @@ public:
 
 #define PC_GETBLOCK_(x, reclut) ((BASEBLOCK*)(reclut[((u32)(x)) >> 16] + (x)*(sizeof(BASEBLOCK)/4)))
 
-static void recLUT_SetPage(uptr reclut[0x10000], uptr hwlut[0x10000],
+/**
+ * Add a page to the recompiler lookup table
+ *
+ * Will associate `reclut[pagebase + pageidx]` with `mapbase[mappage << 14]`
+ * Will associate `hwlut[pagebase + pageidx]` with `pageidx << 16`
+ */
+static void recLUT_SetPage(uptr reclut[0x10000], u32 hwlut[0x10000],
 						   BASEBLOCK *mapbase, uint pagebase, uint pageidx, uint mappage)
 {
 	// this value is in 64k pages!
 	uint page = pagebase + pageidx;
 
 	pxAssert( page < 0x10000 );
-	reclut[page] = (uptr)&mapbase[(mappage - page) << 14];
+	reclut[page] = (uptr)&mapbase[((s32)mappage - (s32)page) << 14];
 	if (hwlut)
 		hwlut[page] = 0u - (pagebase << 16);
 }

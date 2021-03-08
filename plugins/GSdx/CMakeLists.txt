@@ -43,24 +43,8 @@ if(XDG_STD)
     set(GSdxFinalFlags ${GSdxFinalFlags} -DXDG_STD)
 endif()
 
-if(EGL_API AND EGL_FOUND)
-    set(GSdxFinalFlags ${GSdxFinalFlags} -DEGL_SUPPORTED)
-endif()
-
-
-if(OPENCL_API)
-    set(GSdxFinalFlags ${GSdxFinalFlags} -DENABLE_OPENCL)
-endif()
 
 set(GSdxSources
-    PSX/GPU.cpp
-    PSX/GPUDrawScanline.cpp
-    PSX/GPUDrawScanlineCodeGenerator.cpp
-    PSX/GPULocalMemory.cpp
-    PSX/GPURenderer.cpp
-    PSX/GPURendererSW.cpp
-    PSX/GPUSetupPrimCodeGenerator.cpp
-    PSX/GPUState.cpp
     GS.cpp
     GSAlignedClass.cpp
     GSBlock.cpp
@@ -120,7 +104,6 @@ set(GSdxSources
     Renderers/OpenGL/GSShaderOGL.cpp
     Renderers/OpenGL/GSTextureCacheOGL.cpp
     Renderers/OpenGL/GSTextureOGL.cpp
-    Renderers/OpenCL/GSRendererCL.cpp
     Window/GSSetting.cpp
     Window/GSWnd.cpp
     )
@@ -154,17 +137,6 @@ set(GSdxHeaders
     GSVector8.h
     GSVector8i.h
     stdafx.h
-    PSX/GPUDrawingEnvironment.h
-    PSX/GPUDrawScanlineCodeGenerator.h
-    PSX/GPUDrawScanline.h
-    PSX/GPU.h
-    PSX/GPULocalMemory.h
-    PSX/GPURenderer.h
-    PSX/GPURendererSW.h
-    PSX/GPUScanlineEnvironment.h
-    PSX/GPUSetupPrimCodeGenerator.h
-    PSX/GPUState.h
-    PSX/GPUVertex.h
     Renderers/Common/GSDevice.h
     Renderers/Common/GSDirtyRect.h
     Renderers/Common/GSFastList.h
@@ -199,7 +171,6 @@ set(GSdxHeaders
     Renderers/OpenGL/GSTextureOGL.h
     Renderers/OpenGL/GSUniformBufferOGL.h
     Renderers/OpenGL/GSVertexArrayOGL.h
-    Renderers/OpenCL/GSRendererCL.h
     Window/GSCaptureDlg.h
     Window/GSDialog.h
     Window/GSSetting.h
@@ -224,7 +195,6 @@ if(Windows)
         Window/GSSettingsDlg.cpp
         Window/GSWndDX.cpp
         Window/GSWndWGL.cpp
-        PSX/GPUSettingsDlg.cpp
         )
 
     LIST(APPEND GSdxHeaders
@@ -234,20 +204,17 @@ if(Windows)
         Renderers/DX11/GSTextureCache11.h
         Window/GSWndDX.h
         Window/GSWndWGL.h
-        PSX/GPUSettingsDlg.h
         resource.h
         targetver.h
         )
 else()
     LIST(APPEND GSdxSources
         Window/GSLinuxDialog.cpp
-        Window/GSWndOGL.cpp
         Window/GSWndEGL.cpp
         )
 
     LIST(APPEND GSdxHeaders
         Window/GSWndEGL.h
-        Window/GSWndOGL.h
         )
 endif()
 
@@ -260,6 +227,8 @@ set(GSdxFinalSources
 set(GSdxFinalLibs
     ${X11_LIBRARIES}
     ${OPENGL_LIBRARIES}
+    ${EGL_LIBRARIES}
+    ${X11_XCB_LIBRARIES}
     ${GTK2_LIBRARIES}
     ${LIBC_LIBRARIES}
     ${PNG_LIBRARIES}
@@ -267,22 +236,13 @@ set(GSdxFinalLibs
     ${LIBLZMA_LIBRARIES}
 )
 
-if(EGL_API AND EGL_FOUND)
-    set(GSdxFinalLibs ${GSdxFinalLibs} ${EGL_LIBRARIES} ${X11_XCB_LIBRARIES})
-endif()
-
 if(USE_VTUNE)
     set(GSdxFinalLibs ${GSdxFinalLibs} ${VTUNE_LIBRARIES})
-endif()
-
-if(OPENCL_FOUND)
-    set(GSdxFinalLibs ${GSdxFinalLibs} ${OPENCL_LIBRARIES})
 endif()
 
 set(RESOURCE_FILES
     res/logo-ogl.bmp
     res/fxaa.fx
-    res/tfx.cl
     res/glsl/common_header.glsl
     res/glsl/convert.glsl
     res/glsl/interlace.glsl
@@ -302,11 +262,15 @@ else()
         # Don't append -SSE2 on the first build to keep same name as SIMD build
         add_pcsx2_plugin("${Output}" "${GSdxFinalSources}" "${GSdxFinalLibs}" "${GSdxFinalFlags}")
         add_pcsx2_plugin("${Output}-SSE4" "${GSdxFinalSources}" "${GSdxFinalLibs}" "${GSdxFinalFlags} -mssse3 -msse4 -msse4.1")
+        target_compile_features("${Output}-SSE4" PRIVATE cxx_std_17)
         add_pcsx2_plugin("${Output}-AVX2" "${GSdxFinalSources}" "${GSdxFinalLibs}" "${GSdxFinalFlags} -mavx -mavx2 -mbmi -mbmi2")
+        target_compile_features("${Output}-AVX2" PRIVATE cxx_std_17)
     else()
         add_pcsx2_plugin(${Output} "${GSdxFinalSources}" "${GSdxFinalLibs}" "${GSdxFinalFlags}")
     endif()
 endif()
+
+target_compile_features(${Output} PRIVATE cxx_std_17)
 
 ################################### Replay Loader
 if(BUILD_REPLAY_LOADERS)
@@ -315,4 +279,5 @@ if(BUILD_REPLAY_LOADERS)
         linux_replay.cpp
     )
     add_pcsx2_executable(${Replay} "${GSdxReplayLoaderFinalSources}" "${LIBC_LIBRARIES}" "${GSdxFinalFlags}")
+    target_compile_features(${Replay} PRIVATE cxx_std_17)
 endif(BUILD_REPLAY_LOADERS)

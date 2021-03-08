@@ -265,29 +265,14 @@ int innerGSinit()
     //    return -1;
     //else
     //    g_const->Init();
-
-#ifdef _WIN32
-
-    //s_hr = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
-
-    if (!GSDeviceProxy::LoadD3DCompiler()) {
-        return -1;
-    }
-#endif
-
+	
     return 0;
 }
 
 int innerGSshutdown()
 {
     theApp.SetCurrentRendererType(GSRendererType::Undefined);
-
-#ifdef _WIN32
 	
-    GSDeviceProxy::FreeD3DCompiler();
-
-#endif
-
 	return -1;
 }
 
@@ -298,16 +283,14 @@ int VideoRenderer::init(void *sharedhandle, void *capturehandle, void *directXDe
     std::unique_ptr<GSDeviceProxy> l_Device;
 
 	GSRendererType VideoRenderer = GSUtil::CheckDirect3D11Level() >= D3D_FEATURE_LEVEL_10_0 ? GSRendererType::DX1011_HW : GSRendererType::Null;
-
-	GSDeviceProxy::LoadD3DCompiler();
-	
+		
 	try
 	{
 		switch (VideoRenderer)
 		{
 		case GSRendererType::DX1011_HW:
-		case GSRendererType::DX1011_SW:
-		case GSRendererType::DX1011_OpenCL:
+		//case GSRendererType::DX1011_SW:
+		//case GSRendererType::DX1011_OpenCL:
             l_Device = std::make_unique<GSDeviceProxy>();
 			break;			
 		default:
@@ -317,7 +300,13 @@ int VideoRenderer::init(void *sharedhandle, void *capturehandle, void *directXDe
 		if (l_Device == NULL)
 		{
 			return -1;
-		}
+        }
+		
+        std::shared_ptr<GSWnd> l_wnd = std::make_shared<GSWndStub>();
+
+        if (!l_Device->Create(l_wnd, sharedhandle, capturehandle, directXDeviceNative)) {
+            return -1;
+        }
 
 		if (m_VideoRenderer == NULL)
 		{
@@ -327,10 +316,10 @@ int VideoRenderer::init(void *sharedhandle, void *capturehandle, void *directXDe
                     m_VideoRenderer = std::make_unique<GSRendererProxy>();
 				break;
 			case GSRendererType::OGL_HW:
-			case GSRendererType::DX1011_SW:
+			//case GSRendererType::DX1011_SW:
 			case GSRendererType::OGL_SW:
-			case GSRendererType::DX1011_OpenCL:
-			case GSRendererType::OGL_OpenCL:
+			//case GSRendererType::DX1011_OpenCL:
+			//case GSRendererType::OGL_OpenCL:
 			default:
 				break;
 			}
@@ -340,7 +329,7 @@ int VideoRenderer::init(void *sharedhandle, void *capturehandle, void *directXDe
 
 		if (m_VideoRenderer->m_wnd == NULL)
 		{
-            m_VideoRenderer->m_wnd = std::make_shared<GSWndStub>();
+            m_VideoRenderer->m_wnd = l_wnd;
 		}
 	}
 	catch (std::exception& ex)

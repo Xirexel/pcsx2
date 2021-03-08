@@ -19,6 +19,7 @@
 #include <wx/filepicker.h>
 
 
+#ifndef DISABLE_RECORDING
 enum MenuIds_New_Recording_Frame
 {
 	MenuIds_New_Recording_Frame_File = 0,
@@ -30,19 +31,20 @@ enum MenuIds_New_Recording_Frame
 class NewRecordingFrame : public wxDialog
 {
 public:
-	NewRecordingFrame(wxWindow *parent);
+	NewRecordingFrame(wxWindow* parent);
 
 	wxString GetFile() const;
 	wxString GetAuthor() const;
 	int GetFrom() const;
 
 private:
-	wxStaticText *m_fileLabel;
-	wxFilePickerCtrl *m_filePicker;
-	wxStaticText *m_authorLabel;
-	wxTextCtrl *m_authorInput;
-	wxStaticText *m_fromLabel;
-	wxChoice *m_fromChoice;
-	wxButton *m_startRecording;
-	wxButton *m_cancelRecording;
+	wxStaticText* m_fileLabel;
+	wxFilePickerCtrl* m_filePicker;
+	wxStaticText* m_authorLabel;
+	wxTextCtrl* m_authorInput;
+	wxStaticText* m_fromLabel;
+	wxChoice* m_fromChoice;
+	wxButton* m_startRecording;
+	wxButton* m_cancelRecording;
 };
+#endif

@@ -38,9 +38,9 @@ GSCapture::~GSCapture()
 {
 }
 
-bool GSCapture::BeginCapture(float fps, GSVector2i recommendedResolution, float aspect)
+std::wstring* GSCapture::BeginCapture(float fps, GSVector2i recommendedResolution, float aspect)
 {
-    return false;
+    return nullptr;
 }
 bool GSCapture::DeliverFrame(const void *bits, int pitch, bool rgba)
 {

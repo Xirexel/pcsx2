@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Renderers">
+      <UniqueIdentifier>{8ef5576a-501b-4db7-bb1a-faf3860d325d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Renderers\Common">
+      <UniqueIdentifier>{aafc1f9f-2da4-449e-82d9-0b2aad8dce2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Renderers\DX11">
+      <UniqueIdentifier>{6d7b123e-a730-41e8-a44b-f1f6776fff99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Window">
+      <UniqueIdentifier>{334dfc25-a37a-415f-81e7-f0dc1de9c32c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="framework.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SharpenShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderers\Common\GPUDevice.cpp">
+      <Filter>Source Files\Renderers\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderers\Common\GPURenderer.cpp">
+      <Filter>Source Files\Renderers\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderers\DX11\GPUDevice11.cpp">
+      <Filter>Source Files\Renderers\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderers\DX11\GPURendererDX11.cpp">
+      <Filter>Source Files\Renderers\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="draw.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fps.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GPU.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gte_accuracy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pgxp_gpu.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="prim.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="soft.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="texture.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Window\GSWnd.cpp">
+      <Filter>Source Files\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Window\GSWndDX.cpp">
+      <Filter>Source Files\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Processor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Proxy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GPU_Stub.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GPUPng.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CRC32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="VertexShader.hlsl" />
+    <FxCompile Include="PixelShader.hlsl" />
+    <FxCompile Include="PixelShaderNoneTextured.hlsl" />
+    <FxCompile Include="PixelShaderSharpen.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GPUHardware.def">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

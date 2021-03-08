@@ -9,7 +9,6 @@
 #include "wx\string.h"
 
 #include <sstream>
-#include <CDVD/CDVDisoReader.h>
 
 CDVDinner g_CDVD;
 

@@ -25,629 +25,585 @@
 #include "GSVector.h"
 #include "Renderers/Common/GSDevice.h"
 
-typedef void(STDAPICALLTYPE *UpdateCallback)();
-
 struct GSVertexShader11Proxy
 {
-    CComPtr<ID3D11VertexShader> vs;
-    CComPtr<ID3D11InputLayout> il;
+	CComPtr<ID3D11VertexShader> vs;
+	CComPtr<ID3D11InputLayout> il;
 };
 
-class GSDeviceProxy : public GSDevice
+class GSDeviceProxy final : public GSDevice
 {
-
 public:
-#pragma pack(push, 1)
+	#pragma pack(push, 1)
 
-    struct alignas(32) VSConstantBuffer
-    {
-        GSVector4 VertexScale;
-        GSVector4 VertexOffset;
-        GSVector4 Texture_Scale_Offset;
+	struct alignas(32) VSConstantBuffer
+	{
+		GSVector4 VertexScale;
+		GSVector4 VertexOffset;
+		GSVector4 Texture_Scale_Offset;
+		GSVector2i MaxDepth;
+		GSVector2i pad_vscb;
 
-        VSConstantBuffer()
-        {
-            VertexScale = GSVector4::zero();
-            VertexOffset = GSVector4::zero();
-            Texture_Scale_Offset = GSVector4::zero();
-        }
+		VSConstantBuffer()
+		{
+			VertexScale          = GSVector4::zero();
+			VertexOffset         = GSVector4::zero();
+			Texture_Scale_Offset = GSVector4::zero();
+			MaxDepth             = GSVector2i(0);
+			pad_vscb             = GSVector2i(0);
+		}
 
-        __forceinline bool Update(const VSConstantBuffer *cb)
-        {
-            GSVector4i *a = (GSVector4i *)this;
-            GSVector4i *b = (GSVector4i *)cb;
+		__forceinline bool Update(const VSConstantBuffer* cb)
+		{
+			GSVector4i* a = (GSVector4i*)this;
+			GSVector4i* b = (GSVector4i*)cb;
 
-            if (!((a[0] == b[0]) & (a[1] == b[1]) & (a[2] == b[2]) & (a[3] == b[3])).alltrue()) {
-                a[0] = b[0];
-                a[1] = b[1];
-                a[2] = b[2];
-                a[3] = b[3];
+			if(!((a[0] == b[0]) & (a[1] == b[1]) & (a[2] == b[2]) & (a[3] == b[3])).alltrue())
+			{
+				a[0] = b[0];
+				a[1] = b[1];
+				a[2] = b[2];
+				a[3] = b[3];
 
-                return true;
-            }
+				return true;
+			}
 
-            return false;
-        }
-    };
+			return false;
+		}
+	};
 
-    struct VSSelector
-    {
-        union
-        {
-            struct
-            {
-                uint32 bppz : 2;
-                uint32 tme : 1;
-                uint32 fst : 1;
+	struct VSSelector
+	{
+		union
+		{
+			struct
+			{
+				uint32 tme:1;
+				uint32 fst:1;
 
-                uint32 _free : 28;
-            };
+				uint32 _free:30;
+			};
 
-            uint32 key;
-        };
+			uint32 key;
+		};
 
-        operator uint32() const { return key; }
+		operator uint32() const {return key;}
 
-        VSSelector()
-            : key(0)
-        {
-        }
-        VSSelector(uint32 k)
-            : key(k)
-        {
-        }
-    };
+		VSSelector() : key(0) {}
+		VSSelector(uint32 k) : key(k) {}
+	};
 
-    struct alignas(32) PSConstantBuffer
-    {
-        GSVector4 FogColor_AREF;
-        GSVector4 HalfTexel;
-        GSVector4 WH;
-        GSVector4 MinMax;
-        GSVector4 MinF_TA;
-        GSVector4i MskFix;
-        GSVector4i ChannelShuffle;
-        GSVector4i FbMask;
+	struct alignas(32) PSConstantBuffer
+	{
+		GSVector4 FogColor_AREF;
+		GSVector4 HalfTexel;
+		GSVector4 WH;
+		GSVector4 MinMax;
+		GSVector4 MinF_TA;
+		GSVector4i MskFix;
+		GSVector4i ChannelShuffle;
+		GSVector4i FbMask;
 
-        GSVector4 TC_OffsetHack;
-        GSVector4 Af;
+		GSVector4 TC_OffsetHack;
+		GSVector4 Af_MaxDepth;
+		GSVector4 DitherMatrix[4];
 
-        PSConstantBuffer()
-        {
-            FogColor_AREF = GSVector4::zero();
-            HalfTexel = GSVector4::zero();
-            WH = GSVector4::zero();
-            MinMax = GSVector4::zero();
-            MinF_TA = GSVector4::zero();
-            MskFix = GSVector4i::zero();
-            ChannelShuffle = GSVector4i::zero();
-            FbMask = GSVector4i::zero();
-            Af = GSVector4::zero();
-        }
+		PSConstantBuffer()
+		{
+			FogColor_AREF = GSVector4::zero();
+			HalfTexel = GSVector4::zero();
+			WH = GSVector4::zero();
+			MinMax = GSVector4::zero();
+			MinF_TA = GSVector4::zero();
+			MskFix = GSVector4i::zero();
+			ChannelShuffle = GSVector4i::zero();
+			FbMask = GSVector4i::zero();
+			Af_MaxDepth = GSVector4::zero();
 
-        __forceinline bool Update(const PSConstantBuffer *cb)
-        {
-            GSVector4i *a = (GSVector4i *)this;
-            GSVector4i *b = (GSVector4i *)cb;
+			DitherMatrix[0] = GSVector4::zero();
+			DitherMatrix[1] = GSVector4::zero();
+			DitherMatrix[2] = GSVector4::zero();
+			DitherMatrix[3] = GSVector4::zero();
+		}
 
-            if (!((a[0] == b[0]) /*& (a[1] == b1)*/ & (a[2] == b[2]) & (a[3] == b[3]) & (a[4] == b[4]) & (a[5] == b[5]) &
-                  (a[6] == b[6]) & (a[7] == b[7]) & (a[9] == b[9]))
-                     .alltrue()) // if WH matches HalfTexel does too
-            {
-                a[0] = b[0];
-                a[1] = b[1];
-                a[2] = b[2];
-                a[3] = b[3];
-                a[4] = b[4];
-                a[5] = b[5];
-                a[6] = b[6];
-                a[7] = b[7];
-                a[9] = b[9];
+		__forceinline bool Update(const PSConstantBuffer* cb)
+		{
+			GSVector4i* a = (GSVector4i*)this;
+			GSVector4i* b = (GSVector4i*)cb;
 
-                return true;
-            }
+			if(!((a[0] == b[0]) /*& (a[1] == b1)*/ & (a[2] == b[2]) & (a[3] == b[3]) & (a[4] == b[4]) & (a[5] == b[5]) &
+				(a[6] == b[6]) & (a[7] == b[7]) & (a[9] == b[9]) & // if WH matches HalfTexel does too
+				(a[10] == b[10]) & (a[11] == b[11]) & (a[12] == b[12]) & (a[13] == b[13])).alltrue())
+			{
+				a[0] = b[0];
+				a[1] = b[1];
+				a[2] = b[2];
+				a[3] = b[3];
+				a[4] = b[4];
+				a[5] = b[5];
+				a[6] = b[6];
+				a[7] = b[7];
+				a[9] = b[9];
 
-            return false;
-        }
-    };
+				a[10] = b[10];
+				a[11] = b[11];
+				a[12] = b[12];
+				a[13] = b[13];
 
-    struct alignas(32) GSConstantBuffer
-    {
-        GSVector2 PointSize;
+				return true;
+			}
 
-        GSConstantBuffer()
-        {
-            PointSize = GSVector2(0);
-        }
+			return false;
+		}
+	};
 
-        __forceinline bool Update(const GSConstantBuffer *cb)
-        {
-            return true;
-        }
-    };
+	struct alignas(32) GSConstantBuffer
+	{
+		GSVector2 PointSize;
 
-    struct GSSelector
-    {
-        union
-        {
-            struct
-            {
-                uint32 iip : 1;
-                uint32 prim : 2;
-                uint32 point : 1;
-                uint32 line : 1;
+		GSConstantBuffer()
+		{
+			PointSize = GSVector2(0);
+		}
 
-                uint32 _free : 27;
-            };
+		__forceinline bool Update(const GSConstantBuffer* cb)
+		{
+			return true;
+		}
+	};
 
-            uint32 key;
-        };
+	struct GSSelector
+	{
+		union
+		{
+			struct
+			{
+				uint32 iip:1;
+				uint32 prim:2;
+				uint32 point:1;
+				uint32 line:1;
+				uint32 cpu_sprite:1;
 
-        operator uint32() { return key; }
+				uint32 _free:26;
+			};
 
-        GSSelector()
-            : key(0)
-        {
-        }
-        GSSelector(uint32 k)
-            : key(k)
-        {
-        }
-    };
+			uint32 key;
+		};
 
-    struct PSSelector
-    {
-        union
-        {
-            struct
-            {
-                // *** Word 1
-                // Format
-                uint32 fmt : 4;
-                uint32 dfmt : 2;
-                uint32 depth_fmt : 2;
-                // Alpha extension/Correction
-                uint32 aem : 1;
-                uint32 fba : 1;
-                // Fog
-                uint32 fog : 1;
-                // Pixel test
-                uint32 atst : 3;
-                // Color sampling
-                uint32 fst : 1;
-                uint32 tfx : 3;
-                uint32 tcc : 1;
-                uint32 wms : 2;
-                uint32 wmt : 2;
-                uint32 ltf : 1;
-                // Shuffle and fbmask effect
-                uint32 shuffle : 1;
-                uint32 read_ba : 1;
-                uint32 fbmask : 1;
+		operator uint32() {return key;}
 
-                // Blend and Colclip
-                uint32 blend_a : 2;
-                uint32 blend_b : 2;
-                uint32 blend_c : 2;
-                uint32 blend_d : 2;
-                uint32 clr1 : 1;
-                uint32 hdr : 1;
-                uint32 colclip : 1;
+		GSSelector() : key(0) {}
+		GSSelector(uint32 k) : key(k) {}
+	};
 
-                // Others ways to fetch the texture
-                uint32 channel : 3;
+	struct PSSelector
+	{
+		union
+		{
+			struct
+			{
+				// *** Word 1
+				// Format
+				uint32 fmt:4;
+				uint32 dfmt:2;
+				uint32 depth_fmt:2;
+				// Alpha extension/Correction
+				uint32 aem:1;
+				uint32 fba:1;
+				// Fog
+				uint32 fog:1;
+				// Pixel test
+				uint32 atst:3;
+				// Color sampling
+				uint32 fst:1;
+				uint32 tfx:3;
+				uint32 tcc:1;
+				uint32 wms:2;
+				uint32 wmt:2;
+				uint32 ltf:1;
+				// Shuffle and fbmask effect
+				uint32 shuffle:1;
+				uint32 read_ba:1;
+				uint32 fbmask:1;
 
-                // Hack
-                uint32 tcoffsethack : 1;
-                uint32 urban_chaos_hle : 1;
-                uint32 tales_of_abyss_hle : 1;
-                uint32 point_sampler : 1;
-                uint32 invalid_tex0 : 1; // Lupin the 3rd
+				// Blend and Colclip
+				uint32 hdr:1;
+				uint32 blend_a:2;
+				uint32 blend_b:2; // bit30/31
+				uint32 blend_c:2; // bit0
+				uint32 blend_d:2;
+				uint32 clr1:1;
 
-                uint32 _free : 18;
-            };
+				uint32 colclip:1;
 
-            uint64 key;
-        };
+				// Others ways to fetch the texture
+				uint32 channel:3;
 
-        operator uint64() { return key; }
+				// Dithering
+				uint32 dither:2;
 
-        PSSelector()
-            : key(0)
-        {
-        }
-    };
+				// Depth clamp
+				uint32 zclamp:1;
 
-    struct PSSamplerSelector
-    {
-        union
-        {
-            struct
-            {
-                uint32 tau : 1;
-                uint32 tav : 1;
-                uint32 ltf : 1;
-            };
+				// Hack
+				uint32 tcoffsethack:1;
+				uint32 urban_chaos_hle:1;
+				uint32 tales_of_abyss_hle:1;
+				uint32 point_sampler:1;
+				uint32 invalid_tex0:1; // Lupin the 3rd
 
-            uint32 key;
-        };
+				uint32 _free:15;
+			};
 
-        operator uint32() { return key & 0x7; }
+			uint64 key;
+		};
 
-        PSSamplerSelector()
-            : key(0)
-        {
-        }
-    };
+		operator uint64() {return key;}
 
-    struct OMDepthStencilSelector
-    {
-        union
-        {
-            struct
-            {
-                uint32 ztst : 2;
-                uint32 zwe : 1;
-                uint32 date : 1;
-                uint32 fba : 1;
-                uint32 date_one : 1;
-            };
+		PSSelector() : key(0) {}
+	};
 
-            uint32 key;
-        };
+	struct PSSamplerSelector
+	{
+		union
+		{
+			struct
+			{
+				uint32 tau:1;
+				uint32 tav:1;
+				uint32 ltf:1;
+			};
 
-        operator uint32() { return key & 0x3f; }
+			uint32 key;
+		};
 
-        OMDepthStencilSelector()
-            : key(0)
-        {
-        }
-    };
+		operator uint32() {return key & 0x7;}
 
-    struct OMBlendSelector
-    {
-        union
-        {
-            struct
-            {
-                uint32 abe : 1;
-                uint32 a : 2;
-                uint32 b : 2;
-                uint32 c : 2;
-                uint32 d : 2;
-                uint32 wr : 1;
-                uint32 wg : 1;
-                uint32 wb : 1;
-                uint32 wa : 1;
-                uint32 accu_blend : 1;
-            };
+		PSSamplerSelector() : key(0) {}
+	};
 
-            struct
-            {
-                uint32 _pad : 1;
-                uint32 abcd : 8;
-                uint32 wrgba : 4;
-            };
+	struct OMDepthStencilSelector
+	{
+		union
+		{
+			struct
+			{
+				uint32 ztst:2;
+				uint32 zwe:1;
+				uint32 date:1;
+				uint32 fba:1;
+				uint32 date_one:1;
+			};
 
-            uint32 key;
-        };
+			uint32 key;
+		};
 
-        operator uint32() { return key & 0x3fff; }
+		operator uint32() {return key & 0x3f;}
 
-        OMBlendSelector()
-            : key(0)
-        {
-        }
-    };
+		OMDepthStencilSelector() : key(0) {}
+	};
 
-#pragma pack(pop)
+	struct OMBlendSelector
+	{
+		union
+		{
+			struct
+			{
+				uint32 abe:1;
+				uint32 a:2;
+				uint32 b:2;
+				uint32 c:2;
+				uint32 d:2;
+				uint32 wr:1;
+				uint32 wg:1;
+				uint32 wb:1;
+				uint32 wa:1;
+				uint32 accu_blend:1;
+			};
 
-    class ShaderMacro
-    {
-        struct mcstr
-        {
-            const char *name, *def;
-            mcstr(const char *n, const char *d)
-                : name(n)
-                , def(d)
-            {
-            }
-        };
+			struct
+			{
+				uint32 _pad:1;
+				uint32 abcd:8;
+				uint32 wrgba:4;
+			};
 
-        struct mstring
-        {
-            std::string name, def;
-            mstring(const char *n, std::string d)
-                : name(n)
-                , def(d)
-            {
-            }
-        };
+			uint32 key;
+		};
 
-        std::vector<mstring> mlist;
-        std::vector<mcstr> mout;
+		operator uint32() {return key & 0x3fff;}
 
-    public:
-        ShaderMacro(std::string &smodel);
-        void AddMacro(const char *n, int d);
-        D3D_SHADER_MACRO *GetPtr(void);
-    };
+		OMBlendSelector() : key(0) {}
+	};
+
+	#pragma pack(pop)
+
+	class ShaderMacro
+	{
+		struct mcstr
+		{
+			const char* name, * def;
+			mcstr(const char* n, const char* d) : name(n), def(d) {}
+		};
+
+		struct mstring
+		{
+			std::string name, def;
+			mstring(const char* n, std::string d) : name(n), def(d) {}
+		};
+
+		std::vector<mstring> mlist;
+		std::vector<mcstr> mout;
+
+	public:
+		ShaderMacro(std::string& smodel);
+		void AddMacro(const char* n, int d);
+		D3D_SHADER_MACRO* GetPtr(void);
+	};
 
 private:
-    float m_hack_topleft_offset;
-    int m_upscale_multiplier;
-    int m_mipmap;
+	float m_hack_topleft_offset;
+	int m_upscale_multiplier;
+	int m_aniso_filter;
+	int m_mipmap;
+	int m_d3d_texsize;
 
-    GSTexture *CreateSurface(int type, int w, int h, int format);
-    GSTexture *FetchSurface(int type, int w, int h, int format);
+	GSTexture* CreateSurface(int type, int w, int h, int format);
+	GSTexture* FetchSurface(int type, int w, int h, int format);
 
-    void DoMerge(GSTexture *sTex[3], GSVector4 *sRect, GSTexture *dTex, GSVector4 *dRect, const GSRegPMODE &PMODE, const GSRegEXTBUF &EXTBUF, const GSVector4 &c) final;
-    void DoInterlace(GSTexture *sTex, GSTexture *dTex, int shader, bool linear, float yoffset = 0) final;
-    void DoFXAA(GSTexture *sTex, GSTexture *dTex) final;
-    void DoShadeBoost(GSTexture *sTex, GSTexture *dTex) final;
-    void DoExternalFX(GSTexture *sTex, GSTexture *dTex) final;
-    void InitExternalFX();
-    void InitFXAA(); // Bug workaround! Stack corruption? Heap corruption? No idea
-    void RenderOsd(GSTexture *dt);
-    void BeforeDraw();
-    void AfterDraw();
+	void DoMerge(GSTexture* sTex[3], GSVector4* sRect, GSTexture* dTex, GSVector4* dRect, const GSRegPMODE& PMODE, const GSRegEXTBUF& EXTBUF, const GSVector4& c) final;
+	void DoInterlace(GSTexture* sTex, GSTexture* dTex, int shader, bool linear, float yoffset = 0) final;
+	void DoFXAA(GSTexture* sTex, GSTexture* dTex) final;
+	void DoShadeBoost(GSTexture* sTex, GSTexture* dTex) final;
+	void DoExternalFX(GSTexture* sTex, GSTexture* dTex) final;
+	void InitExternalFX();
+	void InitFXAA(); // Bug workaround! Stack corruption? Heap corruption? No idea
+	void RenderOsd(GSTexture* dt);
+	void BeforeDraw();
+	void AfterDraw();
+	
+	uint16 ConvertBlendEnum(uint16 generic) final;
 
-    uint16 ConvertBlendEnum(uint16 generic) final;
+	CComPtr<IDXGIFactory2> m_factory;
+	CComPtr<ID3D11Device> m_dev;
+	CComPtr<ID3D11DeviceContext> m_ctx;
+	CComPtr<IDXGISwapChain1> m_swapchain;
+	CComPtr<ID3D11Buffer> m_vb;
+	CComPtr<ID3D11Buffer> m_vb_old;
+	CComPtr<ID3D11Buffer> m_ib;
+	CComPtr<ID3D11Buffer> m_ib_old;
 
-    CComPtr<ID3D11Device> m_dev;
-    CComPtr<ID3D11DeviceContext> m_ctx;
-    CComPtr<IDXGISwapChain> m_swapchain;
-    CComPtr<ID3D11Buffer> m_vb;
-    CComPtr<ID3D11Buffer> m_vb_old;
-    CComPtr<ID3D11Buffer> m_ib;
-    CComPtr<ID3D11Buffer> m_ib_old;
+	struct
+	{
+		ID3D11Buffer* vb;
+		size_t vb_stride;
+		ID3D11Buffer* ib;
+		ID3D11InputLayout* layout;
+		D3D11_PRIMITIVE_TOPOLOGY topology;
+		ID3D11VertexShader* vs;
+		ID3D11Buffer* vs_cb;
+		ID3D11GeometryShader* gs;
+		ID3D11Buffer* gs_cb;
+		std::array<ID3D11ShaderResourceView*, 16> ps_sr_views;
+		std::array<GSTexture11*, 16> ps_sr_texture;
+		ID3D11PixelShader* ps;
+		ID3D11Buffer* ps_cb;
+		ID3D11SamplerState* ps_ss[3];
+		GSVector2i viewport;
+		GSVector4i scissor;
+		ID3D11DepthStencilState* dss;
+		uint8 sref;
+		ID3D11BlendState* bs;
+		float bf;
+		ID3D11RenderTargetView* rt_view;
+		GSTexture11* rt_texture;
+		GSTexture11* rt_ds;
+		ID3D11DepthStencilView* dsv;
+		uint16_t ps_sr_bitfield;
+	} m_state;
 
-    struct
-    {
-        ID3D11Buffer *vb;
-        size_t vb_stride;
-        ID3D11Buffer *ib;
-        ID3D11InputLayout *layout;
-        D3D11_PRIMITIVE_TOPOLOGY topology;
-        ID3D11VertexShader *vs;
-        ID3D11Buffer *vs_cb;
-        ID3D11GeometryShader *gs;
-        ID3D11Buffer *gs_cb;
-        std::array<ID3D11ShaderResourceView *, 16> ps_sr_views;
-        std::array<GSTexture11 *, 16> ps_sr_texture;
-        ID3D11PixelShader *ps;
-        ID3D11Buffer *ps_cb;
-        ID3D11SamplerState *ps_ss[3];
-        GSVector2i viewport;
-        GSVector4i scissor;
-        ID3D11DepthStencilState *dss;
-        uint8 sref;
-        ID3D11BlendState *bs;
-        float bf;
-        ID3D11RenderTargetView *rt_view;
-        GSTexture11 *rt_texture;
-        GSTexture11 *rt_ds;
-        ID3D11DepthStencilView *dsv;
-        uint16_t ps_sr_bitfield;
-    } m_state;
+	CComPtr<ID3D11RasterizerState> m_rs;
 
-    CComPtr<ID3D11RasterizerState> m_rs;
+	bool FXAA_Compiled;
+	bool ExShader_Compiled;
 
-    bool FXAA_Compiled;
-    bool ExShader_Compiled;
+	struct
+	{
+		CComPtr<ID3D11InputLayout> il;
+		CComPtr<ID3D11VertexShader> vs;
+		CComPtr<ID3D11PixelShader> ps[ShaderConvert_Count];
+		CComPtr<ID3D11SamplerState> ln;
+		CComPtr<ID3D11SamplerState> pt;
+		CComPtr<ID3D11DepthStencilState> dss;
+		CComPtr<ID3D11DepthStencilState> dss_write;
+		CComPtr<ID3D11BlendState> bs;
+	} m_convert;
 
-    struct
-    {
-        CComPtr<ID3D11InputLayout> il;
-        CComPtr<ID3D11VertexShader> vs;
-        CComPtr<ID3D11PixelShader> ps[ShaderConvert_Count];
-        CComPtr<ID3D11SamplerState> ln;
-        CComPtr<ID3D11SamplerState> pt;
-        CComPtr<ID3D11DepthStencilState> dss;
-        CComPtr<ID3D11DepthStencilState> dss_write;
-        CComPtr<ID3D11BlendState> bs;
-    } m_convert;
+	struct
+	{
+		CComPtr<ID3D11PixelShader> ps[2];
+		CComPtr<ID3D11Buffer> cb;
+		CComPtr<ID3D11BlendState> bs;
+	} m_merge;
 
-    struct
-    {
-        CComPtr<ID3D11PixelShader> ps[2];
-        CComPtr<ID3D11Buffer> cb;
-        CComPtr<ID3D11BlendState> bs;
-    } m_merge;
+	struct
+	{
+		CComPtr<ID3D11PixelShader> ps[4];
+		CComPtr<ID3D11Buffer> cb;
+	} m_interlace;
 
-    struct
-    {
-        CComPtr<ID3D11PixelShader> ps[4];
-        CComPtr<ID3D11Buffer> cb;
-    } m_interlace;
+	struct
+	{
+		CComPtr<ID3D11PixelShader> ps;
+		CComPtr<ID3D11Buffer> cb;
+	} m_shaderfx;
 
-    struct
-    {
-        CComPtr<ID3D11PixelShader> ps;
-        CComPtr<ID3D11Buffer> cb;
-    } m_shaderfx;
+	struct 
+	{
+		CComPtr<ID3D11PixelShader> ps;
+		CComPtr<ID3D11Buffer> cb;
+	} m_fxaa;
 
-    struct
-    {
-        CComPtr<ID3D11PixelShader> ps;
-        CComPtr<ID3D11Buffer> cb;
-    } m_fxaa;
+	struct 
+	{
+		CComPtr<ID3D11PixelShader> ps;
+		CComPtr<ID3D11Buffer> cb;
+	} m_shadeboost;
 
-    struct
-    {
-        CComPtr<ID3D11PixelShader> ps;
-        CComPtr<ID3D11Buffer> cb;
-    } m_shadeboost;
+	struct
+	{
+		CComPtr<ID3D11DepthStencilState> dss;
+		CComPtr<ID3D11BlendState> bs;
+	} m_date;
 
-    struct
-    {
-        CComPtr<ID3D11DepthStencilState> dss;
-        CComPtr<ID3D11BlendState> bs;
-    } m_date;
+	// Shaders...
 
-    // Shaders...
+	std::unordered_map<uint32, GSVertexShader11Proxy> m_vs;
+	CComPtr<ID3D11Buffer> m_vs_cb;
+	std::unordered_map<uint32, CComPtr<ID3D11GeometryShader>> m_gs;
+	CComPtr<ID3D11Buffer> m_gs_cb;
+	std::unordered_map<uint64, CComPtr<ID3D11PixelShader>> m_ps;
+	CComPtr<ID3D11Buffer> m_ps_cb;
+	std::unordered_map<uint32, CComPtr<ID3D11SamplerState>> m_ps_ss;
+	CComPtr<ID3D11SamplerState> m_palette_ss;
+	std::unordered_map<uint32, CComPtr<ID3D11DepthStencilState>> m_om_dss;
+	std::unordered_map<uint32, CComPtr<ID3D11BlendState>> m_om_bs;
 
-    std::unordered_map<uint32, GSVertexShader11Proxy> m_vs;
-    CComPtr<ID3D11Buffer> m_vs_cb;
-    std::unordered_map<uint32, CComPtr<ID3D11GeometryShader>> m_gs;
-    CComPtr<ID3D11Buffer> m_gs_cb;
-    std::unordered_map<uint64, CComPtr<ID3D11PixelShader>> m_ps;
-    CComPtr<ID3D11Buffer> m_ps_cb;
-    std::unordered_map<uint32, CComPtr<ID3D11SamplerState>> m_ps_ss;
-    CComPtr<ID3D11SamplerState> m_palette_ss;
-    CComPtr<ID3D11SamplerState> m_rt_ss;
-    std::unordered_map<uint32, CComPtr<ID3D11DepthStencilState>> m_om_dss;
-    std::unordered_map<uint32, CComPtr<ID3D11BlendState>> m_om_bs;
+	VSConstantBuffer m_vs_cb_cache;
+	GSConstantBuffer m_gs_cb_cache;
+	PSConstantBuffer m_ps_cb_cache;
 
-    VSConstantBuffer m_vs_cb_cache;
-    GSConstantBuffer m_gs_cb_cache;
-    PSConstantBuffer m_ps_cb_cache;
-
-    std::unique_ptr<GSTexture> m_font;
+	std::unique_ptr<GSTexture> m_font;
 
 protected:
-    struct
-    {
-        D3D_FEATURE_LEVEL level;
-        std::string model, vs, gs, ps, cs;
-    } m_shader;
-
-    static HMODULE s_d3d_compiler_dll;
-    static decltype(&D3DCompile) s_pD3DCompile;
-    // Older version doesn't support D3D_COMPILE_STANDARD_FILE_INCLUDE, which
-    // could be useful for external shaders.
-    static bool s_old_d3d_compiler_dll;
-
+	struct {D3D_FEATURE_LEVEL level; std::string model, vs, gs, ps, cs;} m_shader;
 public:
-    GSDeviceProxy();
-    virtual ~GSDeviceProxy() {}
+	GSDeviceProxy();
+	virtual ~GSDeviceProxy() {}
 
-    bool SetFeatureLevel(D3D_FEATURE_LEVEL level, bool compat_mode);
-    void GetFeatureLevel(D3D_FEATURE_LEVEL &level) const { level = m_shader.level; }
+	bool SetFeatureLevel(D3D_FEATURE_LEVEL level, bool compat_mode);
+	void GetFeatureLevel(D3D_FEATURE_LEVEL& level) const { level = m_shader.level; }
 
-    static bool LoadD3DCompiler();
-    static void FreeD3DCompiler();
+	bool Create(const std::shared_ptr<GSWnd> &wnd);
+	bool Reset(int w, int h);
+	void Flip();
+	void SetVSync(int vsync) final;
 
-    bool Create(const std::shared_ptr<GSWnd> &wnd);
-    bool Reset(int w, int h);
-    void Flip();
-    void SetVSync(int vsync) final;
+	void DrawPrimitive() final;
+	void DrawIndexedPrimitive();
+	void DrawIndexedPrimitive(int offset, int count) final;
 
-    void SetExclusive(bool isExcl);
+	void ClearRenderTarget(GSTexture* t, const GSVector4& c) final;
+	void ClearRenderTarget(GSTexture* t, uint32 c) final;
+	void ClearDepth(GSTexture* t) final;
+	void ClearStencil(GSTexture* t, uint8 c) final;
 
-    void DrawPrimitive() final;
-    void DrawIndexedPrimitive();
-    void DrawIndexedPrimitive(int offset, int count) final;
-    void Dispatch(uint32 x, uint32 y, uint32 z);
+	GSTexture* CopyOffscreen(GSTexture* src, const GSVector4& sRect, int w, int h, int format = 0, int ps_shader = 0) final;
 
-    void ClearRenderTarget(GSTexture *t, const GSVector4 &c) final;
-    void ClearRenderTarget(GSTexture *t, uint32 c) final;
-    void ClearDepth(GSTexture *t) final;
-    void ClearStencil(GSTexture *t, uint8 c) final;
+	void CloneTexture(GSTexture* src, GSTexture** dest);
 
-    GSTexture *CopyOffscreen(GSTexture *src, const GSVector4 &sRect, int w, int h, int format = 0, int ps_shader = 0) final;
+	void CopyRect(GSTexture* sTex, GSTexture* dTex, const GSVector4i& r);
 
-    void CloneTexture(GSTexture *src, GSTexture **dest);
+	void StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, int shader = 0, bool linear = true) final;
+	void StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, ID3D11PixelShader* ps, ID3D11Buffer* ps_cb, bool linear = true);
+	void StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, bool red, bool green, bool blue, bool alpha);
+	void StretchRect(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect, ID3D11PixelShader* ps, ID3D11Buffer* ps_cb, ID3D11BlendState* bs, bool linear = true);
 
-    void CopyRect(GSTexture *sTex, GSTexture *dTex, const GSVector4i &r);
+	void SetupDATE(GSTexture* rt, GSTexture* ds, const GSVertexPT1* vertices, bool datm);
 
-    void StretchRect(GSTexture *sTex, const GSVector4 &sRect, GSTexture *dTex, const GSVector4 &dRect, int shader = 0, bool linear = true) final;
-    void StretchRect(GSTexture *sTex, const GSVector4 &sRect, GSTexture *dTex, const GSVector4 &dRect, ID3D11PixelShader *ps, ID3D11Buffer *ps_cb, bool linear = true);
-    void StretchRect(GSTexture *sTex, const GSVector4 &sRect, GSTexture *dTex, const GSVector4 &dRect, bool red, bool green, bool blue, bool alpha);
-    void StretchRect(GSTexture *sTex, const GSVector4 &sRect, GSTexture *dTex, const GSVector4 &dRect, ID3D11PixelShader *ps, ID3D11Buffer *ps_cb, ID3D11BlendState *bs, bool linear = true);
+	void IASetVertexBuffer(const void* vertex, size_t stride, size_t count);
+	bool IAMapVertexBuffer(void** vertex, size_t stride, size_t count);
+	void IAUnmapVertexBuffer();
+	void IASetVertexBuffer(ID3D11Buffer* vb, size_t stride);
+	void IASetIndexBuffer(const void* index, size_t count);
+	void IASetIndexBuffer(ID3D11Buffer* ib);
+	void IASetInputLayout(ID3D11InputLayout* layout);
+	void IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY topology);
 
-    void SetupDATE(GSTexture *rt, GSTexture *ds, const GSVertexPT1 *vertices, bool datm);
+	void VSSetShader(ID3D11VertexShader* vs, ID3D11Buffer* vs_cb);
+	void GSSetShader(ID3D11GeometryShader* gs, ID3D11Buffer* gs_cb = NULL);
 
-    void IASetVertexBuffer(const void *vertex, size_t stride, size_t count);
-    bool IAMapVertexBuffer(void **vertex, size_t stride, size_t count);
-    void IAUnmapVertexBuffer();
-    void IASetVertexBuffer(ID3D11Buffer *vb, size_t stride);
-    void IASetIndexBuffer(const void *index, size_t count);
-    void IASetIndexBuffer(ID3D11Buffer *ib);
-    void IASetInputLayout(ID3D11InputLayout *layout);
-    void IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY topology);
+	void PSSetShaderResources(GSTexture* sr0, GSTexture* sr1) final;
+	void PSSetShaderResource(int i, GSTexture* sr) final;
+	void PSSetShaderResourceView(int i, ID3D11ShaderResourceView* srv, GSTexture* sr);
+	void PSSetShader(ID3D11PixelShader* ps, ID3D11Buffer* ps_cb);
+	void PSUpdateShaderState();
+	void PSSetSamplerState(ID3D11SamplerState* ss0, ID3D11SamplerState* ss1);
 
-    void VSSetShader(ID3D11VertexShader *vs, ID3D11Buffer *vs_cb);
-    void GSSetShader(ID3D11GeometryShader *gs, ID3D11Buffer *gs_cb = NULL);
+	void OMSetDepthStencilState(ID3D11DepthStencilState* dss, uint8 sref);
+	void OMSetBlendState(ID3D11BlendState* bs, float bf);
+	void OMSetRenderTargets(GSTexture* rt, GSTexture* ds, const GSVector4i* scissor = NULL) final;
 
-    void PSSetShaderResources(GSTexture *sr0, GSTexture *sr1) final;
-    void PSSetShaderResource(int i, GSTexture *sr) final;
-    void PSSetShaderResourceView(int i, ID3D11ShaderResourceView *srv, GSTexture *sr);
-    void PSSetShader(ID3D11PixelShader *ps, ID3D11Buffer *ps_cb);
-    void PSUpdateShaderState();
-    void PSSetSamplerState(ID3D11SamplerState *ss0, ID3D11SamplerState *ss1);
+	bool CreateTextureFX();
+	void SetupVS(VSSelector sel, const VSConstantBuffer* cb);
+	void SetupGS(GSSelector sel, const GSConstantBuffer* cb);
+	void SetupPS(PSSelector sel, const PSConstantBuffer* cb, PSSamplerSelector ssel);
+	void SetupOM(OMDepthStencilSelector dssel, OMBlendSelector bsel, uint8 afix);
 
-    void OMSetDepthStencilState(ID3D11DepthStencilState *dss, uint8 sref);
-    void OMSetBlendState(ID3D11BlendState *bs, float bf);
-    void OMSetRenderTargets(GSTexture *rt, GSTexture *ds, const GSVector4i *scissor = NULL) final;
+	ID3D11Device* operator->() {return m_dev;}
+	operator ID3D11Device*() {return m_dev;}
+	operator ID3D11DeviceContext*() {return m_ctx;}
 
-    bool CreateTextureFX();
-    void SetupVS(VSSelector sel, const VSConstantBuffer *cb);
-    void SetupGS(GSSelector sel, const GSConstantBuffer *cb);
-    void SetupPS(PSSelector sel, const PSConstantBuffer *cb, PSSamplerSelector ssel);
-    void SetupOM(OMDepthStencilSelector dssel, OMBlendSelector bsel, uint8 afix);
+	void CreateShader(std::vector<char> source, const char* fn, ID3DInclude *include, const char* entry, D3D_SHADER_MACRO* macro, ID3D11VertexShader** vs, D3D11_INPUT_ELEMENT_DESC* layout, int count, ID3D11InputLayout** il);
+	void CreateShader(std::vector<char> source, const char* fn, ID3DInclude *include, const char* entry, D3D_SHADER_MACRO* macro, ID3D11GeometryShader** gs);
+	void CreateShader(std::vector<char> source, const char* fn, ID3DInclude *include, const char* entry, D3D_SHADER_MACRO* macro, ID3D11PixelShader** ps);
 
-    ID3D11Device *operator->() { return m_dev; }
-    operator ID3D11Device *() { return m_dev; }
-    operator ID3D11DeviceContext *() { return m_ctx; }
+	void CompileShader(std::vector<char> source, const char* fn, ID3DInclude *include, const char* entry, D3D_SHADER_MACRO* macro, ID3DBlob** shader, std::string shader_model);
 
-    void CreateShader(std::vector<char> source, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11VertexShader **vs, D3D11_INPUT_ELEMENT_DESC *layout, int count, ID3D11InputLayout **il);
-    void CreateShader(std::vector<char> source, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11GeometryShader **gs);
-    void CreateShader(std::vector<char> source, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11PixelShader **ps);
 
-    void CompileShader(std::vector<char> source, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3DBlob **shader, std::string shader_model);
 
-    template <class T>
-    void PrepareShaderMacro(std::vector<T> &dst, const T *src)
-    {
-        dst.clear();
 
-        while (src && src->Definition && src->Name) {
-            dst.push_back(*src++);
-        }
 
-        T m;
 
-        m.Name = "SHADER_MODEL";
-        m.Definition = m_shader.model.c_str();
 
-        dst.push_back(m);
-
-        m.Name = NULL;
-        m.Definition = NULL;
-
-        dst.push_back(m);
-    }
-
-	
-
-    bool Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, void *capturehandle, void *directXDeviceNative);
+	bool Create(const std::shared_ptr<GSWnd> &wnd, void *sharedhandle, void *capturehandle, void *directXDeviceNative);
 
 	void setIsWired(BOOL a_value);
 
-    void setIsTessellated(BOOL a_value);
-
-	
-    BOOL m_is_wired;
-
-    BOOL m_is_tessellated;
-
-    CComPtr<ID3D11Texture2D> m_SharedTexture;
-
-    CComPtr<ID3D11Texture2D> m_RenderTargetTexture;
-
-    CComPtr<ID3D11Texture2D> m_CaptureTexture;
-
-    CComPtr<ID3D11HullShader> m_hs;
-
-    CComPtr<ID3D11DomainShader> m_ds;
-
-    CComPtr<ID3D11RasterizerState> m_solid_rs;
-
-    CComPtr<ID3D11RasterizerState> m_wired_rs;
+	void setIsTessellated(BOOL a_value);
 
 
-    void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11HullShader **hs);
+	BOOL m_is_wired;
 
-    void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11DomainShader **ds);
+	BOOL m_is_tessellated;
+
+	CComPtr<ID3D11Texture2D> m_SharedTexture;
+
+	CComPtr<ID3D11Texture2D> m_RenderTargetTexture;
+
+	CComPtr<ID3D11Texture2D> m_CaptureTexture;
+
+	CComPtr<ID3D11HullShader> m_hs;
+
+	CComPtr<ID3D11DomainShader> m_ds;
+
+	CComPtr<ID3D11RasterizerState> m_solid_rs;
+
+	CComPtr<ID3D11RasterizerState> m_wired_rs;
+
+
+	void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11HullShader **hs);
+
+	void CompileShader(const char *source, size_t size, const char *fn, ID3DInclude *include, const char *entry, D3D_SHADER_MACRO *macro, ID3D11DomainShader **ds);
 };
+

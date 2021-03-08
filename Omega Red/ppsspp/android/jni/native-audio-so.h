@@ -35,11 +35,15 @@ private:
 	SLObjectItf bqPlayerObject = nullptr;
 	SLPlayItf bqPlayerPlay = nullptr;
 	SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue = nullptr;
-	SLMuteSoloItf bqPlayerMuteSolo = nullptr;
 	SLVolumeItf bqPlayerVolume = nullptr;
 
+	// Should be no reason to need more than two buffers, but make it clear in the code.
+	enum {
+		NUM_BUFFERS = 2,
+	};
+
 	// Double buffering.
-	short *buffer[2]{};
+	short *buffer[NUM_BUFFERS]{};
 	int curBuffer = 0;
 
 	static void bqPlayerCallbackWrap(SLAndroidSimpleBufferQueueItf bq, void *context);

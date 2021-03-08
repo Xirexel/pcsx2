@@ -69,7 +69,8 @@ namespace PboPool {
 
 	char* Map(uint32 size) {
 		char* map;
-		m_size = size;
+		// Note: keep offset aligned for SSE/AVX
+		m_size = (size + 63) & ~0x3F;
 
 		if (m_size > m_pbo_size) {
 			fprintf(stderr, "BUG: PBO too small %u but need %u\n", m_pbo_size, m_size);
@@ -120,6 +121,11 @@ namespace PboPool {
 			// Align current transfer on the start of the segment
 			m_offset = m_seg_size * segment_next;
 
+			if (m_size > m_seg_size) {
+				fprintf(stderr, "BUG: PBO Map size %u is bigger than a single segment %u. Crossing more than one fence is not supported yet, texture data may be corrupted.\n", m_size, m_seg_size);
+				// TODO Synchronize all crossed fences
+			}
+
 			// protect the left segment
 			m_fence[segment_current] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
@@ -142,8 +148,7 @@ namespace PboPool {
 	}
 
 	void EndTransfer() {
-		// Note: keep offset aligned for SSE/AVX
-		m_offset += (m_size + 63) & ~0x3F;
+		m_offset += m_size;
 	}
 }
 

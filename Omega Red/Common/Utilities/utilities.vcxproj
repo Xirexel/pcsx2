@@ -28,6 +28,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6265C852-BCE0-4CDB-A21F-5D7A69C72F96}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
@@ -60,7 +61,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <ExceptionHandling>Async</ExceptionHandling>
+      <ExceptionHandling>false</ExceptionHandling>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MultiThreadedDebug</RuntimeLibrary>
@@ -95,12 +96,12 @@
     <ClCompile Include="..\..\..\common\src\Utilities\Linux\LnxThreads.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\..\common\src\Utilities\Windows\WinHostSys.cpp" />
     <ClCompile Include="..\..\..\common\src\Utilities\Windows\WinMisc.cpp" />
     <ClCompile Include="..\..\..\common\src\Utilities\Windows\WinThreads.cpp" />
     <ClCompile Include="..\..\..\common\src\Utilities\RwMutex.cpp" />
     <ClCompile Include="..\..\..\common\src\Utilities\Semaphore.cpp" />
     <ClCompile Include="..\..\..\common\src\Utilities\ThreadTools.cpp" />
+    <ClCompile Include="Extend\WinHostSys.cpp" />
     <ClCompile Include="Mutex.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -36,6 +36,4 @@ void NotifyUpload(u32 dest, u32 sz);
 void NotifyDisplay(u32 addr, int stride, int fmt);
 void NotifyFrame();
 
-bool RunMountedReplay(const std::string &filename);
-
 };

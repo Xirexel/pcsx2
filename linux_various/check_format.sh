@@ -48,19 +48,14 @@ files=`git diff --name-only --diff-filter=ACMRT $diff_range  -- $PWD | \
     grep -v "${1}pcsx2/" | \
     grep -v "${1}plugins/dev9ghzdrk/" | \
     grep -v "${1}plugins/GSdx/" | \
-    grep -v "${1}plugins/GSdx_legacy/" | \
     grep -v "${1}plugins/USBqemu/" | \
-    grep -v "${1}plugins/zerogs/" | \
-    grep -v "${1}plugins/zerospu2/" | \
-    grep -v "${1}plugins/zzogl-pg/" | \
     \
     grep -v "/resource.h" | \
     grep -v "3rdparty/" | \
     grep -v "bin/" | \
     grep -v "cmake/" | \
     grep -v "tools/" | \
-    grep -v "tests/" | \
-    grep -v "unfree/"
+    grep -v "tests/"
 `
 
 # Check remaining files are clang-format compliant

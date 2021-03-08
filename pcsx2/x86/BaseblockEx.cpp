@@ -15,15 +15,17 @@
 
 
 #include "PrecompiledHeader.h"
+#include "x86emitter/x86emitter.h"
 #include "BaseblockEx.h"
 
 BASEBLOCKEX* BaseBlocks::New(u32 startpc, uptr fnptr)
 {
 	std::pair<linkiter_t, linkiter_t> range = links.equal_range(startpc);
 	for (linkiter_t i = range.first; i != range.second; ++i)
-		*(u32*)i->second = fnptr - (i->second + 4);
+		i->second->SetTarget(fnptr);
+		//*(u32*)i->second = fnptr - (i->second + 4);
 	
-	return blocks.insert(startpc, fnptr);;
+	return blocks.insert(startpc, fnptr);
 }
 
 int BaseBlocks::LastIndex(u32 startpc) const
@@ -70,13 +72,13 @@ BASEBLOCKEX* BaseBlocks::GetByX86(uptr ip)
 }
 #endif
 
-void BaseBlocks::Link(u32 pc, s32* jumpptr)
+void BaseBlocks::Link(u32 pc, std::shared_ptr<x86Emitter::xForwardJumpBase> jumpBase)
 {
 	BASEBLOCKEX *targetblock = Get(pc);
 	if (targetblock && targetblock->startpc == pc)
-		*jumpptr = (s32)(targetblock->fnptr - (sptr)(jumpptr + 1));
+		jumpBase->SetTarget(targetblock->fnptr);
 	else
-		*jumpptr = (s32)(recompiler - (sptr)(jumpptr + 1));
-	links.insert(std::pair<u32, uptr>(pc, (uptr)jumpptr));
+		jumpBase->SetTarget(recompiler);
+	links.insert(std::pair<u32, std::shared_ptr<x86Emitter::xForwardJumpBase>>(pc, jumpBase));
 }
 

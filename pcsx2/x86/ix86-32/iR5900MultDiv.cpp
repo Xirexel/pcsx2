@@ -341,13 +341,13 @@ void recDIVsuper(int info, int sign, int upper, int process)
 	else
 		xMOV(eax, ptr[&cpuRegs.GPR.r[ _Rs_ ].UL[ 0 ] ]);
 
-	u8 *end1;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> end1;
 	if (sign)  //test for overflow (x86 will just throw an exception)
 	{
 		xCMP(eax, 0x80000000 );
-		u8 *cont1 = JNE8(0);
+		auto cont1 = JNE8(0);
 		xCMP(ecx, 0xffffffff );
-		u8 *cont2 = JNE8(0);
+		auto cont2 = JNE8(0);
 		//overflow case:
 		xXOR(edx, edx); //EAX remains 0x80000000
 		end1 = JMP8(0);
@@ -357,7 +357,7 @@ void recDIVsuper(int info, int sign, int upper, int process)
 	}
 
 	xCMP(ecx, 0 );
-	u8 *cont3 = JNE8(0);
+	auto cont3 = JNE8(0);
 	//divide by zero
 	xMOV(edx, eax);
 	if (sign) //set EAX to (EAX < 0)?1:-1
@@ -368,7 +368,7 @@ void recDIVsuper(int info, int sign, int upper, int process)
 	}
 	else
 		xMOV(eax, 0xffffffff );
-	u8 *end2 = JMP8(0);
+	auto end2 = JMP8(0);
 
 	x86SetJ8(cont3);
 	if( sign ) {

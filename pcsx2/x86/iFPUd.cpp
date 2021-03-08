@@ -22,10 +22,6 @@
 #include "iR5900.h"
 #include "iFPU.h"
 
-#ifndef DISABLE_SVU
-#include "sVU_Micro.h"
-#endif
-
 /* This is a version of the FPU that emulates an exponent of 0xff and overflow/underflow flags */
 
 /* Can be made faster by not converting stuff back and forth between instructions. */
@@ -148,12 +144,12 @@ static const __aligned(32) FPUd_Globals s_const =
 void ToDouble(int reg)
 {
 	xUCOMI.SS(xRegisterSSE(reg), ptr[s_const.pos_inf]); // Sets ZF if reg is equal or incomparable to pos_inf
-	u8 *to_complex = JE8(0); // Complex conversion if positive infinity or NaN
+	auto to_complex = JE8(0); // Complex conversion if positive infinity or NaN
 	xUCOMI.SS(xRegisterSSE(reg), ptr[s_const.neg_inf]);
-	u8 *to_complex2 = JE8(0); // Complex conversion if negative infinity
+	auto to_complex2 = JE8(0); // Complex conversion if negative infinity
 
 	xCVTSS2SD(xRegisterSSE(reg), xRegisterSSE(reg)); // Simply convert
-	u8 *end = JMP8(0);
+	auto end = JMP8(0);
 
 	x86SetJ8(to_complex);
 	x86SetJ8(to_complex2);
@@ -196,22 +192,30 @@ void ToPS2FPU_Full(int reg, bool flags, int absreg, bool acc, bool addsub)
 	xAND.PD(xRegisterSSE(absreg), ptr[&s_const.dbl_s_pos]);
 
 	xUCOMI.SD(xRegisterSSE(absreg), ptr[&s_const.dbl_cvt_overflow]);
-	u8 *to_complex = JAE8(0);
+	auto to_complex = JAE8(0);
 
 	xUCOMI.SD(xRegisterSSE(absreg), ptr[&s_const.dbl_underflow]);
-	u8 *to_underflow = JB8(0);
+	auto to_underflow = JB8(0);
 
 	xCVTSD2SS(xRegisterSSE(reg), xRegisterSSE(reg)); //simply convert
-	u8 *end = JMP8(0);
+#ifdef __M_X86_64
+	auto  end = JMP32(0);
+#else
+	auto end = JMP8(0);
+#endif
 
 	x86SetJ8(to_complex);
 	xUCOMI.SD(xRegisterSSE(absreg), ptr[&s_const.dbl_ps2_overflow]);
-	u8 *to_overflow = JAE8(0);
+	auto to_overflow = JAE8(0);
 
 	xPSUB.Q(xRegisterSSE(reg), ptr[&s_const.dbl_one_exp]); //lower exponent
 	xCVTSD2SS(xRegisterSSE(reg), xRegisterSSE(reg)); //convert
 	xPADD.D(xRegisterSSE(reg), ptr[s_const.one_exp]); //raise exponent
-	u8 *end2 = JMP8(0);
+#ifdef __M_X86_64
+	auto end2 = JMP32(0);
+#else
+	auto end2 = JMP8(0);
+#endif
 
 	x86SetJ8(to_overflow);
 	xCVTSD2SS(xRegisterSSE(reg), xRegisterSSE(reg));
@@ -220,15 +224,15 @@ void ToPS2FPU_Full(int reg, bool flags, int absreg, bool acc, bool addsub)
 		xOR(ptr32[&fpuRegs.fprc[31]], (FPUflagO | FPUflagSO));
 	if (flags && FPU_FLAGS_OVERFLOW && acc)
 		xOR(ptr32[&fpuRegs.ACCflag], 1);
-	u8 *end3 = JMP8(0);
+	auto end3 = JMP8(0);
 
 	x86SetJ8(to_underflow);
-	u8 *end4 = nullptr;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> end4 = nullptr;
 	if (flags && FPU_FLAGS_UNDERFLOW) //set underflow flags if not zero
 	{
 		xXOR.PD(xRegisterSSE(absreg), xRegisterSSE(absreg));
 		xUCOMI.SD(xRegisterSSE(reg), xRegisterSSE(absreg));
-		u8 *is_zero = JE8(0);
+		auto is_zero = JE8(0);
 
 		xOR(ptr32[&fpuRegs.fprc[31]], (FPUflagU | FPUflagSU));
 		if (addsub)
@@ -250,8 +254,13 @@ void ToPS2FPU_Full(int reg, bool flags, int absreg, bool acc, bool addsub)
 	xCVTSD2SS(xRegisterSSE(reg), xRegisterSSE(reg));
 	xAND.PS(xRegisterSSE(reg), ptr[s_const.neg]); //flush to zero
 
+#ifdef __M_X86_64
+	x86SetJ32(end);
+	x86SetJ32(end2);
+#else
 	x86SetJ8(end);
 	x86SetJ8(end2);
+#endif
 	x86SetJ8(end3);
 	if (flags && FPU_FLAGS_UNDERFLOW && addsub)
 		x86SetJ8(end4);
@@ -396,14 +405,14 @@ void FPU_ADD_SUB(int tempd, int tempt) //tempd and tempt are overwritten, they a
 
 void FPU_MUL(int info, int regd, int sreg, int treg, bool acc)
 {
-	u8 *noHack;
-	u32 *endMul = nullptr;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> noHack;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> endMul = nullptr;
 
 	if (CHECK_FPUMULHACK)
 	{
-		xMOVD(ecx, xRegisterSSE(sreg));
-		xMOVD(edx, xRegisterSSE(treg));
-		xFastCall((void*)(uptr)&FPU_MUL_HACK, ecx, edx); //returns the hacked result or 0
+		xMOVD(arg1regd, xRegisterSSE(sreg));
+		xMOVD(arg2regd, xRegisterSSE(treg));
+		xFastCall((void*)(uptr)&FPU_MUL_HACK, arg1regd, arg2regd); //returns the hacked result or 0
 		xTEST(eax, eax);
 		noHack = JZ8(0);
 			xMOVDZX(xRegisterSSE(regd), eax);
@@ -580,8 +589,8 @@ void recCVT_W() //called from iFPU.cpp's recCVT_W
 //------------------------------------------------------------------
 void recDIVhelper1(int regd, int regt) // Sets flags
 {
-	u8 *pjmp1, *pjmp2;
-	u32 *ajmp32, *bjmp32;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> pjmp1, pjmp2;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> ajmp32, bjmp32;
 	int t1reg = _allocTempXMMreg(XMMT_FPS, -1);
 	int tempReg = _allocX86reg(xEmptyReg, X86TYPE_TEMP, 0, 0);
 
@@ -714,13 +723,13 @@ void recMaddsub(int info, int regd, int op, bool acc)
 	//          TEST FOR ACC/MUL OVERFLOWS, PROPOGATE THEM IF THEY OCCUR
 
 	xTEST(ptr32[&fpuRegs.fprc[31]], FPUflagO);
-	u8 *mulovf = JNZ8(0);
+	auto mulovf = JNZ8(0);
 	ToDouble(sreg); //else, convert
 
 	xTEST(ptr32[&fpuRegs.ACCflag], 1);
-	u8 *accovf = JNZ8(0);
+	auto accovf = JNZ8(0);
 	ToDouble(treg); //else, convert
-	u8 *operation = JMP8(0);
+	auto operation = JMP8(0);
 
 	x86SetJ8(mulovf);
 	if (op == 1) //sub
@@ -734,7 +743,7 @@ void recMaddsub(int info, int regd, int op, bool acc)
 		xOR(ptr32[&fpuRegs.fprc[31]], FPUflagO | FPUflagSO);
 	if (FPU_FLAGS_OVERFLOW && acc)
 		xOR(ptr32[&fpuRegs.ACCflag], 1);
-	u32 *skipall = JMP32(0);
+	auto skipall = JMP32(0);
 
 	//			PERFORM THE ACCUMULATION AND TEST RESULT. CONVERT TO SINGLE
 
@@ -930,7 +939,7 @@ FPURECOMPILE_CONSTCODE(SUBA_S, XMMINFO_WRITEACC|XMMINFO_READS|XMMINFO_READT);
 void recSQRT_S_xmm(int info)
 {
 	EE::Profiler.EmitOp(eeOpcode::SQRT_F);
-	u8 *pjmp;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> pjmp;
 	int roundmodeFlag = 0;
 	int tempReg = _allocX86reg(xEmptyReg, X86TYPE_TEMP, 0, 0);
 	int t1reg = _allocTempXMMreg(XMMT_FPS, -1);
@@ -988,9 +997,9 @@ FPURECOMPILE_CONSTCODE(SQRT_S, XMMINFO_WRITED|XMMINFO_READT);
 //------------------------------------------------------------------
 void recRSQRThelper1(int regd, int regt) // Preforms the RSQRT function when regd <- Fs and regt <- Ft (Sets correct flags)
 {
-	u8 *pjmp1, *pjmp2;
-	u8 *qjmp1, *qjmp2;
-	u32 *pjmp32;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> pjmp1, pjmp2;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> qjmp1, qjmp2;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> pjmp32;
 	int t1reg = _allocTempXMMreg(XMMT_FPS, -1);
 	int tempReg = _allocX86reg(xEmptyReg, X86TYPE_TEMP, 0, 0);
 

@@ -35,8 +35,8 @@ class DrawBuffer;
 
 struct UITransform {
 	// TODO: Or just use a matrix?
-	Vec3 translate;
-	Vec3 scale;
+	Lin::Vec3 translate;
+	Lin::Vec3 scale;
 	float alpha;
 };
 
@@ -85,6 +85,7 @@ public:
 	// in dps, like dp_xres and dp_yres
 	void SetBounds(const Bounds &b) { bounds_ = b; }
 	const Bounds &GetBounds() const { return bounds_; }
+	Bounds GetLayoutBounds() const;
 	Draw::DrawContext *GetDrawContext() { return draw_; }
 	void SetCurZ(float curZ);
 

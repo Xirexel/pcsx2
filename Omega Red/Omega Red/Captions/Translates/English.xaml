@@ -2,19 +2,20 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <sys:String x:Key="MainName">Omega Red PS2/PSP emulator</sys:String>
+    <sys:String x:Key="MainName">Omega Red PS1/PS2/PSP emulator</sys:String>
     <sys:String x:Key="ControlTitle">Config</sys:String>
     <sys:String x:Key="MediaTitle">Media</sys:String>
     <sys:String x:Key="DisplayModeTitle">Display mode:</sys:String>
     <sys:String x:Key="ControlModeTitle">Control mode:</sys:String>
     <sys:String x:Key="TopmostTitle">Set on top all windows</sys:String>
     <sys:String x:Key="CompressionQualityTitle">Video compression quality:</sys:String>
-    <sys:String x:Key="DisableWideScreenTitle">Turn off widescreen mode</sys:String>
+    <sys:String x:Key="EnableWideScreenTitle">Turn on widescreen mode</sys:String>
     <sys:String x:Key="LanguageTitle">Current language:</sys:String>
     <sys:String x:Key="ColourSchemaTitle">Current colour schema:</sys:String>
     <sys:String x:Key="CaptureManagerTitle">Powered by CaptureManager SDK</sys:String>
     <sys:String x:Key="PCSX2Title">Powered by PCSX2</sys:String>
     <sys:String x:Key="PPSSPPTitle">Powered by PPSSPP</sys:String>
+    <sys:String x:Key="PCSXRTitle">Powered by PCSX-Reloaded</sys:String>
     <sys:String x:Key="YesTitle">Confirm</sys:String>
     <sys:String xml:space="preserve" x:Key="NoTitle">Cancel </sys:String>
     <sys:String xml:space="preserve" x:Key="VersionTitle">Version: </sys:String>
@@ -60,7 +61,7 @@
     <sys:String x:Key="MediaOutputTypeStreamNotSupportingTitle">Freeware is not supported</sys:String>
     <sys:String x:Key="TouchPadScaleTitle">Touch pad scale:</sys:String>
     <sys:String x:Key="RenderingSchemaTitle">Rendering schema:</sys:String>
-    <sys:String x:Key="IsFXAATitle">Enable FXAA</sys:String>
+    <sys:String x:Key="IsFXAATitle">Enable PS2-FXAA &amp; PS1-Sharpen</sys:String>
     <sys:String x:Key="SavingTitle">Saving...</sys:String>
     <sys:String x:Key="BiosTipTitle">Bios is not accessible, try download by link:</sys:String>
     <sys:String x:Key="IsoTipTitle">Iso disc is not accessible, try download by links:</sys:String>
@@ -89,4 +90,33 @@
     <sys:String x:Key="StreamServiceTitle">Stream service:</sys:String>
     <sys:String x:Key="StreamKeyTitle">Stream identificator:</sys:String>
     <sys:String x:Key="StreamConnectionWarningTitle">Connection with the server is lost!!!</sys:String>
+    <sys:String x:Key="RecordServiceTitle">Size of the recorded file:</sys:String>
+    <sys:String x:Key="UnlimitedTitle">Unlimited</sys:String>
+    <sys:String x:Key="S_1_4_GbTitle">1.4 Gb</sys:String>
+    <sys:String x:Key="S_700_MbTitle">700 Mb</sys:String>
+    <sys:String x:Key="VariableBitrateTitle">Variable bitrate</sys:String>
+    <sys:String xml:space="preserve" x:Key="VideoFileRecordedInfoTitle"> recorded!!!</sys:String>
+    <sys:String xml:space="preserve" x:Key="VideoFileRecordingFailedTitle">Recording is failed!!!</sys:String>
+    <sys:String x:Key="VideoFileRecordingStartedTitle">Recording is started!!!</sys:String>
+    <sys:String x:Key="VideoStreamingFailedTitle">Streaming is failed!!!</sys:String>
+    <sys:String x:Key="VideoStreamingStartedTitle">Streaming is started!!!</sys:String>
+    <sys:String x:Key="VideoStreamingIsClosedTitle">Streaming is closed!!!</sys:String>
+    <sys:String xml:space="preserve" x:Key="MemoryCardInfoTitle">Memory card </sys:String>
+    <sys:String x:Key="SharedTitle">shared</sys:String>
+    <sys:String x:Key="VisualVibrationIsEnabledTitle">Visual vibration is enabled</sys:String>
+    <sys:String x:Key="GroupTitle">Count</sys:String>
+    <sys:String x:Key="TexturePackModeTitle">Texture pack load mode</sys:String>
+    <sys:String x:Key="TexturePackModeNoneTitle">Without texture pack</sys:String>
+    <sys:String x:Key="TexturePackModeLoadTitle">Load texture pack</sys:String>
+    <sys:String x:Key="TexturePackModeSaveTitle">Save textures</sys:String>
+    <sys:String x:Key="LowBatteryTitle">has low battery!!!</sys:String>
+    <sys:String x:Key="EmptyBatteryTitle">has empty battery!!!</sys:String>
+    <sys:String x:Key="SkipFrameModeTitle">Skip frame mode:</sys:String>
+    <sys:String x:Key="SkipFrameModeNoneTitle">Skip none frames</sys:String>
+    <sys:String x:Key="SkipFrameModeOneTitle">Skip one frame</sys:String>
+    <sys:String x:Key="SkipFrameModeTwoTitle">Skip two frames</sys:String>
+    <sys:String x:Key="ShowFrameRateTitle">Show frames per second</sys:String>
+    <sys:String x:Key="RefreshScreenTitle">Refresh screen:</sys:String>
+    <sys:String x:Key="FPSTitle">FPS</sys:String>
+    <sys:String x:Key="ResolutionModeTitle">Rendering resolution:</sys:String>
 </ResourceDictionary>

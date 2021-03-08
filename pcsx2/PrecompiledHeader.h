@@ -79,7 +79,16 @@ typedef int BOOL;
 #include "Utilities/Console.h"
 #include "Utilities/MemcpyFast.h"
 #include "Utilities/General.h"
+
+#ifdef ANDROID_ABI_V8A
+#ifdef ENABLE_TOOLS
+    #include "emitter/tools.h"
+#else
 #include "x86emitter/tools.h"
+#endif
+#else
+#include "x86emitter/tools.h"
+#endif
 
 #include "Config.h"
 

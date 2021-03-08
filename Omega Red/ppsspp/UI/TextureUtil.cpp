@@ -1,19 +1,24 @@
 #include <algorithm>
 
+#include "base/colorutil.h"
+#include "base/timeutil.h"
 #include "thin3d/thin3d.h"
 #include "image/zim_load.h"
 #include "image/png_load.h"
 #include "math/math_util.h"
+#include "math/curves.h"
 #include "file/vfs.h"
 #include "ext/jpge/jpgd.h"
-#include "UI/TextureUtil.h"
+#include "ui/view.h"
+#include "ui/ui_context.h"
+#include "gfx_es2/draw_buffer.h"
 #include "Common/Log.h"
+#include "UI/TextureUtil.h"
+#include "UI/GameInfoCache.h"
 
 static Draw::DataFormat ZimToT3DFormat(int zim) {
 	switch (zim) {
-	case ZIM_ETC1: return Draw::DataFormat::ETC1;
 	case ZIM_RGBA8888: return Draw::DataFormat::R8G8B8A8_UNORM;
-	case ZIM_LUMINANCE: return Draw::DataFormat::R8_UNORM;
 	default: return Draw::DataFormat::R8G8B8A8_UNORM;
 	}
 }
@@ -144,7 +149,7 @@ bool ManagedTexture::LoadFromFile(const std::string &filename, ImageFileType typ
 	uint8_t *buffer = VFSReadFile(filename.c_str(), &fileSize);
 	if (!buffer) {
 		filename_ = "";
-		ELOG("Failed to read file '%s'", filename.c_str());
+		//ELOG("Failed to read file '%s'", filename.c_str());
 		return false;
 	}
 	bool retval = LoadFromFileData(buffer, fileSize, type, generateMips);
@@ -208,4 +213,41 @@ std::unique_ptr<ManagedTexture> CreateTextureFromFileData(Draw::DrawContext *dra
 		delete mtex;
 		return std::unique_ptr<ManagedTexture>();
 	}
+}
+
+void GameIconView::GetContentDimensions(const UIContext &dc, float &w, float &h) const {
+	w = textureWidth_;
+	h = textureHeight_;
+}
+
+void GameIconView::Draw(UIContext &dc) {
+	using namespace UI;
+	std::shared_ptr<GameInfo> info = g_gameInfoCache->GetInfo(NULL, gamePath_, GAMEINFO_WANTBG | GAMEINFO_WANTSIZE);
+
+	if (!info->icon.texture) {
+		return;
+	}
+
+	textureWidth_ = info->icon.texture->Width() * scale_;
+	textureHeight_ = info->icon.texture->Height() * scale_;
+
+	// Fade icon with the backgrounds.
+	double loadTime = info->icon.timeLoaded;
+	if (info->pic1.texture) {
+		loadTime = std::max(loadTime, info->pic1.timeLoaded);
+	}
+	if (info->pic0.texture) {
+		loadTime = std::max(loadTime, info->pic0.timeLoaded);
+	}
+	uint32_t color = whiteAlpha(ease((time_now_d() - loadTime) * 3));
+
+	// Adjust size so we don't stretch the image vertically or horizontally.
+	// Make sure it's not wider than 144 (like Doom Legacy homebrew), ugly in the grid mode.
+	float nw = std::min(bounds_.h * textureWidth_ / textureHeight_, (float)bounds_.w);
+
+	dc.Flush();
+	dc.GetDrawContext()->BindTexture(0, info->icon.texture->GetTexture());
+	dc.Draw()->Rect(bounds_.x, bounds_.y, nw, bounds_.h, color);
+	dc.Flush();
+	dc.RebindTexture();
 }

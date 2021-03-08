@@ -23,7 +23,7 @@ using namespace std;
 #include "FW.h"
 #include "svnrev.h"
 
-const u8 version = PS2E_FW_VERSION;
+const u8 version = 1;
 const u8 revision = 0;
 const u8 build = 7; // increase that with each version
 
@@ -63,7 +63,7 @@ FWsetLogDir(const char *dir)
 EXPORT_C_(u32)
 PS2EgetLibType()
 {
-    return PS2E_LT_FW;
+    return 1;
 }
 
 EXPORT_C_(const char *)

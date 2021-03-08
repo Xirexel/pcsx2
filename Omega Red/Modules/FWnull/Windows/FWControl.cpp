@@ -1,9 +1,5 @@
 #include "FWControl.h"
-#ifdef __ANDROID__
-#include "FW.h"
-#else
 #include "../FW.h"
-#endif
 #include "PCSX2Lib_API.h"
 #include "pugixml.hpp"
 
@@ -40,9 +36,9 @@ void FWControl::execute(const wchar_t* a_command, wchar_t** a_result)
 			{
 				if (std::wstring(l_ChildNode.name()) == L"Init")
 				{
-					FWsetSettingsDir(nullptr);
+				//	FWsetSettingsDir(nullptr);
 
-					FWinit();
+//					FWinit();
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Open")
 				{
@@ -71,16 +67,16 @@ void FWControl::execute(const wchar_t* a_command, wchar_t** a_result)
 						}
 					}
 
-					if (l_WindowHandle != nullptr)
-						FWopen(l_WindowHandle);
+//					if (l_WindowHandle != nullptr)
+//						FWopen(l_WindowHandle);
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Close")
 				{
-					FWclose();
+//					FWclose();
 				}
 				else if (std::wstring(l_ChildNode.name()) == L"Shutdown")
 				{
-					FWshutdown();
+//					FWshutdown();
 				}
 
 				l_ChildNode = l_ChildNode.next_sibling();
@@ -92,7 +88,7 @@ void FWControl::execute(const wchar_t* a_command, wchar_t** a_result)
 
 
 PCSX2Lib::API::FW_API g_API = {
-	FWread32,
-	FWwrite32,
-	FWirqCallback
+	NULL,
+	NULL,
+	NULL
 };

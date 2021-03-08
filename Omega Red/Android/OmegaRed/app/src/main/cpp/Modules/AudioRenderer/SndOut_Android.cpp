@@ -17,7 +17,7 @@
 
 #include "src/Global.h"
 #include <src/SndOut.h>
-#include "../../../../../../../../Modules/AudioRenderer/androidconfig.h"
+//#include "../../../../../../../../Modules/AudioRenderer/androidconfig.h"
 
 
 #include <SLES/OpenSLES.h>
@@ -538,7 +538,7 @@ public:
 //
 } static OpenSLES;
 
-void SetVolume(LONG aVolume)
+void SetVolume(int aVolume)
 {
 //    DS.setVolume(aVolume);
 }

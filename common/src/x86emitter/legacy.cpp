@@ -28,6 +28,31 @@
 #include "PrecompiledHeader.h"
 #include "legacy_internal.h"
 
+
+
+emitterT void x86SetJ8(std::shared_ptr<x86Emitter::xForwardJumpBase>& jmpBase)
+{
+	jmpBase->SetTarget();
+}
+
+emitterT void x86SetJ32(std::shared_ptr<x86Emitter::xForwardJumpBase>& jmpBase)
+{
+	jmpBase->SetTarget();
+}
+
+emitterT void x86SetJ32(x86Emitter::xForwardJumpBase& jmpBase)
+{
+	jmpBase.SetTarget();
+}
+
+
+emitterT void x86SetJ32A(std::shared_ptr<x86Emitter::xForwardJumpBase>& jmpBase)
+{
+	while ((uptr)x86Ptr & 0xf)
+		*x86Ptr++ = 0x90;
+	x86SetJ32(jmpBase);
+}
+
 emitterT void ModRM(uint mod, uint reg, uint rm)
 {
     // Note: Following assertions are for legacy support only.
@@ -85,6 +110,11 @@ emitterT u32 *J32Rel(int cc, u32 to)
 emitterT void x86SetPtr(u8 *ptr)
 {
     x86Ptr = ptr;
+}
+
+u8* x86GetPtr()
+{
+	return x86Ptr;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -155,20 +185,25 @@ emitterT void x86Align(int bytes)
 ////////////////////////////////////
 
 /* jmp rel8 */
-emitterT u8 *JMP8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JMP8(u8 to)
 {
-    xWrite8(0xEB);
-    xWrite8(to);
-    return x86Ptr - 1;
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJMP8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jmp rel32 */
-emitterT u32 *JMP32(uptr to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JMP32(uptr to)
 {
-    assert((sptr)to <= 0x7fffffff && (sptr)to >= -0x7fffffff);
-    xWrite8(0xE9);
-    xWrite32(to);
-    return (u32 *)(x86Ptr - 4);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJMP32);
+
+	if(to > 0)
+		jump->SetTarget(to);
+	// to - ( (uptr)x86Ptr + 5 )
+
+	return jump;
 }
 
 /* jp rel8 */
@@ -184,15 +219,23 @@ emitterT u8 *JNP8(u8 to)
 }
 
 /* je rel8 */
-emitterT u8 *JE8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JE8(u8 to)
 {
-    return J8Rel(0x74, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJE8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jz rel8 */
-emitterT u8 *JZ8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JZ8(u8 to)
 {
-    return J8Rel(0x74, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJZ8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* js rel8 */
@@ -202,68 +245,112 @@ emitterT u8 *JS8(u8 to)
 }
 
 /* jns rel8 */
-emitterT u8 *JNS8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JNS8(u8 to)
 {
-    return J8Rel(0x79, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJNS8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jg rel8 */
-emitterT u8 *JG8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JG8(u8 to)
 {
-    return J8Rel(0x7F, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJG8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jge rel8 */
-emitterT u8 *JGE8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JGE8(u8 to)
 {
-    return J8Rel(0x7D, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJGE8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jl rel8 */
-emitterT u8 *JL8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JL8(u8 to)
 {
-    return J8Rel(0x7C, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJL8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* ja rel8 */
-emitterT u8 *JA8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JA8(u8 to)
 {
-    return J8Rel(0x77, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJA8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
-emitterT u8 *JAE8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase>JAE8(u8 to)
 {
-    return J8Rel(0x73, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJAE8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jb rel8 */
-emitterT u8 *JB8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JB8(u8 to)
 {
-    return J8Rel(0x72, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJB8);
+
+	jump->SetRelTarget(to);
+
+    return jump;
 }
 
 /* jbe rel8 */
-emitterT u8 *JBE8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JBE8(u8 to)
 {
-    return J8Rel(0x76, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJBE8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jle rel8 */
-emitterT u8 *JLE8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JLE8(u8 to)
 {
-    return J8Rel(0x7E, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJLE8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jne rel8 */
-emitterT u8 *JNE8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JNE8(u8 to)
 {
-    return J8Rel(0x75, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJNE8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jnz rel8 */
-emitterT u8 *JNZ8(u8 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JNZ8(u8 to)
 {
-    return J8Rel(0x75, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJNZ8);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jng rel8 */
@@ -308,15 +395,23 @@ emitterT u32 *JB32(u32 to)
 }
 
 /* je rel32 */
-emitterT u32 *JE32(u32 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JE32(u32 to)
 {
-    return J32Rel(0x84, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJE32);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jz rel32 */
-emitterT u32 *JZ32(u32 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JZ32(u32 to)
 {
-    return J32Rel(0x84, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJZ32);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* js rel32 */
@@ -332,27 +427,43 @@ emitterT u32 *JNS32(u32 to)
 }
 
 /* jg rel32 */
-emitterT u32 *JG32(u32 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JG32(u32 to)
 {
-    return J32Rel(0x8F, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJG32);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jge rel32 */
-emitterT u32 *JGE32(u32 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JGE32(u32 to)
 {
-    return J32Rel(0x8D, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJGE32);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jl rel32 */
-emitterT u32 *JL32(u32 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JL32(u32 to)
 {
-    return J32Rel(0x8C, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJL32);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jle rel32 */
-emitterT u32 *JLE32(u32 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JLE32(u32 to)
 {
-    return J32Rel(0x8E, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJLE32);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* ja rel32 */
@@ -368,15 +479,23 @@ emitterT u32 *JAE32(u32 to)
 }
 
 /* jne rel32 */
-emitterT u32 *JNE32(u32 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JNE32(u32 to)
 {
-    return J32Rel(0x85, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJNE32);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jnz rel32 */
-emitterT u32 *JNZ32(u32 to)
+emitterT std::shared_ptr<x86Emitter::xForwardJumpBase> JNZ32(u32 to)
 {
-    return J32Rel(0x85, to);
+	std::shared_ptr<x86Emitter::xForwardJumpBase> jump(new xForwardJNZ32);
+
+	jump->SetRelTarget(to);
+
+	return jump;
 }
 
 /* jng rel32 */

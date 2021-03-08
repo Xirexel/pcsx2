@@ -26,12 +26,10 @@
 #include "AppCommon.h"
 #include "AppCoreThread.h"
 #include "RecentIsoList.h"
-
-//Purely to make sure the saveslot define comes through. Remove if it gets removed.
-#include "Saveslots.h"
+#include "DriveList.h"
 
 #ifndef DISABLE_RECORDING
-#	include "Recording/VirtualPad.h"
+#	include "Recording/VirtualPad/VirtualPad.h"
 #	include "Recording/NewRecordingFrame.h"
 #endif
 
@@ -73,15 +71,15 @@ static const bool CloseViewportWithPlugins = false;
 
 enum TopLevelMenuIndices
 {
-	TopLevelMenu_System = 0,
+	TopLevelMenu_Pcsx2 = 0,
 	TopLevelMenu_Cdvd,
 	TopLevelMenu_Config,
-	TopLevelMenu_Misc,
-	TopLevelMenu_Debug,
+	TopLevelMenu_Window,
 	TopLevelMenu_Capture,
 #ifndef DISABLE_RECORDING
-	TopLevelMenu_Recording,
+	TopLevelMenu_InputRecording,
 #endif
+	TopLevelMenu_Help
 };
 
 enum MenuIdentifiers
@@ -102,12 +100,14 @@ enum MenuIdentifiers
 	// Run SubSection
 	MenuId_Cdvd_Source,
 	MenuId_Src_Iso,
-	MenuId_Src_Plugin,
+	MenuId_Src_Disc,
 	MenuId_Src_NoDisc,
 	MenuId_Boot_Iso,			// Opens submenu with Iso browser, and recent isos.
 	MenuId_RecentIsos_reservedStart,
 	MenuId_IsoBrowse = MenuId_RecentIsos_reservedStart + 100,			// Open dialog, runs selected iso.
 	MenuId_IsoClear,
+	MenuId_DriveSelector,
+	MenuId_DriveListRefresh,
 	MenuId_Ask_On_Booting,
 	MenuId_Boot_CDVD,
 	MenuId_Boot_CDVD2,
@@ -120,10 +120,12 @@ enum MenuIdentifiers
 	MenuId_Sys_LoadStates,		// Opens load states submenu
 	MenuId_Sys_SaveStates,		// Opens save states submenu
 	MenuId_EnableBackupStates,	// Checkbox to enable/disables savestates backup
+	MenuId_GameSettingsSubMenu,
 	MenuId_EnablePatches,
 	MenuId_EnableCheats,
+	MenuId_EnableIPC,
 	MenuId_EnableWideScreenPatches,
-	MenuId_EnableRecordingTools,
+	MenuId_EnableInputRecording,
 	MenuId_EnableLuaTools,
 	MenuId_EnableHostFs,
 
@@ -156,6 +158,14 @@ enum MenuIdentifiers
 
 	MenuId_Config_Multitap0Toggle,
 	MenuId_Config_Multitap1Toggle,
+	MenuId_Config_FastBoot,
+
+	MenuId_Help_GetStarted,
+	MenuId_Help_Compatibility,
+	MenuId_Help_Forums,
+	MenuId_Help_Website,
+	MenuId_Help_Wiki,
+	MenuId_Help_Github,
 
 	// Plugin Sections
 	// ---------------
@@ -186,16 +196,19 @@ enum MenuIdentifiers
 	MenuId_Capture_Video_Record,
 	MenuId_Capture_Video_Stop,
 	MenuId_Capture_Screenshot,
+	MenuId_Capture_Screenshot_Screenshot,
+	MenuId_Capture_Screenshot_Screenshot_As,
 
 #ifndef DISABLE_RECORDING
-	// Recording Subsection
+	// Input Recording Subsection
 	MenuId_Recording_New,
 	MenuId_Recording_Play,
 	MenuId_Recording_Stop,
-	MenuId_Recording_Editor,
+	MenuId_Recording_TogglePause,
+	MenuId_Recording_FrameAdvance,
+	MenuId_Recording_ToggleRecordingMode,
 	MenuId_Recording_VirtualPad_Port0,
 	MenuId_Recording_VirtualPad_Port1,
-	MenuId_Recording_Conversions,
 #endif
 
 };
@@ -520,6 +533,7 @@ protected:
 	std::unique_ptr<PipeRedirectionBase> m_StderrRedirHandle;
 
 	std::unique_ptr<RecentIsoList> m_RecentIsoList;
+	std::unique_ptr<DriveList> m_DriveList;
 	std::unique_ptr<pxAppResources> m_Resources;
 
 public:
@@ -611,6 +625,7 @@ public:
 
 	wxMenu&				GetRecentIsoMenu();
 	RecentIsoManager&	GetRecentIsoManager();
+	wxMenu&				GetDriveListMenu();
 
 	pxAppResources&		GetResourceCache();
 	const wxIconBundle&	GetIconBundle();
@@ -666,11 +681,6 @@ protected:
 	void CleanupOnExit();
 	void OpenWizardConsole();
 	void PadKeyDispatch( const keyEvent& ev );
-
-#ifndef DISABLE_RECORDING 
-public:
-	void Recording_PadKeyDispatch(const keyEvent& ev) { PadKeyDispatch(ev); }
-#endif 
 
 protected:
 	void HandleEvent(wxEvtHandler* handler, wxEventFunction func, wxEvent& event) const;
@@ -801,6 +811,7 @@ extern void ShutdownPlugins();
 
 extern bool SysHasValidState();
 extern void SysUpdateIsoSrcFile( const wxString& newIsoFile );
+extern void SysUpdateDiscSrcDrive( const wxString& newDiscDrive );
 extern void SysStatus( const wxString& text );
 
 extern bool				HasMainFrame();

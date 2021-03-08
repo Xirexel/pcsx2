@@ -14,6 +14,8 @@
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
     <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -46,29 +48,32 @@
     <StartupObject>Omega_Red.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Google.Apis, Version=1.40.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.1.40.2\lib\net45\Google.Apis.dll</HintPath>
+    <Reference Include="Google.Apis, Version=1.46.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.1.46.0\lib\net45\Google.Apis.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Auth, Version=1.40.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.Auth.1.40.2\lib\net45\Google.Apis.Auth.dll</HintPath>
+    <Reference Include="Google.Apis.Auth, Version=1.46.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Auth.1.46.0\lib\net45\Google.Apis.Auth.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Auth.PlatformServices, Version=1.40.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.Auth.1.40.2\lib\net45\Google.Apis.Auth.PlatformServices.dll</HintPath>
+    <Reference Include="Google.Apis.Auth.PlatformServices, Version=1.46.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Auth.1.46.0\lib\net45\Google.Apis.Auth.PlatformServices.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Core, Version=1.40.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.Core.1.40.2\lib\net45\Google.Apis.Core.dll</HintPath>
+    <Reference Include="Google.Apis.Core, Version=1.46.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Core.1.46.0\lib\net45\Google.Apis.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Drive.v3, Version=1.40.2.1631, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.Drive.v3.1.40.2.1631\lib\net45\Google.Apis.Drive.v3.dll</HintPath>
+    <Reference Include="Google.Apis.Drive.v3, Version=1.46.0.1986, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Drive.v3.1.46.0.1986\lib\net45\Google.Apis.Drive.v3.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.PlatformServices, Version=1.40.2.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.1.40.2\lib\net45\Google.Apis.PlatformServices.dll</HintPath>
+    <Reference Include="Google.Apis.PlatformServices, Version=1.46.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.1.46.0\lib\net45\Google.Apis.PlatformServices.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.YouTube.v3, Version=1.40.2.1593, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.YouTube.v3.1.40.2.1593\lib\net45\Google.Apis.YouTube.v3.dll</HintPath>
+    <Reference Include="Google.Apis.YouTube.v3, Version=1.46.0.1995, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.YouTube.v3.1.46.0.1995\lib\net45\Google.Apis.YouTube.v3.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="SevenZipExtractor, Version=1.0.15.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SevenZipExtractor.1.0.15\lib\net45\SevenZipExtractor.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -76,6 +81,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -97,21 +103,37 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Capture\AudioCaptureTarget.cs" />
-    <Compile Include="Capture\CaptureTargetTexture.cs" />
+    <Compile Include="Capture\TargetTexture.cs" />
+    <Compile Include="Emulators\Emul.cs" />
+    <Compile Include="Emulators\GameType.cs" />
+    <Compile Include="Emulators\IEmul.cs" />
+    <Compile Include="Emulators\PCSX2Emul.cs" />
+    <Compile Include="Emulators\PCSXEmul.cs" />
+    <Compile Include="Emulators\PPSSPPEmul.cs" />
     <Compile Include="Managers\IStreamingManager.cs" />
     <Compile Include="Managers\MediaSourcesManager.cs" />
+    <Compile Include="Managers\RecordingCaptureConfigManager.cs" />
+    <Compile Include="Managers\SoundSchemaManager.cs" />
     <Compile Include="Managers\StreamingCaptureConfigManager.cs" />
     <Compile Include="Managers\YouTubeBroadcastManager.cs" />
     <Compile Include="Managers\YouTubeStreamManager.cs" />
     <Compile Include="Models\MediaSourceInfo.cs" />
+    <Compile Include="Models\PadControlConfig.cs" />
     <Compile Include="Models\StreamingCaptureConfigInfo.cs" />
     <Compile Include="Models\YouTubeBroadcastInfo.cs" />
     <Compile Include="Models\YouTubeStreamInfo.cs" />
+    <Compile Include="Panels\DirectInputPadControlInfoPanel.xaml.cs" />
     <Compile Include="Panels\DisplayControl.xaml.cs">
       <DependentUpon>DisplayControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Panels\MediaSourcePanel.xaml.cs">
       <DependentUpon>MediaSourcePanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\QuickSaveStatePanel.xaml.cs">
+      <DependentUpon>QuickSaveStatePanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\RecordingCaptureConfig.xaml.cs">
+      <DependentUpon>RecordingCaptureConfig.xaml</DependentUpon>
     </Compile>
     <Compile Include="Panels\StreamControlPanel.xaml.cs">
       <DependentUpon>StreamControlPanel.xaml</DependentUpon>
@@ -119,15 +141,39 @@
     <Compile Include="Panels\StreamingCaptureConfig.xaml.cs">
       <DependentUpon>StreamingCaptureConfig.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Panels\TipInfoPanel.xaml.cs">
+      <DependentUpon>TipInfoPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\TouchPadConfigPanel.xaml.cs">
+      <DependentUpon>TouchPadConfigPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\XInputPadControlInfoPanel.xaml.cs">
+      <DependentUpon>XInputPadControlInfoPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Panels\YouTubeStreamControl.xaml.cs">
       <DependentUpon>YouTubeStreamControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="SocialNetworks\Google\DriveManager.cs" />
     <Compile Include="SocialNetworks\Google\YouTubeManager.cs" />
     <Compile Include="Tools\Converters\BooleanToVisibilityConverter.cs" />
+    <Compile Include="Tools\Converters\ConverterMarkupExtension.cs" />
     <Compile Include="Tools\Converters\InverseBooleanConverter.cs" />
     <Compile Include="Tools\Converters\PrivacyStatusConvertor.cs" />
+    <Compile Include="Tools\Converters\TypeNameConverter.cs" />
+    <Compile Include="Tools\DirectInputPadControl.cs" />
     <Compile Include="Tools\Extensions.cs" />
+    <Compile Include="Tools\IModule.cs" />
+    <Compile Include="Tools\Savestate\IBaseSavestateEntry.cs" />
+    <Compile Include="Tools\Savestate\ILoadStateBase.cs" />
+    <Compile Include="Tools\Savestate\ISaveStateBase.cs" />
+    <Compile Include="Tools\Savestate\MemLoadingState.cs" />
+    <Compile Include="Tools\Savestate\MemSavingState.cs" />
+    <Compile Include="Tools\Savestate\SavestateEntries.cs" />
+    <Compile Include="Tools\Savestate\SStates.cs" />
+    <Compile Include="Tools\TexturePackControl.cs" />
+    <Compile Include="Tools\XInputPadControl.cs" />
+    <Compile Include="Util\DirectInput.cs" />
+    <Compile Include="Util\DirectInputNative.cs" />
     <Compile Include="Util\Interop\ComInterface.cs" />
     <Compile Include="Util\Interop\D3D11Texture2D.cs" />
     <Compile Include="Util\Interop\Direct3D11.cs" />
@@ -135,7 +181,6 @@
     <Compile Include="Util\Interop\NativeMethods.cs" />
     <Compile Include="Util\Interop\NativeStructs.cs" />
     <Compile Include="Capture\MediaStream.cs" />
-    <Compile Include="Capture\OffScreenStream.cs" />
     <Compile Include="Managers\AdditionalControlManager.cs" />
     <Compile Include="Managers\IManager.cs" />
     <Compile Include="Managers\MediaRecorderManager.cs" />
@@ -148,9 +193,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="SocialNetworks\Google\GoogleAccountManager.cs" />
-    <Compile Include="Tools\PPSSPPControl.cs" />
     <Compile Include="Util\Direct3D11Device.cs" />
-    <Compile Include="Util\PPSSPPNative.cs" />
     <Compile Include="Models\BiosInfo.cs" />
     <Compile Include="Models\IsoInfo.cs" />
     <Compile Include="Models\MediaRecorderInfo.cs" />
@@ -176,9 +219,6 @@
     <Compile Include="NotifyIconWpf\TaskbarIcon.cs" />
     <Compile Include="NotifyIconWpf\TaskbarIcon.Declarations.cs" />
     <Compile Include="NotifyIconWpf\Util.cs" />
-    <Compile Include="OffScreenWindow.xaml.cs">
-      <DependentUpon>OffScreenWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Panels\SoundControl.xaml.cs">
       <DependentUpon>SoundControl.xaml</DependentUpon>
     </Compile>
@@ -200,12 +240,11 @@
     </Compile>
     <Compile Include="Util\RTMPNative.cs" />
     <Compile Include="Util\StringStream.cs" />
+    <Compile Include="Util\XInputNative.cs" />
     <Compile Include="ViewModels\AutoSaveStateViewModel.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="Managers\LockScreenManager.cs" />
     <Compile Include="Managers\MemoryCardManager.cs" />
-    <Compile Include="Tools\ModuleControl.cs" />
-    <Compile Include="Tools\ModuleManager.cs" />
     <Compile Include="Managers\PadControlManager.cs" />
     <Compile Include="Tools\PadInput.cs" />
     <Compile Include="Panels\AnalogStickPanel.xaml.cs">
@@ -235,22 +274,11 @@
     <Compile Include="Panels\Video\Interop\NativeStructs.cs" />
     <Compile Include="Panels\Video\VideoPanel.cs" />
     <Compile Include="Tools\PatchAndGameFixManager.cs" />
-    <Compile Include="Tools\Pcsx2Config.cs" />
-    <Compile Include="Tools\PCSX2Controller.cs" />
     <Compile Include="Tools\PlayingControl.cs" />
     <Compile Include="Managers\SaveStateManager.cs" />
-    <Compile Include="Tools\Savestate\IBaseSavestateEntry.cs" />
-    <Compile Include="Tools\Savestate\ILoadStateBase.cs" />
-    <Compile Include="Tools\Savestate\ISaveStateBase.cs" />
-    <Compile Include="Tools\Savestate\MemLoadingState.cs" />
-    <Compile Include="Tools\Savestate\MemSavingState.cs" />
-    <Compile Include="Tools\Savestate\SavestateEntries.cs" />
-    <Compile Include="Tools\Savestate\SStates.cs" />
     <Compile Include="Managers\ScreenshotsManager.cs" />
     <Compile Include="Util\BitField.cs" />
     <Compile Include="Util\LibLoader.cs" />
-    <Compile Include="Util\PCSX2LibNative.cs" />
-    <Compile Include="Util\TempFile.cs" />
     <Compile Include="Util\Win32NativeMethods.cs" />
     <Compile Include="ViewModels\BiosInfoViewModel.cs" />
     <Compile Include="ViewModels\ConfigViewModel.cs" />
@@ -263,6 +291,8 @@
     <Compile Include="ViewModels\MediaSourcesInfoViewModel.cs" />
     <Compile Include="ViewModels\MemoryCardInfoViewModel.cs" />
     <Compile Include="ViewModels\PadControlViewModel.cs" />
+    <Compile Include="ViewModels\QuickSaveStateViewModel.cs" />
+    <Compile Include="ViewModels\RecordControlViewModel.cs" />
     <Compile Include="ViewModels\SaveStateViewModel.cs" />
     <Compile Include="Panels\ControlPanel.xaml.cs">
       <DependentUpon>ControlPanel.xaml</DependentUpon>
@@ -319,6 +349,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="ColourSchemes\Black.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
     <Page Include="ColourSchemes\Default.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -335,13 +369,13 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="OffScreenWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Panels\AnalogTriggerPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\DirectInputPadControlInfoPanel.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Panels\DisplayControl.xaml">
       <SubType>Designer</SubType>
@@ -355,6 +389,14 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Panels\QuickSaveStatePanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\RecordingCaptureConfig.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Panels\SoundControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -364,6 +406,18 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Panels\StreamingCaptureConfig.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\TipInfoPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\TouchPadConfigPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Panels\XInputPadControlInfoPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -496,9 +550,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\FW.dll" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Assests\Images\Test.png" />
   </ItemGroup>
   <ItemGroup>
@@ -526,15 +577,6 @@
     <Resource Include="Assests\Images\T10K.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\CDVD.dll" />
-    <EmbeddedResource Include="Modules\x86\DEV9.dll" />
-    <EmbeddedResource Include="Modules\x86\MemoryCard.dll" />
-    <EmbeddedResource Include="Modules\x86\Pad.dll" />
-    <EmbeddedResource Include="Modules\x86\PCSX2Lib.dll" />
-    <EmbeddedResource Include="Modules\x86\USB.dll" />
-    <EmbeddedResource Include="Modules\x86\VideoRenderer.dll" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Assests\Images\None.png" />
   </ItemGroup>
   <ItemGroup>
@@ -559,22 +601,10 @@
     <Resource Include="Assests\Images\OmegaRed.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\MediaCapture.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\CaptureManagerToCSharpProxy.dll" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Assests\Images\ISO.png" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assests\Images\Media.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\MediaStream.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\PPSSPP.dll" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assests\Images\Register_youtube2.png" />
@@ -592,34 +622,46 @@
     <Resource Include="Assests\Images\Mic.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\RTMP.dll" />
+    <Resource Include="Assests\Images\GamePadQSInfo.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Modules\x86\AudioRenderer.dll" />
+    <EmbeddedResource Include="Modules\AnyCPU\PCSX2Emul.dll" />
+    <EmbeddedResource Include="Modules\AnyCPU\PCSXEmul.dll" />
+    <EmbeddedResource Include="Modules\AnyCPU\PPSSPPEmul.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Modules\AnyCPU\CaptureManagerToCSharpProxy.dll" />
+    <EmbeddedResource Include="Modules\AnyCPU\MediaCapture.dll" />
+    <EmbeddedResource Include="Modules\AnyCPU\MediaStream.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assests\Sounds\BaseSounds\Click.wav" />
+    <Resource Include="Assests\Sounds\BaseSounds\Switch.wav" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"$(VS140COMNTOOLS)..\..\VC\bin\editbin.exe" /STACK:6000000 "$(TargetPath)"
+    <PostBuildEvent>"$(DevEnvDir)..\..\VC\Tools\MSVC\14.16.27023\bin\Hostx64\x86\editbin.exe" /STACK:4000000 "$(TargetPath)"
 ping 127.0.0.1 -n 6
-"$(VS140COMNTOOLS)..\..\VC\bin\editBin.exe" /LARGEADDRESSAWARE "$(TargetPath)"
+"$(DevEnvDir)..\..\VC\Tools\MSVC\14.16.27023\bin\Hostx64\x86\editbin.exe" /LARGEADDRESSAWARE "$(TargetPath)"
 ping 127.0.0.1 -n 6
-copy "$(TargetPath)" "$(SolutionDir)..\bin\$(TargetFileName)"
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\bin\Win32\avcodec-58.dll" "$(TargetDir)avcodec-58.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\bin\Win32\avformat-58.dll" "$(TargetDir)avformat-58.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\bin\Win32\avutil-56.dll" "$(TargetDir)avutil-56.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\bin\Win32\swresample-3.dll" "$(TargetDir)swresample-3.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\bin\Win32\swscale-5.dll" "$(TargetDir)swscale-5.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\bin\Win32\avcodec-58.dll" "$(SolutionDir)..\bin\avcodec-58.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\bin\Win32\avformat-58.dll" "$(SolutionDir)..\bin\avformat-58.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\bin\Win32\avutil-56.dll" "$(SolutionDir)..\bin\avutil-56.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\bin\Win32\swresample-3.dll" "$(SolutionDir)..\bin\swresample-3.dll" 
-copy "$(SolutionDir)packages\FFmpeg.Nightly.20190621.0.0\build\native\bin\Win32\swscale-5.dll" "$(SolutionDir)..\bin\swscale-5.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avcodec-58.dll" "$(TargetDir)x86\avcodec-58.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avformat-58.dll" "$(TargetDir)x86\avformat-58.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\avutil-56.dll" "$(TargetDir)x86\avutil-56.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\swresample-3.dll" "$(TargetDir)x86\swresample-3.dll" 
+copy "$(SolutionDir)packages\FFmpeg.Nightly.20200628.0.0\build\native\bin\Win32\swscale-5.dll" "$(TargetDir)x86\swscale-5.dll" 
 </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>copy "$(SolutionDir)..\bin\GameIndex.dbf" "$(ProjectDir)\Assests\GameIndex.dbf"
 copy "$(SolutionDir)..\bin\cheats_ws.zip" "$(ProjectDir)\Assests\cheats_ws.zip"</PreBuildEvent>
   </PropertyGroup>
+  <Import Project="..\packages\SevenZipExtractor.1.0.15\build\SevenZipExtractor.targets" Condition="Exists('..\packages\SevenZipExtractor.1.0.15\build\SevenZipExtractor.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\SevenZipExtractor.1.0.15\build\SevenZipExtractor.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SevenZipExtractor.1.0.15\build\SevenZipExtractor.targets'))" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

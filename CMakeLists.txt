@@ -4,7 +4,10 @@ project(Pcsx2)
 # Debian-based distributions require at least 2.8.5 due to multiarch.
 # Bumping up to 3.0 seems reasonable at this point, and will let us modernize
 # things a bit.
-cmake_minimum_required(VERSION 3.0.2)
+#
+# Setting it to a range tells it that it supports the features on the newer
+# versions as well, avoiding setting policies.
+cmake_minimum_required(VERSION 3.3.0...3.17)
 
 # Variable to check that people use the good file
 set(TOP_CMAKE_WAS_SOURCED TRUE)
@@ -17,7 +20,7 @@ include(Pcsx2Utils)
 
 check_no_parenthesis_in_path()
 detectOperatingSystem()
-check_compiler_version("4.8" "4.8")
+check_compiler_version("7.0" "7.0")
 
 #-------------------------------------------------------------------------------
 # Include specific module
@@ -28,13 +31,19 @@ include(SearchForStuff)
 include(SelectPcsx2Plugins)
 
 # Must be done after SearchForStuff
+get_git_version_info()
 write_svnrev_h()
 
 if(NOT NO_TRANSLATION)
-# make the translation
-if(EXISTS "${CMAKE_SOURCE_DIR}/locales")
-    add_subdirectory(locales)
+    # make the translation
+    if(EXISTS "${CMAKE_SOURCE_DIR}/locales")
+        add_subdirectory(locales)
+    endif()
 endif()
+
+# 3rdpary Libraries
+if(EXISTS "${CMAKE_SOURCE_DIR}/3rdparty/fmt/fmt")
+    add_subdirectory(3rdparty/fmt/fmt)
 endif()
 
 # make common
@@ -51,6 +60,12 @@ endif()
 # make plugins
 if(EXISTS "${CMAKE_SOURCE_DIR}/plugins")
     add_subdirectory(plugins)
+endif()
+
+# tests
+if(ACTUALLY_ENABLE_TESTS)
+    add_subdirectory(3rdparty/gtest EXCLUDE_FROM_ALL)
+    add_subdirectory(tests/ctest)
 endif()
 
 #-------------------------------------------------------------------------------
@@ -73,7 +88,7 @@ if(PACKAGE_MODE)
     INSTALL(FILES "${CMAKE_BINARY_DIR}/linux_various/PCSX2.desktop" DESTINATION "${CMAKE_INSTALL_PREFIX}/share/applications")
     INSTALL(FILES "${CMAKE_SOURCE_DIR}/linux_various/PCSX2.xpm"     DESTINATION "${CMAKE_INSTALL_PREFIX}/share/pixmaps")
     INSTALL(FILES "${CMAKE_SOURCE_DIR}/bin/docs/PCSX2_FAQ.pdf"      DESTINATION "${DOC_DIR}")
-    INSTALL(FILES "${CMAKE_SOURCE_DIR}/bin/docs/PCSX2_Readme.pdf"   DESTINATION "${DOC_DIR}")
+    INSTALL(FILES "${CMAKE_SOURCE_DIR}/bin/docs/Configuration_Guide.pdf"   DESTINATION "${DOC_DIR}")
     INSTALL(FILES "${CMAKE_SOURCE_DIR}/bin/docs/PCSX2.1"            DESTINATION "${MAN_DIR}/man1")
     if(NOT DISABLE_PCSX2_WRAPPER)
         INSTALL(FILES "${CMAKE_SOURCE_DIR}/linux_various/PCSX2-linux.sh"          DESTINATION "${BIN_DIR}")

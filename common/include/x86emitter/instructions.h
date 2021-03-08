@@ -57,6 +57,9 @@ extern const xImpl_G1Compare xCMP;
 // flags.
 
 extern const xImpl_Mov xMOV;
+#ifdef __M_X86_64
+extern const xImpl_MovImm64 xMOV64;
+#endif
 extern const xImpl_Test xTEST;
 
 extern const xImpl_Group2 xROL, xROR,
@@ -86,13 +89,7 @@ extern const xImpl_Group8 xBTC;
 extern const xImpl_BitScan xBSF, xBSR;
 
 extern const xImpl_JmpCall xJMP;
-#ifdef __M_X86_64
-// 32 bits Call won't be compatible in 64 bits (different ABI)
-// Just a reminder to port the code
-[[deprecated]] extern const xImpl_JmpCall xCALL;
-#else
 extern const xImpl_JmpCall xCALL;
-#endif
 extern const xImpl_FastCall xFastCall;
 
 // ------------------------------------------------------------------------
@@ -142,6 +139,9 @@ extern void xBSWAP(const xRegister32or64 &to);
 extern void xLEA(xRegister64 to, const xIndirectVoid &src, bool preserve_flags = false);
 extern void xLEA(xRegister32 to, const xIndirectVoid &src, bool preserve_flags = false);
 extern void xLEA(xRegister16 to, const xIndirectVoid &src, bool preserve_flags = false);
+/// LEA with a target that will be decided later, guarantees that no optimizations are performed that could change what needs to be written in
+extern u32* xLEA_Writeback(xAddressReg to);
+extern void vtlb_SetWriteback(u32 *writeback);
 
 // ----- Push / Pop Instructions  -----
 // Note: pushad/popad implementations are intentionally left out.  The instructions are
@@ -196,11 +196,34 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
+/// Helper object to save some temporary registers before the call
+class xScopedSavedRegisters
+{
+    std::vector<std::reference_wrapper<const xAddressReg>> regs;
+public:
+    xScopedSavedRegisters(std::initializer_list<std::reference_wrapper<const xAddressReg>> regs);
+    ~xScopedSavedRegisters();
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////
+/// Helper function to calculate base+offset taking into account the limitations of x86-64's RIP-relative addressing
+/// (Will either return `base+offset` or LEA `base` into `tmpRegister` and return `tmpRegister+offset`)
+xAddressVoid xComplexAddress(const xAddressReg& tmpRegister, void *base, const xAddressVoid& offset);
+
+//////////////////////////////////////////////////////////////////////////////////////////
+/// Helper function to load addresses that may be far from the current instruction pointer
+/// On i386, resolves to `mov dst, (sptr)addr`
+/// On x86-64, resolves to either `mov dst, (sptr)addr` or `lea dst, [addr]` depending on the distance from RIP
+void xLoadFarAddr(const xAddressReg& dst, void *addr);
+
+//////////////////////////////////////////////////////////////////////////////////////////
 // JMP / Jcc Instructions!
 
 extern void xJcc(JccComparisonType comparison, const void *target);
-extern s8 *xJcc8(JccComparisonType comparison = Jcc_Unconditional, s8 displacement = 0);
-extern s32 *xJcc32(JccComparisonType comparison = Jcc_Unconditional, s32 displacement = 0);
+//extern s8 *xJcc8(JccComparisonType comparison = Jcc_Unconditional, s8 displacement = 0);
+//extern s32 *xJcc32(JccComparisonType comparison, s32 displacement = 0);
+extern std::shared_ptr<x86Emitter::xForwardJumpBase> xJcc32(JccComparisonType comparison = Jcc_Unconditional);
+extern std::shared_ptr<x86Emitter::xForwardJumpBase> JS32(JccComparisonType comparison, s32 displacement = 0);
 
 // ------------------------------------------------------------------------
 // Conditional jumps to fixed targets.
@@ -333,7 +356,9 @@ __fi void xJAE(T *func)
 // resolution.  Including them into the class definition macro above breaks it.
 
 typedef xForwardJump<s8> xForwardJump8;
+typedef xForwardJump<s8> xForwardJMP8;
 typedef xForwardJump<s32> xForwardJump32;
+typedef xForwardJump<s32> xForwardJMP32;
 
 DEFINE_FORWARD_JUMP(JA, Jcc_Above);
 DEFINE_FORWARD_JUMP(JB, Jcc_Below);
@@ -442,8 +467,8 @@ extern void xMOVNTDQA(const xIndirectVoid &to, const xRegisterSSE &from);
 extern void xMOVNTPD(const xIndirectVoid &to, const xRegisterSSE &from);
 extern void xMOVNTPS(const xIndirectVoid &to, const xRegisterSSE &from);
 
-extern void xMOVMSKPS(const xRegister32or64 &to, const xRegisterSSE &from);
-extern void xMOVMSKPD(const xRegister32or64 &to, const xRegisterSSE &from);
+extern void xMOVMSKPS(const xRegister32 &to, const xRegisterSSE &from);
+extern void xMOVMSKPD(const xRegister32 &to, const xRegisterSSE &from);
 
 extern void xMASKMOV(const xRegisterSSE &to, const xRegisterSSE &from);
 extern void xPMOVMSKB(const xRegister32or64 &to, const xRegisterSSE &from);

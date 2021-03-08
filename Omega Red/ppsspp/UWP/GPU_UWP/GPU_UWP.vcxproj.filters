@@ -4,6 +4,7 @@
     <ClCompile Include="..\..\GPU\Common\DepalettizeShaderCommon.cpp" />
     <ClCompile Include="..\..\GPU\Common\DrawEngineCommon.cpp" />
     <ClCompile Include="..\..\GPU\Common\FramebufferCommon.cpp" />
+    <ClCompile Include="..\..\GPU\Common\PresentationCommon.cpp" />
     <ClCompile Include="..\..\GPU\Common\GPUDebugInterface.cpp" />
     <ClCompile Include="..\..\GPU\Common\GPUStateUtils.cpp" />
     <ClCompile Include="..\..\GPU\Common\IndexGenerator.cpp" />
@@ -39,6 +40,7 @@
     <ClCompile Include="..\..\GPU\D3D11\VertexShaderGeneratorD3D11.cpp" />
     <ClCompile Include="..\..\GPU\Debugger\Breakpoints.cpp" />
     <ClCompile Include="..\..\GPU\Debugger\Debugger.cpp" />
+    <ClCompile Include="..\..\GPU\Debugger\Playback.cpp" />
     <ClCompile Include="..\..\GPU\Debugger\Record.cpp" />
     <ClCompile Include="..\..\GPU\Debugger\Stepping.cpp" />
     <ClCompile Include="..\..\GPU\Directx9\PixelShaderGeneratorDX9.cpp" />
@@ -55,11 +57,13 @@
     <ClCompile Include="..\..\GPU\Software\SoftGpu.cpp" />
     <ClCompile Include="..\..\GPU\Software\TransformUnit.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="..\..\GPU\Software\RasterizerRectangle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\GPU\Common\DepalettizeShaderCommon.h" />
     <ClInclude Include="..\..\GPU\Common\DrawEngineCommon.h" />
     <ClInclude Include="..\..\GPU\Common\FramebufferCommon.h" />
+    <ClInclude Include="..\..\GPU\Common\PresentationCommon.h" />
     <ClInclude Include="..\..\GPU\Common\GPUDebugInterface.h" />
     <ClInclude Include="..\..\GPU\Common\GPUStateUtils.h" />
     <ClInclude Include="..\..\GPU\Common\IndexGenerator.h" />
@@ -91,7 +95,9 @@
     <ClInclude Include="..\..\GPU\D3D11\VertexShaderGeneratorD3D11.h" />
     <ClInclude Include="..\..\GPU\Debugger\Breakpoints.h" />
     <ClInclude Include="..\..\GPU\Debugger\Debugger.h" />
+    <ClInclude Include="..\..\GPU\Debugger\Playback.h" />
     <ClInclude Include="..\..\GPU\Debugger\Record.h" />
+    <ClInclude Include="..\..\GPU\Debugger\RecordFormat.h" />
     <ClInclude Include="..\..\GPU\Debugger\Stepping.h" />
     <ClInclude Include="..\..\GPU\Directx9\PixelShaderGeneratorDX9.h" />
     <ClInclude Include="..\..\GPU\Directx9\VertexShaderGeneratorDX9.h" />
@@ -110,5 +116,6 @@
     <ClInclude Include="..\..\GPU\Software\TransformUnit.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="..\..\GPU\Software\RasterizerRectangle.h" />
   </ItemGroup>
 </Project>

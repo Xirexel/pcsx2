@@ -18,6 +18,9 @@
 #pragma once
 
 #include "ppsspp_config.h"
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 #include "ui/ui_screen.h"
 #include "UI/MiscScreens.h"
 
@@ -31,22 +34,22 @@ public:
 
 	void update() override;
 	void onFinish(DialogResult result) override;
-	void sendMessage(const char *message, const char *value) override;
 	std::string tag() const override { return "settings"; }
-
-	UI::Event OnRecentChanged;
 
 protected:
 	void CreateViews() override;
 	void CallbackRestoreDefaults(bool yes);
 	void CallbackRenderingBackend(bool yes);
 	void CallbackRenderingDevice(bool yes);
+	void CallbackInflightFrames(bool yes);
 #if PPSSPP_PLATFORM(ANDROID)
 	void CallbackMemstickFolder(bool yes);
 #endif
 	bool UseVerticalLayout() const;
 
 private:
+	void TriggerRestart(const char *why);
+
 	std::string gameID_;
 	bool lastVertical_;
 	UI::CheckBox *enableReportsCheckbox_;
@@ -81,10 +84,14 @@ private:
 	UI::EventReturn OnPostProcShaderChange(UI::EventParams &e);
 	UI::EventReturn OnDeveloperTools(UI::EventParams &e);
 	UI::EventReturn OnRemoteISO(UI::EventParams &e);
+	UI::EventReturn OnChangeQuickChat0(UI::EventParams &e);
+	UI::EventReturn OnChangeQuickChat1(UI::EventParams &e);
+	UI::EventReturn OnChangeQuickChat2(UI::EventParams &e);
+	UI::EventReturn OnChangeQuickChat3(UI::EventParams &e);
+	UI::EventReturn OnChangeQuickChat4(UI::EventParams &e);
 	UI::EventReturn OnChangeNickname(UI::EventParams &e);
 	UI::EventReturn OnChangeproAdhocServerAddress(UI::EventParams &e);
 	UI::EventReturn OnChangeMacAddress(UI::EventParams &e);
-	UI::EventReturn OnClearRecents(UI::EventParams &e);
 	UI::EventReturn OnChangeBackground(UI::EventParams &e);
 	UI::EventReturn OnFullscreenChange(UI::EventParams &e);
 	UI::EventReturn OnDisplayLayoutEditor(UI::EventParams &e);
@@ -94,6 +101,9 @@ private:
 	UI::EventReturn OnRenderingMode(UI::EventParams &e);
 	UI::EventReturn OnRenderingBackend(UI::EventParams &e);
 	UI::EventReturn OnRenderingDevice(UI::EventParams &e);
+	UI::EventReturn OnInflightFramesChoice(UI::EventParams &e);
+	UI::EventReturn OnCameraDeviceChange(UI::EventParams& e);
+	UI::EventReturn OnAudioDevice(UI::EventParams &e);
 	UI::EventReturn OnJitAffectingSetting(UI::EventParams &e);
 #if PPSSPP_PLATFORM(ANDROID)
 	UI::EventReturn OnChangeMemStickDir(UI::EventParams &e);
@@ -113,20 +123,15 @@ private:
 	UI::EventReturn OnSavedataManager(UI::EventParams &e);
 	UI::EventReturn OnSysInfo(UI::EventParams &e);
 
-	// Temporaries to convert setting types.
+	// Temporaries to convert setting types, cache enabled, etc.
 	int iAlternateSpeedPercent1_;
 	int iAlternateSpeedPercent2_;
+	int prevInflightFrames_;
 	bool enableReports_;
+	bool tessHWEnable_;
 
 	//edit the game-specific settings and restore the global settings after exiting
 	bool editThenRestore_;
-
-	// Cached booleans
-	bool vtxCacheEnable_;
-	bool postProcEnable_;
-	bool resolutionEnable_;
-	bool bloomHackEnable_;
-	bool tessHWEnable_;
 
 #if PPSSPP_PLATFORM(ANDROID)
 	std::string pendingMemstickFolder_;
@@ -170,34 +175,59 @@ private:
 	UI::EventReturn OnJitDebugTools(UI::EventParams &e);
 	UI::EventReturn OnRemoteDebugger(UI::EventParams &e);
 	UI::EventReturn OnGPUDriverTest(UI::EventParams &e);
+	UI::EventReturn OnTouchscreenTest(UI::EventParams &e);
 
 	bool allowDebugger_ = false;
 	bool canAllowDebugger_ = true;
 };
 
-class ProAdhocServerScreen : public UIDialogScreenWithBackground {
+class HostnameSelectScreen : public PopupScreen {
 public:
-	ProAdhocServerScreen() {}	
+	HostnameSelectScreen(std::string *value, const std::string &title)
+		: PopupScreen(title, "OK", "Cancel"), value_(value) {
+		resolver_ = std::thread([](HostnameSelectScreen *thiz) {
+			thiz->ResolverThread();
+		}, this);
+	}
+	~HostnameSelectScreen() {
+		resolverState_ = ResolverState::QUIT;
+		resolverCond_.notify_one();
+		resolver_.join();
+	}
+
+	void CreatePopupContents(UI::ViewGroup *parent) override;
 
 protected:
-	void CreateViews() override;
+	void OnCompleted(DialogResult result) override;
+	bool CanComplete(DialogResult result) override;
 
-private:	
-	std::string tempProAdhocServer;
-	UI::TextView *addrView_;
-	UI::EventReturn On0Click(UI::EventParams &e);
-	UI::EventReturn On1Click(UI::EventParams &e);
-	UI::EventReturn On2Click(UI::EventParams &e);
-	UI::EventReturn On3Click(UI::EventParams &e);
-	UI::EventReturn On4Click(UI::EventParams &e);
-	UI::EventReturn On5Click(UI::EventParams &e);
-	UI::EventReturn On6Click(UI::EventParams &e);
-	UI::EventReturn On7Click(UI::EventParams &e);
-	UI::EventReturn On8Click(UI::EventParams &e);
-	UI::EventReturn On9Click(UI::EventParams &e);
+private:
+	void ResolverThread();
+	void SendEditKey(int keyCode, int flags = 0);
+	UI::EventReturn OnNumberClick(UI::EventParams &e);
 	UI::EventReturn OnPointClick(UI::EventParams &e);
 	UI::EventReturn OnDeleteClick(UI::EventParams &e);
 	UI::EventReturn OnDeleteAllClick(UI::EventParams &e);
-	UI::EventReturn OnOKClick(UI::EventParams &e);
-	UI::EventReturn OnCancelClick(UI::EventParams &e);
+
+	enum class ResolverState {
+		WAITING,
+		QUEUED,
+		PROGRESS,
+		READY,
+		QUIT,
+	};
+
+	std::string *value_;
+	UI::TextEdit *addrView_ = nullptr;
+	UI::TextView *errorView_ = nullptr;
+	UI::TextView *progressView_ = nullptr;
+
+	std::thread resolver_;
+	ResolverState resolverState_ = ResolverState::WAITING;
+	std::mutex resolverLock_;
+	std::condition_variable resolverCond_;
+	std::string toResolve_ = "";
+	bool toResolveResult_ = false;
+	std::string lastResolved_ = "";
+	bool lastResolvedResult_ = false;
 };

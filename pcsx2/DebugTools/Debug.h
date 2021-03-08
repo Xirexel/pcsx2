@@ -227,7 +227,7 @@ public:
 
 	ConsoleLogFromVM( const TraceLogDescriptor* desc ) : _parent( desc ) {}
 
-	bool Write( const wxChar* msg ) const
+	bool Write( const wxString &msg ) const
 	{
 		ConsoleColorScope cs(conColor);
 		Console.WriteRaw( msg );
@@ -239,12 +239,6 @@ public:
 
 		return false;
 	}
-
-	bool Write( const wxString msg ) const
-	{
-		return Write(msg.wc_str());
-	}
-
 };
 
 // --------------------------------------------------------------------------------------
@@ -353,7 +347,6 @@ extern void __Log( const char* fmt, ... );
 #   define                          SetDoubleBuffered(x)
 
     // TODO OSX OsxKeyCodes.cpp pending
-#   define NewPipeRedir(x)          NULL
 #endif
 
 #define macTrace(trace)	SysTraceActive(trace) && SysTrace.trace.Write

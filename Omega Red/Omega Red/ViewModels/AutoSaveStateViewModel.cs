@@ -1,4 +1,5 @@
-﻿using Omega_Red.Managers;
+﻿using Omega_Red.Emulators;
+using Omega_Red.Managers;
 using Omega_Red.Models;
 using Omega_Red.Tools;
 using System;
@@ -17,7 +18,17 @@ namespace Omega_Red.ViewModels
     {
         public AutoSaveStateViewModel()
         {
-            PCSX2Controller.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+            Emul.Instance.ChangeStatusEvent += Instance_m_ChangeStatusEvent;
+
+            SaveStateManager.Instance.RefreshEvent += Instance_RefreshEvent;
+        }
+
+        private void Instance_RefreshEvent()
+        {
+            VisibilityState =
+                (m_Status == Emul.StatusEnum.Initilized || m_Status == Emul.StatusEnum.Stopped)
+                && !SaveStateManager.Instance.AutoSaveCollection.IsEmpty ?
+                Visibility.Visible : Visibility.Collapsed;
         }
 
         private Visibility mVisibilityState = Visibility.Collapsed;
@@ -35,16 +46,16 @@ namespace Omega_Red.ViewModels
 
         private bool m_IsEnabled = false;
 
-        private PCSX2Controller.StatusEnum m_Status = PCSX2Controller.StatusEnum.NoneInitilized;
+        private Emul.StatusEnum m_Status = Emul.StatusEnum.NoneInitilized;
 
-        void Instance_m_ChangeStatusEvent(PCSX2Controller.StatusEnum a_Status)
+        void Instance_m_ChangeStatusEvent(Emul.StatusEnum a_Status)
         {
             m_Status = a_Status;
 
-            IsEnabled = a_Status != PCSX2Controller.StatusEnum.NoneInitilized;
+            IsEnabled = a_Status != Emul.StatusEnum.NoneInitilized;
 
             VisibilityState = 
-                (a_Status == PCSX2Controller.StatusEnum.Initilized || a_Status == PCSX2Controller.StatusEnum.Stopped)
+                (a_Status == Emul.StatusEnum.Initilized || a_Status == Emul.StatusEnum.Stopped)
                 && !SaveStateManager.Instance.AutoSaveCollection.IsEmpty? 
                 Visibility.Visible : Visibility.Collapsed;
 
@@ -63,7 +74,7 @@ namespace Omega_Red.ViewModels
 
         public ICommand LoadCommand
         {
-            get { return new DelegateCommand<SaveStateInfo>(PCSX2Controller.Instance.loadState); }
+            get { return new DelegateCommand<SaveStateInfo>(Emul.Instance.loadState); }
         }
         
         protected override IManager Manager

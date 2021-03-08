@@ -1,5 +1,5 @@
 //
-// Created by Xirexel on 7/10/2019.
+// Created by Evgeny Pereguda on 7/10/2019.
 //
 
 
@@ -12,7 +12,7 @@ extern std::wstring Java_To_WStr(JNIEnv *env, jstring string);
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_xirexel_omegared_PCSX2_Modules_VideoRenderer_GetPCSX2LibAPI(JNIEnv *env,
+Java_com_evgenypereguda_omegared_PCSX2_Modules_VideoRenderer_GetPCSX2LibAPI(JNIEnv *env,
 																			  jobject instance) {
 
 	return (long)(getAPI());
@@ -21,7 +21,7 @@ Java_com_xirexel_omegared_PCSX2_Modules_VideoRenderer_GetPCSX2LibAPI(JNIEnv *env
 
 extern "C"
 JNIEXPORT jstring JNICALL
-Java_com_xirexel_omegared_PCSX2_Modules_VideoRenderer_Execute(JNIEnv *env, jobject instance,
+Java_com_evgenypereguda_omegared_PCSX2_Modules_VideoRenderer_Execute(JNIEnv *env, jobject instance,
 																	 jstring aCommand) {
 
 	jstring l_result = nullptr;

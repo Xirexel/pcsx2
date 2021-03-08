@@ -218,6 +218,9 @@ int GetPS2ElfName(
 			break;
 		}
 
+		if (!l_isValid)
+            break;
+
 		wxString fname = elfpath.AfterLast('\\');
 		if (!fname)
 			fname = elfpath.AfterLast('/');
@@ -225,6 +228,9 @@ int GetPS2ElfName(
 			fname = elfpath.AfterLast(':');
 		if (fname.Matches(L"????_???.??*"))
 			a_name = fname(0, 4) + L"-" + fname(5, 3) + fname(9, 2);
+
+		if (retype != 2)
+            break;
 		
 		std::unique_ptr<ElfObject> elfptr(loadElf(elfpath, l_ISOFile));
 

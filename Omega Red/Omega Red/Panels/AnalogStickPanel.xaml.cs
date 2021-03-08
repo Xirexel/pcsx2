@@ -94,7 +94,7 @@ namespace Omega_Red.Panels
 
                 e.MouseDevice.Capture(null);
 
-                Axises = new PadInput.XY_Axises() { m_x_axis = 0, m_y_axis = 0 };
+                Axises = new TouchPadPanel.XY_Axises() { m_x_axis = 0, m_y_axis = 0 };
             }
         }
 
@@ -166,7 +166,7 @@ namespace Omega_Red.Panels
                 l_newTopPosition = mInitCanvasTop - (mCenterY * l_d_Y_axis);
                                 
 
-                Axises = new PadInput.XY_Axises() { m_x_axis = l_x_axis, m_y_axis = l_y_axis };
+                Axises = new TouchPadPanel.XY_Axises() { m_x_axis = l_x_axis, m_y_axis = l_y_axis };
 
 
                 Canvas.SetLeft(mTouchEllipse, l_newLeftPosition);
@@ -175,15 +175,15 @@ namespace Omega_Red.Panels
             }
         }
         
-        public PadInput.XY_Axises Axises
+        public TouchPadPanel.XY_Axises Axises
         {
-            get { return (PadInput.XY_Axises)GetValue(AxisesProperty); }
+            get { return (TouchPadPanel.XY_Axises)GetValue(AxisesProperty); }
             set { SetValue(AxisesProperty, value); }
         }
 
         // Using a DependencyProperty as the backing store for Axises.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty AxisesProperty =
-            DependencyProperty.Register("Axises", typeof(PadInput.XY_Axises), typeof(AnalogStickPanel), new PropertyMetadata(new PadInput.XY_Axises() { m_x_axis = 0, m_y_axis = 0 }));
+            DependencyProperty.Register("Axises", typeof(TouchPadPanel.XY_Axises), typeof(AnalogStickPanel), new PropertyMetadata(new TouchPadPanel.XY_Axises() { m_x_axis = 0, m_y_axis = 0 }));
         
         private void UserControl_PreviewTouchMove(object sender, TouchEventArgs e)
         {
@@ -243,7 +243,7 @@ namespace Omega_Red.Panels
                 l_newTopPosition = mInitCanvasTop - (mCenterY * l_d_Y_axis);
 
 
-                Axises = new PadInput.XY_Axises() { m_x_axis = l_x_axis, m_y_axis = l_y_axis };
+                Axises = new TouchPadPanel.XY_Axises() { m_x_axis = l_x_axis, m_y_axis = l_y_axis };
 
 
                 Canvas.SetLeft(mTouchEllipse, l_newLeftPosition);
@@ -283,7 +283,7 @@ namespace Omega_Red.Panels
 
                 e.TouchDevice.Capture(null);
 
-                Axises = new PadInput.XY_Axises() { m_x_axis = 0, m_y_axis = 0 };
+                Axises = new TouchPadPanel.XY_Axises() { m_x_axis = 0, m_y_axis = 0 };
             }
         }
 

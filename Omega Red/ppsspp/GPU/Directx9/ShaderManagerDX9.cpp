@@ -42,6 +42,8 @@
 #include "GPU/Directx9/DrawEngineDX9.h"
 #include "GPU/Directx9/FramebufferDX9.h"
 
+using namespace Lin;
+
 namespace DX9 {
 
 PSShader::PSShader(LPDIRECT3DDEVICE9 device, FShaderID id, const char *code) : id_(id), shader(nullptr), failed_(false) {
@@ -74,7 +76,7 @@ PSShader::PSShader(LPDIRECT3DDEVICE9 device, FShaderID id, const char *code) : i
 		shader = NULL;
 		return;
 	} else {
-		DEBUG_LOG(G3D, "Compiled shader:\n%s\n", (const char *)code);
+		VERBOSE_LOG(G3D, "Compiled pixel shader:\n%s\n", (const char *)code);
 	}
 }
 
@@ -123,7 +125,7 @@ VSShader::VSShader(LPDIRECT3DDEVICE9 device, VShaderID id, const char *code, boo
 		shader = NULL;
 		return;
 	} else {
-		DEBUG_LOG(G3D, "Compiled shader:\n%s\n", (const char *)code);
+		VERBOSE_LOG(G3D, "Compiled vertex shader:\n%s\n", (const char *)code);
 	}
 }
 
@@ -241,14 +243,18 @@ void ShaderManagerDX9::VSSetMatrix(int creg, const float* pMatrix) {
 static void ConvertProjMatrixToD3D(Matrix4x4 &in, bool invertedX, bool invertedY) {
 	// Half pixel offset hack
 	float xoff = 1.0f / gstate_c.curRTRenderWidth;
-	xoff = gstate_c.vpXOffset + (invertedX ? xoff : -xoff);
-	float yoff = -1.0f / gstate_c.curRTRenderHeight;
-	yoff = gstate_c.vpYOffset + (invertedY ? yoff : -yoff);
+	if (invertedX) {
+		xoff = -gstate_c.vpXOffset - xoff;
+	} else {
+		xoff = gstate_c.vpXOffset - xoff;
+	}
 
-	if (invertedX)
-		xoff = -xoff;
-	if (invertedY)
-		yoff = -yoff;
+	float yoff = -1.0f / gstate_c.curRTRenderHeight;
+	if (invertedY) {
+		yoff = -gstate_c.vpYOffset - yoff;
+	} else {
+		yoff = gstate_c.vpYOffset - yoff;
+	}
 
 	const Vec3 trans(xoff, yoff, gstate_c.vpZOffset * 0.5f + 0.5f);
 	const Vec3 scale(gstate_c.vpWidthScale, gstate_c.vpHeightScale, gstate_c.vpDepthScale * 0.5f);
@@ -540,15 +546,15 @@ void ShaderManagerDX9::DirtyLastShader() { // disables vertex arrays
 	lastPShader_ = nullptr;
 }
 
-VSShader *ShaderManagerDX9::ApplyShader(int prim, u32 vertType) {
+VSShader *ShaderManagerDX9::ApplyShader(bool useHWTransform, bool useHWTessellation, u32 vertType) {
 	// Always use software for flat shading to fix the provoking index.
 	bool tess = gstate_c.bezier || gstate_c.spline;
-	bool useHWTransform = CanUseHardwareTransform(prim) && (tess || gstate.getShadeMode() != GE_SHADE_FLAT);
+	useHWTransform = useHWTransform && (tess || gstate.getShadeMode() != GE_SHADE_FLAT);
 
 	VShaderID VSID;
 	if (gstate_c.IsDirty(DIRTY_VERTEXSHADER_STATE)) {
 		gstate_c.Clean(DIRTY_VERTEXSHADER_STATE);
-		ComputeVertexShaderID(&VSID, vertType, useHWTransform);
+		ComputeVertexShaderID(&VSID, vertType, useHWTransform, useHWTessellation);
 	} else {
 		VSID = lastVSID_;
 	}
@@ -582,14 +588,14 @@ VSShader *ShaderManagerDX9::ApplyShader(int prim, u32 vertType) {
 		vs = new VSShader(device_, VSID, codeBuffer_, useHWTransform);
 
 		if (vs->Failed()) {
-			I18NCategory *gr = GetI18NCategory("Graphics");
+			auto gr = GetI18NCategory("Graphics");
 			ERROR_LOG(G3D, "Shader compilation failed, falling back to software transform");
 			if (!g_Config.bHideSlowWarnings) {
 				host->NotifyUserMessage(gr->T("hardware transform error - falling back to software"), 2.5f, 0xFF3030FF);
 			}
 			delete vs;
 
-			ComputeVertexShaderID(&VSID, vertType, false);
+			ComputeVertexShaderID(&VSID, vertType, false, false);
 
 			// TODO: Look for existing shader with the appropriate ID, use that instead of generating a new one - however, need to make sure
 			// that that shader ID is not used when computing the linked shader ID below, because then IDs won't match

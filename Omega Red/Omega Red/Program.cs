@@ -9,41 +9,83 @@ using System.Windows.Markup;
 
 namespace Omega_Red
 {
-    class Program
+    public class Program
     {
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [MTAThread]
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            try
+            var t = new Thread(() =>
             {
-                var lCaptureManagerVersion = MediaCapture.Instance.CaptureManagerVersion;
+                try
+                {
+                    initCaptureManager();
 
-                lCaptureManagerVersion = MediaStream.Instance.CaptureManagerVersion;
-            }
-            catch (System.Exception)
-            {
-            }
+                    App app = new App();
 
-            var t = new Thread(()=>
-               {
-                   try
-                   {                                                                  
-                       new App().Run();
-                   }
-                   catch (Exception)
-                   {
-                   }
-                   finally
-                   {
-                   }
-               });
+                    app.InitializeComponent();
+
+                    app.Run();
+                }
+                catch (Exception)
+                {
+                }
+                finally
+                {
+                }
+            });
 
             t.SetApartmentState(ApartmentState.STA);
 
             t.Start();
+        }
+
+        private static void initCaptureManager()
+        {
+            AutoResetEvent lBlockEvent = new AutoResetEvent(false);
+
+            var t = new Thread(() =>
+            {
+                try
+                {
+                    var l_ExecutingAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+
+                    System.Reflection.Assembly l_lCaptureManagerToCSharpProxyAssembly = null;
+
+                    using (var lCaptureManagerToCSharpProxyStream = l_ExecutingAssembly.GetManifestResourceStream("Omega_Red.Modules.AnyCPU.CaptureManagerToCSharpProxy.dll"))
+                    {
+                        if (lCaptureManagerToCSharpProxyStream != null)
+                        {
+                            byte[] lCaptureManagerToCSharpProxybuffer = new byte[(int)lCaptureManagerToCSharpProxyStream.Length];
+
+                            lCaptureManagerToCSharpProxyStream.Read(lCaptureManagerToCSharpProxybuffer, 0, lCaptureManagerToCSharpProxybuffer.Length);
+
+                            l_lCaptureManagerToCSharpProxyAssembly = System.Reflection.Assembly.Load(lCaptureManagerToCSharpProxybuffer);
+                        }
+                    }
+
+                    AppDomain.CurrentDomain.AssemblyResolve += (sender, argument) =>
+                    {
+                        return l_lCaptureManagerToCSharpProxyAssembly;
+                    };
+
+                    var lCaptureManagerVersion = MediaCapture.Instance.CaptureManagerVersion;
+
+                    lCaptureManagerVersion = MediaStream.Instance.CaptureManagerVersion;
+                }
+                finally
+                {
+                    lBlockEvent.Set();
+                }
+            });
+
+            t.SetApartmentState(ApartmentState.MTA);
+
+            t.Start();
+
+            lBlockEvent.WaitOne(3000, true);
         }
     }
 }

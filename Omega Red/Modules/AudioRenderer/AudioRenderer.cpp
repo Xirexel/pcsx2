@@ -14,7 +14,7 @@
 
 AudioRenderer g_AudioRenderer;
 
-extern void SetVolume(LONG lVolume);
+extern void SetVolume(int lVolume);
 
 SetDataCallback g_setAudioData = nullptr;
 

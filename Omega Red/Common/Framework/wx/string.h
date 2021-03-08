@@ -2,10 +2,9 @@
 #pragma once
 
 #include "defs.h"
-#include <string.h>
-#include <string>
 #include <regex>
 #include <cstdarg>
+#include <string>
 #include <memory>
 #include <vector>
 #include <cwctype>
@@ -224,17 +223,17 @@ public:
 
 	void Append(const wxChar * psz, size_t nLen);
 
-	const const char* utf8_str() const
+	const char* utf8_str() const
     {
         return c_str();
     }
 
-    const const char *mb_str() const
+    const char *mb_str() const
     {
         return c_str();
     }
 
-    const const char *mbc_str() const
+    const char *mbc_str() const
     {
         return c_str();
     }	

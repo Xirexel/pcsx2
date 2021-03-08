@@ -220,7 +220,7 @@ public:
 
 	void ScheduleFinish(u32 handle) {
 		if (!finishThread) {
-			finishThread = new HLEHelperThread("scePsmfPlayer", "scePsmfPlayer", "__PsmfPlayerFinish", playbackThreadPriority, 0x100);
+			finishThread = new HLEHelperThread("scePsmfPlayer", "scePsmfPlayer", "__PsmfPlayerFinish", playbackThreadPriority, 0x200);
 			finishThread->Start(handle, 0);
 		}
 	}
@@ -234,10 +234,10 @@ public:
 
 	bool HasReachedEnd() {
 		// The pts are ignored - the end is when we're out of data.
-		return mediaengine->IsVideoEnd() && mediaengine->IsNoAudioData();
+		return mediaengine->IsVideoEnd() && (mediaengine->IsNoAudioData() || !mediaengine->IsActuallyPlayingAudio());
 	}
 
-	u32 filehandle;
+	int filehandle;
 	u32 fileoffset;
 	int readSize;
 	int streamSize;
@@ -543,15 +543,23 @@ void PsmfPlayer::DoState(PointerWrap &p) {
 	}
 	p.Do(psmfPlayerAvcAu);
 	if (s >= 7) {
-		bool hasFinishThread = finishThread != NULL;
+		bool hasFinishThread = finishThread != nullptr;
 		p.Do(hasFinishThread);
 		if (hasFinishThread) {
 			p.Do(finishThread);
+		} else {
+			if (finishThread)
+				finishThread->Forget();
+			delete finishThread;
+			finishThread = nullptr;
 		}
 	} else if (s >= 6) {
 		p.Do(finishThread);
 	} else {
-		finishThread = NULL;
+		if (finishThread)
+			finishThread->Forget();
+		delete finishThread;
+		finishThread = nullptr;
 	}
 
 	if (s >= 8) {
@@ -1155,7 +1163,7 @@ static int scePsmfPlayerBreak(u32 psmfPlayer)
 }
 
 static int _PsmfPlayerFillRingbuffer(PsmfPlayer *psmfplayer) {
-	if (!psmfplayer->filehandle)
+	if (psmfplayer->filehandle <= 0)
 		return -1;
 	u8* buf = psmfplayer->tempbuf;
 	int tempbufSize = (int)sizeof(psmfplayer->tempbuf);
@@ -1199,7 +1207,7 @@ static int _PsmfPlayerSetPsmfOffset(u32 psmfPlayer, const char *filename, int of
 	int delayUs = 1100;
 
 	psmfplayer->filehandle = pspFileSystem.OpenFile(filename, (FileAccess) FILEACCESS_READ);
-	if (!psmfplayer->filehandle) {
+	if (psmfplayer->filehandle < 0) {
 		return hleDelayResult(SCE_KERNEL_ERROR_ILLEGAL_ARGUMENT, "psmfplayer set", delayUs);
 	}
 
@@ -1433,8 +1441,6 @@ static int scePsmfPlayerStart(u32 psmfPlayer, u32 psmfPlayerData, int initPts)
 		return ERROR_PSMFPLAYER_INVALID_PARAM;
 	}
 
-	WARN_LOG(ME, "scePsmfPlayerStart(%08x, %08x, %d)", psmfPlayer, psmfPlayerData, initPts);
-
 	psmfplayer->AbortFinish();
 	psmfplayer->mediaengine->setVideoStream(playerData->videoStreamNum);
 	psmfplayer->videoCodec = playerData->videoCodec;
@@ -1446,6 +1452,8 @@ static int scePsmfPlayerStart(u32 psmfPlayer, u32 psmfPlayerData, int initPts)
 	}
 	psmfplayer->playMode = playerData->playMode;
 	psmfplayer->playSpeed = playerData->playSpeed;
+
+	WARN_LOG(ME, "scePsmfPlayerStart(%08x, %08x, %d,(mode %d, speed %d)", psmfPlayer, psmfPlayerData, initPts, playerData->playMode, playerData->playSpeed);
 
 	// Does not alter current pts, it just catches up when Update()/etc. get there.
 
@@ -1609,7 +1617,7 @@ static int scePsmfPlayerGetVideoData(u32 psmfPlayer, u32 videoDataAddr)
 	bool doVideoStep = true;
 	if (psmfplayer->playMode == PSMF_PLAYER_MODE_PAUSE) {
 		doVideoStep = false;
-	} else if (!psmfplayer->mediaengine->IsNoAudioData()) {
+	} else if (!psmfplayer->mediaengine->IsNoAudioData() && psmfplayer->mediaengine->IsActuallyPlayingAudio()) {
 		s64 deltapts = psmfplayer->mediaengine->getVideoTimeStamp() - psmfplayer->mediaengine->getAudioTimeStamp();
 		// Don't skip the very first frame, sometimes audio starts with an early timestamp.
 		if (deltapts > 0 && psmfplayer->mediaengine->getVideoTimeStamp() > 0) {

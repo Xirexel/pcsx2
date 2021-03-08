@@ -29,8 +29,6 @@ static const uint VU0_PROGMASK	= VU0_PROGSIZE-1;
 static const uint VU1_MEMMASK	= VU1_MEMSIZE-1;
 static const uint VU1_PROGMASK	= VU1_PROGSIZE-1;
 
-#define vuRunCycles  (512*12)  // Cycles to run ExecuteBlockJIT() for (called from within recs)
-#define vu0RunCycles (512*12)  // Cycles to run vu0 for whenever ExecuteBlock() is called
 #define vu1RunCycles (3000000) // mVU1 uses this for inf loop detection on dev builds
 
 // --------------------------------------------------------------------------------------
@@ -120,11 +118,9 @@ public:
 class BaseVUmicroCPU : public BaseCpuProvider {
 public:
 	int m_Idx;
-	u32 m_lastEEcycles;
 
 	BaseVUmicroCPU() {
 		m_Idx		   = 0;
-		m_lastEEcycles = 0;
 	}
 	virtual ~BaseVUmicroCPU() = default;
 
@@ -147,10 +143,6 @@ public:
 		// clamping in recs and ints, it's not really worth bothering with yet.
 	}
 
-	// Execute VU for the number of VU cycles (recs might go over 0~30 cycles)
-	// virtual void Execute(u32 cycles)=0;
-
-	// Executes a Block based on static preset cycles OR
 	// Executes a Block based on EE delta time (see VUmicro.cpp)
 	virtual void ExecuteBlock(bool startUp=0);
 
@@ -254,47 +246,6 @@ public:
 	void SetCacheReserve( uint reserveInMegs ) const;
 };
 
-// --------------------------------------------------------------------------------------
-//  recSuperVU0 / recSuperVU1
-// --------------------------------------------------------------------------------------
-
-class recSuperVU0 : public BaseVUmicroCPU
-{
-public:
-	recSuperVU0();
-
-	const char* GetShortName() const	{ return "sVU0"; }
-	wxString GetLongName() const		{ return L"SuperVU0 Recompiler"; }
-
-	void Reserve();
-	void Shutdown() noexcept;
-	void Reset();
-	void Execute(u32 cycles);
-	void Clear(u32 Addr, u32 Size);
-
-	uint GetCacheReserve() const;
-	void SetCacheReserve( uint reserveInMegs ) const;
-};
-
-class recSuperVU1 : public BaseVUmicroCPU
-{
-public:
-	recSuperVU1();
-
-	const char* GetShortName() const	{ return "sVU1"; }
-	wxString GetLongName() const		{ return L"SuperVU1 Recompiler"; }
-
-	void Reserve();
-	void Shutdown() noexcept;
-	void Reset();
-	void Execute(u32 cycles);
-	void Clear(u32 Addr, u32 Size);
-	void ResumeXGkick() { Console.Warning("ResumeXGkick() Not implemented!"); }
-
-	uint GetCacheReserve() const;
-	void SetCacheReserve( uint reserveInMegs ) const;
-};
-
 extern BaseVUmicroCPU* CpuVU0;
 extern BaseVUmicroCPU* CpuVU1;
 
@@ -303,6 +254,7 @@ extern BaseVUmicroCPU* CpuVU1;
 extern void vu0ResetRegs();
 extern void __fastcall vu0ExecMicro(u32 addr);
 extern void vu0Exec(VURegs* VU);
+extern void _vu0FinishMicro();
 extern void vu0Finish();
 extern void iDumpVU0Registers();
 

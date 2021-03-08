@@ -55,7 +55,6 @@
 #include "Core/System.h"
 #include "Common/Vulkan/VulkanLoader.h"
 #include "Common/Vulkan/VulkanContext.h"
-#include "Common/Vulkan/VulkanDebug.h"
 
 #include "base/stringutil.h"
 #include "thin3d/thin3d.h"
@@ -72,7 +71,14 @@ static const bool g_validate_ = false;
 
 static VulkanContext *g_Vulkan;
 
-static VulkanLogOptions g_LogOptions;
+static uint32_t FlagsFromConfig() {
+	uint32_t flags = 0;
+	flags = g_Config.bVSync ? VULKAN_FLAG_PRESENT_FIFO : VULKAN_FLAG_PRESENT_MAILBOX;
+	if (g_validate_) {
+		flags |= VULKAN_FLAG_VALIDATE;
+	}
+	return flags;
+}
 
 bool WindowsVulkanContext::Init(HINSTANCE hInst, HWND hWnd, std::string *error_message) {
 	*error_message = "N/A";
@@ -89,21 +95,18 @@ bool WindowsVulkanContext::Init(HINSTANCE hInst, HWND hWnd, std::string *error_m
 	g_LogOptions.msgBoxOnError = false;
 
 	Version gitVer(PPSSPP_GIT_VERSION);
-	g_Vulkan = new VulkanContext();
-	if (g_Vulkan->InitError().size()) {
-		*error_message = g_Vulkan->InitError();
-		delete g_Vulkan;
-		g_Vulkan = nullptr;
+
+	if (!VulkanLoad()) {
+		*error_message = "Failed to load Vulkan driver library";
 		return false;
 	}
-	// int vulkanFlags = VULKAN_FLAG_PRESENT_FIFO_RELAXED;
+
+	g_Vulkan = new VulkanContext();
+
 	VulkanContext::CreateInfo info{};
 	info.app_name = "PPSSPP";
 	info.app_ver = gitVer.ToInteger();
-	info.flags = VULKAN_FLAG_PRESENT_MAILBOX;
-	if (g_validate_) {
-		info.flags |= VULKAN_FLAG_VALIDATE;
-	}
+	info.flags = FlagsFromConfig();
 	if (VK_SUCCESS != g_Vulkan->CreateInstance(info)) {
 		*error_message = g_Vulkan->InitError();
 		delete g_Vulkan;
@@ -116,6 +119,7 @@ bool WindowsVulkanContext::Init(HINSTANCE hInst, HWND hWnd, std::string *error_m
 		if (!g_Config.sVulkanDevice.empty())
 			g_Config.sVulkanDevice = g_Vulkan->GetPhysicalDeviceProperties(deviceNum).properties.deviceName;
 	}
+
 	g_Vulkan->ChooseDevice(deviceNum);
 	if (g_Vulkan->CreateDevice() != VK_SUCCESS) {
 		*error_message = g_Vulkan->InitError();
@@ -123,19 +127,7 @@ bool WindowsVulkanContext::Init(HINSTANCE hInst, HWND hWnd, std::string *error_m
 		g_Vulkan = nullptr;
 		return false;
 	}
-	if (g_validate_) {
-		if (g_Vulkan->DeviceExtensions().EXT_debug_utils) {
-			int bits = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
-				| VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
-				| VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-				// We're intentionally skipping VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT and
-				// VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT, just too spammy.
-			g_Vulkan->InitDebugUtilsCallback(&VulkanDebugUtilsCallback, bits, &g_LogOptions);
-		} else {
-			int bits = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-			g_Vulkan->InitDebugMsgCallback(&VulkanDebugReportCallback, bits, &g_LogOptions);
-		}
-	}
+
 	g_Vulkan->InitSurface(WINDOWSYSTEM_WIN32, (void *)hInst, (void *)hWnd);
 	if (!g_Vulkan->InitObjects()) {
 		*error_message = g_Vulkan->InitError();
@@ -151,8 +143,9 @@ bool WindowsVulkanContext::Init(HINSTANCE hInst, HWND hWnd, std::string *error_m
 	_assert_msg_(G3D, success, "Failed to compile preset shaders");
 	draw_->HandleEvent(Draw::Event::GOT_BACKBUFFER, g_Vulkan->GetBackbufferWidth(), g_Vulkan->GetBackbufferHeight());
 
-	VulkanRenderManager *renderManager = (VulkanRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
-	if (!renderManager->HasBackbuffers()) {
+	renderManager_ = (VulkanRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
+	renderManager_->SetInflightFrames(g_Config.iInflightFrames);
+	if (!renderManager_->HasBackbuffers()) {
 		Shutdown();
 		return false;
 	}
@@ -169,12 +162,11 @@ void WindowsVulkanContext::Shutdown() {
 	g_Vulkan->WaitUntilQueueIdle();
 	g_Vulkan->DestroyObjects();
 	g_Vulkan->DestroyDevice();
-	g_Vulkan->DestroyDebugUtilsCallback();
-	g_Vulkan->DestroyDebugMsgCallback();
 	g_Vulkan->DestroyInstance();
 
 	delete g_Vulkan;
 	g_Vulkan = nullptr;
+	renderManager_ = nullptr;
 
 	finalize_glslang();
 }
@@ -183,10 +175,18 @@ void WindowsVulkanContext::Resize() {
 	draw_->HandleEvent(Draw::Event::LOST_BACKBUFFER, g_Vulkan->GetBackbufferWidth(), g_Vulkan->GetBackbufferHeight());
 	g_Vulkan->DestroyObjects();
 
+	g_Vulkan->UpdateFlags(FlagsFromConfig());
 	g_Vulkan->ReinitSurface();
 
 	g_Vulkan->InitObjects();
 	draw_->HandleEvent(Draw::Event::GOT_BACKBUFFER, g_Vulkan->GetBackbufferWidth(), g_Vulkan->GetBackbufferHeight());
+}
+
+void WindowsVulkanContext::Poll() {
+	// Check for existing swapchain to avoid issues during shutdown.
+	if (g_Vulkan->GetSwapchain() && renderManager_->NeedsSwapchainRecreate()) {
+		Resize();
+	}
 }
 
 void *WindowsVulkanContext::GetAPIContext() {

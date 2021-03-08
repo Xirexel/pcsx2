@@ -29,6 +29,14 @@ namespace MediaCapture
 {
     public class Capture
     {
+        enum FileFormat
+        {
+            ASF,
+            MP4,
+            NONE
+        }
+
+
         public static CaptureManager mCaptureManager = null;
 
         private uint m_VideoMixerInputMaxCount = 0;
@@ -49,6 +57,48 @@ namespace MediaCapture
 
         private Dictionary<string, object> m_AudioMixerNodes = new Dictionary<string, object>();
 
+
+        ISwitcherControl m_SwitcherControl = null;
+
+        object m_VideoSwitcherNode = null;
+
+        object m_AudioSwitcherNode = null;
+
+
+        Guid m_FileFormatGUID = Guid.Empty;
+
+
+        Guid m_CLSIDAudioEncoder = new Guid("93AF0C51-2275-45d2-A35B-F2BA21CAED00");
+        
+        Guid m_GUIDAudioEncoderMode = Guid.Empty;
+
+        Guid m_GUIDVideoEncoderMode = Guid.Empty;
+
+
+        List<object> m_CompressedMediaTypeList = new List<object>();
+
+        List<object> m_UncompressedMediaTypeList = new List<object>();
+
+
+        private Tuple<uint, uint, string> m_AudioBitRates = null;
+
+        private List<Tuple<Tuple<uint, uint, string>, Tuple<string, string>>> m_VideoBitRates = new List<Tuple<Tuple<uint, uint, string>, Tuple<string, string>>>();
+
+
+        private uint m_VideoBitRate = 0;
+
+        private uint m_CurrentVideoBitRate = 0;
+
+        private Guid m_VideoEncoderCLSID = Guid.Empty;
+
+        private uint m_AudioBitRate = 0;
+
+        private uint m_CurrentAudioBitRate = 0;
+
+
+        private FileFormat m_FileFormat = FileFormat.NONE;
+
+
         private static Capture m_Instance = null;
                 
         public static Capture Instance { get { if (m_Instance == null) m_Instance = new Capture(); return m_Instance; } }
@@ -62,6 +112,14 @@ namespace MediaCapture
             catch (Exception)
             {
                 mCaptureManager = new CaptureManager();
+            }
+
+            if(mCaptureManager != null)
+            {
+                m_SwitcherControl = mCaptureManager.createSwitcherControl();
+
+                if (m_SwitcherControl == null)
+                    return;
             }
         }
 
@@ -95,6 +153,8 @@ namespace MediaCapture
                 if (mCaptureManager == null)
                     break;
 
+                checkFileFormat();
+
                 string aPtrPtrXMLstring = "";
                 
                 if (mCaptureManager.getCollectionOfSources(ref aPtrPtrXMLstring))
@@ -102,11 +162,240 @@ namespace MediaCapture
                     aStringBuilderXMLstring.Append(aPtrPtrXMLstring);
 
                     checkMixers();
+
+                    checkEncoders(aPtrPtrXMLstring);
                 }
 
             } while (false);
         }
+        
+        private void checkEncoders(string a_XMLstring)
+        {
 
+            do
+            {
+                if (mCaptureManager == null)
+                    break;
+
+                if (m_FileFormat == FileFormat.NONE)
+                    break;
+
+                List<Tuple<string, string>> l_encoderCLSIDs = new List<Tuple<string, string>>();
+
+                l_encoderCLSIDs.Add(Tuple.Create<string, string>("{6CA50344-051A-4DED-9779-A43305165E35}", "H264 Microsoft Encoder"));
+
+                l_encoderCLSIDs.Add(Tuple.Create<string, string>("{0257849E-1A7F-4F57-AF39-D6ADC3B42483}", "H264 Hardware Encoder"));
+                
+                switch (m_FileFormat)
+                {
+                    case FileFormat.ASF:
+                        l_encoderCLSIDs.Add(Tuple.Create<string, string>("{7E320092-596A-41B2-BBEB-175D10504EB6}", "WMVideo8 Encoder"));
+                        break;
+                    case FileFormat.MP4:
+                        break;
+                    case FileFormat.NONE:
+                    default:
+                        break;
+                }
+
+                XmlDocument doc = new XmlDocument();
+
+                doc.LoadXml(a_XMLstring);
+
+                if (doc.DocumentElement != null)
+                {
+                    var lSourceNode = doc.DocumentElement.SelectSingleNode("//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_SYMBOLIC_LINK']/SingleValue[@Value='CaptureManager///Software///Sources///AudioEndpointCapture///AudioLoopBack']]");
+
+                    if (lSourceNode != null)
+                    {
+                        var lAttr = lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_SYMBOLIC_LINK']/SingleValue/@Value");
+
+                        if (lAttr != null)
+                        {
+                            var l_Constant_bit_rate_Mode = "{CA37E2BE-BEC0-4B17-946D-44FBC1B3DF55}"; // Constant bit rate Mode
+
+                            var l_Streaming_Constant_bit_rate_Mode = "{8F6FF1B6-534E-49C0-B2A8-16D534EAF135}"; // Streaming Constant bit rate Mode
+
+                            var l_rang = checkEncoder(lAttr.Value, m_CLSIDAudioEncoder, m_FileFormat == FileFormat.MP4? l_Constant_bit_rate_Mode: l_Streaming_Constant_bit_rate_Mode);
+
+                            if(l_rang != null)
+                                m_AudioBitRates = l_rang[0];
+                        }
+                    }
+
+                    lSourceNode = doc.DocumentElement.SelectSingleNode("//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_HW_SOURCE']/SingleValue[@Value='Software device']]");
+
+                    if (lSourceNode != null)
+                    {
+                        var lAttr = lSourceNode.SelectSingleNode("Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK']/SingleValue/@Value");
+
+                        if (lAttr != null)
+                        {
+                            string lxmldoc = "";
+
+                            XmlDocument lEncodersDoc = new XmlDocument();
+
+                            mCaptureManager.getCollectionOfEncoders(ref lxmldoc);
+
+                            lEncodersDoc.LoadXml(lxmldoc);
+
+                            foreach (var l_encoderCLSID in l_encoderCLSIDs)
+                            {             
+                                Guid lCLSIDVideoEncoder;
+
+                                if (!Guid.TryParse(l_encoderCLSID.Item1, out lCLSIDVideoEncoder))
+                                    break;
+
+                                var l_Range = checkEncoder(lAttr.Value, lCLSIDVideoEncoder);
+
+                                if(l_Range != null)
+                                {
+                                    foreach (var item in l_Range)
+                                    {
+                                        m_VideoBitRates.Add(Tuple.Create<Tuple<uint, uint, string>, Tuple<string, string>>(item, l_encoderCLSID));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } while (false);
+        }
+        
+        private List<Tuple<uint, uint, string>> checkEncoder(string a_SymbolicLink, Guid a_CLSIDEncoder, string a_ConstantBitRateMode = "")
+        {
+            List<Tuple<uint, uint, string>> l_result = new List<Tuple<uint, uint, string>>();
+
+            uint lMaxBitRate = 0;
+
+            uint lMinBitRate = 0;
+
+            do
+            {
+                if (mCaptureManager == null)
+                    break;
+
+                var l_SourceControl = mCaptureManager.createSourceControl();
+
+                if (l_SourceControl == null)
+                    break;
+
+                object l_SourceOutputMediaType = null;
+
+                if (!l_SourceControl.getSourceOutputMediaType(
+                    a_SymbolicLink,
+                    0,
+                    0,
+                    out l_SourceOutputMediaType))
+                    break;
+
+                if (l_SourceOutputMediaType == null)
+                    break;
+
+                var l_EncoderControl = mCaptureManager.createEncoderControl();
+
+                if (l_EncoderControl == null)
+                    break;
+
+                string lxmlDoc;
+
+                l_EncoderControl.getMediaTypeCollectionOfEncoder(
+                        l_SourceOutputMediaType,
+                        a_CLSIDEncoder,
+                        out lxmlDoc);
+
+                var doc = new System.Xml.XmlDocument();
+
+                doc.LoadXml(lxmlDoc);
+
+                var lGroup = doc.SelectSingleNode("EncoderMediaTypes/Group[@GUID='" + a_ConstantBitRateMode + "']");
+
+                if (lGroup != null)
+                {
+                    var lAttr = lGroup.SelectSingleNode("@MaxBitRate");
+
+                    if (lAttr != null)
+                    {
+                        uint.TryParse(lAttr.Value, out lMaxBitRate);
+                    }
+
+                    lAttr = lGroup.SelectSingleNode("@MinBitRate");
+
+                    if (lAttr != null)
+                    {
+                        uint.TryParse(lAttr.Value, out lMinBitRate);
+                    }
+
+                    l_result.Add(Tuple.Create<uint, uint, string>(lMaxBitRate, lMinBitRate, a_ConstantBitRateMode));
+                }
+
+                lGroup = doc.SelectSingleNode("EncoderMediaTypes/Group[@GUID='{EE8C3745-F45B-42B3-A8CC-C7A696440955}']");
+
+                if (lGroup != null)
+                {
+                    lMaxBitRate = 0;
+
+                    lMinBitRate = 0;
+
+                    l_result.Add(Tuple.Create<uint, uint, string>(lMaxBitRate, lMinBitRate, "{EE8C3745-F45B-42B3-A8CC-C7A696440955}"));
+                }
+                                
+            } while (false);
+
+            return l_result;
+        }
+
+        private void checkFileFormat()
+        {
+            string lxmldoc = "";
+
+            XmlDocument doc = new XmlDocument();
+
+            mCaptureManager.getCollectionOfSinks(ref lxmldoc);
+
+            doc.LoadXml(lxmldoc);
+
+            var l_FileContainerNodes = doc.SelectNodes("SinkFactories/SinkFactory[@GUID='{D6E342E3-7DDD-4858-AB91-4253643864C2}']/Value.ValueParts/ValuePart");
+
+            bool l_is_mp4_format = false;
+
+            bool l_is_asf_format = false;
+
+            foreach (var item in l_FileContainerNodes)
+            {
+                var l_FileContainerNode = item as XmlNode;
+
+                if(l_FileContainerNode != null)
+                {
+
+                    var lSelectedAttr = l_FileContainerNode.Attributes["Value"];
+
+                    if (lSelectedAttr == null)
+                        continue;
+
+                    string l_fileExtention = lSelectedAttr.Value;
+
+                    if (l_fileExtention == null)
+                        continue;
+
+                    if(string.Compare(l_fileExtention, "mp4", true) == 0)
+                    {
+                        l_is_mp4_format = true;
+                    }
+
+                    if (string.Compare(l_fileExtention, "asf", true) == 0)
+                    {
+                        l_is_asf_format = true;
+                    }
+
+                }
+            }
+
+            if (l_is_mp4_format)
+                m_FileFormat = FileFormat.MP4;
+            else if (l_is_asf_format)
+                m_FileFormat = FileFormat.ASF;                
+        }
 
         private void checkMixers()
         {
@@ -343,7 +632,7 @@ namespace MediaCapture
         {
             do
             {
-#if EXTEND_CM
+
                 if (!m_VideoMixerNodes.ContainsKey(a_SymbolicLink))
                     break;
 
@@ -351,8 +640,7 @@ namespace MediaCapture
 
                 if (lVideoMixerControl != null)
                     lVideoMixerControl.setPosition(m_VideoMixerNodes[a_SymbolicLink], aLeft, aRight, aTop, aBottom);
-#endif
-
+                
             } while (false);
         }
 
@@ -360,7 +648,7 @@ namespace MediaCapture
         {
             do
             {
-#if EXTEND_CM
+
                 if (!m_VideoMixerNodes.ContainsKey(a_SymbolicLink))
                     break;
 
@@ -368,7 +656,7 @@ namespace MediaCapture
 
                 if (lVideoMixerControl != null)
                     lVideoMixerControl.setOpacity(m_VideoMixerNodes[a_SymbolicLink], a_value);
-#endif
+
             } while (false);
         }
 
@@ -376,7 +664,7 @@ namespace MediaCapture
         {
             do
             {
-#if EXTEND_CM
+
                 if (!m_AudioMixerNodes.ContainsKey(a_SymbolicLink))
                     break;
 
@@ -384,7 +672,7 @@ namespace MediaCapture
 
                 if (lAudioMixerControl != null)
                     lAudioMixerControl.setRelativeVolume(m_AudioMixerNodes[a_SymbolicLink], a_value);
-#endif
+
             } while (false);
         }
 
@@ -394,8 +682,37 @@ namespace MediaCapture
             string a_FilePath, 
             uint a_CompressionQuality)
         {
+            if (m_VideoBitRate == 0)
+                m_CurrentVideoBitRate = a_CompressionQuality;
+            else
+                m_CurrentVideoBitRate = m_VideoBitRate;
+
+
+            if (m_AudioBitRate == 0)
+                m_CurrentAudioBitRate = a_CompressionQuality;
+            else
+                m_CurrentAudioBitRate = m_AudioBitRate;
+
+
+            foreach (var item in m_CompressedMediaTypeList)
+            {
+                Marshal.ReleaseComObject(item);
+            }
+
+            m_CompressedMediaTypeList.Clear();
+
+
+            foreach (var item in m_UncompressedMediaTypeList)
+            {
+                Marshal.ReleaseComObject(item);
+            }
+
+            m_UncompressedMediaTypeList.Clear();
+
 
             string l_FileExtention = "";
+
+            string l_resultFileExtention = "";
 
             ISourceControl l_ISourceControl = null;
 
@@ -414,8 +731,6 @@ namespace MediaCapture
             object l_AudioMediaSource = null;
 
             object l_VideoSourceMediaType = null;
-
-            List<object> lCompressedMediaTypeList = new List<object>();
 
             List<object> lOutputNodes = null;
 
@@ -450,8 +765,60 @@ namespace MediaCapture
 
                 if (l_SinkControl == null)
                     break;
+
+                string l_ext = "";
+                               
+                switch (m_FileFormat)
+                {
+                    case FileFormat.ASF:
+                        l_ext = "ASF";
+                        break;
+                    case FileFormat.MP4:
+                        l_ext = "MP4";
+                        break;
+                    case FileFormat.NONE:
+                    default:
+                        break;
+                }
+
+                if (string.IsNullOrWhiteSpace(l_ext))
+                    break;
+
+
+                string lxmldoc = "";
+
+                XmlDocument l_doc = new XmlDocument();
+
+                mCaptureManager.getCollectionOfSinks(ref lxmldoc);
+
+                l_doc.LoadXml(lxmldoc);
+
+                var l_FileContainerNode = l_doc.SelectSingleNode("SinkFactories/SinkFactory[@GUID='{D6E342E3-7DDD-4858-AB91-4253643864C2}']/Value.ValueParts/ValuePart[@Value='" + l_ext + "']");
+
+                if (l_FileContainerNode == null)
+                    break;
+
+                var lSelectedAttr = l_FileContainerNode.Attributes["Value"];
+
+                if (lSelectedAttr == null)
+                    break;
+
+                string l_fileExtention = lSelectedAttr.Value;
+
+                if (l_fileExtention == null)
+                    break;
+
+                l_FileExtention = l_fileExtention.ToLower();
+
+                lSelectedAttr = l_FileContainerNode.Attributes["GUID"];
+
+                if (lSelectedAttr == null)
+                    break;
+
+                if(!Guid.TryParse(lSelectedAttr.Value, out m_FileFormatGUID))
+                    break;
                 
-                if(!string.IsNullOrEmpty(a_PtrDirectX11Source))
+                if (!string.IsNullOrEmpty(a_PtrDirectX11Source))
                 {
                     var l_VideoCaptureProcessor = VideoTextureCaptureProcessor.createCaptureProcessor(a_PtrDirectX11Source);
 
@@ -518,35 +885,11 @@ namespace MediaCapture
 
 
 
-                string lxmldoc = "";
+                lxmldoc = "";
 
                 XmlDocument doc = new XmlDocument();
-
-                mCaptureManager.getCollectionOfEncoders(ref lxmldoc);
-
-                doc.LoadXml(lxmldoc);
-
-                var l_VideoEncoderNode = doc.SelectSingleNode("EncoderFactories/Group[@GUID='{73646976-0000-0010-8000-00AA00389B71}']/EncoderFactory[1]/@CLSID");
-
-                if (l_VideoEncoderNode == null)
-                    break;
-
-                Guid lCLSIDVideoEncoder;
-
-                if (!Guid.TryParse(l_VideoEncoderNode.Value, out lCLSIDVideoEncoder))
-                    break;
-
-                var l_AudioEncoderNode = doc.SelectSingleNode("EncoderFactories/Group[@GUID='{73647561-0000-0010-8000-00AA00389B71}']/EncoderFactory[1]/@CLSID");
-
-                if (l_AudioEncoderNode == null)
-                    break;
-
-                Guid lCLSIDAudioEncoder;
-
-                if (!Guid.TryParse(l_AudioEncoderNode.Value, out lCLSIDAudioEncoder))
-                    break;
-
-
+                                                
+                Guid lCLSIDVideoEncoder = m_VideoEncoderCLSID;              
 
 
                 if(l_VideoMediaSource != null)
@@ -557,166 +900,66 @@ namespace MediaCapture
                     out l_VideoSourceMediaType))
                     break;
 
-                Guid lGUIDVideoEncoderMode = Guid.Empty;
-
                 if (l_VideoSourceMediaType != null)
-                {
-
-                    l_EncoderControl.getMediaTypeCollectionOfEncoder(
-                        l_VideoSourceMediaType,
-                        lCLSIDVideoEncoder,
-                        out lxmldoc);
-
-                    doc.LoadXml(lxmldoc);
-
-                    var lGUIDEncoderModeNode = doc.SelectSingleNode("EncoderMediaTypes/Group[1]/@GUID");
-
-                    if (lGUIDEncoderModeNode == null)
-                        break;
-
-
-                    if (!Guid.TryParse(lGUIDEncoderModeNode.Value, out lGUIDVideoEncoderMode))
-                        break;
-                    
+                {                                        
                     var l_VideoCompressedMediaType = getCompressedMediaType(
                         l_EncoderControl,
                         l_VideoSourceMediaType,
                         lCLSIDVideoEncoder,
-                        lGUIDVideoEncoderMode,
-                        a_CompressionQuality,
+                        m_GUIDVideoEncoderMode,
+                        m_CurrentVideoBitRate,
                         0);
 
                     if (l_VideoCompressedMediaType == null)
                         break;
 
-                    lCompressedMediaTypeList.Add(l_VideoCompressedMediaType);
+                    m_CompressedMediaTypeList.Add(l_VideoCompressedMediaType);
+
+                    m_UncompressedMediaTypeList.Add(l_VideoSourceMediaType);
                 }
 
 
-                Guid lGUIDAudioEncoderMode = Guid.Empty;
 
                 if (lAudioSourceOutputMediaType != null)
                 {
-                    l_EncoderControl.getMediaTypeCollectionOfEncoder(
-                        lAudioSourceOutputMediaType,
-                        lCLSIDAudioEncoder,
-                        out lxmldoc);
-
-                    doc.LoadXml(lxmldoc);
-
-                    var lGUIDEncoderModeNode = doc.SelectSingleNode("EncoderMediaTypes/Group[1]/@GUID");
-
-                    if (lGUIDEncoderModeNode == null)
-                        break;
-
-                    if (!Guid.TryParse(lGUIDEncoderModeNode.Value, out lGUIDAudioEncoderMode))
-                        break;
-
                     var l_AudioCompressedMediaType = getCompressedMediaType(
                         l_EncoderControl,
                         lAudioSourceOutputMediaType,
-                        lCLSIDAudioEncoder,
-                        lGUIDAudioEncoderMode,
-                        a_CompressionQuality,
+                        m_CLSIDAudioEncoder,
+                        m_GUIDAudioEncoderMode,
+                        m_CurrentAudioBitRate,
                         0);
 
                     if (l_AudioCompressedMediaType == null)
                         break;
 
-                    lCompressedMediaTypeList.Add(l_AudioCompressedMediaType);
+                    m_CompressedMediaTypeList.Add(l_AudioCompressedMediaType);
+
+                    m_UncompressedMediaTypeList.Add(lAudioSourceOutputMediaType);
                 }
 
+
+                var l_Encoders = createEncoderNodes(a_FilePath);
+
+                if (l_Encoders == null || l_Encoders.Count != 2)
+                    break;
                 
-
-                doc = new XmlDocument();
-
-                mCaptureManager.getCollectionOfSinks(ref lxmldoc);
-
-                doc.LoadXml(lxmldoc);
-
-                var l_FileContainerNode = doc.SelectSingleNode("SinkFactories/SinkFactory[@GUID='{D6E342E3-7DDD-4858-AB91-4253643864C2}']/Value.ValueParts/ValuePart[1]");
-
-                if (l_FileContainerNode == null)
-                    break;
-
-                var lSelectedAttr = l_FileContainerNode.Attributes["Value"];
-
-                if (lSelectedAttr == null)
-                    break;
-
-                string l_fileExtention = lSelectedAttr.Value;
-
-                if (l_fileExtention == null)
-                    break;
-
-                l_FileExtention = l_fileExtention.ToLower();
-
-                lSelectedAttr = l_FileContainerNode.Attributes["GUID"];
-
-                if (lSelectedAttr == null)
-                    break;
-
-
-                IFileSinkFactory l_FileSinkFactory = null;
-
-                l_SinkControl.createSinkFactory(
-                Guid.Parse(lSelectedAttr.Value),
-                out l_FileSinkFactory);
-
-                if (l_FileSinkFactory == null)
-                    break;
-
-               
-                lOutputNodes = getOutputNodes(
-                    lCompressedMediaTypeList,
-                    l_FileSinkFactory,
-                    a_FilePath);
-
-                if (lOutputNodes == null || lOutputNodes.Count == 0)
-                    break;
-
-
-
-
-
-                var lSinkNode = doc.SelectSingleNode("SinkFactories/SinkFactory[@GUID='{2F34AF87-D349-45AA-A5F1-E4104D5C458E}']");
-
-                if (lSinkNode == null)
-                    break;
-
-                var lContainerNode = lSinkNode.SelectSingleNode("Value.ValueParts/ValuePart[1]");
-
-                if (lContainerNode == null)
-                    break;
-
-
-
-                IEVRSinkFactory lSinkFactory;
-
-                var lSinkControl = mCaptureManager.createSinkControl();
-
-                lSinkControl.createSinkFactory(
-                Guid.Empty,
-                out lSinkFactory);
-
                 int l_index = 0;
 
                 if(l_VideoMediaSource != null)
                 {
-                    var l_encoderNode = getEncoderNode(
-                        l_ISourceControl,
-                        l_EncoderControl,
-                        l_SpreaderNodeFactory,
-                        l_VideoSourceMediaType,
-                        lCLSIDVideoEncoder,
-                        lGUIDVideoEncoderMode,
-                        a_CompressionQuality,
-                        0,
-                        lOutputNodes[l_index++]);
+                    var l_encoderNode = l_Encoders[l_index++];
 
                     if (l_encoderNode == null)
                         break;
-#if EXTEND_CM
+
+                    m_VideoSwitcherNode = createSwitcher(l_encoderNode);
+
+                    if (m_VideoSwitcherNode == null)
+                        break;
+
+                    l_encoderNode = m_VideoSwitcherNode;
+
                     if(m_VideoMixerInputMaxCount > 1)
                     {
                         IMixerNodeFactory lMixerNodeFactory = null;
@@ -740,7 +983,7 @@ namespace MediaCapture
                             m_VideoTopologyInputMixerNodes.Add(lVideoTopologyInputMixerNodes[i]);
                         }
                     }
-#endif
+
                     object l_VideoSourceNode = null;
 
                     if (!l_ISourceControl.createSourceNodeFromExternalSourceWithDownStreamConnection(
@@ -756,18 +999,22 @@ namespace MediaCapture
 
                 if(!string.IsNullOrEmpty(lAudioLoopBack))
                 {
+                    var l_encoderNode = l_Encoders[l_index++];
+
+                    if (l_encoderNode == null)
+                        break;
+
+                    m_AudioSwitcherNode = createSwitcher(l_encoderNode);
+
+                    if (m_AudioSwitcherNode == null)
+                        break;
+
+                    l_encoderNode = m_AudioSwitcherNode;
+
                     var l_AudioSourceNode = getSourceNode(
                         l_ISourceControl,
-                        l_EncoderControl,
-                        l_SpreaderNodeFactory,
                         lAudioLoopBack,
-                        lAudioSourceOutputMediaType,
-                        lCLSIDAudioEncoder,
-                        lGUIDAudioEncoderMode,
-                        a_CompressionQuality,
-                        0,
-                        null,
-                        lOutputNodes[l_index++]);
+                        l_encoderNode);
 
                     lSourceMediaNodeList.Add(l_AudioSourceNode);
                 }
@@ -775,20 +1022,18 @@ namespace MediaCapture
                 {
                     if(l_AudioMediaSource != null)
                     {
-                        var l_encoderNode = getEncoderNode(
-                            l_ISourceControl,
-                            l_EncoderControl,
-                            l_SpreaderNodeFactory,
-                            lAudioSourceOutputMediaType,
-                            lCLSIDAudioEncoder,
-                            lGUIDAudioEncoderMode,
-                            a_CompressionQuality,
-                            0,
-                            lOutputNodes[l_index++]);
+                        var l_encoderNode = l_Encoders[l_index++];
 
                         if (l_encoderNode == null)
                             break;
-#if EXTEND_CM
+
+                        m_AudioSwitcherNode = createSwitcher(l_encoderNode);
+
+                        if (m_AudioSwitcherNode == null)
+                            break;
+
+                        l_encoderNode = m_AudioSwitcherNode;
+
                         if(m_AudioMixerInputMaxCount > 1)
                         {
                             IMixerNodeFactory lMixerNodeFactory = null;
@@ -812,7 +1057,7 @@ namespace MediaCapture
                                 m_AudioTopologyInputMixerNodes.Add(lAudioTopologyInputMixerNodes[i]);
                             }
                         }
-#endif
+
                         object l_AudioSourceNode = null;
 
                         if (!l_ISourceControl.createSourceNodeFromExternalSourceWithDownStreamConnection(
@@ -841,7 +1086,9 @@ namespace MediaCapture
                 m_ISession.registerUpdateStateDelegate(UpdateStateDelegate);
 
                 m_ISession.startSession(0, Guid.Empty);
-                
+
+                l_resultFileExtention = l_FileExtention;
+
             } while (false);
 
             if (lOutputNodes != null)
@@ -856,25 +1103,14 @@ namespace MediaCapture
                     Marshal.ReleaseComObject(item);
                 }
 
-
-            if (lAudioSourceOutputMediaType != null)
-                Marshal.ReleaseComObject(lAudioSourceOutputMediaType);
-
+            
             if (l_AudioMediaSource != null)
                 Marshal.ReleaseComObject(l_AudioMediaSource);
-
-            if (l_VideoSourceMediaType != null)
-                Marshal.ReleaseComObject(l_VideoSourceMediaType);
-
-            foreach (var item in lCompressedMediaTypeList)
-            {
-                Marshal.ReleaseComObject(item);
-            }
-            
+                                   
             if (l_VideoMediaSource != null)
                 Marshal.ReleaseComObject(l_VideoMediaSource);
 
-            return l_FileExtention;
+            return l_resultFileExtention;
         }
 
         private void UpdateStateDelegate(uint aCallbackEventCode, uint aSessionDescriptor)
@@ -904,14 +1140,6 @@ namespace MediaCapture
                 case SessionCallbackEventCode.ItIsClosed:
                     break;
                 case SessionCallbackEventCode.VideoCaptureDeviceRemoved:
-                    {
-
-
-                        //Dispatcher.Invoke(
-                        //DispatcherPriority.Normal,
-                        //new Action(() => mLaunchButton_Click(null, null)));
-
-                    }
                     break;
                 default:
                     break;
@@ -920,6 +1148,28 @@ namespace MediaCapture
 
         public void stop()
         {
+
+
+            foreach (var item in m_CompressedMediaTypeList)
+            {
+                Marshal.ReleaseComObject(item);
+            }
+
+            m_CompressedMediaTypeList.Clear();
+
+
+
+
+
+            foreach (var item in m_UncompressedMediaTypeList)
+            {
+                Marshal.ReleaseComObject(item);
+            }
+
+            m_UncompressedMediaTypeList.Clear();
+
+
+
             if (m_ISession == null)
                 return;
 
@@ -942,6 +1192,22 @@ namespace MediaCapture
             }
 
             m_AudioTopologyInputMixerNodes.Clear();
+
+            try
+            {
+                Marshal.FinalReleaseComObject(m_VideoSwitcherNode);
+            }
+            catch (Exception)
+            {
+            }
+
+            try
+            {
+                Marshal.FinalReleaseComObject(m_AudioSwitcherNode);
+            }
+            catch (Exception)
+            {
+            }                       
         }
 
         private object getCompressedMediaType(
@@ -1026,7 +1292,6 @@ namespace MediaCapture
         private object getEncoderNode(
             ISourceControl aSourceControl,
             IEncoderControl aEncoderControl,
-            ISpreaderNodeFactory aSpreaderNodeFactory,
             object aSourceMediaType,
             Guid aCLSIDEncoder,
             Guid aCLSIDEncoderMode,
@@ -1241,6 +1506,33 @@ namespace MediaCapture
             return lresult;
         }
 
+        private object getSourceNode(
+            ISourceControl aSourceControl,
+            string aSymbolicLink,
+            object aOutputNode)
+        {
+            object lresult = null;
+
+            do
+            {
+                
+                object lSourceNode;
+
+                if (!aSourceControl.createSourceNode(
+                    aSymbolicLink,
+                    0,
+                    0,
+                    aOutputNode,
+                    out lSourceNode))
+                    break;
+
+                lresult = lSourceNode;
+
+            } while (false);
+
+            return lresult;
+        }
+
         public int currentAvalableVideoMixers()
         {
             return m_VideoTopologyInputMixerNodes.Count;
@@ -1249,6 +1541,224 @@ namespace MediaCapture
         public int currentAvalableAudioMixers()
         {
             return m_AudioTopologyInputMixerNodes.Count;
+        }
+
+
+
+
+        public Tuple<uint, uint, string> getAudioBitRates()
+        {
+            return m_AudioBitRates;
+        }
+
+        public List<Tuple<Tuple<uint, uint, string>, Tuple<string, string>>> getVideoBitRates()
+        {
+            return m_VideoBitRates;
+        }
+
+
+
+        public void setVideoBitRate(uint a_bitRate, string a_encoderCLSID, string a_encoderModeCLSID)
+        {
+            m_VideoBitRate = a_bitRate;
+
+            Guid lCLSIDVideoEncoder;
+
+            if (Guid.TryParse(a_encoderCLSID, out lCLSIDVideoEncoder))
+                m_VideoEncoderCLSID = lCLSIDVideoEncoder;
+
+            Guid lCLSIDEncoderMode;
+
+            if (Guid.TryParse(a_encoderModeCLSID, out lCLSIDEncoderMode))
+                m_GUIDVideoEncoderMode = lCLSIDEncoderMode;
+        }
+
+        public void setAudioBitRate(uint a_bitRate, string a_encoderModeCLSID)
+        {
+            m_AudioBitRate = a_bitRate;
+
+            Guid lCLSIDEncoderMode;
+
+            if (Guid.TryParse(a_encoderModeCLSID, out lCLSIDEncoderMode))
+                m_GUIDAudioEncoderMode = lCLSIDEncoderMode;
+        }
+
+        public bool restart(string a_FilePath)
+        {
+            bool l_result = false;
+
+            do
+            {
+                detachRecorder();
+
+                l_result = attachRecorder(a_FilePath);
+
+            } while (false);
+
+            return l_result;
+        }
+        
+        private void detachRecorder()
+        {
+            m_SwitcherControl.detachSwitchers(m_ISession);
+        }
+
+        bool attachRecorder(string a_FilePath)
+        {
+            bool l_result = false;
+
+            do
+            {
+                List<object> lEncoderNodes = createEncoderNodes(a_FilePath);
+
+                if (lEncoderNodes == null)
+                    break;
+
+                int lencoderCount = 0;
+
+                if (m_VideoSwitcherNode != null)
+                    m_SwitcherControl.atttachSwitcher(m_VideoSwitcherNode, lEncoderNodes[lencoderCount++]);
+
+                if (m_AudioSwitcherNode != null)
+                    m_SwitcherControl.atttachSwitcher(m_AudioSwitcherNode, lEncoderNodes[lencoderCount++]);
+
+                m_SwitcherControl.resumeSwitchers(m_ISession);
+
+                l_result = true;
+
+            } while (false);
+
+            return l_result;
+        }
+
+        private List<object> createEncoderNodes(string a_FilePath)
+        {
+
+            List<object> lEncoderNodes = new List<object>();
+
+            do
+            {
+
+                ISourceControl l_ISourceControl = null;
+
+                IEncoderControl l_EncoderControl = null;
+
+                IStreamControl l_StreamControl = null;
+
+                ISpreaderNodeFactory l_SpreaderNodeFactory = null;
+
+                l_ISourceControl = mCaptureManager.createSourceControl();
+
+                if (l_ISourceControl == null)
+                    break;
+
+                l_EncoderControl = mCaptureManager.createEncoderControl();
+
+                if (l_EncoderControl == null)
+                    break;
+
+
+
+                l_StreamControl = mCaptureManager.createStreamControl();
+
+                if (l_StreamControl == null)
+                    break;
+
+                l_StreamControl.createStreamControlNodeFactory(ref l_SpreaderNodeFactory);
+
+                if (l_SpreaderNodeFactory == null)
+                    break;
+
+
+                ISinkControl l_SinkControl = null;
+
+                l_SinkControl = mCaptureManager.createSinkControl();
+
+                if (l_SinkControl == null)
+                    break;
+
+                IFileSinkFactory l_FileSinkFactory = null;
+
+                l_SinkControl.createSinkFactory(
+                m_FileFormatGUID,
+                out l_FileSinkFactory);
+
+                if (l_FileSinkFactory == null)
+                    break;
+
+
+                List<object> lOutputNodes = getOutputNodes(
+                    m_CompressedMediaTypeList,
+                    l_FileSinkFactory,
+                    a_FilePath);
+
+                if (lOutputNodes == null || lOutputNodes.Count == 0)
+                    break;
+
+
+                int lOutputIndex = 0;
+
+                object lEncoderNode = getEncoderNode(
+                        l_ISourceControl,
+                        l_EncoderControl,
+                        m_UncompressedMediaTypeList[lOutputIndex],
+                        m_VideoEncoderCLSID,
+                        m_GUIDVideoEncoderMode,
+                        m_CurrentVideoBitRate,
+                        0,
+                        lOutputNodes[lOutputIndex++]);
+
+                if (lEncoderNode == null)
+                    break;
+
+                lEncoderNodes.Add(lEncoderNode);
+
+                lEncoderNode = null;
+
+                lEncoderNode = getEncoderNode(
+                        l_ISourceControl,
+                        l_EncoderControl,
+                        m_UncompressedMediaTypeList[lOutputIndex],
+                        m_CLSIDAudioEncoder,
+                        m_GUIDAudioEncoderMode,
+                        m_CurrentAudioBitRate,
+                        0,
+                        lOutputNodes[lOutputIndex++]);
+
+                if (lEncoderNode != null)
+                    lEncoderNodes.Add(lEncoderNode);
+
+            } while (false);
+                                                  
+            return lEncoderNodes;
+        }
+        private object createSwitcher(object aEncoderNode)
+        {
+            object lresult = null;
+
+            do
+            {
+
+                IStreamControl l_StreamControl = null;
+
+                l_StreamControl = mCaptureManager.createStreamControl();
+
+                if (l_StreamControl == null)
+                    break;
+
+                ISwitcherNodeFactory lSwitcherNodeFactory = null;
+
+                if (!l_StreamControl.createStreamControlNodeFactory(ref lSwitcherNodeFactory))
+                    break;
+
+                if (lSwitcherNodeFactory == null)
+                    break;
+
+                lSwitcherNodeFactory.createSwitcherNode(aEncoderNode, out lresult);
+
+            } while (false);
+
+            return lresult;
         }
     }
 }

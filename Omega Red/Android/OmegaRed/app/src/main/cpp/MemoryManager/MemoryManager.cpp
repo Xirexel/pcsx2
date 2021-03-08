@@ -1,3 +1,4 @@
+#include <cstddef>
 #include "MemoryManager.h"
 #include <string.h>
 

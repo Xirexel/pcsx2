@@ -98,12 +98,12 @@ void recPLZCW()
 
 	xMOV(ecx, 31);
 	xTEST(eax, eax);		// TEST sets the sign flag accordingly.
-	u8* label_notSigned = JNS8(0);
+	auto label_notSigned = JNS8(0);
 	xNOT(eax);
 	x86SetJ8(label_notSigned);
 
 	xBSR(eax, eax);
-	u8* label_Zeroed = JZ8(0);	// If BSR sets the ZF, eax is "trash"
+	auto label_Zeroed = JZ8(0);	// If BSR sets the ZF, eax is "trash"
 	xSUB(ecx, eax);
 	xDEC(ecx);			// PS2 doesn't count the first bit
 
@@ -1500,16 +1500,18 @@ void recQFSRV()
 		int info = eeRecompileCodeXMM(XMMINFO_WRITED);
 
 		xMOV(eax, ptr32[&cpuRegs.sa]);
-		xMOVDQU(xRegisterSSE(EEREC_D), ptr32[eax + &cpuRegs.GPR.r[_Rt_]]);
+		xLEA(rcx, ptr[&cpuRegs.GPR.r[_Rt_]]);
+		xMOVDQU(xRegisterSSE(EEREC_D), ptr32[rax + rcx]);
 		return;
 	}
 		
 	int info = eeRecompileCodeXMM( XMMINFO_READS | XMMINFO_READT | XMMINFO_WRITED );
 
 	xMOV(eax, ptr32[&cpuRegs.sa]);
-	xMOVDQA(ptr32[&tempqw[0]], xRegisterSSE(EEREC_T));
-	xMOVDQA(ptr32[&tempqw[4]], xRegisterSSE(EEREC_S));
-	xMOVDQU(xRegisterSSE(EEREC_D), ptr32[eax + &tempqw]);
+	xLEA(rcx, ptr[tempqw]);
+	xMOVDQA(ptr32[rcx], xRegisterSSE(EEREC_T));
+	xMOVDQA(ptr32[rcx+16], xRegisterSSE(EEREC_S));
+	xMOVDQU(xRegisterSSE(EEREC_D), ptr32[rax + rcx]);
 
 	_clearNeededXMMregs();
 }

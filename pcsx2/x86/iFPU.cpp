@@ -21,10 +21,6 @@
 #include "iR5900.h"
 #include "iFPU.h"
 
-#ifndef DISABLE_SVU
-#include "sVU_Micro.h"
-#endif
-
 using namespace x86Emitter;
 
 const __aligned16 u32 g_minvals[4]	= {0xff7fffff, 0xff7fffff, 0xff7fffff, 0xff7fffff};
@@ -510,7 +506,7 @@ u32 __fastcall FPU_MUL_HACK(u32 s, u32 t)
 
 void FPU_MUL(int regd, int regt, bool reverseOperands)
 {
-	u8 *noHack, *endMul = nullptr;
+	std::shared_ptr<x86Emitter::xForwardJumpBase>noHack, endMul = nullptr;
 
 	if (CHECK_FPUMULHACK)
 	{
@@ -643,28 +639,32 @@ void recBC1F()
 {
 	EE::Profiler.EmitOp(eeOpcode::BC1F);
 	_setupBranchTest();
-	recDoBranchImm(JNZ32(0));
+	xForwardJNZ32 jump;
+	recDoBranchImm((x86Emitter::xForwardJumpBase*)&jump);
 }
 
 void recBC1T()
 {
 	EE::Profiler.EmitOp(eeOpcode::BC1T);
 	_setupBranchTest();
-	recDoBranchImm(JZ32(0));
+	xForwardJZ32 jump;
+	recDoBranchImm((x86Emitter::xForwardJumpBase*)&jump);
 }
 
 void recBC1FL()
 {
 	EE::Profiler.EmitOp(eeOpcode::BC1FL);
 	_setupBranchTest();
-	recDoBranchImm_Likely(JNZ32(0));
+	xForwardJNZ32 jump;
+	recDoBranchImm_Likely((x86Emitter::xForwardJumpBase*)&jump);
 }
 
 void recBC1TL()
 {
 	EE::Profiler.EmitOp(eeOpcode::BC1TL);
 	_setupBranchTest();
-	recDoBranchImm_Likely(JZ32(0));
+	xForwardJZ32 jump;
+	recDoBranchImm_Likely((x86Emitter::xForwardJumpBase*)&jump);
 }
 //------------------------------------------------------------------
 
@@ -957,8 +957,8 @@ void recCVT_W()
 //------------------------------------------------------------------
 void recDIVhelper1(int regd, int regt) // Sets flags
 {
-	u8 *pjmp1, *pjmp2;
-	u32 *ajmp32, *bjmp32;
+	std::shared_ptr<x86Emitter::xForwardJumpBase>pjmp1, pjmp2;
+	std::shared_ptr<x86Emitter::xForwardJumpBase>ajmp32, bjmp32;
 	int t1reg = _allocTempXMMreg(XMMT_FPS, -1);
 	int tempReg = _allocX86reg(xEmptyReg, X86TYPE_TEMP, 0, 0);
 
@@ -1600,7 +1600,7 @@ FPURECOMPILE_CONSTCODE(SUBA_S, XMMINFO_WRITEACC|XMMINFO_READS|XMMINFO_READT);
 void recSQRT_S_xmm(int info)
 {
 	EE::Profiler.EmitOp(eeOpcode::SQRT_F);
-	u8* pjmp;
+	std::shared_ptr<x86Emitter::xForwardJumpBase>pjmp;
 	bool roundmodeFlag = false;
 	//Console.WriteLn("FPU: SQRT");
 
@@ -1650,9 +1650,9 @@ FPURECOMPILE_CONSTCODE(SQRT_S, XMMINFO_WRITED|XMMINFO_READT);
 //------------------------------------------------------------------
 void recRSQRThelper1(int regd, int t0reg) // Preforms the RSQRT function when regd <- Fs and t0reg <- Ft (Sets correct flags)
 {
-	u8 *pjmp1, *pjmp2;
-	u32 *pjmp32;
-	u8 *qjmp1, *qjmp2;
+	std::shared_ptr<x86Emitter::xForwardJumpBase>pjmp1, pjmp2;
+	std::shared_ptr<x86Emitter::xForwardJumpBase>pjmp32;
+	std::shared_ptr<x86Emitter::xForwardJumpBase>qjmp1, qjmp2;
 	int t1reg = _allocTempXMMreg(XMMT_FPS, -1);
 	int tempReg = _allocX86reg(xEmptyReg, X86TYPE_TEMP, 0, 0);
 

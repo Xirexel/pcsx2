@@ -34,12 +34,14 @@ private:
 	int m_custom_height;
 	bool m_reset;
 	int m_upscale_multiplier;
+	int m_userhacks_ts_half_bottom;
 
 	bool m_large_framebuffer;
-	bool m_disable_ts_half_bottom;
 	bool m_userhacks_align_sprite_X;
 	bool m_userhacks_enabled_gs_mem_clear;
 	bool m_userHacks_merge_sprite;
+
+	static const float SSR_UV_TOLERANCE;
 
 	#pragma region hacks
 
@@ -52,6 +54,8 @@ private:
 	void OI_GsMemClear(); // always on
 	void OI_DoubleHalfClear(GSTexture* rt, GSTexture* ds); // always on
 
+	bool OI_BigMuthaTruckers(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
+	bool OI_DBZBTGames(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_FFXII(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_FFX(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_MetalSlug6(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
@@ -61,13 +65,10 @@ private:
 	bool OI_PointListPalette(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_SuperManReturns(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_ArTonelico2(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
-	bool OI_ItadakiStreet(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_JakGames(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 
-	void OO_DBZBT2();
 	void OO_MajokkoALaMode2();
 
-	bool CU_DBZBT2();
 	bool CU_MajokkoALaMode2();
 	bool CU_TalesOfAbyss();
 
@@ -137,6 +138,7 @@ private:
 	float alpha0(int L, int X0, int X1);
 	float alpha1(int L, int X0, int X1);
 	void SwSpriteRender();
+	bool CanUseSwSpriteRender(bool allow_64x64_sprite);
 
 	template <bool linear> void RoundSpriteOffset();
 

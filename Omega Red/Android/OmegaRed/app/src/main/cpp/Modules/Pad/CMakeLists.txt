@@ -12,6 +12,7 @@ include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${PUGIXML_DIR}
         ${EXTEND_DIR}
+        ${EMITTER_DIR}
         ${FRAMEWORK_DIR}
         ${PCSX2_DIR}/../common/include
         ${Pad_DIR}

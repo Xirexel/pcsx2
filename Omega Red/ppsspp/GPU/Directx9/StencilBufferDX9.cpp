@@ -66,7 +66,7 @@ VS_OUT main(VS_IN In) {
 }
 )";
 
-bool FramebufferManagerDX9::NotifyStencilUpload(u32 addr, int size, bool skipZero) {
+bool FramebufferManagerDX9::NotifyStencilUpload(u32 addr, int size, StencilUpload flags) {
 	addr &= 0x3FFFFFFF;
 	if (!MayIntersectFramebuffer(addr)) {
 		return false;
@@ -113,7 +113,7 @@ bool FramebufferManagerDX9::NotifyStencilUpload(u32 addr, int size, bool skipZer
 	}
 
 	if (usedBits == 0) {
-		if (skipZero) {
+		if (flags == StencilUpload::STENCIL_IS_ZERO) {
 			// Common when creating buffers, it's already 0.  We're done.
 			return false;
 		}
@@ -193,7 +193,9 @@ bool FramebufferManagerDX9::NotifyStencilUpload(u32 addr, int size, bool skipZer
 	u16 h = dstBuffer->renderHeight;
 
 	if (dstBuffer->fbo) {
-		draw_->BindFramebufferAsRenderTarget(dstBuffer->fbo, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, Draw::RPAction::CLEAR });
+		// Typically, STENCIL_IS_ZERO means it's already bound.
+		Draw::RPAction stencilAction = flags == StencilUpload::STENCIL_IS_ZERO ? Draw::RPAction::KEEP : Draw::RPAction::CLEAR;
+		draw_->BindFramebufferAsRenderTarget(dstBuffer->fbo, { Draw::RPAction::KEEP, Draw::RPAction::KEEP, stencilAction }, "StencilUpload");
 	}
 	D3DVIEWPORT9 vp{ 0, 0, w, h, 0.0f, 1.0f };
 	device_->SetViewport(&vp);
@@ -201,9 +203,11 @@ bool FramebufferManagerDX9::NotifyStencilUpload(u32 addr, int size, bool skipZer
 
 	float u1 = 1.0f;
 	float v1 = 1.0f;
-	MakePixelTexture(src, dstBuffer->format, dstBuffer->fb_stride, dstBuffer->bufferWidth, dstBuffer->bufferHeight, u1, v1);
+	Draw::Texture *tex = MakePixelTexture(src, dstBuffer->format, dstBuffer->fb_stride, dstBuffer->bufferWidth, dstBuffer->bufferHeight, u1, v1);
+	if (!tex)
+		return false;
 
-	device_->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_STENCIL, D3DCOLOR_RGBA(0, 0, 0, 0), 0.0f, 0);
+	// TODO: Ideally, we should clear alpha to zero here (but not RGB.)
 
 	dxstate.stencilFunc.set(D3DCMP_ALWAYS, 0xFF, 0xFF);
 
@@ -220,7 +224,7 @@ bool FramebufferManagerDX9::NotifyStencilUpload(u32 addr, int size, bool skipZer
 	device_->SetPixelShader(stencilUploadPS_);
 	device_->SetVertexShader(stencilUploadVS_);
 
-	device_->SetTexture(0, drawPixelsTex_);
+	draw_->BindTextures(0, 1, &tex);
 
 	shaderManagerDX9_->DirtyLastShader();
 	textureCacheDX9_->ForgetLastTexture();
@@ -248,9 +252,11 @@ bool FramebufferManagerDX9::NotifyStencilUpload(u32 addr, int size, bool skipZer
 			ERROR_LOG_REPORT(G3D, "Failed to draw stencil bit %x: %08x", i, hr);
 		}
 	}
+
+	tex->Release();
 	dxstate.stencilMask.set(0xFF);
 	dxstate.viewport.restore();
-	RebindFramebuffer();
+	RebindFramebuffer("RebindFramebuffer stencil");
 	return true;
 }
 

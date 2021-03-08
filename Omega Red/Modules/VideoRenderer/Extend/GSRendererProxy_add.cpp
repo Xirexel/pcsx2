@@ -26,11 +26,7 @@ bool GSRendererProxy::CreateDevice(GSDeviceProxy *dev, void *sharedhandle, void 
 {
     ASSERT(dev);
     ASSERT(!m_dev);
-
-    if (!dev->Create(m_wnd, sharedhandle, capturehandle, directXDeviceNative)) {
-        return false;
-    }
-
+	
     m_dev = (GSDevice *)dev;
     m_dev->SetVSync(m_vsync);
 

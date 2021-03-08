@@ -10,6 +10,7 @@ set (CDVD_DIR ${MODULES_DIR}/CDVD)
 include_directories(
         ${EXTEND_DIR}
         ${FRAMEWORK_DIR}
+        ${EMITTER_DIR}
         ${PCSX2_DIR}/../common/include
         ${PCSX2LIB_DIR}
         ${LIBAIO_DIR}

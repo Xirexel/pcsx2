@@ -37,9 +37,6 @@
     <Filter Include="plugins\GSdx\Renderers\HW">
       <UniqueIdentifier>{60b5ea41-c082-4a95-9e6e-60eb166f1aab}</UniqueIdentifier>
     </Filter>
-    <Filter Include="plugins\GSdx\Renderers\OpenCL">
-      <UniqueIdentifier>{bb6d2f04-8bc9-459c-b605-a6c50ea2ecb0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="plugins\GSdx\res">
       <UniqueIdentifier>{a17ee887-e374-4b9e-b814-2ca675bdb959}</UniqueIdentifier>
     </Filter>
@@ -126,9 +123,6 @@
     <ClCompile Include="..\..\..\plugins\GSdx\GSVector.cpp">
       <Filter>plugins\GSdx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\plugins\GSdx\Window\GSCaptureDlg.cpp">
-      <Filter>plugins\GSdx\Window</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Common\GSDevice.cpp">
       <Filter>plugins\GSdx\Renderers\Common</Filter>
     </ClCompile>
@@ -137,9 +131,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Null\GSDeviceNull.cpp">
       <Filter>plugins\GSdx\Renderers\Null</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\plugins\GSdx\Window\GSDialog.cpp">
-      <Filter>plugins\GSdx\Window</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Common\GSDirtyRect.cpp">
       <Filter>plugins\GSdx\Renderers\Common</Filter>
@@ -155,9 +146,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\Common\GSRenderer.cpp">
       <Filter>plugins\GSdx\Renderers\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\plugins\GSdx\Renderers\OpenCL\GSRendererCL.cpp">
-      <Filter>plugins\GSdx\Renderers\OpenCL</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\plugins\GSdx\Renderers\HW\GSRendererHW.cpp">
       <Filter>plugins\GSdx\Renderers\HW</Filter>
@@ -206,6 +194,9 @@
     </ClCompile>
     <ClCompile Include="Extend\GSDeviceProxy_add.cpp">
       <Filter>Omega Red\Modules\VideoRenderer\Extend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\GSdx\Window\GSDialog.cpp">
+      <Filter>plugins\GSdx\Window</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

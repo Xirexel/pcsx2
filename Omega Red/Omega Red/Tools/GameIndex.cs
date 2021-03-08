@@ -217,7 +217,8 @@ namespace Omega_Red.Tools
                         {
                             l_currentGameData = new GameData();
 
-                            m_gameCollection.Add(lsplit[1], l_currentGameData);
+                            if(!m_gameCollection.ContainsKey(lsplit[1]))
+                                m_gameCollection.Add(lsplit[1], l_currentGameData);
                         }
                     }
                     else

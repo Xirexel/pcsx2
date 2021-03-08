@@ -18,6 +18,20 @@
 // Dependencies.h : Contains classes required by all Utilities headers.
 //   This file is included by most .h files provided by the Utilities class.
 
+#ifdef _MSC_VER
+#include <basetsd.h>
+
+typedef UINT_PTR        SOCKET;
+
+#define INVALID_SOCKET  (SOCKET)(~0)
+#define SOCKET_ERROR            (-1)
+#endif
+
+#ifdef ANDROID_ABI_V8A
+#define __fastcall
+#define stdcall
+#endif
+
 #include "pxForwardDefs.h"
 
 // This should prove useful....
@@ -228,6 +242,13 @@ public:
 #include <atomic>
 #include <thread>
 
+
+extern const wxChar *__fastcall pxExpandMsg(const wxChar *englishContent);
+extern const wxChar *__fastcall pxGetTranslation(const wxChar *message);
+extern bool pxIsEnglish(int id);
+extern wxString fromUTF8(const char *src);
+extern wxString fromAscii(const char *src);
+
 #include "Pcsx2Defs.h"
 
 // --------------------------------------------------------------------------------------
@@ -263,14 +284,12 @@ static const s64 _4gb = _1gb * 4;
 #define pxE_dev(english) pxExpandMsg((english))
 
 
-extern const wxChar *__fastcall pxExpandMsg(const wxChar *englishContent);
-extern const wxChar *__fastcall pxGetTranslation(const wxChar *message);
-extern bool pxIsEnglish(int id);
 
-extern wxString fromUTF8(const char *src);
-extern wxString fromAscii(const char *src);
 
 
 #include "Utilities/Assertions.h"
 #include "Utilities/Exceptions.h"
 #include "Utilities/ScopedAlloc.h"
+
+extern int fputs(const char *str, FILE *stream);
+extern FILE* wxFopen(const char *filename, const char *mode);

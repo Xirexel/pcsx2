@@ -29,6 +29,7 @@
 #include "Counters.h"
 
 #include "Utilities/SafeArray.inl"
+#include "SPU2/spu2.h"
 
 using namespace R5900;
 
@@ -40,7 +41,7 @@ static void PreLoadPrep()
 
 static void PostLoadPrep()
 {
-	memzero(pCache);
+	resetCache();
 //	WriteCP0Status(cpuRegs.CP0.n.Status.val);
 	for(int i=0; i<48; i++) MapTLB(i);
 	if (EmuConfig.Gamefixes.GoemonTlbHack) GoemonPreloadTlb();
@@ -78,7 +79,6 @@ void SaveStateBase::Init( SafeArray<u8>* memblock )
 	m_memory	= memblock;
 	m_version	= g_SaveVersion;
 	m_idx		= 0;
-	m_DidBios	= false;
 }
 
 void SaveStateBase::PrepBlock( int size )
@@ -225,6 +225,7 @@ SaveStateBase& SaveStateBase::FreezeInternals()
 	sio2Freeze();
 	cdrFreeze();
 	cdvdFreeze();
+
 	
 	// technically this is HLE BIOS territory, but we don't have enough such stuff
 	// to merit an HLE Bios sub-section... yet.
@@ -245,7 +246,6 @@ SaveStateBase& SaveStateBase::FreezePlugins()
 		FreezeTag( FastFormatAscii().Write("Plugin:%s", tbl_PluginInfo[i].shortname) );
 		GetCorePlugins().Freeze( (PluginsEnum_t)i, *this );
 	}
-
 	return *this;
 }
 
@@ -255,6 +255,7 @@ SaveStateBase& SaveStateBase::FreezeAll()
 	FreezeBios();
 	FreezeInternals();
 	FreezePlugins();
+
 	
 	return *this;
 }
@@ -320,42 +321,4 @@ void memLoadingState::FreezeMem( void* data, int size )
 	const u8* const src = m_memory->GetPtr(m_idx);
 	m_idx += size;
 	memcpy( data, src, size );
-}
-
-// --------------------------------------------------------------------------------------
-//  SaveState Exception Messages
-// --------------------------------------------------------------------------------------
-
-wxString Exception::UnsupportedStateVersion::FormatDiagnosticMessage() const
-{
-	// Note: no stacktrace needed for this one...
-	return pxsFmt( L"Unknown or unsupported savestate version: 0x%x", Version );
-}
-
-wxString Exception::UnsupportedStateVersion::FormatDisplayMessage() const
-{
-	// m_message_user contains a recoverable savestate error which is helpful to the user.
-	return
-		m_message_user + L"\n\n" +
-		pxsFmt( _("Cannot load savestate.  It is of an unknown or unsupported version."), Version );
-}
-
-wxString Exception::StateCrcMismatch::FormatDiagnosticMessage() const
-{
-	// Note: no stacktrace needed for this one...
-	return pxsFmt(
-		L"Game/CDVD does not match the savestate CRC.\n"
-		L"\tCdvd CRC: 0x%X\n\tGame CRC: 0x%X\n",
-		Crc_Savestate, Crc_Cdvd
-	);
-}
-
-wxString Exception::StateCrcMismatch::FormatDisplayMessage() const
-{
-	return
-		m_message_user + L"\n\n" +
-		pxsFmt(
-			L"Savestate game/crc mismatch. Cdvd CRC: 0x%X Game CRC: 0x%X\n",
-			Crc_Savestate, Crc_Cdvd
-		);
 }

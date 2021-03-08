@@ -31,7 +31,7 @@ namespace Dynarec {
 // Parameters:
 //   jmpSkip - This parameter is the result of the appropriate J32 instruction
 //   (usually JZ32 or JNZ32).
-void recDoBranchImm( u32* jmpSkip, bool isLikely )
+void recDoBranchImm(x86Emitter::xForwardJumpBase* jump, bool isLikely )
 {
 	// All R5900 branches use this format:
 	const u32 branchTo = ((s32)_Imm_ * 4) + pc;
@@ -46,7 +46,7 @@ void recDoBranchImm( u32* jmpSkip, bool isLikely )
 
 	// Jump target when the branch is *not* taken, skips the branchtest code
 	// insertion above.
-	x86SetJ32(jmpSkip);
+	x86SetJ32(*jump);
 
 	// if it's a likely branch then we'll need to skip the delay slot here, since
 	// MIPS cancels the delay slot instruction when branches aren't taken.
@@ -59,9 +59,9 @@ void recDoBranchImm( u32* jmpSkip, bool isLikely )
 	SetBranchImm(pc);	// start a new recompiled block.
 }
 
-void recDoBranchImm_Likely( u32* jmpSkip )
+void recDoBranchImm_Likely(x86Emitter::xForwardJumpBase* jump)
 {
-	recDoBranchImm( jmpSkip, true );
+	recDoBranchImm(jump, true );
 }
 
 namespace OpcodeImpl {

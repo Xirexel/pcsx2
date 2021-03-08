@@ -38,7 +38,8 @@
 #include <commdlg.h>
 #include <shellapi.h>
 #include <d3dcompiler.h>
-#include <d3d11.h>
+#include <d3d11_1.h>
+#include <dxgi1_3.h>
 #include <comutil.h>
 #include <atlcomcli.h>
 
@@ -49,14 +50,6 @@
 #endif
 
 #include <PluginCompatibility.h>
-
-#ifdef ENABLE_OPENCL
-
-#define CL_USE_DEPRECATED_OPENCL_1_1_APIS
-#define __CL_ENABLE_EXCEPTIONS
-#include <CL/cl.hpp>
-
-#endif
 
 #ifdef __x86_64__
 #define _M_AMD64

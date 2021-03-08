@@ -65,25 +65,29 @@ static void _setupBranchTest()
 void recBC0F()
 {
 	_setupBranchTest();
-	recDoBranchImm(JE32(0));
+	xForwardJE32 jump;
+	recDoBranchImm((x86Emitter::xForwardJumpBase*)&jump);
 }
 
 void recBC0T()
 {
 	_setupBranchTest();
-	recDoBranchImm(JNE32(0));
+	xForwardJNE32 jump;
+	recDoBranchImm((x86Emitter::xForwardJumpBase*)&jump);
 }
 
 void recBC0FL()
 {
 	_setupBranchTest();
-	recDoBranchImm_Likely(JE32(0));
+	xForwardJE32 jump;
+	recDoBranchImm_Likely((x86Emitter::xForwardJumpBase*)&jump);
 }
 
 void recBC0TL()
 {
 	_setupBranchTest();
-	recDoBranchImm_Likely(JNE32(0));
+	xForwardJNE32 jump;
+	recDoBranchImm_Likely((x86Emitter::xForwardJumpBase*)&jump);
 }
 
 void recTLBR() { recCall(Interp::TLBR); }
@@ -114,6 +118,12 @@ void recDI()
 
 	//xFastCall((void*)(uptr)Interp::DI );
 
+	// Fixes booting issues in the following games:
+	// Jak X, Namco 50th anniversary, Spongebob the Movie, Spongebob Battle for Bikini Bottom,
+	// The Incredibles, The Incredibles rize of the underminer, Soukou kihei armodyne, Garfield Saving Arlene, Tales of Fandom Vol. 2.
+	if(!g_recompilingDelaySlot)
+		recompileNextInstruction(0); // DI execution is delayed by one instruction
+
 	xMOV(eax, ptr[&cpuRegs.CP0.n.Status]);
 	xTEST(eax, 0x20006); // EXL | ERL | EDI
 	xForwardJNZ8 iHaveNoIdea;
@@ -141,7 +151,7 @@ void recMFC0()
         xMOV(ecx, ptr[&cpuRegs.cycle]);
         xMOV(eax, ecx);
 		xSUB(eax, ptr[&s_iLastCOP0Cycle]);
-		u8* skipInc = JNZ8( 0 );
+		auto skipInc = JNZ8( 0 );
 		xINC(eax);
 		x86SetJ8( skipInc );
         xADD(ptr[&cpuRegs.CP0.n.Count], eax);

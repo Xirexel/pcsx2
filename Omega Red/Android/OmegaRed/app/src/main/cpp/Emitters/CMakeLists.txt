@@ -9,4 +9,6 @@ cmake_minimum_required(VERSION 3.4.1)
 
 if(${ANDROID_ABI} STREQUAL "x86")
     add_subdirectory(x86emitter)
+elseif(${ANDROID_ABI} STREQUAL "arm64-v8a")
+    add_subdirectory(arm64v8aEmitter)
 endif()

@@ -17,6 +17,25 @@
 
 #include "..\src\Global.h"
 
+#if (defined(__ANDROID__) && !defined(ANDROID_ABI_X86))
+
+
+// Seriously what is so complicated to provided this bunch of intrinsics in clangs.
+static unsigned int _rotr(unsigned int x, int s)
+{
+	return (x >> s) | (x << (32 - s));
+}
+
+static unsigned int _rotl(unsigned int x, int s)
+{
+	return (x << s) | (x >> (32 - s));
+}
+
+
+#endif
+
+
+
 // Games have turned out to be surprisingly sensitive to whether a parked, silent voice is being fully emulated.
 // With Silent Hill: Shattered Memories requiring full processing for no obvious reason, we've decided to
 // disable the optimisation until we can tie it to the game database.

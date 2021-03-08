@@ -2,8 +2,11 @@
 
 #include <set>
 
+#include "math/lin/vec3.h"
 #include "ui/screen.h"
 #include "ui/viewgroup.h"
+
+using namespace Lin;
 
 class I18NCategory;
 namespace Draw {
@@ -41,17 +44,16 @@ protected:
 
 	virtual void RecreateViews() override { recreateViews_ = true; }
 
-	UI::ViewGroup *root_;
-	Vec3 translation_;
-	Vec3 scale_;
+	UI::ViewGroup *root_ = nullptr;
+	Vec3 translation_ = Vec3(0.0f);
+	Vec3 scale_ = Vec3(1.0f);
 	float alpha_ = 1.0f;
+	bool ignoreInsets_ = false;
 
 private:
 	void DoRecreateViews();
 
-	bool recreateViews_;
-
-	int hatDown_;
+	bool recreateViews_ = true;
 };
 
 class UIDialogScreen : public UIScreen {
@@ -84,6 +86,7 @@ protected:
 	virtual bool FillVertical() const { return false; }
 	virtual UI::Size PopupWidth() const { return 550; }
 	virtual bool ShowButtons() const { return true; }
+	virtual bool CanComplete(DialogResult result) { return true; }
 	virtual void OnCompleted(DialogResult result) {}
 
 	virtual void update() override;
@@ -225,7 +228,7 @@ private:
 
 class TextEditPopupScreen : public PopupScreen {
 public:
-	TextEditPopupScreen(std::string *value, std::string &placeholder, const std::string &title, int maxLen)
+	TextEditPopupScreen(std::string *value, const std::string &placeholder, const std::string &title, int maxLen)
 		: PopupScreen(title, "OK", "Cancel"), value_(value), placeholder_(placeholder), maxLen_(maxLen) {}
 	virtual void CreatePopupContents(ViewGroup *parent) override;
 

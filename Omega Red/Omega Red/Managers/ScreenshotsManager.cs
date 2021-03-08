@@ -29,11 +29,14 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using Omega_Red.Emulators;
 
 namespace Omega_Red.Managers
 {
     class ScreenshotsManager : IManager
     {
+        public event Action<bool, System.Windows.Media.ImageSource> TakeScreenshotEvent;
+        
         private VideoPanel m_VideoPanel = null;
 
         private ScreenshotsManager()
@@ -61,8 +64,8 @@ namespace Omega_Red.Managers
 
         void mCustomerView_CurrentChanged(object sender, EventArgs e)
         {
-            if (PCSX2Controller.Instance.Status == PCSX2Controller.StatusEnum.Started)
-                PCSX2Controller.Instance.PlayPause();
+            if (Emul.Instance.Status == Emul.StatusEnum.Started)
+                Emul.Instance.pause();
 
             Managers.MediaRecorderManager.Instance.StartStop(false);
 
@@ -181,7 +184,7 @@ namespace Omega_Red.Managers
         
         public void createItem()
         {
-            var l_isoInfo = PCSX2Controller.Instance.IsoInfo;
+            var l_isoInfo = Emul.Instance.IsoInfo;
 
             if (l_isoInfo == null)
                 return;
@@ -192,7 +195,20 @@ namespace Omega_Red.Managers
 
             if (l_gameData != null)
             {
-                l_add_file_path = l_gameData.FriendlyName + "_" + l_add_file_path;
+                var l_invalidChars = Path.GetInvalidFileNameChars();
+
+                bool l_hasInvalidChar = false;
+
+                foreach (var l_invalidChar in l_invalidChars)
+                {
+                    l_hasInvalidChar = l_gameData.FriendlyName.Contains(l_invalidChar);
+
+                    if (l_hasInvalidChar)
+                        break;
+                }
+
+                if (!l_hasInvalidChar)
+                    l_add_file_path = l_gameData.FriendlyName + "_" + l_add_file_path;
             }
 
             if (File.Exists(Settings.Default.ScreenshotsFolder + l_add_file_path))
@@ -236,6 +252,36 @@ namespace Omega_Red.Managers
             a_ScreenshotInfo.DateTime = DateTime.Now;
 
             _screenshotInfoCollection.Add(a_ScreenshotInfo);
+
+            SoundSchemaManager.Instance.playEvent(SoundSchemaManager.Event.Click);
+
+            bitmap = new BitmapImage();
+
+            using (var stream = new MemoryStream(l_data))
+            {
+                stream.Position = 0; // here
+
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.StreamSource = stream;
+                bitmap.EndInit();
+                bitmap.Freeze();
+            }
+
+            if (TakeScreenshotEvent != null)
+                TakeScreenshotEvent(true, bitmap);
+
+
+            var _dispatcherTimer = new DispatcherTimer();
+            _dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 1, 500);
+            _dispatcherTimer.Tick += (sender, e)=> {
+                _dispatcherTimer.Stop();
+
+                if (TakeScreenshotEvent != null)
+                    TakeScreenshotEvent(false, null);
+            };
+            _dispatcherTimer.Start();
+
         }
 
         public void persistItemAsync(object a_Item)
@@ -254,6 +300,10 @@ namespace Omega_Red.Managers
         public bool accessLoadItem(object a_Item)
         {
             return true;
+        }
+
+        public void registerItem(object a_Item)
+        {
         }
 
         public ICollectionView Collection

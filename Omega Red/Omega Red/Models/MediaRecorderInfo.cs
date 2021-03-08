@@ -28,6 +28,8 @@ namespace Omega_Red.Models
 
         public DateTime DateTime { get; set; }
 
+        public string Duration { get; set; }
+
         public System.Windows.Media.ImageSource SmallImageSource { get; set; }      
     }
 }

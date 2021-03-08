@@ -29,6 +29,14 @@ PFNGLPUSHDEBUGGROUPPROC glPushDebugGroup = NULL;
 PFNGLPOPDEBUGGROUPPROC glPopDebugGroup = NULL;
 PFNGLDEBUGMESSAGEINSERTPROC glDebugMessageInsert = NULL;
 
+FT_Error FT_New_Memory_Face(FT_Library      library,
+	const FT_Byte*  file_base,
+	FT_Long         file_size,
+	FT_Long         face_index,
+	FT_Face        *aface)
+{
+	return 1;
+}
 
 FT_Error FT_New_Face(FT_Library   library,
 	const char*  filepathname,

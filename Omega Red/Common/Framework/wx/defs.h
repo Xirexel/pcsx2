@@ -41,7 +41,12 @@
 #endif /*  HAVE_EXPLICIT/!HAVE_EXPLICIT */
 
 
+#ifdef ANDROID_ABI_V8A
+typedef unsigned int uint;
+typedef long s64;
+#else
 typedef unsigned int uint;
 typedef long long s64;
+#endif
 
-
+#include <assert.h>

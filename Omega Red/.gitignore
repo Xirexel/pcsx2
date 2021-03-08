@@ -13,7 +13,7 @@
 *.bsc
 *.aps
 *.exe
-*.wav
+!*.wav
 
 *.trace
 *.dump
@@ -38,7 +38,7 @@
 
 _ReSharper.*
 pcsx2.snapshot_*
-!svnrev.h
+svnrev.h
 
 /build
 /obj-*
@@ -113,3 +113,4 @@ packages/
 Omega Red/bin/
 bin/
 Win32/
+!/PCSX-Reloaded/win32

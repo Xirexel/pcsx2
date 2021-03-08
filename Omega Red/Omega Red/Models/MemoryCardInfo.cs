@@ -25,6 +25,8 @@ namespace Omega_Red.Models
     {
         public Visibility Visibility { get; set; }
 
+        public string Number { get; set; }
+
         public int Index { get; set; }
 
         public string FileName { get; set; }
@@ -35,6 +37,14 @@ namespace Omega_Red.Models
 
         public DateTime DateTime { get; set; }
 
+        public string CloudSaveDate { get; set; }
+
         public bool IsCurrent { get; set; }
+
+        public bool IsCloudOnlysave { get; set; }
+
+        public bool IsCloudsave { get; set; }
+
+        public bool Focusable { get { return !IsCloudOnlysave; } }
     }
 }

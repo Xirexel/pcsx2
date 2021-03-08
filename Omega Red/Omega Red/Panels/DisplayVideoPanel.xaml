@@ -26,7 +26,7 @@
                 <Viewbox Margin="80,80,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
                     <Grid>
                         <CheckBox x:Name="mYouTubeChkBx" Style="{DynamicResource StateCheckBox}" Background="Transparent" Unchecked="CheckBox_Checked" Checked="CheckBox_Checked" Grid.Column="1">
-                            <Image Source="/Assests/Images/Register_youtube2.png" 
+                            <Image Source="pack://application:,,,/Omega Red;component/Assests/Images/Register_youtube2.png" 
                                    Stretch="Uniform" 
                                    Height="128" 
                                    Width="128"/>

@@ -166,6 +166,7 @@ public:
 
 		wxDirName RunIso;		// last used location for Iso loading.
 		wxDirName RunELF;		// last used location for ELF loading.
+		wxFileName RunDisc;		// last used location for Disc loading.
 
 		FolderOptions();
 		void LoadSave( IniInterface& conf );
@@ -249,6 +250,16 @@ public:
 		void SanityCheck();
 	};
 
+#ifndef DISABLE_RECORDING
+	struct InputRecordingOptions
+	{
+		wxPoint		VirtualPadPosition;
+
+		InputRecordingOptions();
+		void loadSave( IniInterface& conf );
+	};
+#endif
+
 	struct UiTemplateOptions {
 		UiTemplateOptions();
 		void LoadSave(IniInterface& conf);
@@ -309,6 +320,7 @@ public:
 	// (the toggle is applied when a new EmuConfig is sent through AppCoreThread::ApplySettings)
 	bool		EnableSpeedHacks;
 	bool		EnableGameFixes;
+	bool		EnableFastBoot;
 
 	// Presets try to prevent users from overwhelming when they want to change settings (usually to make a game run faster).
 	// The presets allow to modify the balance between emulation accuracy and emulation speed using a pseudo-linear control.
@@ -339,6 +351,9 @@ public:
 	FilenameOptions			BaseFilenames;
 	GSWindowOptions			GSWindow;
 	FramerateOptions		Framerate;
+#ifndef DISABLE_RECORDING
+	InputRecordingOptions   inputRecording;
+#endif
 	UiTemplateOptions		Templates;
 	
 	// PCSX2-core emulation options, which are passed to the emu core prior to initiating
