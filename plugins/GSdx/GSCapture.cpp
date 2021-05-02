@@ -26,33 +26,45 @@
 
 #ifdef _WIN32
 
-class CPinInfo : public PIN_INFO {
+class CPinInfo : public PIN_INFO
+{
 public:
 	CPinInfo() { pFilter = NULL; }
-	~CPinInfo() { if (pFilter) pFilter->Release(); }
+	~CPinInfo()
+	{
+		if (pFilter)
+			pFilter->Release();
+	}
 };
 
-class CFilterInfo : public FILTER_INFO {
+class CFilterInfo : public FILTER_INFO
+{
 public:
 	CFilterInfo() { pGraph = NULL; }
-	~CFilterInfo() { if (pGraph) pGraph->Release(); }
+	~CFilterInfo()
+	{
+		if (pGraph)
+			pGraph->Release();
+	}
 };
 
 #define BeginEnumFilters(pFilterGraph, pEnumFilters, pBaseFilter) \
-	{CComPtr<IEnumFilters> pEnumFilters; \
-	if(pFilterGraph && SUCCEEDED(pFilterGraph->EnumFilters(&pEnumFilters))) \
 	{ \
-		for(CComPtr<IBaseFilter> pBaseFilter; S_OK == pEnumFilters->Next(1, &pBaseFilter, 0); pBaseFilter = NULL) \
+		CComPtr<IEnumFilters> pEnumFilters; \
+		if(pFilterGraph && SUCCEEDED(pFilterGraph->EnumFilters(&pEnumFilters))) \
 		{ \
+			for(CComPtr<IBaseFilter> pBaseFilter; S_OK == pEnumFilters->Next(1, &pBaseFilter, 0); pBaseFilter = NULL) \
+			{
 
 #define EndEnumFilters }}}
 
 #define BeginEnumPins(pBaseFilter, pEnumPins, pPin) \
-	{CComPtr<IEnumPins> pEnumPins; \
-	if(pBaseFilter && SUCCEEDED(pBaseFilter->EnumPins(&pEnumPins))) \
 	{ \
-		for(CComPtr<IPin> pPin; S_OK == pEnumPins->Next(1, &pPin, 0); pPin = NULL) \
+		CComPtr<IEnumPins> pEnumPins; \
+		if(pBaseFilter && SUCCEEDED(pBaseFilter->EnumPins(&pEnumPins))) \
 		{ \
+			for(CComPtr<IPin> pPin; S_OK == pEnumPins->Next(1, &pPin, 0); pPin = NULL) \
+			{
 
 #define EndEnumPins }}}
 
@@ -76,9 +88,9 @@ GSSource : public CBaseFilter, private CCritSec, public IGSSource
 
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv)
 	{
-		return
-			riid == __uuidof(IGSSource) ? GetInterface((IGSSource*)this, ppv) :
-			__super::NonDelegatingQueryInterface(riid, ppv);
+		return riid == __uuidof(IGSSource)
+			? GetInterface((IGSSource*)this, ppv)
+			: __super::NonDelegatingQueryInterface(riid, ppv);
 	}
 
 	class GSSourceOutputPin : public CBaseOutputPin
@@ -126,8 +138,10 @@ GSSource : public CBaseFilter, private CCritSec, public IGSSource
 			vih.bmiHeader.biSizeImage = m_size.x * m_size.y * 4;
 			mt.SetFormat((uint8*)&vih, sizeof(vih));
 
-			if(colorspace == 1) m_mts.insert(m_mts.begin(), mt);
-			else m_mts.push_back(mt);
+			if (colorspace == 1)
+				m_mts.insert(m_mts.begin(), mt);
+			else
+				m_mts.push_back(mt);
 		}
 
 		HRESULT GSSourceOutputPin::DecideBufferSize(IMemAllocator* pAlloc, ALLOCATOR_PROPERTIES* pProperties)
@@ -141,12 +155,12 @@ GSSource : public CBaseFilter, private CCritSec, public IGSSource
 
 			ALLOCATOR_PROPERTIES Actual;
 
-			if(FAILED(hr = pAlloc->SetProperties(pProperties, &Actual)))
+			if (FAILED(hr = pAlloc->SetProperties(pProperties, &Actual)))
 			{
 				return hr;
 			}
 
-			if(Actual.cbBuffer < pProperties->cbBuffer)
+			if (Actual.cbBuffer < pProperties->cbBuffer)
 			{
 				return E_FAIL;
 			}
@@ -156,11 +170,11 @@ GSSource : public CBaseFilter, private CCritSec, public IGSSource
 			return S_OK;
 		}
 
-	    HRESULT CheckMediaType(const CMediaType* pmt)
+		HRESULT CheckMediaType(const CMediaType* pmt)
 		{
-			for(const auto &mt : m_mts)
+			for (const auto& mt : m_mts)
 			{
-				if(mt.majortype == pmt->majortype && mt.subtype == pmt->subtype)
+				if (mt.majortype == pmt->majortype && mt.subtype == pmt->subtype)
 				{
 					return S_OK;
 				}
@@ -169,12 +183,14 @@ GSSource : public CBaseFilter, private CCritSec, public IGSSource
 			return E_FAIL;
 		}
 
-	    HRESULT GetMediaType(int i, CMediaType* pmt)
+		HRESULT GetMediaType(int i, CMediaType* pmt)
 		{
 			CheckPointer(pmt, E_POINTER);
 
-			if(i < 0) return E_INVALIDARG;
-			if(i > 1) return VFW_S_NO_MORE_ITEMS;
+			if (i < 0)
+				return E_INVALIDARG;
+			if (i > 1)
+				return VFW_S_NO_MORE_ITEMS;
 
 			*pmt = m_mts[i];
 
@@ -195,9 +211,8 @@ GSSource : public CBaseFilter, private CCritSec, public IGSSource
 	GSSourceOutputPin* m_output;
 
 public:
-
 	GSSource(int w, int h, float fps, IUnknown* pUnk, HRESULT& hr, int colorspace)
-		: CBaseFilter(NAME("GSSource"), pUnk, this, __uuidof(this), &hr)
+		: CBaseFilter("GSSource", pUnk, this, __uuidof(this), &hr)
 		, m_output(NULL)
 		, m_size(w, h)
 		, m_atpf((REFERENCE_TIME)(10000000.0f / fps))
@@ -234,14 +249,14 @@ public:
 
 	STDMETHODIMP DeliverFrame(const void* bits, int pitch, bool rgba)
 	{
-		if(!m_output || !m_output->IsConnected())
+		if (!m_output || !m_output->IsConnected())
 		{
 			return E_UNEXPECTED;
 		}
 
 		CComPtr<IMediaSample> sample;
 
-		if(FAILED(m_output->GetDeliveryBuffer(&sample, NULL, NULL, 0)))
+		if (FAILED(m_output->GetDeliveryBuffer(&sample, NULL, NULL, 0)))
 		{
 			return E_FAIL;
 		}
@@ -263,7 +278,7 @@ public:
 		int h = m_size.y;
 		int srcpitch = pitch;
 
-		if(mt.subtype == MEDIASUBTYPE_YUY2)
+		if (mt.subtype == MEDIASUBTYPE_YUY2)
 		{
 			int dstpitch = ((VIDEOINFOHEADER*)mt.Format())->bmiHeader.biWidth * 2;
 
@@ -271,7 +286,7 @@ public:
 			GSVector4 us(-0.148f / 2, -0.291f / 2, 0.439f / 2, 0.0f);
 			GSVector4 vs(0.439f / 2, -0.368f / 2, -0.071f / 2, 0.0f);
 
-			if(!rgba)
+			if (!rgba)
 			{
 				ys = ys.zyxw();
 				us = us.zyxw();
@@ -280,12 +295,12 @@ public:
 
 			const GSVector4 offset(16, 128, 16, 128);
 
-			for(int j = 0; j < h; j++, dst += dstpitch, src += srcpitch)
+			for (int j = 0; j < h; j++, dst += dstpitch, src += srcpitch)
 			{
 				uint32* s = (uint32*)src;
 				uint16* d = (uint16*)dst;
 
-				for(int i = 0; i < w; i += 2)
+				for (int i = 0; i < w; i += 2)
 				{
 					GSVector4 c0 = GSVector4::rgba32(s[i + 0]);
 					GSVector4 c1 = GSVector4::rgba32(s[i + 1]);
@@ -300,40 +315,40 @@ public:
 				}
 			}
 		}
-		else if(mt.subtype == MEDIASUBTYPE_RGB32)
+		else if (mt.subtype == MEDIASUBTYPE_RGB32)
 		{
 			int dstpitch = ((VIDEOINFOHEADER*)mt.Format())->bmiHeader.biWidth * 4;
 
 			dst += dstpitch * (h - 1);
 			dstpitch = -dstpitch;
 
-			for(int j = 0; j < h; j++, dst += dstpitch, src += srcpitch)
+			for (int j = 0; j < h; j++, dst += dstpitch, src += srcpitch)
 			{
-				if(rgba)
+				if (rgba)
 				{
-					#if _M_SSE >= 0x301
+#if _M_SSE >= 0x301
 
 					GSVector4i* s = (GSVector4i*)src;
 					GSVector4i* d = (GSVector4i*)dst;
 
 					GSVector4i mask(2, 1, 0, 3, 6, 5, 4, 7, 10, 9, 8, 11, 14, 13, 12, 15);
 
-					for(int i = 0, w4 = w >> 2; i < w4; i++)
+					for (int i = 0, w4 = w >> 2; i < w4; i++)
 					{
 						d[i] = s[i].shuffle8(mask);
 					}
 
-					#else
+#else
 
 					GSVector4i* s = (GSVector4i*)src;
 					GSVector4i* d = (GSVector4i*)dst;
 
-					for(int i = 0, w4 = w >> 2; i < w4; i++)
+					for (int i = 0, w4 = w >> 2; i < w4; i++)
 					{
 						d[i] = ((s[i] & 0x00ff0000) >> 16) | ((s[i] & 0x000000ff) << 16) | (s[i] & 0x0000ff00);
 					}
 
-					#endif
+#endif
 				}
 				else
 				{
@@ -346,7 +361,7 @@ public:
 			return E_FAIL;
 		}
 
-		if(FAILED(m_output->Deliver(sample)))
+		if (FAILED(m_output->Deliver(sample)))
 		{
 			return E_FAIL;
 		}
@@ -364,22 +379,23 @@ public:
 
 static IPin* GetFirstPin(IBaseFilter* pBF, PIN_DIRECTION dir)
 {
-	if(!pBF) return(NULL);
+	if (!pBF)
+		return nullptr;
 
 	BeginEnumPins(pBF, pEP, pPin)
 	{
 		PIN_DIRECTION dir2;
 		pPin->QueryDirection(&dir2);
-		if(dir == dir2)
+		if (dir == dir2)
 		{
 			IPin* pRet = pPin.Detach();
 			pRet->Release();
-			return(pRet);
+			return pRet;
 		}
 	}
 	EndEnumPins
 
-	return(NULL);
+	return nullptr;
 }
 
 #endif
@@ -390,7 +406,7 @@ static IPin* GetFirstPin(IBaseFilter* pBF, PIN_DIRECTION dir)
 
 GSCapture::GSCapture()
 	: m_capturing(false), m_frame(0)
-	  , m_out_dir("/tmp/GSdx_Capture") // FIXME Later add an option
+	, m_out_dir("/tmp/GSdx_Capture") // FIXME Later add an option
 {
 	m_out_dir = theApp.GetConfigS("capture_out_dir");
 	m_threads = theApp.GetConfigI("capture_threads");
@@ -404,7 +420,7 @@ GSCapture::~GSCapture()
 	EndCapture();
 }
 
-std::wstring* GSCapture::BeginCapture(float fps, GSVector2i recommendedResolution, float aspect)
+bool GSCapture::BeginCapture(float fps, GSVector2i recommendedResolution, float aspect, std::string& filename)
 {
 	printf("Recommended resolution: %d x %d, DAR for muxing: %.4f\n", recommendedResolution.x, recommendedResolution.y, aspect);
 	std::lock_guard<std::recursive_mutex> lock(m_lock);
@@ -418,31 +434,29 @@ std::wstring* GSCapture::BeginCapture(float fps, GSVector2i recommendedResolutio
 	GSCaptureDlg dlg;
 
 	if (IDOK != dlg.DoModal())
-		return nullptr;
+		return false;
 
 	{
-		int start = dlg.m_filename.length() - 4;
+		const int start = dlg.m_filename.length() - 4;
 		if (start > 0)
 		{
-			std::string test = dlg.m_filename.substr(start);
+			std::wstring test = dlg.m_filename.substr(start);
 			std::transform(test.begin(), test.end(), test.begin(), (char(_cdecl*)(int))tolower);
-			if (test.compare(".avi") != 0)
-				dlg.m_filename += ".avi";
+			if (test.compare(L".avi") != 0)
+				dlg.m_filename += L".avi";
 		}
 		else
-			dlg.m_filename += ".avi";
+			dlg.m_filename += L".avi";
 
-		FILE* test = fopen(dlg.m_filename.c_str(), "w");
+		FILE* test = _wfopen(dlg.m_filename.c_str(), L"w");
 		if (test)
 			fclose(test);
 		else
 		{
 			dlg.InvalidFile();
-			return nullptr;
+			return false;
 		}
 	}
-
-	std::wstring fn{dlg.m_filename.begin(), dlg.m_filename.end()};
 
 	m_size.x = (dlg.m_width + 7) & ~7;
 	m_size.y = (dlg.m_height + 7) & ~7;
@@ -453,35 +467,34 @@ std::wstring* GSCapture::BeginCapture(float fps, GSVector2i recommendedResolutio
 	CComPtr<ICaptureGraphBuilder2> cgb;
 	CComPtr<IBaseFilter> mux;
 
-	if(FAILED(hr = m_graph.CoCreateInstance(CLSID_FilterGraph))
-	|| FAILED(hr = cgb.CoCreateInstance(CLSID_CaptureGraphBuilder2))
-	|| FAILED(hr = cgb->SetFiltergraph(m_graph))
-	|| FAILED(hr = cgb->SetOutputFileName(&MEDIASUBTYPE_Avi, fn.c_str(), &mux, NULL)))
+	if (FAILED(hr = m_graph.CoCreateInstance(CLSID_FilterGraph))
+	 || FAILED(hr = cgb.CoCreateInstance(CLSID_CaptureGraphBuilder2))
+	 || FAILED(hr = cgb->SetFiltergraph(m_graph))
+	 || FAILED(hr = cgb->SetOutputFileName(&MEDIASUBTYPE_Avi, std::wstring(dlg.m_filename.begin(), dlg.m_filename.end()).c_str(), &mux, NULL)))
 	{
-		return nullptr;
+		return false;
 	}
 
 	m_src = new GSSource(m_size.x, m_size.y, fps, NULL, hr, dlg.m_colorspace);
 
-	if (dlg.m_enc==0)
+	if (dlg.m_enc == 0)
 	{
 		if (FAILED(hr = m_graph->AddFilter(m_src, L"Source")))
-			return nullptr;
+			return false;
 		if (FAILED(hr = m_graph->ConnectDirect(GetFirstPin(m_src, PINDIR_OUTPUT), GetFirstPin(mux, PINDIR_INPUT), NULL)))
-			return nullptr;
+			return false;
 	}
 	else
 	{
-		if(FAILED(hr = m_graph->AddFilter(m_src, L"Source"))
-		|| FAILED(hr = m_graph->AddFilter(dlg.m_enc, L"Encoder")))
+		if (FAILED(hr = m_graph->AddFilter(m_src, L"Source")) || FAILED(hr = m_graph->AddFilter(dlg.m_enc, L"Encoder")))
 		{
-			return nullptr;
+			return false;
 		}
 
-		if(FAILED(hr = m_graph->ConnectDirect(GetFirstPin(m_src, PINDIR_OUTPUT), GetFirstPin(dlg.m_enc, PINDIR_INPUT), NULL))
-		|| FAILED(hr = m_graph->ConnectDirect(GetFirstPin(dlg.m_enc, PINDIR_OUTPUT), GetFirstPin(mux, PINDIR_INPUT), NULL)))
+		if (FAILED(hr = m_graph->ConnectDirect(GetFirstPin(m_src, PINDIR_OUTPUT), GetFirstPin(dlg.m_enc, PINDIR_INPUT), NULL))
+		 || FAILED(hr = m_graph->ConnectDirect(GetFirstPin(dlg.m_enc, PINDIR_OUTPUT), GetFirstPin(mux, PINDIR_INPUT), NULL)))
 		{
-			return nullptr;
+			return false;
 		}
 	}
 
@@ -509,7 +522,8 @@ std::wstring* GSCapture::BeginCapture(float fps, GSVector2i recommendedResolutio
 	CComQIPtr<IGSSource>(m_src)->DeliverNewSegment();
 
 	m_capturing = true;
-	return new std::wstring(dlg.m_filename.begin(), dlg.m_filename.end() - 3);
+	filename = convert_utf16_to_utf8(dlg.m_filename.erase(dlg.m_filename.length() - 3, 3) + L"wav");
+	return true;
 #elif defined(__unix__)
 	// Note I think it doesn't support multiple depth creation
 	GSmkdir(m_out_dir.c_str());
@@ -520,12 +534,14 @@ std::wstring* GSCapture::BeginCapture(float fps, GSVector2i recommendedResolutio
 	m_size.x = theApp.GetConfigI("CaptureWidth");
 	m_size.y = theApp.GetConfigI("CaptureHeight");
 
-	for(int i = 0; i < m_threads; i++) {
+	for (int i = 0; i < m_threads; i++)
+	{
 		m_workers.push_back(std::unique_ptr<GSPng::Worker>(new GSPng::Worker(&GSPng::Process)));
 	}
 
 	m_capturing = true;
-	return new std::wstring();
+	filename = m_out_dir + "/audio_recording.wav";
+	return true;
 #endif
 }
 
@@ -533,7 +549,7 @@ bool GSCapture::DeliverFrame(const void* bits, int pitch, bool rgba)
 {
 	std::lock_guard<std::recursive_mutex> lock(m_lock);
 
-	if(bits == NULL || pitch == 0)
+	if (bits == NULL || pitch == 0)
 	{
 		ASSERT(0);
 
@@ -542,7 +558,7 @@ bool GSCapture::DeliverFrame(const void* bits, int pitch, bool rgba)
 
 #ifdef _WIN32
 
-	if(m_src)
+	if (m_src)
 	{
 		CComQIPtr<IGSSource>(m_src)->DeliverFrame(bits, pitch, rgba);
 
@@ -553,7 +569,7 @@ bool GSCapture::DeliverFrame(const void* bits, int pitch, bool rgba)
 
 	std::string out_file = m_out_dir + format("/frame.%010d.png", m_frame);
 	//GSPng::Save(GSPng::RGB_PNG, out_file, (uint8*)bits, m_size.x, m_size.y, pitch, m_compression_level);
-	m_workers[m_frame%m_threads]->Push(std::make_shared<GSPng::Transaction>(GSPng::RGB_PNG, out_file, static_cast<const uint8*>(bits), m_size.x, m_size.y, pitch, m_compression_level));
+	m_workers[m_frame % m_threads]->Push(std::make_shared<GSPng::Transaction>(GSPng::RGB_PNG, out_file, static_cast<const uint8*>(bits), m_size.x, m_size.y, pitch, m_compression_level));
 
 	m_frame++;
 
@@ -564,18 +580,21 @@ bool GSCapture::DeliverFrame(const void* bits, int pitch, bool rgba)
 
 bool GSCapture::EndCapture()
 {
+	if (!m_capturing)
+		return false;
+
 	std::lock_guard<std::recursive_mutex> lock(m_lock);
 
 #ifdef _WIN32
 
-	if(m_src)
+	if (m_src)
 	{
 		CComQIPtr<IGSSource>(m_src)->DeliverEOS();
 
 		m_src = NULL;
 	}
 
-	if(m_graph)
+	if (m_graph)
 	{
 		CComQIPtr<IMediaControl>(m_graph)->Stop();
 

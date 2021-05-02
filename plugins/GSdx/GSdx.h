@@ -28,8 +28,8 @@ class GSdxApp
 {
 	std::string m_ini;
 	std::string m_section;
-	std::map< std::string, std::string > m_default_configuration;
-	std::map< std::string, std::string > m_configuration_map;
+	std::map<std::string, std::string> m_default_configuration;
+	std::map<std::string, std::string> m_configuration_map;
 	GSRendererType m_current_renderer_type;
 
 public:
@@ -39,7 +39,10 @@ public:
 	void* GetModuleHandlePtr();
 
 #ifdef _WIN32
- 	HMODULE GetModuleHandle() {return (HMODULE)GetModuleHandlePtr();}
+	HMODULE GetModuleHandle()
+	{
+		return (HMODULE)GetModuleHandlePtr();
+	}
 #endif
 
 	void BuildConfigurationMap(const char* lpFileName);
@@ -49,15 +52,22 @@ public:
 	bool WriteIniString(const char* lpAppName, const char* lpKeyName, const char* pString, const char* lpFileName);
 	int GetIniInt(const char* lpAppName, const char* lpKeyName, int nDefault, const char* lpFileName);
 
+#ifdef _WIN32
+	bool LoadResource(int id, std::vector<char>& buff, const wchar_t* type = nullptr);
+#else
 	bool LoadResource(int id, std::vector<char>& buff, const char* type = nullptr);
+#endif
 
 	void SetConfig(const char* entry, const char* value);
 	void SetConfig(const char* entry, int value);
 	// Avoid issue with overloading
-	template<typename T>
-	T      GetConfigT(const char* entry) { return static_cast<T>(GetConfigI(entry)); }
-	int    GetConfigI(const char* entry);
-	bool   GetConfigB(const char* entry);
+	template <typename T>
+	T GetConfigT(const char* entry)
+	{
+		return static_cast<T>(GetConfigI(entry));
+	}
+	int GetConfigI(const char* entry);
+	bool GetConfigB(const char* entry);
 	std::string GetConfigS(const char* entry);
 
 	void SetCurrentRendererType(GSRendererType type);
@@ -78,14 +88,19 @@ public:
 	std::vector<GSSetting> m_gs_offset_hack;
 	std::vector<GSSetting> m_gs_hw_mipmapping;
 	std::vector<GSSetting> m_gs_crc_level;
-	std::vector<GSSetting> m_gs_acc_date_level;
 	std::vector<GSSetting> m_gs_acc_blend_level;
 	std::vector<GSSetting> m_gs_acc_blend_level_d3d11;
 	std::vector<GSSetting> m_gs_tv_shaders;
 };
 
-struct GSDXError {};
-struct GSDXRecoverableError : GSDXError {};
-struct GSDXErrorGlVertexArrayTooSmall : GSDXError {};
+struct GSDXError
+{
+};
+struct GSDXRecoverableError : GSDXError
+{
+};
+struct GSDXErrorGlVertexArrayTooSmall : GSDXError
+{
+};
 
 extern GSdxApp theApp;

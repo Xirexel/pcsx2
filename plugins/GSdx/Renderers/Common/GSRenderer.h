@@ -65,14 +65,14 @@ public:
 	virtual void VSync(int field);
 	virtual bool MakeSnapshot(const std::string& path);
 	virtual void KeyEvent(GSKeyEventData* e);
-	virtual bool CanUpscale() {return false;}
-	virtual int GetUpscaleMultiplier() {return 1;}
-	virtual GSVector2i GetCustomResolution() {return GSVector2i(0,0);}
+	virtual bool CanUpscale() { return false; }
+	virtual int GetUpscaleMultiplier() { return 1; }
+	virtual GSVector2i GetCustomResolution() { return GSVector2i(0, 0); }
 	GSVector2i GetInternalResolution();
-	void SetAspectRatio(int aspect) {m_aspectratio = aspect;}
+	void SetAspectRatio(int aspect) { m_aspectratio = aspect; }
 	void SetVSync(int vsync);
 
-	virtual std::wstring* BeginCapture();
+	virtual bool BeginCapture(std::string& filename);
 	virtual void EndCapture();
 
 	void PurgePool();

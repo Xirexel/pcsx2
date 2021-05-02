@@ -303,6 +303,7 @@ namespace Panels
 	{
 	protected:
 		pxCheckBox*			m_check_SynchronousGS;
+		wxSpinCtrl*			m_spinner_VsyncQueue;
 		wxButton*			m_restore_defaults;
 		FrameSkipPanel*		m_span;
 		FramelimiterPanel*	m_fpan;
@@ -325,6 +326,7 @@ namespace Panels
 	class SpeedHacksPanel : public BaseApplicableConfigPanel_SpecificConfig
 	{
 	protected:
+		wxBoxSizer* m_sizer;
 		wxFlexGridSizer* s_table;
 
 		pxCheckBox*		m_check_Enable;
@@ -342,6 +344,7 @@ namespace Panels
 		pxCheckBox*		m_check_fastCDVD;
 		pxCheckBox*		m_check_vuFlagHack;
 		pxCheckBox*		m_check_vuThread;
+		pxCheckBox*		m_check_vu1Instant;
 
 	public:
 		virtual ~SpeedHacksPanel() = default;
@@ -356,12 +359,12 @@ namespace Panels
 		const wxChar* GetEECycleSkipSliderMsg( int val );
 		void SetEEcycleSliderMsg();
 		void SetVUcycleSliderMsg();
-		void TrigLayout();
 
 		void OnEnable_Toggled( wxCommandEvent& evt );
 		void Defaults_Click( wxCommandEvent& evt );
 		void EECycleRate_Scroll(wxScrollEvent &event);
 		void VUCycleRate_Scroll(wxScrollEvent &event);
+		void VUThread_Enable ( wxCommandEvent& evt );
 	};
 
 	// --------------------------------------------------------------------------------------

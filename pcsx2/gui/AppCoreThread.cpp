@@ -19,6 +19,7 @@
 #include "AppGameDatabase.h"
 
 #include <wx/stdpaths.h>
+#include "fmt/core.h"
 
 #include "Debugger/DisassemblyDialog.h"
 
@@ -29,10 +30,16 @@
 
 #include "CDVD/CDVD.h"
 #include "SPU2/spu2.h"
+#include "USB/USB.h"
 #include "Elfheader.h"
 #include "Patch.h"
 #include "R5900Exceptions.h"
 #include "Sio.h"
+#ifdef _WIN32
+#include "PAD/Windows/PAD.h"
+#else
+#include "PAD/Linux/PAD.h"
+#endif
 
 #ifndef DISABLE_RECORDING
 #include "Recording/InputRecordingControls.h"
@@ -42,6 +49,15 @@ __aligned16 SysMtgsThread mtgsThread;
 __aligned16 AppCoreThread CoreThread;
 
 typedef void (AppCoreThread::*FnPtr_CoreThreadMethod)();
+
+
+namespace GameInfo
+{
+	wxString gameName;
+	wxString gameSerial;
+	wxString gameCRC;
+	wxString gameVersion;
+}; // namespace GameInfo
 
 // --------------------------------------------------------------------------------------
 //  SysExecEvent_InvokeCoreThreadMethod
@@ -242,48 +258,48 @@ void AppCoreThread::OnPauseDebug()
 // Load Game Settings found in database
 // (game fixes, round modes, clamp modes, etc...)
 // Returns number of gamefixes set
-static int loadGameSettings(Pcsx2Config& dest, const Game_Data& game)
+static int loadGameSettings(Pcsx2Config& dest, const GameDatabaseSchema::GameEntry& game)
 {
-	if (!game.IsOk())
+	if (!game.isValid)
 		return 0;
 
 	int gf = 0;
 
-	if (game.keyExists("eeRoundMode"))
+	if (game.eeRoundMode != GameDatabaseSchema::RoundMode::Undefined)
 	{
-		SSE_RoundMode eeRM = (SSE_RoundMode)game.getInt("eeRoundMode");
+		SSE_RoundMode eeRM = (SSE_RoundMode)enum_cast(game.eeRoundMode);
 		if (EnumIsValid(eeRM))
 		{
-			PatchesCon->WriteLn("(GameDB) Changing EE/FPU roundmode to %d [%s]", eeRM, EnumToString(eeRM));
+			PatchesCon->WriteLn(L"(GameDB) Changing EE/FPU roundmode to %d [%s]", eeRM, EnumToString(eeRM));
 			dest.Cpu.sseMXCSR.SetRoundMode(eeRM);
-			++gf;
+			gf++;
 		}
 	}
 
-	if (game.keyExists("vuRoundMode"))
+	if (game.vuRoundMode != GameDatabaseSchema::RoundMode::Undefined)
 	{
-		SSE_RoundMode vuRM = (SSE_RoundMode)game.getInt("vuRoundMode");
+		SSE_RoundMode vuRM = (SSE_RoundMode)enum_cast(game.vuRoundMode);
 		if (EnumIsValid(vuRM))
 		{
-			PatchesCon->WriteLn("(GameDB) Changing VU0/VU1 roundmode to %d [%s]", vuRM, EnumToString(vuRM));
+			PatchesCon->WriteLn(L"(GameDB) Changing VU0/VU1 roundmode to %d [%s]", vuRM, EnumToString(vuRM));
 			dest.Cpu.sseVUMXCSR.SetRoundMode(vuRM);
-			++gf;
+			gf++;
 		}
 	}
 
-	if (game.keyExists("eeClampMode"))
+	if (game.eeClampMode != GameDatabaseSchema::ClampMode::Undefined)
 	{
-		int clampMode = game.getInt("eeClampMode");
-		PatchesCon->WriteLn("(GameDB) Changing EE/FPU clamp mode [mode=%d]", clampMode);
+		int clampMode = enum_cast(game.eeClampMode);
+		PatchesCon->WriteLn(L"(GameDB) Changing EE/FPU clamp mode [mode=%d]", clampMode);
 		dest.Cpu.Recompiler.fpuOverflow = (clampMode >= 1);
 		dest.Cpu.Recompiler.fpuExtraOverflow = (clampMode >= 2);
 		dest.Cpu.Recompiler.fpuFullMode = (clampMode >= 3);
 		gf++;
 	}
 
-	if (game.keyExists("vuClampMode"))
+	if (game.vuClampMode != GameDatabaseSchema::ClampMode::Undefined)
 	{
-		int clampMode = game.getInt("vuClampMode");
+		int clampMode = enum_cast(game.vuClampMode);
 		PatchesCon->WriteLn("(GameDB) Changing VU0/VU1 clamp mode [mode=%d]", clampMode);
 		dest.Cpu.Recompiler.vuOverflow = (clampMode >= 1);
 		dest.Cpu.Recompiler.vuExtraOverflow = (clampMode >= 2);
@@ -291,29 +307,38 @@ static int loadGameSettings(Pcsx2Config& dest, const Game_Data& game)
 		gf++;
 	}
 
-
-	if (game.keyExists("mvuFlagSpeedHack"))
+	// TODO - config - this could be simplified with maps instead of bitfields and enums
+	for (SpeedhackId id = SpeedhackId_FIRST; id < pxEnumEnd; id++)
 	{
-		bool vuFlagHack = game.getInt("mvuFlagSpeedHack") ? 1 : 0;
-		PatchesCon->WriteLn("(GameDB) Changing mVU flag speed hack [mode=%d]", vuFlagHack);
-		dest.Speedhacks.vuFlagHack = vuFlagHack;
-		gf++;
+		std::string key = fmt::format("{}SpeedHack", wxString(EnumToString(id)));
+
+		// Gamefixes are already guaranteed to be valid, any invalid ones are dropped
+		if (game.speedHacks.count(key) == 1)
+		{
+			// Legacy note - speedhacks are setup in the GameDB as integer values, but
+			// are effectively booleans like the gamefixes
+			bool mode = game.speedHacks.at(key) ? 1 : 0;
+			dest.Speedhacks.Set(id, mode);
+			PatchesCon->WriteLn(L"(GameDB) Setting Speedhack '" + key + "' to [mode=%d]", mode);
+			gf++;
+		}
 	}
 
-	for (GamefixId id = GamefixId_FIRST; id < pxEnumEnd; ++id)
+	// TODO - config - this could be simplified with maps instead of bitfields and enums
+	for (GamefixId id = GamefixId_FIRST; id < pxEnumEnd; id++)
 	{
-		wxString key(EnumToString(id));
-		key += L"Hack";
+		std::string key = fmt::format("{}Hack", wxString(EnumToString(id)));
 
-		if (game.keyExists(key))
+		// Gamefixes are already guaranteed to be valid, any invalid ones are dropped
+		if (std::find(game.gameFixes.begin(), game.gameFixes.end(), key) != game.gameFixes.end())
 		{
-			bool enableIt = game.getBool(key);
-			dest.Gamefixes.Set(id, enableIt);
-			PatchesCon->WriteLn(L"(GameDB) %s Gamefix: " + key, enableIt ? L"Enabled" : L"Disabled");
+			// if the fix is present, it is said to be enabled
+			dest.Gamefixes.Set(id, true);
+			PatchesCon->WriteLn(L"(GameDB) Enabled Gamefix: " + key);
 			gf++;
 
 			// The LUT is only used for 1 game so we allocate it only when the gamefix is enabled (save 4MB)
-			if (id == Fix_GoemonTlbMiss && enableIt)
+			if (id == Fix_GoemonTlbMiss && true)
 				vtlb_Alloc_Ppmap();
 		}
 	}
@@ -389,14 +414,11 @@ static void _ApplySettings(const Pcsx2Config& src, Pcsx2Config& fixup)
 		fixup.GS.VsyncEnable = VsyncMode::Off;
 	}
 
-	wxString gameCRC;
-	wxString gameSerial;
 	wxString gamePatch;
 	wxString gameFixes;
 	wxString gameCheats;
 	wxString gameWsHacks;
 
-	wxString gameName;
 	wxString gameCompat;
 	wxString gameMemCardFilter;
 
@@ -406,9 +428,9 @@ static void _ApplySettings(const Pcsx2Config& src, Pcsx2Config& fixup)
 	// settings as if the game is already running (title, loadeding patches, etc).
 	bool ingame = (ElfCRC && (g_GameLoading || g_GameStarted));
 	if (ingame)
-		gameCRC.Printf(L"%8.8x", ElfCRC);
+		GameInfo::gameCRC.Printf(L"%8.8x", ElfCRC);
 	if (ingame && !DiscSerial.IsEmpty())
-		gameSerial = L" [" + DiscSerial + L"]";
+		GameInfo::gameSerial = L" [" + DiscSerial + L"]";
 
 	const wxString newGameKey(ingame ? SysGetDiscID() : SysGetBiosDiscID());
 	const bool verbose(newGameKey != curGameKey && ingame);
@@ -423,19 +445,18 @@ static void _ApplySettings(const Pcsx2Config& src, Pcsx2Config& fixup)
 	{
 		if (IGameDatabase* GameDB = AppHost_GetGameDatabase())
 		{
-			Game_Data game;
-			if (GameDB->findGame(game, curGameKey))
+			GameDatabaseSchema::GameEntry game = GameDB->findGame(std::string(curGameKey));
+			if (game.isValid)
 			{
-				int compat = game.getInt("Compat");
-				gameName = game.getString("Name");
-				gameName += L" (" + game.getString("Region") + L")";
-				gameCompat = L" [Status = " + compatToStringWX(compat) + L"]";
-				gameMemCardFilter = game.getString("MemCardFilter");
+				GameInfo::gameName = game.name;
+				GameInfo::gameName += L" (" + game.region + L")";
+				gameCompat = L" [Status = " + compatToStringWX(game.compat) + L"]";
+				gameMemCardFilter = game.memcardFiltersAsString();
 			}
 
 			if (fixup.EnablePatches)
 			{
-				if (int patches = LoadPatchesFromGamesDB(gameCRC, game))
+				if (int patches = LoadPatchesFromGamesDB(GameInfo::gameCRC, game))
 				{
 					gamePatch.Printf(L" [%d Patches]", patches);
 					PatchesCon->WriteLn(Color_Green, "(GameDB) Patches Loaded: %d", patches);
@@ -451,30 +472,30 @@ static void _ApplySettings(const Pcsx2Config& src, Pcsx2Config& fixup)
 	else
 		sioSetGameSerial(curGameKey);
 
-	if (gameName.IsEmpty() && gameSerial.IsEmpty() && gameCRC.IsEmpty())
+	if (GameInfo::gameName.IsEmpty() && GameInfo::gameSerial.IsEmpty() && GameInfo::gameCRC.IsEmpty())
 	{
 		// if all these conditions are met, it should mean that we're currently running BIOS code.
 		// Chances are the BiosChecksum value is still zero or out of date, however -- because
 		// the BIos isn't loaded until after initial calls to ApplySettings.
 
-		gameName = L"Booting PS2 BIOS... ";
+		GameInfo::gameName = L"Booting PS2 BIOS... ";
 	}
 
 	//Till the end of this function, entry CRC will be 00000000
-	if (!gameCRC.Length())
+	if (!GameInfo::gameCRC.Length())
 	{
 		Console.WriteLn(Color_Gray, "Patches: No CRC found, using 00000000 instead.");
-		gameCRC = L"00000000";
+		GameInfo::gameCRC = L"00000000";
 	}
 
 	// regular cheat patches
 	if (fixup.EnableCheats)
-		gameCheats.Printf(L" [%d Cheats]", LoadPatchesFromDir(gameCRC, GetCheatsFolder(), L"Cheats"));
+		gameCheats.Printf(L" [%d Cheats]", LoadPatchesFromDir(GameInfo::gameCRC, GetCheatsFolder(), L"Cheats"));
 
 	// wide screen patches
 	if (fixup.EnableWideScreenPatches)
 	{
-		if (int numberLoadedWideScreenPatches = LoadPatchesFromDir(gameCRC, GetCheatsWsFolder(), L"Widescreen hacks"))
+		if (int numberLoadedWideScreenPatches = LoadPatchesFromDir(GameInfo::gameCRC, GetCheatsWsFolder(), L"Widescreen hacks"))
 		{
 			gameWsHacks.Printf(L" [%d widescreen hacks]", numberLoadedWideScreenPatches);
 			Console.WriteLn(Color_Gray, "Found widescreen patches in the cheats_ws folder --> skipping cheats_ws.zip");
@@ -483,7 +504,7 @@ static void _ApplySettings(const Pcsx2Config& src, Pcsx2Config& fixup)
 		{
 			// No ws cheat files found at the cheats_ws folder, try the ws cheats zip file.
 			wxString cheats_ws_archive = Path::Combine(PathDefs::GetProgramDataDir(), wxFileName(L"cheats_ws.zip"));
-			int numberDbfCheatsLoaded = LoadPatchesFromZip(gameCRC, cheats_ws_archive);
+			int numberDbfCheatsLoaded = LoadPatchesFromZip(GameInfo::gameCRC, cheats_ws_archive);
 			PatchesCon->WriteLn(Color_Green, "(Wide Screen Cheats DB) Patches Loaded: %d", numberDbfCheatsLoaded);
 			gameWsHacks.Printf(L" [%d widescreen hacks]", numberDbfCheatsLoaded);
 		}
@@ -492,8 +513,8 @@ static void _ApplySettings(const Pcsx2Config& src, Pcsx2Config& fixup)
 	// When we're booting, the bios loader will set a a title which would be more interesting than this
 	// to most users - with region, version, etc, so don't overwrite it with patch info. That's OK. Those
 	// users which want to know the status of the patches at the bios can check the console content.
-	wxString consoleTitle = gameName + gameSerial;
-	consoleTitle += L" [" + gameCRC.MakeUpper() + L"]" + gameCompat + gameFixes + gamePatch + gameCheats + gameWsHacks;
+	wxString consoleTitle = GameInfo::gameName + GameInfo::gameSerial;
+	consoleTitle += L" [" + GameInfo::gameCRC.MakeUpper() + L"]" + gameCompat + gameFixes + gamePatch + gameCheats + gameWsHacks;
 	if (ingame)
 		Console.SetTitle(consoleTitle);
 
@@ -538,7 +559,7 @@ void AppCoreThread::ApplySettings(const Pcsx2Config& src)
 	if (fixup == EmuConfig)
 		return;
 
-	if (m_ExecMode >= ExecMode_Opened)
+	if (m_ExecMode >= ExecMode_Opened && !IsSelf())
 	{
 		ScopedCoreThreadPause paused_core;
 		_parent::ApplySettings(fixup);
@@ -570,8 +591,11 @@ void AppCoreThread::OnResumeInThread(bool isSuspended)
 	{
 		CDVDsys_ChangeSource(g_Conf->CdvdSource);
 		cdvdCtrlTrayOpen();
+		DoCDVDopen();
 		m_resetCdvd = false;
 	}
+	else if (isSuspended)
+		DoCDVDopen();
 
 	_parent::OnResumeInThread(isSuspended);
 	PostCoreStatus(CoreThread_Resumed);

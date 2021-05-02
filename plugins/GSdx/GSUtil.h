@@ -48,11 +48,15 @@ public:
 	static bool CheckDXGI();
 	static bool CheckD3D11();
 	static GSRendererType GetBestRenderer();
-	static D3D_FEATURE_LEVEL CheckDirect3D11Level(IDXGIAdapter *adapter = NULL, D3D_DRIVER_TYPE type = D3D_DRIVER_TYPE_HARDWARE);
+	static D3D_FEATURE_LEVEL CheckDirect3D11Level(IDXGIAdapter* adapter = NULL, D3D_DRIVER_TYPE type = D3D_DRIVER_TYPE_HARDWARE);
 #endif
 };
 
+#ifdef _WIN32
+void GSmkdir(const wchar_t* dir);
+#else
 void GSmkdir(const char* dir);
+#endif
 std::string GStempdir();
 
 const char* psm_str(int psm);

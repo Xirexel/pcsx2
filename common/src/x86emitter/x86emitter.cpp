@@ -212,12 +212,14 @@ const char *const x86_regnames_gpr32[] =
         "e8", "e9", "e10", "e11",
         "e12", "e13", "e14", "e15"};
 
+#ifdef __M_X86_64
 const char *const x86_regnames_gpr64[] =
     {
         "rax", "rcx", "rdx", "rbx",
         "rsp", "rbp", "rsi", "rdi",
         "r8", "r9", "r10", "r11",
         "r12", "r13", "r14", "r15"};
+#endif
 
 const char *const x86_regnames_sse[] =
     {
@@ -421,7 +423,7 @@ void EmitSibMagic(const xRegisterBase &reg1, const xIndirectVoid &sib, int extra
 __emitinline static void EmitRex(bool w, bool r, bool x, bool b)
 {
 #ifdef __M_X86_64
-    u8 rex = 0x40 | (w << 3) | (r << 2) | (x << 1) | b;
+    const u8 rex = 0x40 | (w << 3) | (r << 2) | (x << 1) | (u8)b;
     if (rex != 0x40)
         xWrite8(rex);
 #endif
@@ -574,6 +576,16 @@ __emitinline void xAdvancePtr(uint bytes)
             xWrite8(0xcc);
     } else
         x86Ptr += bytes;
+}
+
+// --------------------------------------------------------------------------------------
+//  xRegisterInt  (method implementations)
+// --------------------------------------------------------------------------------------
+xRegisterInt xRegisterInt::MatchSizeTo(xRegisterInt other) const
+{
+    return other.GetOperandSize() == 1
+        ? xRegisterInt(xRegister8(*this))
+        : xRegisterInt(other.GetOperandSize(), Id);
 }
 
 // --------------------------------------------------------------------------------------
@@ -822,12 +834,6 @@ void xIndirectVoid::Reduce()
     }
 }
 
-uint xIndirectVoid::GetOperandSize() const
-{
-    pxFailDev("Invalid operation on xIndirectVoid");
-    return 0;
-}
-
 xIndirectVoid &xIndirectVoid::Add(sptr imm)
 {
     Displacement += imm;
@@ -849,10 +855,6 @@ static void EmitLeaMagic(const xRegisterInt &to, const xIndirectVoid &src, bool 
 
     // See EmitSibMagic for commenting on SIB encoding.
 
-    // We should allow native-sized addressing regs (e.g. lea eax, [rax])
-    const xRegisterInt& sizeMatchedIndex = to.IsWide() ? src.Index : src.Index.GetNonWide();
-    const xRegisterInt& sizeMatchedBase = to.IsWide() ? src.Base : src.Base.GetNonWide();
-
     if (!NeedsSibMagic(src) && src.Displacement == (s32)src.Displacement) {
         // LEA Land: means we have either 1-register encoding or just an offset.
         // offset is encodable as an immediate MOV, and a register is encodable
@@ -863,13 +865,13 @@ static void EmitLeaMagic(const xRegisterInt &to, const xIndirectVoid &src, bool 
             return;
         }
         else if (displacement_size == 0) {
-            _xMovRtoR(to, sizeMatchedIndex);
+            _xMovRtoR(to, src.Index.MatchSizeTo(to));
             return;
         } else if (!preserve_flags) {
             // encode as MOV and ADD combo.  Make sure to use the immediate on the
             // ADD since it can encode as an 8-bit sign-extended value.
 
-            _xMovRtoR(to, sizeMatchedIndex);
+            _xMovRtoR(to, src.Index.MatchSizeTo(to));
             xADD(to, src.Displacement);
             return;
         }
@@ -892,20 +894,20 @@ static void EmitLeaMagic(const xRegisterInt &to, const xIndirectVoid &src, bool 
                 if (!preserve_flags) {
                     if (src.Index == rsp) {
                         // ESP is not encodable as an index (ix86 ignores it), thus:
-                        _xMovRtoR(to, sizeMatchedBase); // will do the trick!
+                        _xMovRtoR(to, src.Base.MatchSizeTo(to)); // will do the trick!
                         if (src.Displacement)
                             xADD(to, src.Displacement);
                         return;
                     } else if (src.Displacement == 0) {
-                        _xMovRtoR(to, sizeMatchedBase);
-                        _g1_EmitOp(G1Type_ADD, to, sizeMatchedIndex);
+                        _xMovRtoR(to, src.Base.MatchSizeTo(to));
+                        _g1_EmitOp(G1Type_ADD, to, src.Index.MatchSizeTo(to));
                         return;
                     }
                 } else if ((src.Index == rsp) && (src.Displacement == 0)) {
                     // special case handling of ESP as Index, which is replaceable with
                     // a single MOV even when preserve_flags is set! :D
 
-                    _xMovRtoR(to, sizeMatchedBase);
+                    _xMovRtoR(to, src.Base.MatchSizeTo(to));
                     return;
                 }
             }

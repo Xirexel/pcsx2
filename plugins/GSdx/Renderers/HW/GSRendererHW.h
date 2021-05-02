@@ -36,14 +36,14 @@ private:
 	int m_upscale_multiplier;
 	int m_userhacks_ts_half_bottom;
 
-	bool m_large_framebuffer;
+	bool m_conservative_framebuffer;
 	bool m_userhacks_align_sprite_X;
 	bool m_userhacks_enabled_gs_mem_clear;
 	bool m_userHacks_merge_sprite;
 
 	static const float SSR_UV_TOLERANCE;
 
-	#pragma region hacks
+#pragma region hacks
 
 	typedef bool (GSRendererHW::*OI_Ptr)(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	typedef void (GSRendererHW::*OO_Ptr)();
@@ -61,7 +61,6 @@ private:
 	bool OI_MetalSlug6(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_RozenMaidenGebetGarden(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_SonicUnleashed(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
-	bool OI_StarWarsForceUnleashed(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_PointListPalette(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_SuperManReturns(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
 	bool OI_ArTonelico2(GSTexture* rt, GSTexture* ds, GSTextureCache::Source* t);
@@ -74,7 +73,8 @@ private:
 
 	class Hacks
 	{
-		template<class T> class HackEntry
+		template <class T>
+		class HackEntry
 		{
 		public:
 			CRC::Title title;
@@ -89,18 +89,19 @@ private:
 			}
 		};
 
-		template<class T> class FunctionMap : public GSFunctionMap<uint32, T>
+		template <class T>
+		class FunctionMap : public GSFunctionMap<uint32, T>
 		{
-			std::list<HackEntry<T> >& m_tbl;
+			std::list<HackEntry<T>>& m_tbl;
 
 			T GetDefaultFunction(uint32 key)
 			{
 				CRC::Title title = (CRC::Title)(key & 0xffffff);
 				CRC::Region region = (CRC::Region)(key >> 24);
 
-				for(const auto &entry : m_tbl)
+				for (const auto& entry : m_tbl)
 				{
-					if(entry.title == title && (entry.region == CRC::RegionCount || entry.region == region))
+					if (entry.title == title && (entry.region == CRC::RegionCount || entry.region == region))
 					{
 						return entry.func;
 					}
@@ -110,12 +111,15 @@ private:
 			}
 
 		public:
-			FunctionMap(std::list<HackEntry<T> >& tbl) : m_tbl(tbl) {}
+			FunctionMap(std::list<HackEntry<T>>& tbl)
+				: m_tbl(tbl)
+			{
+			}
 		};
 
-		std::list<HackEntry<OI_Ptr> > m_oi_list;
-		std::list<HackEntry<OO_Ptr> > m_oo_list;
-		std::list<HackEntry<CU_Ptr> > m_cu_list;
+		std::list<HackEntry<OI_Ptr>> m_oi_list;
+		std::list<HackEntry<OO_Ptr>> m_oo_list;
+		std::list<HackEntry<CU_Ptr>> m_cu_list;
 
 		FunctionMap<OI_Ptr> m_oi_map;
 		FunctionMap<OO_Ptr> m_oo_map;
@@ -132,7 +136,7 @@ private:
 
 	} m_hacks;
 
-	#pragma endregion
+#pragma endregion
 
 	uint16 Interpolate_UV(float alpha, int t0, int t1);
 	float alpha0(int L, int X0, int X1);
@@ -140,7 +144,8 @@ private:
 	void SwSpriteRender();
 	bool CanUseSwSpriteRender(bool allow_64x64_sprite);
 
-	template <bool linear> void RoundSpriteOffset();
+	template <bool linear>
+	void RoundSpriteOffset();
 
 protected:
 	GSTextureCache* m_tc;
@@ -157,7 +162,7 @@ protected:
 	float m_userhacks_tcoffset_x;
 	float m_userhacks_tcoffset_y;
 
-	int m_accurate_date;
+	bool m_accurate_date;
 	int m_sw_blending;
 
 	bool m_channel_shuffle;
@@ -175,6 +180,7 @@ public:
 	GSVector2i GetCustomResolution();
 	void SetScaling();
 	void Lines2Sprites();
+	void EmulateAtst(GSVector4& FogColor_AREF, uint8& atst, const bool pass_2);
 	void ConvertSpriteTextureShuffle(bool& write_ba, bool& read_ba);
 	GSVector4 RealignTargetTextureCoordinate(const GSTextureCache::Source* tex);
 	GSVector4i ComputeBoundingBox(const GSVector2& rtscale, const GSVector2i& rtsize);
@@ -190,5 +196,5 @@ public:
 	void Draw();
 
 	// Called by the texture cache to know if current texture is useful
-	virtual bool IsDummyTexture() const { return false;}
+	virtual bool IsDummyTexture() const { return false; }
 };

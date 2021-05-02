@@ -30,9 +30,9 @@ class GSLocalMemory;
 
 class alignas(32) GSClut : public GSAlignedClass<32>
 {
-	static GSVector4i m_bm;
-	static GSVector4i m_gm;
-	static GSVector4i m_rm;
+	static const GSVector4i m_bm;
+	static const GSVector4i m_gm;
+	static const GSVector4i m_rm;
 
 	GSLocalMemory* m_mem;
 
@@ -71,9 +71,12 @@ class alignas(32) GSClut : public GSAlignedClass<32>
 	void WriteCLUT16S_I8_CSM1(const GIFRegTEX0& TEX0, const GIFRegTEXCLUT& TEXCLUT);
 	void WriteCLUT16S_I4_CSM1(const GIFRegTEX0& TEX0, const GIFRegTEXCLUT& TEXCLUT);
 
-	template<int n> void WriteCLUT32_CSM2(const GIFRegTEX0& TEX0, const GIFRegTEXCLUT& TEXCLUT);
-	template<int n> void WriteCLUT16_CSM2(const GIFRegTEX0& TEX0, const GIFRegTEXCLUT& TEXCLUT);
-	template<int n> void WriteCLUT16S_CSM2(const GIFRegTEX0& TEX0, const GIFRegTEXCLUT& TEXCLUT);
+	template <int n>
+	void WriteCLUT32_CSM2(const GIFRegTEX0& TEX0, const GIFRegTEXCLUT& TEXCLUT);
+	template <int n>
+	void WriteCLUT16_CSM2(const GIFRegTEX0& TEX0, const GIFRegTEXCLUT& TEXCLUT);
+	template <int n>
+	void WriteCLUT16S_CSM2(const GIFRegTEX0& TEX0, const GIFRegTEXCLUT& TEXCLUT);
 
 	void WriteCLUT_NULL(const GIFRegTEX0& TEX0, const GIFRegTEXCLUT& TEXCLUT);
 
@@ -97,8 +100,6 @@ class alignas(32) GSClut : public GSAlignedClass<32>
 	static void Expand16(const uint16* RESTRICT src, uint32* RESTRICT dst, int w, const GIFRegTEXA& TEXA);
 
 public:
-	static void InitVectors();
-
 	GSClut(GSLocalMemory* mem);
 	virtual ~GSClut();
 
@@ -110,8 +111,8 @@ public:
 	void Read32(const GIFRegTEX0& TEX0, const GIFRegTEXA& TEXA);
 	void GetAlphaMinMax32(int& amin, int& amax);
 
-	uint32 operator [] (size_t i) const {return m_buff32[i];}
+	uint32 operator[](size_t i) const { return m_buff32[i]; }
 
-	operator const uint32*() const  {return m_buff32;}
-	operator const uint64*() const {return m_buff64;}
+	operator const uint32*() const { return m_buff32; }
+	operator const uint64*() const { return m_buff64; }
 };

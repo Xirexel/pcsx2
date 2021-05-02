@@ -18,6 +18,7 @@
 #include "SPU2/spu2.h"
 
 #include "Sif.h"
+#include "DEV9/DEV9.h"
 
 using namespace R3000A;
 
@@ -42,7 +43,7 @@ static void __fastcall psxDmaGeneric(u32 madr, u32 bcr, u32 chcr, u32 spuCore)
 	//Console.Status("cycles sent to SPU2 %x\n", psxRegs.cycle - psxCounters[6].sCycleT);
 
 	psxCounters[6].sCycleT = psxRegs.cycle;
-	psxCounters[6].CycleT = size * 3;
+	psxCounters[6].CycleT = size * 4;
 
 	psxNextCounter -= (psxRegs.cycle - psxNextsCounter);
 	psxNextsCounter = psxRegs.cycle;
@@ -102,8 +103,11 @@ void spu2DMA4Irq()
 	Console.Warning("spu2DMA4Irq()");
 #endif
 	SPU2interruptDMA4();
-	HW_DMA4_CHCR &= ~0x01000000;
-	psxDmaInterrupt(4);
+	if (HW_DMA4_CHCR & 0x01000000)
+	{
+		HW_DMA4_CHCR &= ~0x01000000;
+		psxDmaInterrupt(4);
+	}
 }
 
 void psxDma7(u32 madr, u32 bcr, u32 chcr) // SPU2's Core 1
@@ -127,8 +131,11 @@ void spu2DMA7Irq()
 	Console.Warning("spu2DMA7Irq()");
 #endif
 	SPU2interruptDMA7();
-	HW_DMA7_CHCR &= ~0x01000000;
-	psxDmaInterrupt2(0);
+	if (HW_DMA7_CHCR & 0x01000000)
+	{
+		HW_DMA7_CHCR &= ~0x01000000;
+		psxDmaInterrupt2(0);
+	}
 }
 
 #ifndef DISABLE_PSX_GPU_DMAS

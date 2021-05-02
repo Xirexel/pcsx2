@@ -35,36 +35,63 @@ void TraceLogFilters::LoadSave( IniInterface& ini )
 	IniEntry( IOP.bitset );
 }
 
+const wxChar* const tbl_SpeedhackNames[] =
+	{
+		L"mvuFlag",
+		L"InstantVU1"};
+
+const __fi wxChar* EnumToString(SpeedhackId id)
+{
+	return tbl_SpeedhackNames[id];
+}
+
+void Pcsx2Config::SpeedhackOptions::Set(SpeedhackId id, bool enabled)
+{
+	EnumAssert(id);
+	switch (id)
+	{
+		case Speedhack_mvuFlag:
+			vuFlagHack = enabled;
+			break;
+		case Speedhack_InstantVU1:
+			vu1Instant = enabled;
+			break;
+			jNO_DEFAULT;
+	}
+}
+
 Pcsx2Config::SpeedhackOptions::SpeedhackOptions()
 {
 	DisableAll();
-	
+
 	// Set recommended speedhacks to enabled by default. They'll still be off globally on resets.
 	WaitLoop = true;
 	IntcStat = true;
 	vuFlagHack = true;
+	vu1Instant = true;
 }
 
 Pcsx2Config::SpeedhackOptions& Pcsx2Config::SpeedhackOptions::DisableAll()
 {
-	bitset			= 0;
-	EECycleRate		= 0;
-	EECycleSkip		= 0;
-	
+	bitset = 0;
+	EECycleRate = 0;
+	EECycleSkip = 0;
+
 	return *this;
 }
 
-void Pcsx2Config::SpeedhackOptions::LoadSave( IniInterface& ini )
+void Pcsx2Config::SpeedhackOptions::LoadSave(IniInterface& ini)
 {
-	ScopedIniGroup path( ini, L"Speedhacks" );
+	ScopedIniGroup path(ini, L"Speedhacks");
 
-	IniBitfield( EECycleRate );
-	IniBitfield( EECycleSkip );
-	IniBitBool( fastCDVD );
-	IniBitBool( IntcStat );
-	IniBitBool( WaitLoop );
-	IniBitBool( vuFlagHack );
-	IniBitBool( vuThread );
+	IniBitfield(EECycleRate);
+	IniBitfield(EECycleSkip);
+	IniBitBool(fastCDVD);
+	IniBitBool(IntcStat);
+	IniBitBool(WaitLoop);
+	IniBitBool(vuFlagHack);
+	IniBitBool(vuThread);
+	IniBitBool(vu1Instant);
 }
 
 void Pcsx2Config::ProfilerOptions::LoadSave( IniInterface& ini )
@@ -256,9 +283,9 @@ const wxChar *const tbl_GamefixNames[] =
 	L"FpuMul",
 	L"FpuNegDiv",
 	L"XGKick",
-	L"IpuWait",
+	L"IPUWait",
 	L"EETiming",
-	L"SkipMpeg",
+	L"SkipMPEG",
 	L"OPHFlag",
 	L"DMABusy",
 	L"VIFFIFO",
@@ -439,6 +466,7 @@ void Pcsx2Config::LoadSave( IniInterface& ini )
 #endif
 	IniBitBool( ConsoleToStdio );
 	IniBitBool( HostFs );
+	IniBitBool( FullBootConfig );
 
 	IniBitBool( BackupSavestate );
 	IniBitBool( McdEnableEjection );

@@ -55,17 +55,17 @@ void prepareRegsForFastcall(const Reg1 &a1, const Reg2 &a2) {
 
     // Make sure we don't mess up if someone tries to fastcall with a1 in arg2reg and a2 in arg1reg
     if (a2.Id != arg1reg.Id) {
-        xMOV(Reg1(arg1reg.Id), a1);
+        xMOV(Reg1(arg1reg), a1);
         if (!a2.IsEmpty()) {
-            xMOV(Reg2(arg2reg.Id), a2);
+            xMOV(Reg2(arg2reg), a2);
         }
     } else if (a1.Id != arg2reg.Id) {
-        xMOV(Reg2(arg2reg.Id), a2);
-        xMOV(Reg1(arg1reg.Id), a1);
+        xMOV(Reg2(arg2reg), a2);
+        xMOV(Reg1(arg1reg), a1);
     } else {
         xPUSH(a1);
-        xMOV(Reg2(arg2reg.Id), a2);
-        xPOP(Reg1(arg1reg.Id));
+        xMOV(Reg2(arg2reg), a2);
+        xPOP(Reg1(arg1reg));
     }
 }
 
@@ -127,35 +127,6 @@ void xImpl_FastCall::operator()(const xIndirectNative &f, const xRegisterLong &a
 }
 
 const xImpl_FastCall xFastCall = {};
-
-void xSmartJump::SetTarget()
-{
-    u8 *target = xGetPtr();
-    if (m_baseptr == NULL)
-        return;
-
-    xSetPtr(m_baseptr);
-    u8 *const saveme = m_baseptr + GetMaxInstructionSize();
-    xJccKnownTarget(m_cc, target, true);
-
-    // Copy recompiled data inward if the jump instruction didn't fill the
-    // alloted buffer (means that we optimized things to a j8!)
-
-    const int spacer = (sptr)saveme - (sptr)xGetPtr();
-    if (spacer != 0) {
-        u8 *destpos = xGetPtr();
-        const int copylen = (sptr)target - (sptr)saveme;
-
-        memcpy(destpos, saveme, copylen);
-        xSetPtr(target - spacer);
-    }
-}
-
-xSmartJump::~xSmartJump()
-{
-    SetTarget();
-    m_baseptr = NULL; // just in case (sometimes helps in debugging too)
-}
 
 // ------------------------------------------------------------------------
 // Emits a 32 bit jump, and returns a pointer to the 32 bit displacement.

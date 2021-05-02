@@ -28,11 +28,7 @@ static __fi void testZero(const xmm& xmmReg, const xmm& xmmTemp, const x32& gprT
 {
 	xXOR.PS(xmmTemp, xmmTemp);
 	xCMPEQ.SS(xmmTemp, xmmReg);
-	if (!x86caps.hasStreamingSIMD4Extensions) {
-		xMOVMSKPS(gprTemp, xmmTemp);
-		xTEST(gprTemp, 1);
-	}
-	else xPTEST(xmmTemp, xmmTemp);
+	xPTEST(xmmTemp, xmmTemp);
 }
 
 // Test if Vector is Negative (Set Flags and Makes Positive)
@@ -298,18 +294,8 @@ mVUop(mVU_EEXP) {
 
 // sumXYZ(): PQ.x = x ^ 2 + y ^ 2 + z ^ 2
 static __fi void mVU_sumXYZ(mV, const xmm& PQ, const xmm& Fs) {
-	if (x86caps.hasStreamingSIMD4Extensions) {
-		xDP.PS(Fs, Fs, 0x71);
-		xMOVSS(PQ, Fs);
-	}
-	else {
-		SSE_MULPS(mVU, Fs, Fs);	   // wzyx ^ 2
-		xMOVSS		(PQ, Fs);		  // x ^ 2
-		xPSHUF.D	  (Fs, Fs, 0xe1); // wzyx -> wzxy
-		SSE_ADDSS(mVU, PQ, Fs);	   // x ^ 2 + y ^ 2
-		xPSHUF.D	  (Fs, Fs, 0xd2); // wzxy -> wxyz
-		SSE_ADDSS(mVU, PQ, Fs);	   // x ^ 2 + y ^ 2 + z ^ 2
-	}
+	xDP.PS(Fs, Fs, 0x71);
+	xMOVSS(PQ, Fs);
 }
 
 mVUop(mVU_ELENG) {
@@ -406,7 +392,7 @@ mVUop(mVU_ESADD) {
 }
 
 mVUop(mVU_ESIN) {
-	pass1 { mVUanalyzeEFU2(mVU, _Fs_, 29); }
+	pass1 { mVUanalyzeEFU1(mVU, _Fs_, _Fsf_, 29); }
 	pass2 {
 		const xmm& Fs = mVU.regAlloc->allocReg(_Fs_, 0, (1 << (3 - _Fsf_)));
 		const xmm& t1 = mVU.regAlloc->allocReg();
@@ -939,10 +925,10 @@ mVUop(mVU_ISW) {
 		if (!_Is_)
 			xXOR(gprT2, gprT2);
 		xADD(gprT2, _Imm11_);
-		mVUaddrFix (mVU, gprT2);
+		mVUaddrFix (mVU, gprT2q);
 
 		mVUallocVIa(mVU, gprT1, _It_);
-		writeBackISW(mVU, ptr, gprT2);
+		writeBackISW(mVU, ptr, gprT2q);
 		mVU.profiler.EmitOp(opISW);
 	}
 	pass3 { mVUlog("ISW.%s vi%02d, vi%02d + %d", _XYZW_String, _Ft_, _Fs_, _Imm11_);  }

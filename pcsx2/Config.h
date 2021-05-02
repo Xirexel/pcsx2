@@ -17,18 +17,15 @@
 
 #include "x86emitter/tools.h"
 
-// Disable TAS on release builds, threading issue maybe? It hangs the emu.
-// Linux always hangs, Windows far less but it's still an issue.
-#define DISABLE_RECORDING
+#include "Utilities/FixedPointTypes.h"
+#include "Utilities/General.h"
+#include <wx/filename.h>
 
 class IniInterface;
 
 enum PluginsEnum_t
 {
 	PluginId_GS = 0,
-	PluginId_PAD,
-	PluginId_USB,
-	PluginId_DEV9,
 	PluginId_Count,
 
 	// Memorycard plugin support is preliminary, and is only hacked/hardcoded in at this
@@ -64,6 +61,19 @@ enum GamefixId
 	GamefixId_COUNT
 };
 
+// TODO - config - not a fan of the excessive use of enums and macros to make them work
+// a proper object would likely make more sense (if possible).
+
+enum SpeedhackId
+{
+	SpeedhackId_FIRST = 0,
+
+	Speedhack_mvuFlag = SpeedhackId_FIRST,
+	Speedhack_InstantVU1,
+
+	SpeedhackId_COUNT
+};
+
 enum class VsyncMode
 {
 	Off,
@@ -79,6 +89,7 @@ typename std::underlying_type<Enumeration>::type enum_cast(Enumeration E)
 }
 
 ImplementEnumOperators( GamefixId );
+ImplementEnumOperators( SpeedhackId );
 
 //------------ DEFAULT sseMXCSR VALUES ---------------
 #define DEFAULT_sseMXCSR	0xffc0 //FPU rounding > DaZ, FtZ, "chop"
@@ -396,15 +407,18 @@ struct Pcsx2Config
 				IntcStat		:1,		// tells Pcsx2 to fast-forward through intc_stat waits.
 				WaitLoop		:1,		// enables constant loop detection and fast-forwarding
 				vuFlagHack		:1,		// microVU specific flag hack
-				vuThread        :1;		// Enable Threaded VU1
+				vuThread		:1,		// Enable Threaded VU1
+				vu1Instant		:1;		// Enable Instant VU1 (Without MTVU only)
 		BITFIELD_END
 
 		s8	EECycleRate;		// EE cycle rate selector (1.0, 1.5, 2.0)
 		u8	EECycleSkip;		// EE Cycle skip factor (0, 1, 2, or 3)
 
 		SpeedhackOptions();
-		void LoadSave( IniInterface& conf );
+		void LoadSave(IniInterface& conf);
 		SpeedhackOptions& DisableAll();
+
+		void Set(SpeedhackId id, bool enabled = true);
 
 		bool operator ==( const SpeedhackOptions& right ) const
 		{
@@ -470,7 +484,8 @@ struct Pcsx2Config
 			MultitapPort1_Enabled:1,
 
 			ConsoleToStdio		:1,
-			HostFs				:1;
+			HostFs				:1,
+			FullBootConfig		:1;
 	BITFIELD_END
 
 	CpuOptions			Cpu;
@@ -528,6 +543,7 @@ TraceLogFilters&				SetTraceConfig();
 // ------------ CPU / Recompiler Options ---------------
 
 #define THREAD_VU1					(EmuConfig.Cpu.Recompiler.UseMicroVU1 && EmuConfig.Speedhacks.vuThread)
+#define INSTANT_VU1					(EmuConfig.Speedhacks.vu1Instant)
 #define CHECK_MICROVU0				(EmuConfig.Cpu.Recompiler.UseMicroVU0)
 #define CHECK_MICROVU1				(EmuConfig.Cpu.Recompiler.UseMicroVU1)
 #define CHECK_EEREC					(EmuConfig.Cpu.Recompiler.EnableEE && GetCpuProviders().IsRecAvailable_EE())

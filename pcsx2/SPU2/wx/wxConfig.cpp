@@ -15,7 +15,7 @@
 
 #include "PrecompiledHeader.h"
 #include "../Config.h"
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
 #include "../Linux/Config.h"
 #endif
 #include "../Global.h"
@@ -35,6 +35,7 @@ MixerTab::MixerTab(wxWindow* parent)
 	interpolation_entries.Add("Cubic (Artificial highs)");
 	interpolation_entries.Add("Hermite (Better highs)");
 	interpolation_entries.Add("Catmull-Rom (PS2-like/slow)");
+	interpolation_entries.Add("Gaussian (SPU native)");
 
 	m_inter_select = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, interpolation_entries);
 
@@ -350,7 +351,7 @@ void DebugTab::CallUpdate(wxCommandEvent& /*event*/)
 }
 
 Dialog::Dialog()
-	: wxDialog(nullptr, wxID_ANY, "SPU2 Config", wxDefaultPosition, wxDefaultSize, wxCAPTION | wxCLOSE_BOX)
+	: wxDialog(nullptr, wxID_ANY, "Audio Settings", wxDefaultPosition, wxDefaultSize, wxCAPTION | wxCLOSE_BOX)
 {
 	m_top_box = new wxBoxSizer(wxVERTICAL);
 	auto* module_box = new wxBoxSizer(wxVERTICAL);

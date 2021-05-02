@@ -169,6 +169,60 @@
     <Filter Include="Recording\VirtualPad\Images">
       <UniqueIdentifier>{ad528458-08eb-49a2-aefa-3c2b86ab8896}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System\Ps2\DEV9">
+      <UniqueIdentifier>{8d5454f9-590c-4c53-aae1-8391c6465e50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\DEV9\ATA">
+      <UniqueIdentifier>{bc20f567-851d-4440-a3fd-ef470241962e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\DEV9\ATA\Commands">
+      <UniqueIdentifier>{9e9b52d7-7b1c-44b2-82d8-1e0d8085e7e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB">
+      <UniqueIdentifier>{df9de75c-2272-4f73-b2a0-4f9f492ba1e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\readerwriterqueue">
+      <UniqueIdentifier>{f128e163-0f30-43eb-80a1-4739a6313c8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\qemu-usb">
+      <UniqueIdentifier>{5a206eba-a8b6-44ef-98e7-eb0384c9a896}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\usb-msd">
+      <UniqueIdentifier>{c63d7e06-bbf9-48ec-aa38-d122aa6648cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\usb-pad">
+      <UniqueIdentifier>{aee88110-a71e-4896-8b22-73e3198eb30a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\usb-pad\lg">
+      <UniqueIdentifier>{1aa4f41d-451c-4599-9aa7-e2f51f5b467d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\usb-mic">
+      <UniqueIdentifier>{9c8b3479-af75-4999-b265-d0c8c66d0954}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\usb-eyetoy">
+      <UniqueIdentifier>{e4b2d8b4-a9fb-4c6d-b247-2112afd8d099}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\usb-eyetoy\jpgd">
+      <UniqueIdentifier>{fe77f40c-84c0-4a06-affb-b6e7fb09ce49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\usb-hid">
+      <UniqueIdentifier>{a478e196-ac99-4a12-bfbb-2a7a3128d6e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\shared">
+      <UniqueIdentifier>{96b523da-ac91-4f95-81af-8df223188783}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\Win32">
+      <UniqueIdentifier>{a12c76e1-5876-4ce2-aec6-427270102eed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\usb-pad\dx">
+      <UniqueIdentifier>{b067682e-741d-4414-89ef-8ffc22aef8dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\USB\usb-pad\raw">
+      <UniqueIdentifier>{8640e8ca-7d79-4221-b1bf-35bc142a9add}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Ps2\PAD">
+      <UniqueIdentifier>{e1cbcaf6-9f65-4f14-9e89-27dd0f10e047}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Utilities\folderdesc.txt">
@@ -218,6 +272,9 @@
     </None>
     <None Include="..\..\gui\Dialogs\BaseConfigurationDialog.inl">
       <Filter>AppHost\Dialogs</Filter>
+    </None>
+    <None Include="..\..\PAD\Windows\Default.ini">
+      <Filter>System\Ps2\PAD</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -602,12 +659,6 @@
     <ClCompile Include="..\..\gui\CpuUsageProvider.cpp">
       <Filter>AppHost</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\gui\CpuUsageProviderLnx.cpp">
-      <Filter>AppHost</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\gui\CpuUsageProviderMSW.cpp">
-      <Filter>AppHost</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\gui\FrameForGS.cpp">
       <Filter>AppHost</Filter>
     </ClCompile>
@@ -922,9 +973,6 @@
     <ClCompile Include="..\..\SPU2\spu2freeze.cpp">
       <Filter>System\Ps2\SPU2</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\SPU2\spu2replay.cpp">
-      <Filter>System\Ps2\SPU2</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\SPU2\spu2sys.cpp">
       <Filter>System\Ps2\SPU2</Filter>
     </ClCompile>
@@ -1002,6 +1050,264 @@
     </ClCompile>
     <ClCompile Include="..\..\SPU2\SndOut_Portaudio.cpp">
       <Filter>System\Ps2\SPU2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_Command.cpp">
+      <Filter>System\Ps2\DEV9\ATA\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_CmdDMA.cpp">
+      <Filter>System\Ps2\DEV9\ATA\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_CmdExecuteDeviceDiag.cpp">
+      <Filter>System\Ps2\DEV9\ATA\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_CmdNoData.cpp">
+      <Filter>System\Ps2\DEV9\ATA\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_CmdPIOData.cpp">
+      <Filter>System\Ps2\DEV9\ATA\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_CmdSMART.cpp">
+      <Filter>System\Ps2\DEV9\ATA\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_SCE.cpp">
+      <Filter>System\Ps2\DEV9\ATA\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\ATA_Info.cpp">
+      <Filter>System\Ps2\DEV9\ATA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\ATA_State.cpp">
+      <Filter>System\Ps2\DEV9\ATA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\ATA_Transfer.cpp">
+      <Filter>System\Ps2\DEV9\ATA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\ATA\HddCreate.cpp">
+      <Filter>System\Ps2\DEV9\ATA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\DEV9.cpp">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\flash.cpp">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\pcap_io.cpp">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\Win32\pcap_io_win32.cpp">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\smap.cpp">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\net.cpp">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\Win32\tap-win32.cpp">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\Win32\Win32.cpp">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DEV9\Win32\DEV9WinConfig.cpp">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\configuration.cpp">
+      <Filter>System\Ps2\USB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\device_init.cpp">
+      <Filter>System\Ps2\USB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\deviceproxy.cpp">
+      <Filter>System\Ps2\USB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\USB.cpp">
+      <Filter>System\Ps2\USB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\qemu-usb\bus.cpp">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\qemu-usb\core.cpp">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\qemu-usb\desc.cpp">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\qemu-usb\glib.cpp">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\qemu-usb\hid.cpp">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\qemu-usb\input-keymap-qcode-to-qnum.cpp">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\qemu-usb\iov.cpp">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\qemu-usb\usb-ohci.cpp">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\qemu-usb\vl.cpp">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-msd\usb-msd.cpp">
+      <Filter>System\Ps2\USB\usb-msd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-pad\usb-pad.cpp">
+      <Filter>System\Ps2\USB\usb-pad</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-pad\usb-pad-ff.cpp">
+      <Filter>System\Ps2\USB\usb-pad</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-pad\lg\lg_ff.cpp">
+      <Filter>System\Ps2\USB\usb-pad\lg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-pad\usb-seamic.cpp">
+      <Filter>System\Ps2\USB\usb-pad</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-mic\usb-headset.cpp">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-mic\usb-mic-logitech.cpp">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-mic\usb-mic-singstar.cpp">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-eyetoy\jpgd\jpgd.cpp">
+      <Filter>System\Ps2\USB\usb-eyetoy\jpgd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-eyetoy\jo_mpeg.cpp">
+      <Filter>System\Ps2\USB\usb-eyetoy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-eyetoy\usb-eyetoy-webcam.cpp">
+      <Filter>System\Ps2\USB\usb-eyetoy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-hid\usb-hid.cpp">
+      <Filter>System\Ps2\USB\usb-hid</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\shared\ringbuffer.cpp">
+      <Filter>System\Ps2\USB\shared</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-mic\audiodev-wasapi.cpp">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-msd\usb-msd-win32.cpp">
+      <Filter>System\Ps2\USB\usb-msd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\shared\hidapi.cpp">
+      <Filter>System\Ps2\USB\shared</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\qemu-usb\input-keymap-win32-to-qcode.cpp">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-hid\raw\rawinput.cpp">
+      <Filter>System\Ps2\USB\usb-hid</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-eyetoy\cam-windows.cpp">
+      <Filter>System\Ps2\USB\usb-eyetoy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-pad\dx\dinput.cpp">
+      <Filter>System\Ps2\USB\usb-pad\dx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-pad\dx\dinput-config.cpp">
+      <Filter>System\Ps2\USB\usb-pad\dx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-pad\dx\usb-pad-dx.cpp">
+      <Filter>System\Ps2\USB\usb-pad\dx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-pad\raw\raw-config.cpp">
+      <Filter>System\Ps2\USB\usb-pad\raw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-pad\raw\usb-pad-raw.cpp">
+      <Filter>System\Ps2\USB\usb-pad\raw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-pad\api_init_win32_pad.cpp">
+      <Filter>System\Ps2\USB\usb-pad</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-mic\api_init_win32_mic.cpp">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-hid\api_init_win32_hid.cpp">
+      <Filter>System\Ps2\USB\usb-hid</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\usb-eyetoy\api_init_win32_eyetoy.cpp">
+      <Filter>System\Ps2\USB\usb-eyetoy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\Win32\Config_usb.cpp">
+      <Filter>System\Ps2\USB\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\shared\shared_usb.cpp">
+      <Filter>System\Ps2\USB\shared</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\shared\inifile_usb.cpp">
+      <Filter>System\Ps2\USB\shared</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\USB\shared\rawinput_usb.cpp">
+      <Filter>System\Ps2\USB\shared</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\DeviceEnumerator.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\Diagnostics.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\DirectInput.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\DualShock3.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\Global.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\HidDevice.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\InputManager.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\KeyboardQueue.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\Tooltips.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\VKey.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\WindowsKeyboard.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\WindowsMessaging.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\WindowsMouse.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\WndProcEater.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\XInputEnum.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\PAD.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\PADConfig.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PAD\Windows\PADRawInput.cpp">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\gui\Dialogs\IPCDialog.cpp">
+      <Filter>AppHost\Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\gui\Dialogs\GSDumpDialog.cpp">
+      <Filter>AppHost\Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\CDVD\ChdFileReader.cpp">
+      <Filter>System\ISO</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1473,10 +1779,10 @@
     <ClInclude Include="..\..\SPU2\spu2.h">
       <Filter>System\Ps2\SPU2</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SPU2\spu2replay.h">
+    <ClInclude Include="..\..\SPU2\Mixer.h">
       <Filter>System\Ps2\SPU2</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SPU2\Mixer.h">
+    <ClInclude Include="..\..\SPU2\interpolate_table.h">
       <Filter>System\Ps2\SPU2</Filter>
     </ClInclude>
     <ClInclude Include="..\..\SPU2\Lowpass.h">
@@ -1524,6 +1830,252 @@
     <ClInclude Include="..\..\Recording\Utilities\InputRecordingLogger.h">
       <Filter>Recording\Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\DEV9\ATA\ATA.h">
+      <Filter>System\Ps2\DEV9\ATA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\DEV9\ATA\HddCreate.h">
+      <Filter>System\Ps2\DEV9\ATA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\DEV9\Config.h">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\DEV9\DEV9.h">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\DEV9\net.h">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\DEV9\pcap_io.h">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\DEV9\smap.h">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\DEV9\Win32\pcap_io_win32_funcs.h">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\DEV9\Win32\resource.h">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\DEV9\Win32\tap.h">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\configuration.h">
+      <Filter>System\Ps2\USB</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\deviceproxy.h">
+      <Filter>System\Ps2\USB</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\helpers.h">
+      <Filter>System\Ps2\USB</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\platcompat.h">
+      <Filter>System\Ps2\USB</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\proxybase.h">
+      <Filter>System\Ps2\USB</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\USB.h">
+      <Filter>System\Ps2\USB</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\readerwriterqueue\atomicops.h">
+      <Filter>System\Ps2\USB\readerwriterqueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\readerwriterqueue\readerwriterqueue.h">
+      <Filter>System\Ps2\USB\readerwriterqueue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\qemu-usb\desc.h">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\qemu-usb\glib.h">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\qemu-usb\hid.h">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\qemu-usb\input-keymap.h">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\qemu-usb\iov.h">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\qemu-usb\queue.h">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\qemu-usb\qusb.h">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\qemu-usb\USBinternal.h">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\qemu-usb\vl.h">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-msd\usb-msd.h">
+      <Filter>System\Ps2\USB\usb-msd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-pad\padproxy.h">
+      <Filter>System\Ps2\USB\usb-pad</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-pad\usb-pad.h">
+      <Filter>System\Ps2\USB\usb-pad</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-pad\lg\lg_ff.h">
+      <Filter>System\Ps2\USB\usb-pad\lg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-mic\audio.h">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-mic\audiodev.h">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-mic\audiodeviceproxy.h">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-mic\audiodev-noop.h">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-mic\usb-headset.h">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-mic\usb-mic-singstar.h">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-eyetoy\jo_mpeg.h">
+      <Filter>System\Ps2\USB\usb-eyetoy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-eyetoy\ov519.h">
+      <Filter>System\Ps2\USB\usb-eyetoy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-eyetoy\usb-eyetoy-webcam.h">
+      <Filter>System\Ps2\USB\usb-eyetoy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-eyetoy\videodev.h">
+      <Filter>System\Ps2\USB\usb-eyetoy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-eyetoy\videodeviceproxy.h">
+      <Filter>System\Ps2\USB\usb-eyetoy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-eyetoy\jpgd\jpgd.h">
+      <Filter>System\Ps2\USB\usb-eyetoy\jpgd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-hid\hidproxy.h">
+      <Filter>System\Ps2\USB\usb-hid</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-hid\noop.h">
+      <Filter>System\Ps2\USB\usb-hid</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-hid\usb-hid.h">
+      <Filter>System\Ps2\USB\usb-hid</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\shared\ringbuffer.h">
+      <Filter>System\Ps2\USB\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-mic\audiodev-wasapi.h">
+      <Filter>System\Ps2\USB\usb-mic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\shared\hidapi.h">
+      <Filter>System\Ps2\USB\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\qemu-usb\input-keymap-win32-to-qcode.h">
+      <Filter>System\Ps2\USB\qemu-usb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-hid\raw\rawinput.h">
+      <Filter>System\Ps2\USB\usb-hid</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-eyetoy\cam-windows.h">
+      <Filter>System\Ps2\USB\usb-eyetoy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-pad\dx\dx.h">
+      <Filter>System\Ps2\USB\usb-pad\dx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-pad\dx\usb-pad-dx.h">
+      <Filter>System\Ps2\USB\usb-pad\dx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-pad\dx\versionproxy.h">
+      <Filter>System\Ps2\USB\usb-pad\dx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-pad\raw\raw-config-res.h">
+      <Filter>System\Ps2\USB\usb-pad\raw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\usb-pad\raw\usb-pad-raw.h">
+      <Filter>System\Ps2\USB\usb-pad\raw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\Win32\Config_usb.h">
+      <Filter>System\Ps2\USB\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\shared\shared_usb.h">
+      <Filter>System\Ps2\USB\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\shared\inifile_usb.h">
+      <Filter>System\Ps2\USB\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\shared\rawinput_usb.h">
+      <Filter>System\Ps2\USB\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\USB\Win32\resource_usb.h">
+      <Filter>System\Ps2\USB\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\DeviceEnumerator.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\Diagnostics.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\DirectInput.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\DualShock3.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\Global.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\HidDevice.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\InputManager.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\KeyboardQueue.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\Tooltips.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\usb.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\VKey.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\WindowsKeyboard.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\WindowsMessaging.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\WindowsMouse.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\WndProcEater.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\XInputEnum.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\PADConfig.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\PADRawInput.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\PAD.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PAD\Windows\resource_pad.h">
+      <Filter>System\Ps2\PAD</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\wxResources.rc">
@@ -1534,6 +2086,21 @@
     </ResourceCompile>
     <ResourceCompile Include="..\..\SPU2\Windows\SPU2.rc">
       <Filter>System\Ps2\SPU2</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="..\..\DEV9\Win32\DEV9ghzdrk.rc">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="..\..\USB\usb-pad\dx\versionproxy.rc">
+      <Filter>System\Ps2\USB\usb-pad\dx</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="..\..\USB\usb-pad\raw\raw-config.rc">
+      <Filter>System\Ps2\USB\usb-pad\raw</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="..\..\USB\Win32\USBDialog.rc">
+      <Filter>System\Ps2\USB\Win32</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="..\..\PAD\Windows\PAD.rc">
+      <Filter>System\Ps2\PAD</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1570,6 +2137,9 @@
       <Filter>AppHost\Resources</Filter>
     </CustomBuild>
     <CustomBuild Include="..\..\gui\Resources\BackgroundLogo.png">
+      <Filter>AppHost\Resources</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\gui\Resources\NoIcon.png">
       <Filter>AppHost\Resources</Filter>
     </CustomBuild>
     <CustomBuild Include="..\..\gui\Resources\ButtonIcon_Camera.png">
@@ -1667,5 +2237,10 @@
     <Manifest Include="..\PCSX2.manifest">
       <Filter>AppHost\Resources</Filter>
     </Manifest>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\gui\Resources\NoIcon.png">
+      <Filter>AppHost\Resources</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -176,18 +176,12 @@ extern "C" {
 
 enum PS2E_ComponentTypes {
     PS2E_TYPE_GS = 0,
-    PS2E_TYPE_PAD,
-    PS2E_TYPE_DEV9,
-    PS2E_TYPE_USB,
     PS2E_TYPE_SIO,
     PS2E_TYPE_Mcd,
 };
 
 enum PluginLibVersion {
     PS2E_VER_GS = 0x1000,
-    PS2E_VER_PAD = 0x1000,
-    PS2E_VER_DEV9 = 0x1000,
-    PS2E_VER_USB = 0x1000,
     PS2E_VER_SIO = 0x1000
 };
 
@@ -1373,7 +1367,6 @@ typedef void (CALLBACK* _DEV9keyEvent)(keyEvent* ev);
 typedef s32  (CALLBACK* _DEV9freeze)(int mode, freezeData *data);
 typedef void (CALLBACK* _DEV9configure)();
 typedef s32  (CALLBACK* _DEV9test)();
-typedef void (CALLBACK* _DEV9about)();
 
 // USB
 // NOTE: The read/write functions CANNOT use XMM/MMX regs

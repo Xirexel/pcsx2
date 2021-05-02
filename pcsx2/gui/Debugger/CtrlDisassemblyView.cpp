@@ -62,6 +62,7 @@ enum DisassemblyMenuIdentifiers
 	ID_DISASM_SETPCTOHERE,
 	ID_DISASM_TOGGLEBREAKPOINT,
 	ID_DISASM_FOLLOWBRANCH,
+	ID_DISASM_GOTOADDRESS,
 	ID_DISASM_GOTOINMEMORYVIEW,
 	ID_DISASM_KILLFUNCTION,
 	ID_DISASM_RENAMEFUNCTION,
@@ -168,6 +169,7 @@ CtrlDisassemblyView::CtrlDisassemblyView(wxWindow* parent, DebugInterface* _cpu)
 	menu.Append(ID_DISASM_TOGGLEBREAKPOINT,			L"Toggle Breakpoint");
 	menu.Append(ID_DISASM_FOLLOWBRANCH,				L"Follow Branch");
 	menu.AppendSeparator();
+	menu.Append(ID_DISASM_GOTOADDRESS,				L"Go to Address");
 	menu.Append(ID_DISASM_GOTOINMEMORYVIEW,			L"Go to in Memory View");
 	menu.AppendSeparator();
 	menu.Append(ID_DISASM_ADDFUNCTION,				L"Add Function Here");
@@ -525,7 +527,7 @@ void CtrlDisassemblyView::render(wxDC& dc)
 		
 		// display address/symbol
 		bool enabled;
-		if (CBreakPoints::IsAddressBreakPoint(address,&enabled))
+		if (CBreakPoints::IsAddressBreakPoint(cpu->getCpuType(),address,&enabled))
 		{
 			if (enabled)
 				textColor = 0x0000FF;
@@ -669,6 +671,9 @@ void CtrlDisassemblyView::onPopupClick(wxCommandEvent& evt)
 			wxTheClipboard->Close();
 		}
 		break;
+	case ID_DISASM_GOTOADDRESS:
+		postEvent(debEVT_GOTOADDRESS, 0);
+		break;
 	case ID_DISASM_GOTOINMEMORYVIEW:
 		postEvent(debEVT_GOTOINMEMORYVIEW,curAddress);
 		break;
@@ -684,6 +689,9 @@ void CtrlDisassemblyView::onPopupClick(wxCommandEvent& evt)
 		break;
 	case ID_DISASM_RUNTOHERE:
 		postEvent(debEVT_RUNTOPOS,curAddress);
+		break;
+	case ID_DISASM_TOGGLEBREAKPOINT:
+		toggleBreakpoint(false);
 		break;
 	case ID_DISASM_DISASSEMBLETOFILE:
 		disassembleToFile();
@@ -933,26 +941,26 @@ void CtrlDisassemblyView::scrollbarEvent(wxScrollWinEvent& evt)
 void CtrlDisassemblyView::toggleBreakpoint(bool toggleEnabled)
 {
 	bool enabled;
-	if (CBreakPoints::IsAddressBreakPoint(curAddress,&enabled))
+	if (CBreakPoints::IsAddressBreakPoint(cpu->getCpuType(), curAddress,&enabled))
 	{
 		if (!enabled)
 		{
 			// enable disabled breakpoints
-			CBreakPoints::ChangeBreakPoint(curAddress,true);
-		} else if (!toggleEnabled && CBreakPoints::GetBreakPointCondition(curAddress) != NULL)
+			CBreakPoints::ChangeBreakPoint(cpu->getCpuType(), curAddress,true);
+		} else if (!toggleEnabled && CBreakPoints::GetBreakPointCondition(cpu->getCpuType(), curAddress) != NULL)
 		{
 			// don't just delete a breakpoint with a custom condition
-			CBreakPoints::RemoveBreakPoint(curAddress);
+			CBreakPoints::RemoveBreakPoint(cpu->getCpuType(), curAddress);
 		} else if (toggleEnabled)
 		{
 			// disable breakpoint
-			CBreakPoints::ChangeBreakPoint(curAddress,false);
+			CBreakPoints::ChangeBreakPoint(cpu->getCpuType(), curAddress,false);
 		} else {
 			// otherwise just remove breakpoint
-			CBreakPoints::RemoveBreakPoint(curAddress);
+			CBreakPoints::RemoveBreakPoint(cpu->getCpuType(), curAddress);
 		}
 	} else {
-		CBreakPoints::AddBreakPoint(curAddress);
+		CBreakPoints::AddBreakPoint(cpu->getCpuType(), curAddress);
 	}
 }
 
@@ -1266,7 +1274,7 @@ void CtrlDisassemblyView::editBreakpoint()
 	BreakpointWindow win(this,cpu);
 
 	bool exists = false;
-	if (CBreakPoints::IsAddressBreakPoint(curAddress))
+	if (CBreakPoints::IsAddressBreakPoint(cpu->getCpuType(), curAddress))
 	{
 		auto breakpoints = CBreakPoints::GetBreakpoints();
 		for (size_t i = 0; i < breakpoints.size(); i++)
@@ -1286,7 +1294,7 @@ void CtrlDisassemblyView::editBreakpoint()
 	if (win.ShowModal() == wxID_OK)
 	{
 		if (exists)
-			CBreakPoints::RemoveBreakPoint(curAddress);
+			CBreakPoints::RemoveBreakPoint(cpu->getCpuType(), curAddress);
 		win.addBreakpoint();	
 		postEvent(debEVT_UPDATE,0);
 	}

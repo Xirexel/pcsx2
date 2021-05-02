@@ -56,22 +56,6 @@ bool GSC_BigMuthaTruckers(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
-bool GSC_Bully(const GSFrameInfo& fi, int& skip)
-{
-	if (skip == 0)
-	{
-		if ((Aggressive || !s_nativeres) && !fi.TME && (fi.FBP == 0x02300 || fi.FBP == 0x02800) && fi.FPSM == PSM_PSMCT24)
-		{
-			// ntsc 0x02300, pal 0x02800
-			// Don't enable hack on native res if crc is below aggressive.
-			// Previous value 6, ntsc didn't like it.
-			skip = 8; // Upscaling blur/ghosting
-		}
-	}
-
-	return true;
-}
-
 bool GSC_DBZBT3(const GSFrameInfo& fi, int& skip)
 {
 	if (skip == 0)
@@ -136,15 +120,9 @@ bool GSC_GodOfWar2(const GSFrameInfo& fi, int& skip)
 {
 	if (skip == 0)
 	{
-		if (Aggressive && fi.TME && fi.FPSM == PSM_PSMCT16 && (fi.FBP == 0x00100 || fi.FBP == 0x02100) && (fi.TBP0 == 0x00100 || fi.TBP0 == 0x02100) && fi.TPSM == PSM_PSMCT16)
+		if (Aggressive && fi.TME && fi.TPSM == PSM_PSMCT24 && fi.FBP == 0x1300 && (fi.TBP0 == 0x0F00 || fi.TBP0 == 0x1300 || fi.TBP0 == 0x2b00)) // || fi.FBP == 0x0100
 		{
-			// Can be used as a speed hack.
-			// Removes shadows.
-			skip = 1000;
-		}
-		else if (Aggressive && fi.TME && fi.TPSM == PSM_PSMCT24 && fi.FBP == 0x1300 && (fi.TBP0 == 0x0F00 || fi.TBP0 == 0x1300 || fi.TBP0 == 0x2b00)) // || fi.FBP == 0x0100
-		{
-			// Upscaling hack maybe ? Needs to be verified, move it to Aggressive state just in case.
+			// Ghosting when upscaling, HPO helps but isn't perfect.
 			skip = 1; // global haze/halo
 		}
 		else if ((Aggressive || !s_nativeres) && fi.TME && fi.TPSM == PSM_PSMCT24 && (fi.FBP == 0x0100 || fi.FBP == 0x2100) && (fi.TBP0 == 0x2b00 || fi.TBP0 == 0x2e80 || fi.TBP0 == 0x3100)) // 480P 2e80, interlaced 3100
@@ -152,13 +130,6 @@ bool GSC_GodOfWar2(const GSFrameInfo& fi, int& skip)
 			// Upscaling issue.
 			// Don't enable hack on native res if crc is below aggressive.
 			skip = 1; // water effect and water vertical lines
-		}
-	}
-	else
-	{
-		if (Aggressive && fi.TME && (fi.FBP == 0x00100 || fi.FBP == 0x02100) && fi.FPSM == PSM_PSMCT16)
-		{
-			skip = 3;
 		}
 	}
 
@@ -560,17 +531,6 @@ bool GSC_Kunoichi(const GSFrameInfo& fi, int& skip)
 		{
 			skip = 1; // Removes black screen (not needed anymore maybe)?
 		}
-		if (Aggressive && fi.TME)
-		{
-			// depth textures (bully, mgs3s1 intro, Front Mission 5)
-			if ((fi.TPSM == PSM_PSMZ32 || fi.TPSM == PSM_PSMZ24 || fi.TPSM == PSM_PSMZ16 || fi.TPSM == PSM_PSMZ16S) ||
-				// General, often problematic post processing
-				(GSUtil::HasSharedBits(fi.FBP, fi.FPSM, fi.TBP0, fi.TPSM)))
-			{
-				// Removes burning air effect, the effect causes major slowdowns.
-				skip = 1;
-			}
-		}
 	}
 	else
 	{
@@ -834,9 +794,11 @@ bool GSC_GetaWayGames(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
-bool GSC_StarOcean3(const GSFrameInfo& fi, int& skip)
+bool GSC_TriAceGames(const GSFrameInfo& fi, int& skip)
 {
-	// The game emulate a stencil buffer with the alpha channel of the RT
+	// Tri Ace Games: ValkyrieProfile2, RadiataStories, StarOcean3
+	//
+	// The games emulate a stencil buffer with the alpha channel of the RT
 	// The operation of the stencil is selected with the palette
 	// For example -1 wrap will be [240, 16, 32, 48 ....]
 	// i.e. p[A>>4] = (A - 16) % 256
@@ -853,48 +815,6 @@ bool GSC_StarOcean3(const GSFrameInfo& fi, int& skip)
 	{
 		if (fi.TME && fi.FBP == fi.TBP0 && fi.FPSM == PSM_PSMCT32 && fi.TPSM == PSM_PSMT4HH)
 		{
-			skip = 1000; //
-		}
-	}
-	else
-	{
-		if (!(fi.TME && fi.FBP == fi.TBP0 && fi.FPSM == PSM_PSMCT32 && fi.TPSM == PSM_PSMT4HH))
-		{
-			skip = 0;
-		}
-	}
-
-	return true;
-}
-
-bool GSC_ValkyrieProfile2(const GSFrameInfo& fi, int& skip)
-{
-	if (skip == 0)
-	{
-		if (fi.TME && fi.FBP == fi.TBP0 && fi.FPSM == PSM_PSMCT32 && fi.TPSM == PSM_PSMT4HH)
-		{
-			// GH: Hack is quite similar to GSC_StarOcean3. It is potentially the same issue.
-			skip = 1000; //
-		}
-	}
-	else
-	{
-		if (!(fi.TME && fi.FBP == fi.TBP0 && fi.FPSM == PSM_PSMCT32 && fi.TPSM == PSM_PSMT4HH))
-		{
-			skip = 0;
-		}
-	}
-
-	return true;
-}
-
-bool GSC_RadiataStories(const GSFrameInfo& fi, int& skip)
-{
-	if (skip == 0)
-	{
-		if (fi.TME && fi.FBP == fi.TBP0 && fi.FPSM == PSM_PSMCT32 && fi.TPSM == PSM_PSMT4HH)
-		{
-			// GH: Hack is quite similar to GSC_StarOcean3. It is potentially the same issue.
 			skip = 1000;
 		}
 	}
@@ -923,28 +843,6 @@ bool GSC_TenchuGames(const GSFrameInfo& fi, int& skip)
 	return true;
 }
 
-bool GSC_SlyGames(const GSFrameInfo& fi, int& skip)
-{
-	if (skip == 0)
-	{
-		if (fi.TME && fi.FPSM == fi.TPSM && (fi.FBP == 0x00000 || fi.FBP == 0x00700 || fi.FBP == 0x00800 || fi.FBP == 0x008c0 || fi.FBP == 0x00a80 || fi.FBP == 0x00e00) && fi.TPSM == PSM_PSMCT16 && fi.FBMSK == 0x03FFF)
-		// 0x00a80, 0x00e00 from Sly 3
-		{
-			// Upscaling issue with texture shuffle on dx and gl. Also removes shadows on gl.
-			skip = 1000;
-		}
-	}
-	else
-	{
-		if (fi.TME && fi.FPSM == fi.TPSM && fi.TPSM == PSM_PSMCT16 && fi.FBMSK == 0x03FFF)
-		{
-			skip = 3;
-		}
-	}
-
-	return true;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Aggressive only hack
 ////////////////////////////////////////////////////////////////////////////////
@@ -961,20 +859,6 @@ bool GSC_AceCombat4(const GSFrameInfo& fi, int& skip)
 		if (fi.TME && fi.FBP == 0x02a00 && fi.FPSM == PSM_PSMZ24 && fi.TBP0 == 0x01600 && fi.TPSM == PSM_PSMZ24)
 		{
 			skip = 71; // clouds (z, 16-bit)
-		}
-	}
-
-	return true;
-}
-
-bool GSC_BleachBladeBattlers(const GSFrameInfo& fi, int& skip)
-{
-	if (skip == 0)
-	{
-		if (fi.TME && fi.FBP == 0x01180 && fi.FPSM == fi.TPSM && fi.TBP0 == 0x03fc0 && fi.TPSM == PSM_PSMCT32)
-		{
-			// Removes body shading. Not needed but offers a very decent speed boost.
-			skip = 1;
 		}
 	}
 
@@ -1190,7 +1074,6 @@ void GSState::SetupCrcHack()
 		lut[CRC::DeathByDegreesTekkenNinaWilliams] = GSC_DeathByDegreesTekkenNinaWilliams; // + Upscaling issues
 
 		// Upscaling hacks
-		lut[CRC::Bully] = GSC_Bully;
 		lut[CRC::DBZBT3] = GSC_DBZBT3;
 		lut[CRC::EvangelionJo] = GSC_EvangelionJo;
 		lut[CRC::FightingBeautyWulong] = GSC_FightingBeautyWulong;
@@ -1210,21 +1093,18 @@ void GSState::SetupCrcHack()
 		lut[CRC::GetaWayBlackMonday] = GSC_GetaWayGames; // Blending High
 		lut[CRC::TenchuFS] = GSC_TenchuGames;
 		lut[CRC::TenchuWoH] = GSC_TenchuGames;
-		lut[CRC::Sly2] = GSC_SlyGames; // SW blending on fbmask + Upscaling issue
-		lut[CRC::Sly3] = GSC_SlyGames; // SW blending on fbmask + Upscaling issue
 
 		// These games emulate a stencil buffer with the alpha channel of the RT (too slow to move to Aggressive)
 		// Needs at least Basic Blending,
 		// see https://github.com/PCSX2/pcsx2/pull/2921
-		lut[CRC::RadiataStories] = GSC_RadiataStories;
-		lut[CRC::StarOcean3] = GSC_StarOcean3;
-		lut[CRC::ValkyrieProfile2] = GSC_ValkyrieProfile2;
+		lut[CRC::RadiataStories] = GSC_TriAceGames;
+		lut[CRC::StarOcean3] = GSC_TriAceGames;
+		lut[CRC::ValkyrieProfile2] = GSC_TriAceGames;
 	}
 
 	if (Aggressive)
 	{
 		lut[CRC::AceCombat4] = GSC_AceCombat4;
-		lut[CRC::BleachBladeBattlers] = GSC_BleachBladeBattlers;
 		lut[CRC::FFX2] = GSC_FFXGames;
 		lut[CRC::FFX] = GSC_FFXGames;
 		lut[CRC::FFXII] = GSC_FFXGames;

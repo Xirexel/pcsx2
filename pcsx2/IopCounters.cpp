@@ -21,6 +21,8 @@
 #include "PrecompiledHeader.h"
 #include "IopCommon.h"
 #include "SPU2/spu2.h"
+#include "DEV9/DEV9.h"
+#include "USB/USB.h"
 
 #include <math.h>
 
@@ -144,16 +146,13 @@ void psxRcntInit()
 	psxCounters[4].interrupt = 0x08000;
 	psxCounters[5].interrupt = 0x10000;
 
-	psxCounters[6].rate = 768 * 12;
+	psxCounters[6].rate = 768 * 12; // 12 SPU ticks. 768 would be ideal but some games slow down internally for some reason
 	psxCounters[6].CycleT = psxCounters[6].rate;
 	psxCounters[6].mode = 0x8;
 
-	if (USBasync != NULL)
-	{
-		psxCounters[7].rate = PSXCLK / 1000;
-		psxCounters[7].CycleT = psxCounters[7].rate;
-		psxCounters[7].mode = 0x8;
-	}
+	psxCounters[7].rate = PSXCLK / 1000;
+	psxCounters[7].CycleT = psxCounters[7].rate;
+	psxCounters[7].mode = 0x8;
 
 	for (i = 0; i < 8; i++)
 		psxCounters[i].sCycleT = psxRegs.cycle;
@@ -507,33 +506,28 @@ void psxRcntUpdate()
 
 	if (difference >= psxCounters[6].CycleT)
 	{
-		SPU2async(difference);
 		psxCounters[6].sCycleT = psxRegs.cycle;
 		psxCounters[6].CycleT = psxCounters[6].rate;
+		SPU2async(difference);
+		c = psxCounters[6].CycleT;
 	}
 	else
 		c -= difference;
 	psxNextCounter = c;
-	if (DEV9async)
-	{
-		DEV9async(1);
-	}
-	if (USBasync)
-	{
-		const s32 difference = psxRegs.cycle - psxCounters[7].sCycleT;
-		s32 c = psxCounters[7].CycleT;
+	DEV9async(1);
+    const s32 diffusb = psxRegs.cycle - psxCounters[7].sCycleT;
+    s32 cusb = psxCounters[7].CycleT;
 
-		if (difference >= psxCounters[7].CycleT)
-		{
-			USBasync(difference);
-			psxCounters[7].sCycleT = psxRegs.cycle;
-			psxCounters[7].CycleT = psxCounters[7].rate;
-		}
-		else
-			c -= difference;
-		if (c < psxNextCounter)
-			psxNextCounter = c;
-	}
+    if (diffusb >= psxCounters[7].CycleT)
+    {
+		USBasync(diffusb);
+		psxCounters[7].sCycleT = psxRegs.cycle;
+		psxCounters[7].CycleT = psxCounters[7].rate;
+    }
+    else
+		cusb -= diffusb;
+    if (cusb < psxNextCounter)
+		psxNextCounter = cusb;
 
 	for (i = 0; i < 6; i++)
 		_rcntSet(i);

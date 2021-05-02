@@ -125,16 +125,13 @@ macro(add_pcsx2_plugin lib srcs libs flags)
         target_link_libraries(${lib} "${USER_CMAKE_LD_FLAGS}")
     endif(NOT USER_CMAKE_LD_FLAGS STREQUAL "")
     if(PACKAGE_MODE)
-        install(TARGETS ${lib} DESTINATION ${PLUGIN_DIR})
+        install(TARGETS ${lib} DESTINATION ${CMAKE_INSTALL_LIBDIR}/PCSX2)
     else(PACKAGE_MODE)
         install(TARGETS ${lib} DESTINATION ${CMAKE_SOURCE_DIR}/bin/plugins)
     endif(PACKAGE_MODE)
     if (APPLE)
-        # Copy to app bundle
-        add_custom_command(TARGET ${lib} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:PCSX2>/plugins"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${lib}>" "$<TARGET_FILE_DIR:PCSX2>/plugins/"
-        )
+        # Output to app bundle
+        set_target_properties(${lib} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "$<TARGET_FILE_DIR:PCSX2>/plugins")
         add_dependencies(pcsx2-postprocess-bundle ${lib})
     endif()
 endmacro(add_pcsx2_plugin)
@@ -159,7 +156,7 @@ macro(add_pcsx2_executable exe srcs libs flags)
         target_link_libraries(${exe} "${USER_CMAKE_LD_FLAGS}")
     endif(NOT USER_CMAKE_LD_FLAGS STREQUAL "")
     if(PACKAGE_MODE)
-        install(TARGETS ${exe} DESTINATION ${BIN_DIR})
+        install(TARGETS ${exe} DESTINATION ${CMAKE_INSTALL_BINDIR})
     else(PACKAGE_MODE)
         install(TARGETS ${exe} DESTINATION ${CMAKE_SOURCE_DIR}/bin)
     endif(PACKAGE_MODE)

@@ -23,6 +23,11 @@
 #include "Gif_Unit.h"
 #include "MTVU.h"
 #include "Elfheader.h"
+#ifdef _WIN32
+#include "PAD/Windows/PAD.h"
+#else
+#include "PAD/Linux/PAD.h"
+#endif
 
 
 // Uncomment this to enable profiling of the GS RingBufferCopy function.
@@ -447,11 +452,6 @@ void SysMtgsThread::ExecuteTaskInThread()
 							// CSR & 0x2000; is the pageflip id.
 							GSvsync(((u32&)RingBuffer.Regs[0x1000]) & 0x2000);
 							gsFrameSkip();
-
-							// if we're not using GSOpen2, then the GS window is on this thread (MTGS thread),
-							// so we need to call PADupdate from here.
-							if ((GSopen2 == NULL) && (PADupdate != NULL))
-								PADupdate(0);
 
 							m_QueuedFrameCount.fetch_sub(1);
 							if (m_VsyncSignalListener.exchange(false))

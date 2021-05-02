@@ -16,8 +16,14 @@
 #pragma once
 
 #include "AppForwardDefs.h"
+#include "Config.h"
 #include "PathDefs.h"
 #include "CDVD/CDVDaccess.h"
+#include "Utilities/General.h"
+#include "Utilities/Path.h"
+
+#include <wx/colour.h>
+#include <wx/gdicmn.h>
 #include <memory>
 
 enum DocsModeType
@@ -279,6 +285,15 @@ public:
 #endif
 	};
 
+	struct CaptureOptions
+	{
+		bool EnableAudio;
+
+		CaptureOptions();
+
+		void LoadSave(IniInterface& conf);
+	};
+
 public:
 	wxPoint		MainGuiPosition;
 
@@ -355,6 +370,7 @@ public:
 	InputRecordingOptions   inputRecording;
 #endif
 	UiTemplateOptions		Templates;
+	CaptureOptions			AudioCapture;
 	
 	// PCSX2-core emulation options, which are passed to the emu core prior to initiating
 	// an emulation session.  Note these are the options saved into the GUI ini file and

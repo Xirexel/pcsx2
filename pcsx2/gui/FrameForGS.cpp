@@ -22,6 +22,13 @@
 #include "GS.h"
 #include "MainFrame.h"
 #include "MSWstuff.h"
+#ifdef _WIN32
+#include "PAD/Windows/PAD.h"
+#else
+#include "PAD/Linux/PAD.h"
+#endif
+
+#include "gui/Dialogs/ModalPopups.h"
 
 #include "ConsoleLogger.h"
 
@@ -104,11 +111,13 @@ void GSPanel::InitRecordingAccelerators()
 	m_Accels->Map(AAC(WXK_SPACE), "FrameAdvance");
 	m_Accels->Map(AAC(wxKeyCode('p')).Shift(), "TogglePause");
 	m_Accels->Map(AAC(wxKeyCode('r')).Shift(), "InputRecordingModeToggle");
+	m_Accels->Map(AAC(wxKeyCode('l')).Shift(), "GoToFirstFrame");
 #if defined(__unix__)
 	// Shift+P (80) and Shift+p (112) have two completely different codes 
 	// On Linux the former is sometimes fired so define bindings for both
 	m_Accels->Map(AAC(wxKeyCode('P')).Shift(), "TogglePause");
 	m_Accels->Map(AAC(wxKeyCode('R')).Shift(), "InputRecordingModeToggle");
+	m_Accels->Map(AAC(wxKeyCode('L')).Shift(), "GoToFirstFrame");
 #endif
 
 	m_Accels->Map(AAC(WXK_NUMPAD0).Shift(), "States_SaveSlot0");
@@ -134,16 +143,21 @@ void GSPanel::InitRecordingAccelerators()
 
 	GetMainFramePtr()->initializeRecordingMenuItem(
 		MenuId_Recording_FrameAdvance,
-		m_Accels->findKeycodeWithCommandId("FrameAdvance").toTitleizedString());
+		GetAssociatedKeyCode("FrameAdvance"));
 	GetMainFramePtr()->initializeRecordingMenuItem(
 		MenuId_Recording_TogglePause,
-		m_Accels->findKeycodeWithCommandId("TogglePause").toTitleizedString());
+		GetAssociatedKeyCode("TogglePause"));
 	GetMainFramePtr()->initializeRecordingMenuItem(
 		MenuId_Recording_ToggleRecordingMode,
-		m_Accels->findKeycodeWithCommandId("InputRecordingModeToggle").toTitleizedString(),
+		GetAssociatedKeyCode("InputRecordingModeToggle"),
 		g_InputRecording.IsActive());
 
 	inputRec::consoleLog("Initialized Input Recording Key Bindings");
+}
+
+wxString GSPanel::GetAssociatedKeyCode(const char* id)
+{
+	return m_Accels->findKeycodeWithCommandId(id).toTitleizedString();
 }
 
 void GSPanel::RemoveRecordingAccelerators()
@@ -314,7 +328,7 @@ void GSPanel::OnMouseEvent( wxMouseEvent& evt )
 #if defined(__unix__)
 	// HACK2: In gsopen2 there is one event buffer read by both wx/gui and pad plugin. Wx deletes
 	// the event before the pad see it. So you send key event directly to the pad.
-	if( (PADWriteEvent != NULL) && (GSopen2 != NULL) ) {
+	if( (GSopen2 != NULL) ) {
 		keyEvent event;
 		// FIXME how to handle double click ???
 		if (evt.ButtonDown()) {
@@ -377,7 +391,7 @@ void GSPanel::OnKeyDownOrUp( wxKeyEvent& evt )
 #if defined(__unix__)
 	// HACK2: In gsopen2 there is one event buffer read by both wx/gui and pad plugin. Wx deletes
 	// the event before the pad see it. So you send key event directly to the pad.
-	if( (PADWriteEvent != NULL) && (GSopen2 != NULL) ) {
+	if( (GSopen2 != NULL) ) {
 		keyEvent event;
 		event.key = evt.GetRawKeyCode();
 		if (evt.GetEventType() == wxEVT_KEY_UP)
@@ -410,7 +424,7 @@ void GSPanel::OnKeyDownOrUp( wxKeyEvent& evt )
 		evt.m_keyCode += (int)'a' - 'A';
 #endif
 
-	if ((PADopen != NULL) && CoreThread.IsOpen())
+	if (CoreThread.IsOpen())
 	{
 		return;
 	}
@@ -442,8 +456,7 @@ void GSPanel::DirectKeyCommand( wxKeyEvent& evt )
 
 void GSPanel::UpdateScreensaver()
 {
-	bool prevent = g_Conf->GSWindow.DisableScreenSaver
-				   && m_HasFocus && m_coreRunning;
+    bool prevent = g_Conf->GSWindow.DisableScreenSaver && m_HasFocus && m_coreRunning;
 	ScreensaverAllow(!prevent);
 }
 
@@ -463,7 +476,7 @@ void GSPanel::OnFocus( wxFocusEvent& evt )
 #if defined(__unix__)
 	// HACK2: In gsopen2 there is one event buffer read by both wx/gui and pad plugin. Wx deletes
 	// the event before the pad see it. So you send key event directly to the pad.
-	if( (PADWriteEvent != NULL) && (GSopen2 != NULL) ) {
+	if((GSopen2 != NULL) ) {
 		keyEvent event = {0, 9}; // X equivalent of FocusIn;
 		PADWriteEvent(event);
 	}
@@ -481,7 +494,7 @@ void GSPanel::OnFocusLost( wxFocusEvent& evt )
 #if defined(__unix__)
 	// HACK2: In gsopen2 there is one event buffer read by both wx/gui and pad plugin. Wx deletes
 	// the event before the pad see it. So you send key event directly to the pad.
-	if( (PADWriteEvent != NULL) && (GSopen2 != NULL) ) {
+	if((GSopen2 != NULL) ) {
 		keyEvent event = {0, 10}; // X equivalent of FocusOut
 		PADWriteEvent(event);
 	}
@@ -585,8 +598,7 @@ bool GSFrame::ShowFullScreen(bool show, bool updateConfig)
 	return retval;
 }
 
-
-void GSFrame::CoreThread_OnResumed()
+void GSFrame::UpdateTitleUpdateFreq()
 {
 #ifndef DISABLE_RECORDING
 	if (g_Conf->EmuOptions.EnableRecordingTools)
@@ -600,8 +612,15 @@ void GSFrame::CoreThread_OnResumed()
 #else
 	m_timer_UpdateTitle.Start(TitleBarUpdateMs);
 #endif
-	
-	if( !IsShown() ) Show();
+}
+
+void GSFrame::CoreThread_OnResumed()
+{
+	UpdateTitleUpdateFreq();
+	if (!IsShown())
+	{
+		Show();
+	}
 }
 
 void GSFrame::CoreThread_OnSuspended()
@@ -772,7 +791,7 @@ void GSFrame::OnUpdateTitle( wxTimerEvent& evt )
 	title.Replace(L"${omodei}",		omodei);
 	title.Replace(L"${gsdx}",		fromUTF8(gsDest));
 	title.Replace(L"${videomode}",	ReportVideoMode());
-	if (CoreThread.IsPaused())
+	if (CoreThread.IsPaused() && !GSDump::isRunning)
 		title = templates.Paused + title;
 
 	SetTitle(title);

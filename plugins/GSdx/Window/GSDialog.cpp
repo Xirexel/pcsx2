@@ -41,7 +41,7 @@ INT_PTR CALLBACK GSDialog::DialogProc(HWND hWnd, UINT message, WPARAM wParam, LP
 {
 	GSDialog* dlg = NULL;
 
-	if(message == WM_INITDIALOG)
+	if (message == WM_INITDIALOG)
 	{
 		dlg = (GSDialog*)lParam;
 		SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)dlg);
@@ -71,7 +71,7 @@ INT_PTR CALLBACK GSDialog::DialogProc(HWND hWnd, UINT message, WPARAM wParam, LP
 		if (((LPNMHDR)lParam)->code == TTN_GETDISPINFO)
 		{
 			LPNMTTDISPINFO pInfo = (LPNMTTDISPINFO)lParam;
-			UINT id = GetWindowLongPtr((HWND)pInfo->hdr.idFrom, GWL_ID);
+			const UINT id = (UINT)GetWindowLongPtr((HWND)pInfo->hdr.idFrom, GWL_ID);
 
 			// lpszText is used only if hinst is NULL. Seems to be NULL already,
 			// but it can't hurt to explicitly set it.
@@ -90,12 +90,14 @@ INT_PTR CALLBACK GSDialog::DialogProc(HWND hWnd, UINT message, WPARAM wParam, LP
 // correct size.
 UINT GSDialog::GetTooltipStructSize()
 {
-	DLLGETVERSIONPROC dllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(GetModuleHandle("ComCtl32.dll"), "DllGetVersion");
-	if (dllGetVersion) {
-		DLLVERSIONINFO2 dllversion = { 0 };
+	DLLGETVERSIONPROC dllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(GetModuleHandle(L"ComCtl32.dll"), "DllGetVersion");
+	if (dllGetVersion)
+	{
+		DLLVERSIONINFO2 dllversion = {0};
 		dllversion.info1.cbSize = sizeof(DLLVERSIONINFO2);
 
-		if (dllGetVersion((DLLVERSIONINFO*)&dllversion) == S_OK) {
+		if (dllGetVersion((DLLVERSIONINFO*)&dllversion) == S_OK)
+		{
 			// Minor, then major version.
 			DWORD version = MAKELONG(dllversion.info1.dwMinorVersion, dllversion.info1.dwMajorVersion);
 			DWORD tooltip_v3 = MAKELONG(0, 6);
@@ -115,7 +117,7 @@ bool GSDialog::OnMessage(UINT message, WPARAM wParam, LPARAM lParam)
 
 bool GSDialog::OnCommand(HWND hWnd, UINT id, UINT code)
 {
-	if(id == IDOK || id == IDCANCEL)
+	if (id == IDOK || id == IDCANCEL)
 	{
 		EndDialog(m_hWnd, id);
 
@@ -125,23 +127,23 @@ bool GSDialog::OnCommand(HWND hWnd, UINT id, UINT code)
 	return false;
 }
 
-std::string GSDialog::GetText(UINT id)
+std::wstring GSDialog::GetText(UINT id)
 {
-	std::string s;
+	std::wstring s;
 
-	char* buff = NULL;
+	wchar_t* buff = NULL;
 
-	for(int size = 256, limit = 65536; size < limit; size <<= 1)
+	for (int size = 256, limit = 65536; size < limit; size <<= 1)
 	{
-		buff = new char[size];
+		buff = new wchar_t[size];
 
-		if(GetDlgItemText(m_hWnd, id, buff, size))
+		if (GetDlgItemText(m_hWnd, id, buff, size))
 		{
 			s = buff;
 			size = limit;
 		}
 
-		delete [] buff;
+		delete[] buff;
 	}
 
 	return s;
@@ -149,18 +151,18 @@ std::string GSDialog::GetText(UINT id)
 
 int GSDialog::GetTextAsInt(UINT id)
 {
-	return atoi(GetText(id).c_str());
+	return _wtoi(GetText(id).c_str());
 }
 
-void GSDialog::SetText(UINT id, const char* str)
+void GSDialog::SetText(UINT id, const wchar_t* str)
 {
 	SetDlgItemText(m_hWnd, id, str);
 }
 
 void GSDialog::SetTextAsInt(UINT id, int i)
 {
-	char buff[32] = {0};
-	itoa(i, buff, 10);
+	wchar_t buff[32] = {0};
+	_itow(i, buff, 10);
 	SetText(id, buff);
 }
 
@@ -177,15 +179,15 @@ void GSDialog::ComboBoxInit(UINT id, const std::vector<GSSetting>& settings, int
 	if (std::none_of(settings.begin(), settings.end(), is_present))
 		selectionValue = settings.front().value;
 
-	for(size_t i = 0; i < settings.size(); i++)
+	for (size_t i = 0; i < settings.size(); i++)
 	{
 		const GSSetting& s = settings[i];
 
-		if(s.value <= maxValue)
+		if (s.value <= maxValue)
 		{
 			std::string str(s.name);
 
-			if(!s.note.empty())
+			if (!s.note.empty())
 			{
 				str = str + " (" + s.note + ")";
 			}
@@ -227,9 +229,9 @@ bool GSDialog::ComboBoxGetSelData(UINT id, INT_PTR& data)
 {
 	HWND hWnd = GetDlgItem(m_hWnd, id);
 
-	int item = SendMessage(hWnd, CB_GETCURSEL, 0, 0);
+	const int item = (int)SendMessage(hWnd, CB_GETCURSEL, 0, 0);
 
-	if(item >= 0)
+	if (item >= 0)
 	{
 		data = SendMessage(hWnd, CB_GETITEMDATA, item, 0);
 
@@ -245,7 +247,7 @@ void GSDialog::ComboBoxFixDroppedWidth(UINT id)
 
 	int count = (int)SendMessage(hWnd, CB_GETCOUNT, 0, 0);
 
-	if(count > 0)
+	if (count > 0)
 	{
 		HDC hDC = GetDC(hWnd);
 
@@ -253,42 +255,43 @@ void GSDialog::ComboBoxFixDroppedWidth(UINT id)
 
 		int width = (int)SendMessage(hWnd, CB_GETDROPPEDWIDTH, 0, 0);
 
-		for(int i = 0; i < count; i++)
+		for (int i = 0; i < count; i++)
 		{
 			int len = (int)SendMessage(hWnd, CB_GETLBTEXTLEN, i, 0);
 
-			if(len > 0)
+			if (len > 0)
 			{
-				char* buff = new char[len + 1];
+				wchar_t* buff = new wchar_t[len + 1];
 
 				SendMessage(hWnd, CB_GETLBTEXT, i, (LPARAM)buff);
 
 				SIZE size;
-				
-				if(GetTextExtentPoint32(hDC, buff, strlen(buff), &size))
+
+				if (GetTextExtentPoint32(hDC, buff, wcslen(buff), &size))
 				{
 					size.cx += 10;
 
-					if(size.cx > width) width = size.cx;
+					if (size.cx > width)
+						width = size.cx;
 				}
 
-				delete [] buff;
+				delete[] buff;
 			}
 		}
 
 		ReleaseDC(hWnd, hDC);
 
-		if(width > 0)
+		if (width > 0)
 		{
 			SendMessage(hWnd, CB_SETDROPPEDWIDTH, width, 0);
 		}
 	}
 }
 
-void GSDialog::OpenFileDialog(UINT id, const char *title)
+void GSDialog::OpenFileDialog(UINT id, const wchar_t* title)
 {
-	char filename[512];
-	OPENFILENAME ofn = { 0 };
+	wchar_t filename[512];
+	OPENFILENAME ofn = {0};
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST;
@@ -300,14 +303,13 @@ void GSDialog::OpenFileDialog(UINT id, const char *title)
 	// GetOpenFileName changes the current directory, so we need to save and
 	// restore the current directory or everything using relative paths will
 	// break.
-	char current_directory[512];
+	wchar_t current_directory[512];
 	GetCurrentDirectory(512, current_directory);
 
 	if (GetOpenFileName(&ofn))
 		SendMessage(GetDlgItem(m_hWnd, id), WM_SETTEXT, 0, (LPARAM)filename);
 
 	SetCurrentDirectory(current_directory);
-
 }
 
 void GSDialog::AddTooltip(UINT id)
@@ -331,7 +333,7 @@ void GSDialog::AddTooltip(UINT id)
 	if (hwndTip == NULL)
 		return;
 
-	TOOLINFO toolInfo = { 0 };
+	TOOLINFO toolInfo = {0};
 	toolInfo.cbSize = tooltipStructSize;
 	toolInfo.hwnd = m_hWnd;
 	toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;

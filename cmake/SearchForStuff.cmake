@@ -4,9 +4,9 @@
 ## Use cmake package to find module
 if (Linux)
     find_package(ALSA)
-    find_package(PCAP)
-    find_package(LibXml2)
 endif()
+find_package(PCAP)
+find_package(LibXml2)
 find_package(Freetype) # GSdx OSD
 find_package(Gettext) # translation tool
 if(EXISTS ${PROJECT_SOURCE_DIR}/.git)
@@ -20,6 +20,7 @@ set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL)
 find_package(PNG)
 find_package(Vtune)
+
 # The requirement of wxWidgets is checked in SelectPcsx2Plugins module
 # Does not require the module (allow to compile non-wx plugins)
 # Force the unicode build (the variable is only supported on cmake 2.8.3 and above)
@@ -35,12 +36,15 @@ else()
     set(wxWidgets_CONFIG_OPTIONS --unicode=yes)
 endif()
 
-list(APPEND wxWidgets_CONFIG_OPTIONS --version=3.0)
+# I'm removing the version check, because it excludes newer versions and requires specifically 3.0.
+#list(APPEND wxWidgets_CONFIG_OPTIONS --version=3.0)
 
-if(GTK3_API AND NOT APPLE)
-    list(APPEND wxWidgets_CONFIG_OPTIONS --toolkit=gtk3)
-elseif(NOT APPLE)
+# The wx version must be specified so a mix of gtk2 and gtk3 isn't used
+# as that can cause compile errors.
+if(GTK2_API AND NOT APPLE)
     list(APPEND wxWidgets_CONFIG_OPTIONS --toolkit=gtk2)
+elseif(NOT APPLE)
+    list(APPEND wxWidgets_CONFIG_OPTIONS --toolkit=gtk3)
 endif()
 
 # wx2.8 => /usr/bin/wx-config-2.8
@@ -66,8 +70,20 @@ else()
     if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
         set(wxWidgets_CONFIG_EXECUTABLE "/usr/local/bin/wxgtk3u-3.0-config")
     endif()
+    if(EXISTS "/usr/bin/wx-config-3.2")
+        set(wxWidgets_CONFIG_EXECUTABLE "/usr/bin/wx-config-3.2")
+    endif()
+    if(EXISTS "/usr/bin/wx-config-3.1")
+        set(wxWidgets_CONFIG_EXECUTABLE "/usr/bin/wx-config-3.1")
+    endif()
     if(EXISTS "/usr/bin/wx-config-3.0")
         set(wxWidgets_CONFIG_EXECUTABLE "/usr/bin/wx-config-3.0")
+    endif()
+    if(EXISTS "/usr/bin/wx-config")
+        set(wxWidgets_CONFIG_EXECUTABLE "/usr/bin/wx-config")
+    endif()
+    if(NOT GTK2_API AND EXISTS "/usr/bin/wx-config-gtk3")
+        set(wxWidgets_CONFIG_EXECUTABLE "/usr/bin/wx-config-gtk3")
     endif()
 endif()
 
@@ -77,12 +93,11 @@ find_package(ZLIB)
 ## Use pcsx2 package to find module
 include(FindLibc)
 
-## Only needed by the extra plugins
-if(EXTRA_PLUGINS)
-    include(FindCg)
-    include(FindGlew)
-    find_package(JPEG)
-endif()
+## Use pcsx2 package to find module
+include(Findlibsamplerate)
+
+## Use pcsx2 package to find module
+include(FindPulseAudio)
 
 ## Use CheckLib package to find module
 include(CheckLib)
@@ -116,14 +131,14 @@ endif()
 if(UNIX)
     find_package(X11)
     # Most plugins (if not all) and PCSX2 core need gtk2, so set the required flags
-    if (GTK3_API)
-        if(CMAKE_CROSSCOMPILING)
-            find_package(GTK3 REQUIRED gtk)
-        else()
-            check_lib(GTK3 gtk+-3.0 gtk/gtk.h)
-        endif()
+    if (GTK2_API)
+    find_package(GTK2 REQUIRED gtk)
     else()
-        find_package(GTK2 REQUIRED gtk)
+    if(CMAKE_CROSSCOMPILING)
+        find_package(GTK3 REQUIRED gtk)
+    else()
+        check_lib(GTK3 gtk+-3.0 gtk/gtk.h)
+    endif()
     endif()
 endif()
 
@@ -131,12 +146,12 @@ endif()
 #		    Use system include
 #----------------------------------------
 if(UNIX)
-	if(GTK2_FOUND)
-		include_directories(${GTK2_INCLUDE_DIRS})
-    elseif(GTK3_FOUND)
-		include_directories(${GTK3_INCLUDE_DIRS})
+	if(GTK3_FOUND)
+        include_directories(${GTK3_INCLUDE_DIRS})
         # A lazy solution
         set(GTK2_LIBRARIES ${GTK3_LIBRARIES})
+    elseif(GTK2_FOUND)
+        include_directories(${GTK2_INCLUDE_DIRS})
 	endif()
 
 	if(X11_FOUND)
@@ -178,6 +193,14 @@ endif()
 
 if(PCAP_FOUND)
 	include_directories(${PCAP_INCLUDE_DIR})
+endif()
+
+if(LIBSAMPLERATE_FOUND)
+    include_directories(${LIBSAMPLERATE_INCLUDE_DIR})
+endif()
+
+if(PULSEAUDIO_FOUND)
+    include_directories(${PULSEAUDIO_INCLUDE_DIR})
 endif()
 
 if(LIBXML2_FOUND)
@@ -233,3 +256,38 @@ if((GCC_VERSION VERSION_EQUAL "9.0" OR GCC_VERSION VERSION_GREATER "9.0") AND GC
     Even with that patch, compiling with LTO may still segfault. Use at your own risk!
     This text being in a compile log in an open issue may cause it to be closed.")
 endif()
+
+find_package(fmt "7.1.3" QUIET)
+if(NOT fmt_FOUND)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/3rdparty/fmt/fmt/CMakeLists.txt")
+        message(STATUS "No system fmt was found. Using bundled")
+        add_subdirectory(3rdparty/fmt/fmt)
+    else()
+        message(FATAL_ERROR "No system or bundled fmt was found")
+    endif()
+else()
+    message(STATUS "Found fmt: ${fmt_VERSION}")
+endif()
+
+if(USE_SYSTEM_YAML)
+    find_package(yaml-cpp "0.6.3" QUIET)
+    if(NOT yaml-cpp_FOUND)
+        message(STATUS "No system yaml-cpp was found")
+        set(USE_SYSTEM_YAML OFF)
+    else()
+        message(STATUS "Found yaml-cpp: ${yaml-cpp_VERSION}")
+        message(STATUS "Note that the latest release of yaml-cpp is very outdated, and the bundled submodule in the repo has over a year of bug fixes and as such is preferred.")
+    endif()
+endif()
+
+if(NOT USE_SYSTEM_YAML)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/3rdparty/yaml-cpp/yaml-cpp/CMakeLists.txt")
+        message(STATUS "Using bundled yaml-cpp")
+        add_subdirectory(3rdparty/yaml-cpp/yaml-cpp EXCLUDE_FROM_ALL)
+    else()
+        message(FATAL_ERROR "No bundled yaml-cpp was found")
+    endif()
+endif()
+
+add_subdirectory(3rdparty/libchdr/libchdr EXCLUDE_FROM_ALL)
+include_directories(3rdparty/libchdr/libchdr/include)

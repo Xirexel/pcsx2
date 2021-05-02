@@ -18,9 +18,11 @@
 #define PLUGINtypedefs
 #define PLUGINfuncs
 
+#include "Config.h"
 #include "PS2Edefs.h"
 #include "PluginCallbacks.h"
 
+#include <Utilities/MemcpyFast.h>
 #include "Utilities/Threading.h"
 
 #include <wx/dynlib.h>
@@ -377,7 +379,7 @@ public:
 	virtual void FreezeOut( PluginsEnum_t pid, pxOutputStream& outfp );
 	virtual void FreezeIn( PluginsEnum_t pid, pxInputStream& infp );
 	virtual void Freeze( PluginsEnum_t pid, SaveStateBase& state );
-	virtual bool DoFreeze( PluginsEnum_t pid, int mode, freezeData* data );
+	virtual bool DoFreeze( PluginsEnum_t pid, int mode, freezeData* data, bool bypass_tsafety=false );
 
 	virtual bool KeyEvent( const keyEvent& evt );
 	virtual void Configure( PluginsEnum_t pid );
@@ -401,17 +403,11 @@ protected:
 	virtual bool NeedsUnload() const;
 
 	virtual bool OpenPlugin_GS();
-	virtual bool OpenPlugin_PAD();
-	virtual bool OpenPlugin_DEV9();
-	virtual bool OpenPlugin_USB();
 	virtual bool OpenPlugin_Mcd();
 
 	void _generalclose( PluginsEnum_t pid );
 
 	virtual void ClosePlugin_GS();
-	virtual void ClosePlugin_PAD();
-	virtual void ClosePlugin_DEV9();
-	virtual void ClosePlugin_USB();
 	virtual void ClosePlugin_Mcd();
 
 	friend class SysMtgsThread;

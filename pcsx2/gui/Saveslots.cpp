@@ -56,8 +56,6 @@ protected:
 	}
 };
 
-void Sstates_updateLoadBackupMenuItem(bool isBeforeSave);
-
 void States_FreezeCurrentSlot()
 {
 	// FIXME : Use of the IsSavingOrLoading flag is mostly a hack until we implement a
@@ -73,7 +71,6 @@ void States_FreezeCurrentSlot()
 		Console.WriteLn("Load or save action is already pending.");
 		return;
 	}
-	Sstates_updateLoadBackupMenuItem(true);
 
 	GSchangeSaveState(StatesC, SaveStateBase::GetFilename(StatesC).ToUTF8());
 	StateCopy_SaveToSlot(StatesC);
@@ -83,6 +80,8 @@ void States_FreezeCurrentSlot()
 #endif
 
 	GetSysExecutorThread().PostIdleEvent(SysExecEvent_ClearSavingLoadingFlag());
+
+	States_updateLoadBackupMenuItem();
 }
 
 void _States_DefrostCurrentSlot(bool isFromBackup)
@@ -104,7 +103,7 @@ void _States_DefrostCurrentSlot(bool isFromBackup)
 
 	GetSysExecutorThread().PostIdleEvent(SysExecEvent_ClearSavingLoadingFlag());
 
-	Sstates_updateLoadBackupMenuItem(false);
+	States_updateLoadBackupMenuItem();
 }
 
 void States_DefrostCurrentSlot()
@@ -117,15 +116,9 @@ void States_DefrostCurrentSlotBackup()
 	_States_DefrostCurrentSlot(true);
 }
 
-// I'd keep an eye on this function, as it may still be problematic.
-void Sstates_updateLoadBackupMenuItem(bool isBeforeSave)
+void States_updateLoadBackupMenuItem()
 {
-	wxString file = SaveStateBase::GetFilename(StatesC);
-
-	if (!(isBeforeSave && g_Conf->EmuOptions.BackupSavestate))
-	{
-		file = file + L".backup";
-	}
+	wxString file = SaveStateBase::GetFilename(StatesC) + ".backup";
 
 	sMainFrame.EnableMenuItem(MenuId_State_LoadBackup, wxFileExists(file));
 	sMainFrame.SetMenuItemLabel(MenuId_State_LoadBackup, wxsFormat(L"%s %d", _("Backup"), StatesC));
@@ -138,7 +131,7 @@ static void OnSlotChanged()
 	if (GSchangeSaveState != NULL)
 		GSchangeSaveState(StatesC, SaveStateBase::GetFilename(StatesC).utf8_str());
 
-	Sstates_updateLoadBackupMenuItem(false);
+	States_updateLoadBackupMenuItem();
 }
 
 int States_GetCurrentSlot()
@@ -146,20 +139,23 @@ int States_GetCurrentSlot()
 	return StatesC;
 }
 
-void States_SetCurrentSlot(int slot)
+void States_SetCurrentSlot(int slot_num)
 {
-	StatesC = std::min(std::max(slot, 0), StateSlotsCount);
+	StatesC = std::min(std::max(slot_num, 0), StateSlotsCount);
+	for (Saveslot& slot : saveslot_cache)
+	{
+		sMainFrame.CheckMenuItem(slot.load_item_id, slot.slot_num == slot_num);
+		sMainFrame.CheckMenuItem(slot.save_item_id, slot.slot_num == slot_num);
+	}
 	OnSlotChanged();
 }
 
 void States_CycleSlotForward()
 {
-	StatesC = (StatesC + 1) % StateSlotsCount;
-	OnSlotChanged();
+	States_SetCurrentSlot((StatesC + 1) % StateSlotsCount);
 }
 
 void States_CycleSlotBackward()
 {
-	StatesC = (StatesC + StateSlotsCount - 1) % StateSlotsCount;
-	OnSlotChanged();
+	States_SetCurrentSlot((StatesC + StateSlotsCount - 1) % StateSlotsCount);
 }

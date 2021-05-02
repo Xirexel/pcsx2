@@ -16,6 +16,7 @@
 #include "PrecompiledHeader.h"
 #include "../Global.h"
 #include "Dialogs.h"
+#include "Config.h"
 #include <math.h>
 
 #ifdef PCSX2_DEVBUILD
@@ -28,7 +29,7 @@ static const int LATENCY_MIN = 3;
 static const int LATENCY_MIN_TS = 15;
 
 // MIXING
-int Interpolation = 4;
+int Interpolation = 5;
 /* values:
 		0: no interpolation (use nearest)
 		1. linear interpolation
@@ -57,7 +58,6 @@ float VolumeAdjustBR;
 float VolumeAdjustSL;
 float VolumeAdjustSR;
 float VolumeAdjustLFE;
-unsigned int delayCycles;
 
 bool postprocess_filter_enabled = 1;
 bool postprocess_filter_dealias = false;
@@ -84,7 +84,7 @@ int dplLevel = 0;
 
 void ReadSettings()
 {
-	Interpolation = CfgReadInt(L"MIXING", L"Interpolation", 4);
+	Interpolation = CfgReadInt(L"MIXING", L"Interpolation", 5);
 
 	EffectsDisabled = CfgReadBool(L"MIXING", L"Disable_Effects", false);
 	postprocess_filter_dealias = CfgReadBool(L"MIXING", L"DealiasFilter", false);
@@ -101,7 +101,6 @@ void ReadSettings()
 	VolumeAdjustSLdb = CfgReadFloat(L"MIXING", L"VolumeAdjustSL(dB)", 0);
 	VolumeAdjustSRdb = CfgReadFloat(L"MIXING", L"VolumeAdjustSR(dB)", 0);
 	VolumeAdjustLFEdb = CfgReadFloat(L"MIXING", L"VolumeAdjustLFE(dB)", 0);
-	delayCycles = CfgReadInt(L"DEBUG", L"DelayCycles", 4);
 	VolumeAdjustC = powf(10, VolumeAdjustCdb / 10);
 	VolumeAdjustFL = powf(10, VolumeAdjustFLdb / 10);
 	VolumeAdjustFR = powf(10, VolumeAdjustFRdb / 10);
@@ -153,7 +152,9 @@ void ReadSettings()
 	if (mods[OutputModule] == nullptr)
 	{
 		// Unsupported or legacy module.
-		fwprintf(stderr, L"* SPU2: Unknown output module '%s' specified in configuration file.\n", omodid);
+		Console.Warning("* SPU2: Unknown output module '%s' specified in configuration file.", omodid);
+		Console.Warning("* SPU2: Defaulting to XAudio (%s).", XAudio2Out->GetIdent());
+		OutputModule = FindOutputModuleById(XAudio2Out->GetIdent());
 	}
 }
 
@@ -182,7 +183,6 @@ void WriteSettings()
 	CfgWriteInt(L"OUTPUT", L"Synch_Mode", SynchMode);
 	CfgWriteInt(L"OUTPUT", L"SpeakerConfiguration", numSpeakers);
 	CfgWriteInt(L"OUTPUT", L"DplDecodingLevel", dplLevel);
-	CfgWriteInt(L"DEBUG", L"DelayCycles", delayCycles);
 
 	if (Config_WaveOut.Device.empty())
 		Config_WaveOut.Device = L"default";
@@ -232,6 +232,7 @@ BOOL CALLBACK ConfigProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendDialogMsg(hWnd, IDC_INTERPOLATE, CB_ADDSTRING, 0, (LPARAM)L"2 - Cubic (Artificial highs)");
 			SendDialogMsg(hWnd, IDC_INTERPOLATE, CB_ADDSTRING, 0, (LPARAM)L"3 - Hermite (Better highs)");
 			SendDialogMsg(hWnd, IDC_INTERPOLATE, CB_ADDSTRING, 0, (LPARAM)L"4 - Catmull-Rom (PS2-like/slow)");
+			SendDialogMsg(hWnd, IDC_INTERPOLATE, CB_ADDSTRING, 0, (LPARAM)L"5 - Gaussian (SPU native)");
 			SendDialogMsg(hWnd, IDC_INTERPOLATE, CB_SETCURSEL, Interpolation, 0);
 
 			SendDialogMsg(hWnd, IDC_SYNCHMODE, CB_RESETCONTENT, 0, 0);
@@ -261,14 +262,14 @@ BOOL CALLBACK ConfigProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			double minlat = (SynchMode == 0) ? LATENCY_MIN_TS : LATENCY_MIN;
 			int minexp = (int)(pow(minlat + 1, 1.0 / 3.0) * 128.0);
 			int maxexp = (int)(pow((double)LATENCY_MAX + 2, 1.0 / 3.0) * 128.0);
-			INIT_SLIDER(IDC_LATENCY_SLIDER, minexp, maxexp, 200, 42, 1);
+			INIT_SLIDER(IDC_LATENCY_SLIDER, minexp, maxexp, 200, 13, 15);
 
 			SendDialogMsg(hWnd, IDC_LATENCY_SLIDER, TBM_SETPOS, TRUE, (int)((pow((double)SndOutLatencyMS, 1.0 / 3.0) * 128.0) + 1));
 			swprintf_s(temp, L"%d ms (avg)", SndOutLatencyMS);
 			SetWindowText(GetDlgItem(hWnd, IDC_LATENCY_LABEL), temp);
 
 			int configvol = (int)(FinalVolume * 100 + 0.5f);
-			INIT_SLIDER(IDC_VOLUME_SLIDER, 0, 100, 10, 42, 1);
+			INIT_SLIDER(IDC_VOLUME_SLIDER, 0, 100, 10, 5, 1);
 
 			SendDialogMsg(hWnd, IDC_VOLUME_SLIDER, TBM_SETPOS, TRUE, configvol);
 			swprintf_s(temp, L"%d%%", configvol);

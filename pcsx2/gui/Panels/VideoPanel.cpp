@@ -15,10 +15,12 @@
 
 #include "PrecompiledHeader.h"
 #include "App.h"
+#include "AppAccelerators.h"
 #include "Dialogs/ConfigurationDialog.h"
 #include "ConfigurationPanels.h"
 
 #include <wx/spinctrl.h>
+#include "fmt/core.h"
 
 using namespace pxSizerFlags;
 
@@ -29,8 +31,9 @@ using namespace pxSizerFlags;
 Panels::FramelimiterPanel::FramelimiterPanel( wxWindow* parent )
 	: BaseApplicableConfigPanel_SpecificConfig( parent )
 {
-	m_check_LimiterDisable = new pxCheckBox( this, _("Disable Framelimiting"),
-		_("Uncaps FPS. Toggle in-game by pressing F4. Useful for running benchmarks." ) );
+	//  Implement custom hotkeys (F4) with translatable string intact + not blank in GUI. 
+	m_check_LimiterDisable	= new pxCheckBox( this, _("Disable Framelimiting") + wxString(" (") +  wxGetApp().GlobalAccels->findKeycodeWithCommandId("Framelimiter_MasterToggle").toTitleizedString()+ wxString(")"),
+		_("Uncaps FPS. Useful for running benchmarks.") );
 
 	m_check_LimiterDisable->SetToolTip( pxEt( L"Note that when Framelimiting is disabled, Turbo and SlowMotion modes will not be available either."
 	) );
@@ -60,17 +63,21 @@ Panels::FramelimiterPanel::FramelimiterPanel( wxWindow* parent )
 	s_spins += Label(L"%")							| StdExpand();
 	s_spins += 5;
 
-	s_spins += Label(_("Slow Motion Adjust:"))		| StdExpand();
+	//  Implement custom hotkeys (Shift + Tab) with translatable string intact + not blank in GUI. 
+
+	s_spins += Label(_("Slow Motion Adjust:") + wxString(" ") + fmt::format("({})", wxGetApp().GlobalAccels->findKeycodeWithCommandId("Framelimiter_SlomoToggle").toTitleizedString())) | StdExpand();
 	s_spins += 5;
 	s_spins += m_spin_SlomoPct						| pxBorder(wxTOP, 3);
 	s_spins += Label(L"%")							| StdExpand();
 	s_spins += 5;
 
-	s_spins	+= Label(_("Turbo Adjust:"))			| StdExpand();
-	s_spins	+= 5;
-	s_spins	+= m_spin_TurboPct						| pxBorder(wxTOP, 3);
-	s_spins	+= Label(L"%" )							| StdExpand();
-	s_spins	+= 5;
+	//  Implement custom hotkeys (Tab) with translatable string intact + not blank in GUI. 
+
+	s_spins += Label(_("Turbo Adjust:") + wxString(" ") + fmt::format("({})", wxGetApp().GlobalAccels->findKeycodeWithCommandId("Framelimiter_TurboToggle").toTitleizedString())) | StdExpand();
+	s_spins += 5;
+	s_spins += m_spin_TurboPct						| pxBorder(wxTOP, 3);
+	s_spins += Label(L"%") 							| StdExpand();
+	s_spins += 5;
 
 	wxFlexGridSizer& s_fps( *new wxFlexGridSizer( 5 ) );
 	s_fps.AddGrowableCol( 0 );
@@ -175,13 +182,13 @@ Panels::FrameSkipPanel::FrameSkipPanel( wxWindow* parent )
 		RadioPanelItem(
 			_("Disabled [default]")
 		),
-
+		//  Implement custom hotkeys (Tab) with translatable string intact + not blank in GUI.  
 		RadioPanelItem(
-			_("Skip when on Turbo only (TAB to enable)")
+			_("Skip only on Turbo, to enable press") + fmt::format("{} ({})", " ", wxGetApp().GlobalAccels->findKeycodeWithCommandId("Framelimiter_TurboToggle").toTitleizedString())
 		),
-
+		//  Implement custom hotkeys (Shift + F4) with translatable string intact + not blank in GUI.  
 		RadioPanelItem(
-			_("Constant skipping"),
+			_("Constant skipping") + fmt::format("{} ({})", " ", wxGetApp().GlobalAccels->findKeycodeWithCommandId("Frameskip_Toggle").toTitleizedString()),
 			wxEmptyString,
 			_("Normal and Turbo limit rates skip frames.  Slow motion mode will still disable frameskipping.")
 		),
@@ -291,10 +298,13 @@ Panels::VideoPanel::VideoPanel( wxWindow* parent ) :
 		_t("For troubleshooting potential bugs in the MTGS only, as it is potentially very slow.")
 	);
 
+	m_spinner_VsyncQueue = new wxSpinCtrl(left);
+	m_spinner_VsyncQueue->SetRange(0, 3);
+
 	m_restore_defaults = new wxButton(right, wxID_DEFAULT, _("Restore Defaults"));
 
-	m_check_SynchronousGS->SetToolTip( pxEt( L"Enable this if you think MTGS thread sync is causing crashes or graphical errors. For debugging to see if GS is running at the correct speed.")
-	) ;
+	m_spinner_VsyncQueue->SetToolTip( pxEt(L"Setting this to a lower value improves input lag, a value around 2 or 3 will slightly improve framerates. (Default is 2)"));
+	m_check_SynchronousGS->SetToolTip( pxEt( L"Enable this if you think MTGS thread sync is causing crashes or graphical errors. For debugging to see if GS is running at the correct speed."));
 
 	//GSWindowSettingsPanel* winpan = new GSWindowSettingsPanel( left );
 	//winpan->AddFrame(_("Display/Window"));
@@ -306,6 +316,7 @@ Panels::VideoPanel::VideoPanel( wxWindow* parent ) :
 	m_fpan->AddFrame(_("Framelimiter"));
 
 	wxFlexGridSizer* s_table = new wxFlexGridSizer( 2 );
+	wxGridSizer* s_vsyncs = new wxGridSizer( 2 );
 	s_table->AddGrowableCol( 0, 1 );
 	s_table->AddGrowableCol( 1, 1 );
 
@@ -315,6 +326,11 @@ Panels::VideoPanel::VideoPanel( wxWindow* parent ) :
 
 	*left		+= m_fpan		| pxExpand;
 	*left		+= 5;
+	
+	*s_vsyncs	+= Label(_("Vsyncs in MTGS Queue:")) | StdExpand();
+	*s_vsyncs	+= m_spinner_VsyncQueue | pxBorder(wxTOP, -2).Right();
+	*left		+= s_vsyncs | StdExpand();
+	*left		+= 2;
 	*left		+= m_check_SynchronousGS | StdExpand();
 
 	*s_table	+= left		| StdExpand();
@@ -347,6 +363,7 @@ void Panels::VideoPanel::OnOpenWindowSettings( wxCommandEvent& evt )
 void Panels::VideoPanel::Apply()
 {
 	g_Conf->EmuOptions.GS.SynchronousMTGS	= m_check_SynchronousGS->GetValue();
+	g_Conf->EmuOptions.GS.VsyncQueueSize = m_spinner_VsyncQueue->GetValue();
 }
 
 void Panels::VideoPanel::AppStatusEvent_OnSettingsApplied()
@@ -357,7 +374,7 @@ void Panels::VideoPanel::AppStatusEvent_OnSettingsApplied()
 void Panels::VideoPanel::ApplyConfigToGui( AppConfig& configToApply, int flags ){
 	
 	m_check_SynchronousGS->SetValue( configToApply.EmuOptions.GS.SynchronousMTGS );
-
+	m_spinner_VsyncQueue->SetValue( configToApply.EmuOptions.GS.VsyncQueueSize );
 	m_check_SynchronousGS->Enable(!configToApply.EnablePresets);
 
 	if( flags & AppConfig::APPLY_FLAG_MANUALLY_PROPAGATE )

@@ -115,7 +115,7 @@ public:
 	virtual ~DisassemblyMacro() { };
 
 	void setMacroLi(u32 _immediate, u8 _rt);
-	void setMacroMemory(std::string _name, u32 _immediate, u8 _rt, int _dataSize);
+	void setMacroMemory(const std::string& _name, u32 _immediate, u8 _rt, int _dataSize);
 
 	virtual void recheck() { };
 	virtual int getNumLines() { return 1; };
@@ -171,7 +171,7 @@ private:
 class DisassemblyComment: public DisassemblyEntry
 {
 public:
-	DisassemblyComment(DebugInterface* _cpu, u32 _address, u32 _size, std::string name, std::string param);
+	DisassemblyComment(DebugInterface* _cpu, u32 _address, u32 _size,const std::string& name, const std::string& param);
 	virtual ~DisassemblyComment() { };
 
 	virtual void recheck() { };
@@ -181,7 +181,7 @@ public:
 	virtual u32 getTotalSize() { return size; };
 	virtual bool disassemble(u32 address, DisassemblyLineInfo& dest, bool insertSymbols);
 private:
-	DebugInterface* cpu;
+	[[maybe_unused]]DebugInterface* cpu;
 	u32 address;
 	u32 size;
 	std::string name;

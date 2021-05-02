@@ -15,12 +15,14 @@
 
 #include "PrecompiledHeader.h"
 #include "IopCommon.h"
+#include "DEV9/DEV9.h"
+#include "USB/USB.h"
 
 using namespace R3000A;
 
 void dev9Interrupt()
 {
-	if ((dev9Handler != NULL) && (dev9Handler() != 1)) return;
+	if (DEV9irqHandler() != 1) return;
 
 	iopIntcIrq(13);
 }
@@ -32,8 +34,6 @@ void dev9Irq(int cycles)
 
 void usbInterrupt()
 {
-	if (usbHandler != NULL && (usbHandler() != 1)) return;
-
 	iopIntcIrq(22);
 }
 

@@ -24,6 +24,7 @@
 #define write_portable(a, b, c) (send(a, b, c, 0))
 #define close_portable(a) (closesocket(a))
 #define bzero(b, len) (memset((b), '\0', (len)), (void)0)
+#include <WinSock2.h>
 #include <windows.h>
 #else
 #define read_portable(a, b, c) (read(a, b, c))
@@ -35,11 +36,13 @@
 
 #include "Common.h"
 #include "Memory.h"
+#include "gui/AppSaveStates.h"
+#include "gui/AppCoreThread.h"
 #include "System/SysThreads.h"
 #include "svnrev.h"
 #include "IPC.h"
 
-SocketIPC::SocketIPC(SysCoreThread* vm)
+SocketIPC::SocketIPC(SysCoreThread* vm, unsigned int slot)
 	: pxThread("IPC_Socket")
 {
 #ifdef _WIN32
@@ -53,7 +56,8 @@ SocketIPC::SocketIPC(SysCoreThread* vm)
 		return;
 	}
 
-	if ((m_sock = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+	m_sock = socket(AF_INET, SOCK_STREAM, 0);
+	if ((m_sock == INVALID_SOCKET) || slot > 65536)
 	{
 		Console.WriteLn(Color_Red, "IPC: Cannot open socket! Shutting down...");
 		return;
@@ -63,7 +67,7 @@ SocketIPC::SocketIPC(SysCoreThread* vm)
 	server.sin_family = AF_INET;
 	// localhost only
 	server.sin_addr.s_addr = inet_addr("127.0.0.1");
-	server.sin_port = htons(PORT);
+	server.sin_port = htons(slot);
 
 	if (bind(m_sock, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR)
 	{
@@ -72,19 +76,24 @@ SocketIPC::SocketIPC(SysCoreThread* vm)
 	}
 
 #else
-	// XXX: go back whenever we want to have multiple IPC instances with
-	// multiple emulators running and make this a folder
+	char* runtime_dir = nullptr;
 #ifdef __APPLE__
-	char* runtime_dir = std::getenv("TMPDIR");
+	runtime_dir = std::getenv("TMPDIR");
 #else
-	char* runtime_dir = std::getenv("XDG_RUNTIME_DIR");
+	runtime_dir = std::getenv("XDG_RUNTIME_DIR");
 #endif
 	// fallback in case macOS or other OSes don't implement the XDG base
 	// spec
-	if (runtime_dir == NULL)
-		m_socket_name = (char*)"/tmp/pcsx2.sock";
+	if (runtime_dir == nullptr)
+		m_socket_name = "/tmp/" IPC_EMULATOR_NAME ".sock";
 	else
-		m_socket_name = strcat(runtime_dir, "/pcsx2.sock");
+	{
+		m_socket_name = runtime_dir;
+		m_socket_name += "/" IPC_EMULATOR_NAME ".sock";
+	}
+
+	if (slot != IPC_DEFAULT_SLOT)
+		m_socket_name += "." + std::to_string(slot);
 
 	struct sockaddr_un server;
 
@@ -95,11 +104,11 @@ SocketIPC::SocketIPC(SysCoreThread* vm)
 		return;
 	}
 	server.sun_family = AF_UNIX;
-	strcpy(server.sun_path, m_socket_name);
+	strcpy(server.sun_path, m_socket_name.c_str());
 
 	// we unlink the socket so that when releasing this thread the socket gets
 	// freed even if we didn't close correctly the loop
-	unlink(m_socket_name);
+	unlink(m_socket_name.c_str());
 	if (bind(m_sock, (struct sockaddr*)&server, sizeof(struct sockaddr_un)))
 	{
 		Console.WriteLn(Color_Red, "IPC: Error while binding to socket! Shutting down...");
@@ -133,6 +142,32 @@ char* SocketIPC::MakeFailIPC(char* ret_buffer, uint32_t size = 5)
 	return ret_buffer;
 }
 
+int SocketIPC::StartSocket()
+{
+	m_msgsock = accept(m_sock, 0, 0);
+
+	if (m_msgsock == -1)
+	{
+		// everything else is non recoverable in our scope
+		// we also mark as recoverable socket errors where it would block a
+		// non blocking socket, even though our socket is blocking, in case
+		// we ever have to implement a non blocking socket.
+#ifdef _WIN32
+		int errno_w = WSAGetLastError();
+		if (!(errno_w == WSAECONNRESET || errno_w == WSAEINTR || errno_w == WSAEINPROGRESS || errno_w == WSAEMFILE || errno_w == WSAEWOULDBLOCK))
+		{
+#else
+		if (!(errno == ECONNABORTED || errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
+		{
+#endif
+			fprintf(stderr, "IPC: An unrecoverable error happened! Shutting down...\n");
+			m_end = true;
+			return -1;
+		}
+	}
+	return 0;
+}
+
 void SocketIPC::ExecuteTaskInThread()
 {
 	m_end = false;
@@ -141,92 +176,64 @@ void SocketIPC::ExecuteTaskInThread()
 	// request, as malloc is expansive when we optimize for µs.
 	m_ret_buffer = new char[MAX_IPC_RETURN_SIZE];
 	m_ipc_buffer = new char[MAX_IPC_SIZE];
+
+	if (StartSocket() < 0)
+		return;
+
 	while (true)
 	{
-		m_msgsock = accept(m_sock, 0, 0);
-		if (m_msgsock == -1)
+		// either int or ssize_t depending on the platform, so we have to
+		// use a bunch of auto
+		auto receive_length = 0;
+		auto end_length = 4;
+
+		// while we haven't received the entire packet, maybe due to
+		// socket datagram splittage, we continue to read
+		while (receive_length < end_length)
 		{
-			// everything else is non recoverable in our scope
-			// we also mark as recoverable socket errors where it would block a
-			// non blocking socket, even though our socket is blocking, in case
-			// we ever have to implement a non blocking socket.
-#ifdef _WIN32
-			int errno_w = WSAGetLastError();
-			if (!(errno_w == WSAECONNRESET || errno_w == WSAEINTR || errno_w == WSAEINPROGRESS || errno_w == WSAEMFILE || errno_w == WSAEWOULDBLOCK))
+			auto tmp_length = read_portable(m_msgsock, &m_ipc_buffer[receive_length], MAX_IPC_SIZE - receive_length);
+
+			// we recreate the socket if an error happens
+			if (tmp_length <= 0)
 			{
-#else
-			if (!(errno == ECONNABORTED || errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
-			{
-#endif
-				fprintf(stderr, "IPC: An unrecoverable error happened! Shutting down...\n");
-				m_end = true;
+				receive_length = 0;
+				if (StartSocket() < 0)
+					return;
 				break;
 			}
-		}
-		else
-		{
 
-#ifdef _WIN32
-			// socket timeout
-			DWORD tv = 10 * 1000; // 10 seconds
-#else
-			// socket timeout
-			struct timeval tv;
-			tv.tv_sec = 10;
-			tv.tv_usec = 0;
-#endif
-			setsockopt(m_msgsock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
-			setsockopt(m_msgsock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof tv);
+			receive_length += tmp_length;
 
-
-			// either int or ssize_t depending on the platform, so we have to
-			// use a bunch of auto
-			auto receive_length = 0;
-			auto end_length = 4;
-
-			// while we haven't received the entire packet, maybe due to
-			// socket datagram splittage, we continue to read
-			while (receive_length < end_length)
+			// if we got at least the final size then update
+			if (end_length == 4 && receive_length >= 4)
 			{
-				auto tmp_length = read_portable(m_msgsock, &m_ipc_buffer[receive_length], MAX_IPC_SIZE - receive_length);
-
-				// we close the connection if an error happens
-				if (tmp_length <= 0)
+				end_length = FromArray<u32>(m_ipc_buffer, 0);
+				// we'd like to avoid a client trying to do OOB
+				if (end_length > MAX_IPC_SIZE || end_length < 4)
 				{
 					receive_length = 0;
 					break;
 				}
-
-				receive_length += tmp_length;
-
-				// if we got at least the final size then update
-				if (end_length == 4 && receive_length >= 4)
-				{
-					end_length = FromArray<u32>(m_ipc_buffer, 0);
-					// we'd like to avoid a client trying to do OOB
-					if (end_length > MAX_IPC_SIZE || end_length < 4)
-					{
-						receive_length = 0;
-						break;
-					}
-				}
-			}
-			SocketIPC::IPCBuffer res;
-
-			// we remove 4 bytes to get the message size out of the IPC command
-			// size in ParseCommand
-			if (receive_length == 0)
-				res = IPCBuffer{5, MakeFailIPC(m_ret_buffer)};
-			else
-				res = ParseCommand(&m_ipc_buffer[4], m_ret_buffer, (u32)end_length - 4);
-
-			// we don't care about the error value as we will reset the
-			// connection after that anyways
-			if (write_portable(m_msgsock, res.buffer, res.size) < 0)
-			{
 			}
 		}
-		close_portable(m_msgsock);
+		SocketIPC::IPCBuffer res;
+
+		// we remove 4 bytes to get the message size out of the IPC command
+		// size in ParseCommand.
+		// also, if we got a failed command, let's reset the state so we don't
+		// end up deadlocking by getting out of sync, eg when a client
+		// disconnects
+		if (receive_length != 0)
+		{
+			res = ParseCommand(&m_ipc_buffer[4], m_ret_buffer, (u32)end_length - 4);
+
+			// if we cannot send back our answer restart the socket
+			if (write_portable(m_msgsock, res.buffer, res.size) < 0)
+			{
+				if (StartSocket() < 0)
+					return;
+			}
+		}
 	}
 	return;
 }
@@ -237,7 +244,7 @@ SocketIPC::~SocketIPC()
 #ifdef _WIN32
 	WSACleanup();
 #else
-	unlink(m_socket_name);
+	unlink(m_socket_name.c_str());
 #endif
 	close_portable(m_sock);
 	close_portable(m_msgsock);
@@ -380,6 +387,99 @@ SocketIPC::IPCBuffer SocketIPC::ParseCommand(char* buf, char* ret_buffer, u32 bu
 					goto error;
 				memcpy(&ret_buffer[ret_cnt], version, 256);
 				ret_cnt += 256;
+				break;
+			}
+			case MsgSaveState:
+			{
+				if (!m_vm->HasActiveMachine())
+					goto error;
+				if (!SafetyChecks(buf_cnt, 1, ret_cnt, 0, buf_size))
+					goto error;
+				StateCopy_SaveToSlot(FromArray<u8>(&buf[buf_cnt], 0));
+				buf_cnt += 1;
+				break;
+			}
+			case MsgLoadState:
+			{
+				if (!m_vm->HasActiveMachine())
+					goto error;
+				if (!SafetyChecks(buf_cnt, 1, ret_cnt, 0, buf_size))
+					goto error;
+				StateCopy_LoadFromSlot(FromArray<u8>(&buf[buf_cnt], 0), false);
+				buf_cnt += 1;
+				break;
+			}
+			case MsgTitle:
+			{
+				if (!m_vm->HasActiveMachine())
+					goto error;
+				if (!SafetyChecks(buf_cnt, 0, ret_cnt, 256, buf_size))
+					goto error;
+				char title[256] = {};
+				sprintf(title, "%s", GameInfo::gameName.ToUTF8().data());
+				title[255] = 0x00;
+				memcpy(&ret_buffer[ret_cnt], title, 256);
+				ret_cnt += 256;
+				break;
+			}
+			case MsgID:
+			{
+				if (!m_vm->HasActiveMachine())
+					goto error;
+				if (!SafetyChecks(buf_cnt, 0, ret_cnt, 256, buf_size))
+					goto error;
+				char id[256] = {};
+				sprintf(id, "%s", GameInfo::gameSerial.ToUTF8().data());
+				id[255] = 0x00;
+				memcpy(&ret_buffer[ret_cnt], id, 256);
+				ret_cnt += 256;
+				break;
+			}
+			case MsgUUID:
+			{
+				if (!m_vm->HasActiveMachine())
+					goto error;
+				if (!SafetyChecks(buf_cnt, 0, ret_cnt, 256, buf_size))
+					goto error;
+				char uuid[256] = {};
+				sprintf(uuid, "%s", GameInfo::gameCRC.ToUTF8().data());
+				uuid[255] = 0x00;
+				memcpy(&ret_buffer[ret_cnt], uuid, 256);
+				ret_cnt += 256;
+				break;
+			}
+			case MsgGameVersion:
+			{
+				if (!m_vm->HasActiveMachine())
+					goto error;
+				if (!SafetyChecks(buf_cnt, 0, ret_cnt, 256, buf_size))
+					goto error;
+				char version[256] = {};
+				sprintf(version, "%s", GameInfo::gameVersion.ToUTF8().data());
+				version[255] = 0x00;
+				memcpy(&ret_buffer[ret_cnt], version, 256);
+				ret_cnt += 256;
+				break;
+			}
+			case MsgStatus:
+			{
+				if (!SafetyChecks(buf_cnt, 0, ret_cnt, 4, buf_size))
+					goto error;
+				EmuStatus status;
+				switch (m_vm->HasActiveMachine())
+				{
+					case true:
+						if (CoreThread.IsClosing())
+							status = Paused;
+						else
+							status = Running;
+						break;
+					case false:
+						status = Shutdown;
+						break;
+				}
+				ToArray(ret_buffer, status, ret_cnt);
+				ret_cnt += 4;
 				break;
 			}
 			default:

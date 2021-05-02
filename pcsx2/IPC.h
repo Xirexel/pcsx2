@@ -18,14 +18,25 @@
 
 #pragma once
 
+// IPC uses a concept of "slot" to be able to communicate with multiple
+// emulators at the same time, each slot should be unique to each emulator to
+// allow PnP and configurable by the end user so that several runs don't
+// conflict with each others
+#define IPC_DEFAULT_SLOT 28011
+#define IPC_EMULATOR_NAME "pcsx2"
+
 #include "Utilities/PersistentThread.h"
 #include "System/SysThreads.h"
+#include <string>
+#ifdef _WIN32
+#include <WinSock2.h>
+#include <windows.h>
+#endif
 
 using namespace Threading;
 
 class SocketIPC : public pxThread
 {
-
 	// parent thread
 	typedef pxThread _parent;
 
@@ -33,13 +44,12 @@ protected:
 #ifdef _WIN32
 	// windows claim to have support for AF_UNIX sockets but that is a blatant lie,
 	// their SDK won't even run their own examples, so we go on TCP sockets.
-#define PORT 28011
 	SOCKET m_sock = INVALID_SOCKET;
 	// the message socket used in thread's accept().
 	SOCKET m_msgsock = INVALID_SOCKET;
 #else
 	// absolute path of the socket. Stored in XDG_RUNTIME_DIR, if unset /tmp
-	char* m_socket_name;
+	std::string m_socket_name;
 	int m_sock = 0;
 	// the message socket used in thread's accept().
 	int m_msgsock = 0;
@@ -88,9 +98,26 @@ protected:
 		MsgWrite32 = 6,         /**< Write 32 bit value to memory. */
 		MsgWrite64 = 7,         /**< Write 64 bit value to memory. */
 		MsgVersion = 8,         /**< Returns PCSX2 version. */
+		MsgSaveState = 9,       /**< Saves a savestate. */
+		MsgLoadState = 0xA,     /**< Loads a savestate. */
+		MsgTitle = 0xB,         /**< Returns the game title. */
+		MsgID = 0xC,            /**< Returns the game ID. */
+		MsgUUID = 0xD,          /**< Returns the game UUID. */
+		MsgGameVersion = 0xE,   /**< Returns the game verion. */
+		MsgStatus = 0xF,        /**< Returns the emulator status. */
 		MsgUnimplemented = 0xFF /**< Unimplemented IPC message. */
 	};
 
+	/**
+	 * Emulator status enum.
+	 * A list of possible emulator statuses.
+	 */
+	enum EmuStatus : uint32_t
+	{
+		Running = 0, /**< Game is running */
+		Paused = 1,  /**< Game is paused */
+		Shutdown = 2 /**< Game is shutdown */
+	};
 
 	/**
 	 * IPC message buffer. 
@@ -140,6 +167,12 @@ protected:
 	static inline char* MakeFailIPC(char* ret_buffer, uint32_t size);
 
 	/**
+	 * Initializes an open socket for IPC communication.
+	 * return value: -1 if a fatal failure happened, 0 otherwise. 
+	 */
+	int StartSocket();
+
+	/**
 	 * Converts an uint to an char* in little endian 
 	 * res_array: the array to modify 
 	 * res: the value to convert
@@ -185,7 +218,7 @@ public:
 	bool m_end = true;
 
 	/* Initializers */
-	SocketIPC(SysCoreThread* vm);
+	SocketIPC(SysCoreThread* vm, unsigned int slot = IPC_DEFAULT_SLOT);
 	virtual ~SocketIPC();
 
 }; // class SocketIPC

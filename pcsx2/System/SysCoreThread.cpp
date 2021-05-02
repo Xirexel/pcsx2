@@ -28,6 +28,13 @@
 #include "IPC.h"
 #include "FW.h"
 #include "SPU2/spu2.h"
+#include "DEV9/DEV9.h"
+#include "USB/USB.h"
+#ifdef _WIN32
+#include "PAD/Windows/PAD.h"
+#else
+#include "PAD/Linux/PAD.h"
+#endif
 
 #include "../DebugTools/MIPSAnalyst.h"
 #include "../DebugTools/SymbolMap.h"
@@ -43,6 +50,11 @@
 #include "x86emitter/x86_intrin.h"
 
 bool g_CDVDReset = false;
+
+namespace IPCSettings
+{
+	unsigned int slot = IPC_DEFAULT_SLOT;
+};
 
 // --------------------------------------------------------------------------------------
 //  SysCoreThread *External Thread* Implementations
@@ -94,6 +106,9 @@ void SysCoreThread::Start()
 		return;
 	GetCorePlugins().Init();
 	SPU2init();
+	PADinit();
+	DEV9init();
+	USBinit();
 	_parent::Start();
 }
 
@@ -157,7 +172,7 @@ void SysCoreThread::ApplySettings(const Pcsx2Config& src)
 	if (src == EmuConfig)
 		return;
 
-	if (!pxAssertDev(IsPaused(), "CoreThread is not paused; settings cannot be applied."))
+	if (!pxAssertDev(IsPaused() | IsSelf(), "CoreThread is not paused; settings cannot be applied."))
 		return;
 
 	m_resetRecompilers = (src.Cpu != EmuConfig.Cpu) || (src.Gamefixes != EmuConfig.Gamefixes) || (src.Speedhacks != EmuConfig.Speedhacks);
@@ -241,6 +256,7 @@ void SysCoreThread::DoCpuReset()
 void SysCoreThread::VsyncInThread()
 {
 	ApplyLoadedPatches(PPT_CONTINUOUSLY);
+	ApplyLoadedPatches(PPT_COMBINED_0_1);
 }
 
 void SysCoreThread::GameStartingInThread()
@@ -252,13 +268,14 @@ void SysCoreThread::GameStartingInThread()
 	sApp.PostAppMethod(&Pcsx2App::resetDebugger);
 
 	ApplyLoadedPatches(PPT_ONCE_ON_LOAD);
+	ApplyLoadedPatches(PPT_COMBINED_0_1);
 #ifdef USE_SAVESLOT_UI_UPDATES
 	UI_UpdateSysControls();
 #endif
 	if (EmuConfig.EnableIPC && m_IpcState == OFF)
 	{
 		m_IpcState = ON;
-		m_socketIpc = std::make_unique<SocketIPC>(this);
+		m_socketIpc = std::make_unique<SocketIPC>(this, IPCSettings::slot);
 	}
 	if (m_IpcState == ON && m_socketIpc->m_end)
 		m_socketIpc->Start();
@@ -282,7 +299,7 @@ void SysCoreThread::DoCpuExecute()
 
 void SysCoreThread::ExecuteTaskInThread()
 {
-	Threading::EnableHiresScheduler(); // Note that *something* in SPU2-X and GSdx also set the timer resolution to 1ms.
+	Threading::EnableHiresScheduler(); // Note that *something* in SPU2 and GSdx also set the timer resolution to 1ms.
 	m_sem_event.WaitWithoutYield();
 
 	m_mxcsr_saved.bitmask = _mm_getcsr();
@@ -301,8 +318,11 @@ void SysCoreThread::ExecuteTaskInThread()
 void SysCoreThread::OnSuspendInThread()
 {
 	GetCorePlugins().Close();
+	DEV9close();
+	USBclose();
 	DoCDVDclose();
 	FWclose();
+	PADclose();
 	SPU2close();
 }
 
@@ -310,9 +330,13 @@ void SysCoreThread::OnResumeInThread(bool isSuspended)
 {
 	GetCorePlugins().Open();
 	if (isSuspended)
-		DoCDVDopen();
+	{
+		DEV9open((void*)pDsp);
+		USBopen((void*)pDsp);
+	}
 	FWopen();
 	SPU2open((void*)pDsp);
+	PADopen((void*)pDsp);
 }
 
 
@@ -327,12 +351,18 @@ void SysCoreThread::OnCleanupInThread()
 	R3000A::ioman::reset();
 	// FIXME: temporary workaround for deadlock on exit, which actually should be a crash
 	vu1Thread.WaitVU();
+	USBclose();
 	SPU2close();
+	PADclose();
+	DEV9close();
 	DoCDVDclose();
 	FWclose();
 	GetCorePlugins().Close();
 	GetCorePlugins().Shutdown();
+	USBshutdown();
 	SPU2shutdown();
+	PADshutdown();
+	DEV9shutdown();
 
 	_mm_setcsr(m_mxcsr_saved.bitmask);
 	Threading::DisableHiresScheduler();

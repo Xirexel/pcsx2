@@ -16,14 +16,12 @@
 #include "PrecompiledHeader.h"
 
 #include "AppSaveStates.h"
+#include "Counters.h"
 
 #ifndef DISABLE_RECORDING
 
-#include <vector>
-
 #include "AppGameDatabase.h"
 #include "DebugTools/Debug.h"
-#include "Counters.h"
 
 #include "InputRecording.h"
 #include "InputRecordingControls.h"
@@ -45,16 +43,9 @@ void SaveStateBase::InputRecordingFreeze()
 		// that starts from a savestate (not power-on) and the starting (pcsx2 internal) frame
 		// marker has not been set (which comes from the save-state), we initialize it.
 		if (g_InputRecording.IsInitialLoad())
-			g_InputRecording.SetStartingFrame(g_FrameCount);
-		else if (g_InputRecording.IsActive())
-		{
-			// Explicitly set the frame change tracking variable as to not
-			// detect saving or loading a savestate as a frame being drawn
-			g_InputRecordingControls.SetFrameCountTracker(g_FrameCount);
-
-			if (IsLoading())
-				g_InputRecording.SetFrameCounter(g_FrameCount);
-		}
+			g_InputRecording.SetupInitialState(g_FrameCount);
+		else if (g_InputRecording.IsActive() && IsLoading())
+			g_InputRecording.SetFrameCounter(g_FrameCount);
 	}
 #endif
 }
@@ -63,16 +54,26 @@ void SaveStateBase::InputRecordingFreeze()
 
 InputRecording g_InputRecording;
 
-InputRecording::InputRecording()
+InputRecording::InputRecordingPad::InputRecordingPad()
 {
-	// NOTE - No multi-tap support, only two controllers
-	padData[CONTROLLER_PORT_ONE] = new PadData();
-	padData[CONTROLLER_PORT_TWO] = new PadData();
+	padData = new PadData;
 }
 
-void InputRecording::setVirtualPadPtr(VirtualPad* ptr, int const port)
+InputRecording::InputRecordingPad::~InputRecordingPad()
 {
-	virtualPads[port] = ptr;
+	delete padData;
+}
+
+void InputRecording::InitVirtualPadWindows(wxWindow* parent)
+{
+	for (int port = 0; port < 2; ++port)
+		if (!pads[port].virtualPad)
+			pads[port].virtualPad = new VirtualPad(parent, port, g_Conf->inputRecording);
+}
+
+void InputRecording::ShowVirtualPad(const int port)
+{
+	pads[port].virtualPad->Show();
 }
 
 void InputRecording::RecordingReset()
@@ -81,7 +82,7 @@ void InputRecording::RecordingReset()
 	// that starts from power-on and the starting (pcsx2 internal) frame
 	// marker has not been set, we initialize it.
 	if (g_InputRecording.IsInitialLoad())
-		g_InputRecording.SetStartingFrame(0);
+		g_InputRecording.SetupInitialState(0);
 	else if (g_InputRecording.IsActive())
 	{
 		g_InputRecording.SetFrameCounter(0);
@@ -97,58 +98,58 @@ void InputRecording::ControllerInterrupt(u8& data, u8& port, u16& bufCount, u8 b
 
 	if (bufCount == 1)
 		fInterruptFrame = data == READ_DATA_AND_VIBRATE_FIRST_BYTE;
-	else if (bufCount == 2 && buf[bufCount] != READ_DATA_AND_VIBRATE_SECOND_BYTE)
-		fInterruptFrame = false;
-
-	// We do not want to record or save the first two bytes in the data returned from the PAD plugin
-	else if (fInterruptFrame && bufCount >= 3 && frameCounter >= 0 && frameCounter < INT_MAX)
+	else if (bufCount == 2)
+	{
+		if (buf[bufCount] != READ_DATA_AND_VIBRATE_SECOND_BYTE)
+			fInterruptFrame = false;
+	}
+	else if (fInterruptFrame)
 	{
 		u8& bufVal = buf[bufCount];
 		const u16 bufIndex = bufCount - 3;
-
 		if (state == InputRecordingMode::Replaying)
 		{
-			u8 tmp = 0;
-			if (inputRecordingData.ReadKeyBuffer(tmp, frameCounter, port, bufIndex))
+			if (frameCounter >= 0 && frameCounter < INT_MAX)
 			{
-				// Overwrite value originally provided by the PAD plugin
-				bufVal = tmp;
+				if (!inputRecordingData.ReadKeyBuffer(bufVal, frameCounter, port, bufIndex))
+					inputRec::consoleLog(fmt::format("Failed to read input data at frame {}", frameCounter));
+
+				// Update controller data state for future VirtualPad / logging usage.
+				pads[port].padData->UpdateControllerData(bufIndex, bufVal);
+				
+				if (pads[port].virtualPad->IsShown())
+					pads[port].virtualPad->UpdateControllerData(bufIndex, pads[port].padData);
 			}
 		}
-
-		// Update controller data state for future VirtualPad / logging usage.
-		padData[port]->UpdateControllerData(bufIndex, bufVal);
-
-		if (virtualPads[port] &&
-			virtualPads[port]->IsShown() &&
-			virtualPads[port]->UpdateControllerData(bufIndex, padData[port]) &&
-			state != InputRecordingMode::Replaying)
+		else
 		{
+			// Update controller data state for future VirtualPad / logging usage.
+			pads[port].padData->UpdateControllerData(bufIndex, bufVal);
+
+			// Commit the byte to the movie file if we are recording
+			if (state == InputRecordingMode::Recording)
+			{
+				if (frameCounter >= 0)
+				{
+					// If the VirtualPad updated the PadData, we have to update the buffer
+					// before committing it to the recording / sending it to the game
+					if (pads[port].virtualPad->IsShown() && pads[port].virtualPad->UpdateControllerData(bufIndex, pads[port].padData))
+						bufVal = pads[port].padData->PollControllerData(bufIndex);
+
+					if (incrementUndo)
+					{
+						inputRecordingData.IncrementUndoCount();
+						incrementUndo = false;
+					}
+
+					if (frameCounter < INT_MAX && !inputRecordingData.WriteKeyBuffer(frameCounter, port, bufIndex, bufVal))
+						inputRec::consoleLog(fmt::format("Failed to write input data at frame {}", frameCounter));
+				}
+			}
 			// If the VirtualPad updated the PadData, we have to update the buffer
-			// before committing it to the recording / sending it to the game
-			// - Do not do this if we are in replay mode!
-			bufVal = padData[port]->PollControllerData(bufIndex);
-		}
-
-		// If we have reached the end of the pad data, log it out
-		if (bufIndex == PadData::END_INDEX_CONTROLLER_BUFFER)
-		{
-			padData[port]->LogPadData(port);
-			// As well as re-render the virtual pad UI, if applicable
-			// - Don't render if it's minimized
-			if (virtualPads[port] && virtualPads[port]->IsShown() && !virtualPads[port]->IsIconized())
-				virtualPads[port]->Redraw();
-		}
-
-		// Finally, commit the byte to the movie file if we are recording
-		if (state == InputRecordingMode::Recording)
-		{
-			if (incrementUndo)
-			{
-				inputRecordingData.IncrementUndoCount();
-				incrementUndo = false;
-			}
-			inputRecordingData.WriteKeyBuffer(frameCounter, port, bufIndex, bufVal);
+			// before sending it to the game
+			else if (pads[port].virtualPad->IsShown() && pads[port].virtualPad->UpdateControllerData(bufIndex, pads[port].padData))
+				bufVal = pads[port].padData->PollControllerData(bufIndex);
 		}
 	}
 }
@@ -170,12 +171,30 @@ u32 InputRecording::GetStartingFrame()
 
 void InputRecording::IncrementFrameCounter()
 {
-	frameCounter++;
-	if (state == InputRecordingMode::Recording)
+	if (frameCounter < INT_MAX)
 	{
-		GetInputRecordingData().SetTotalFrames(frameCounter);
-		if (frameCounter == inputRecordingData.GetTotalFrames())
-			incrementUndo = false;
+		frameCounter++;
+		switch (state)
+		{
+		case InputRecordingMode::Recording:
+			inputRecordingData.SetTotalFrames(frameCounter);
+			[[fallthrough]];
+		case InputRecordingMode::Replaying:
+			if (frameCounter == inputRecordingData.GetTotalFrames())
+				incrementUndo = false;
+		}
+	}
+}
+
+void InputRecording::LogAndRedraw()
+{
+	for (u8 port = 0; port < 2; port++)
+	{
+		pads[port].padData->LogPadData(port);
+		// As well as re-render the virtual pad UI, if applicable
+		// - Don't render if it's minimized
+		if (pads[port].virtualPad->IsShown() && !pads[port].virtualPad->IsIconized())
+			pads[port].virtualPad->Redraw();
 	}
 }
 
@@ -220,26 +239,26 @@ wxString InputRecording::RecordingModeTitleSegment()
 void InputRecording::SetToRecordMode()
 {
 	state = InputRecordingMode::Recording;
-	virtualPads[CONTROLLER_PORT_ONE]->SetReadOnlyMode(false);
-	virtualPads[CONTROLLER_PORT_TWO]->SetReadOnlyMode(false);
+	pads[CONTROLLER_PORT_ONE].virtualPad->SetReadOnlyMode(false);
+	pads[CONTROLLER_PORT_TWO].virtualPad->SetReadOnlyMode(false);
 	inputRec::log("Record mode ON");
 }
 
 void InputRecording::SetToReplayMode()
 {
 	state = InputRecordingMode::Replaying;
-	virtualPads[CONTROLLER_PORT_ONE]->SetReadOnlyMode(true);
-	virtualPads[CONTROLLER_PORT_TWO]->SetReadOnlyMode(true);
+	pads[CONTROLLER_PORT_ONE].virtualPad->SetReadOnlyMode(true);
+	pads[CONTROLLER_PORT_TWO].virtualPad->SetReadOnlyMode(true);
 	inputRec::log("Replay mode ON");
 }
 
 void InputRecording::SetFrameCounter(u32 newGFrameCount)
 {
-	if (newGFrameCount > startingFrame + (u32)g_InputRecording.GetInputRecordingData().GetTotalFrames())
+	if (newGFrameCount > startingFrame + (u32)inputRecordingData.GetTotalFrames())
 	{
 		inputRec::consoleLog("Warning, you've loaded PCSX2 emulation to a point after the end of the original recording. This should be avoided.");
 		inputRec::consoleLog("Savestate's framecount has been ignored.");
-		frameCounter = g_InputRecording.GetInputRecordingData().GetTotalFrames();
+		frameCounter = inputRecordingData.GetTotalFrames();
 		if (state == InputRecordingMode::Replaying)
 			SetToRecordMode();
 		incrementUndo = false;
@@ -254,14 +273,39 @@ void InputRecording::SetFrameCounter(u32 newGFrameCount)
 		}
 		else if (newGFrameCount == 0 && state == InputRecordingMode::Recording)
 			SetToReplayMode();
-		frameCounter = static_cast<s32>(newGFrameCount - startingFrame);
+		frameCounter = newGFrameCount - (s32)startingFrame;
 		incrementUndo = true;
 	}
 }
 
-void InputRecording::SetStartingFrame(u32 newStartingFrame)
+void InputRecording::SetupInitialState(u32 newStartingFrame)
 {
 	startingFrame = newStartingFrame;
+	if (state != InputRecordingMode::Replaying)
+	{
+		inputRec::log("Started new input recording");
+		inputRec::consoleLog(fmt::format("Filename {}", std::string(inputRecordingData.GetFilename())));
+		SetToRecordMode();
+	}
+	else
+	{
+		// Check if the current game matches with the one used to make the original recording
+		if (!g_Conf->CurrentIso.IsEmpty())
+			if (resolveGameName() != inputRecordingData.GetHeader().gameName)
+				inputRec::consoleLog("Input recording was possibly constructed for a different game.");
+
+		incrementUndo = true;
+		inputRec::log("Replaying input recording");
+		inputRec::consoleMultiLog({fmt::format("File: {}", std::string(inputRecordingData.GetFilename())),
+								   fmt::format("PCSX2 Version Used: {}", std::string(inputRecordingData.GetHeader().emu)),
+								   fmt::format("Recording File Version: {}", inputRecordingData.GetHeader().version),
+								   fmt::format("Associated Game Name or ISO Filename: {}", std::string(inputRecordingData.GetHeader().gameName)),
+								   fmt::format("Author: {}", inputRecordingData.GetHeader().author),
+								   fmt::format("Total Frames: {}", inputRecordingData.GetTotalFrames()),
+								   fmt::format("Undo Count: {}", inputRecordingData.GetUndoCount())});
+		SetToReplayMode();
+	}
+
 	if (inputRecordingData.FromSaveState())
 		inputRec::consoleLog(fmt::format("Internal Starting Frame: {}", startingFrame));
 	frameCounter = 0;
@@ -269,27 +313,39 @@ void InputRecording::SetStartingFrame(u32 newStartingFrame)
 	g_InputRecordingControls.Lock(startingFrame);
 }
 
+void InputRecording::FailedSavestate()
+{
+	inputRec::consoleLog(fmt::format("{} is not compatible with this version of PCSX2", savestate));
+	inputRec::consoleLog(fmt::format("Original PCSX2 version used: {}", inputRecordingData.GetHeader().emu));
+	inputRecordingData.Close();
+	initialLoad = false;
+	state = InputRecordingMode::NotActive;
+	g_InputRecordingControls.Resume();
+}
+
 void InputRecording::Stop()
 {
 	state = InputRecordingMode::NotActive;
-	virtualPads[CONTROLLER_PORT_ONE]->SetReadOnlyMode(false);
-	virtualPads[CONTROLLER_PORT_TWO]->SetReadOnlyMode(false);
+	pads[CONTROLLER_PORT_ONE].virtualPad->SetReadOnlyMode(false);
+	pads[CONTROLLER_PORT_TWO].virtualPad->SetReadOnlyMode(false);
 	incrementUndo = false;
 	if (inputRecordingData.Close())
 		inputRec::log("Input recording stopped");
 }
 
-bool InputRecording::Create(wxString FileName, bool fromSaveState, wxString authorName)
+bool InputRecording::Create(wxString fileName, const bool fromSaveState, wxString authorName)
 {
-	if (!inputRecordingData.OpenNew(FileName, fromSaveState))
+	if (!inputRecordingData.OpenNew(fileName, fromSaveState))
 		return false;
 
 	initialLoad = true;
+	state = InputRecordingMode::Recording;
 	if (fromSaveState)
 	{
-		if (wxFileExists(FileName + "_SaveState.p2s"))
-			wxCopyFile(FileName + "_SaveState.p2s", FileName + "_SaveState.p2s.bak", true);
-		StateCopy_SaveToFile(FileName + "_SaveState.p2s");
+		savestate = fileName + "_SaveState.p2s";
+		if (wxFileExists(savestate))
+			wxCopyFile(savestate, savestate + ".bak", true);
+		StateCopy_SaveToFile(savestate);
 	}
 	else
 		sApp.SysExecute(g_Conf->CdvdSource);
@@ -305,19 +361,12 @@ bool InputRecording::Create(wxString FileName, bool fromSaveState, wxString auth
 	inputRecordingData.GetHeader().SetGameName(resolveGameName());
 	// Write header contents
 	inputRecordingData.WriteHeader();
-	SetToRecordMode();
-	g_InputRecordingControls.DisableFrameAdvance();
-	inputRec::log("Started new input recording");
-	inputRec::consoleLog(fmt::format("Filename {}", std::string(FileName)));
 	return true;
 }
 
-bool InputRecording::Play(wxString fileName)
+bool InputRecording::Play(wxWindow* parent, wxString filename)
 {
-	if (IsActive())
-		Stop();
-
-	if (!inputRecordingData.OpenExisting(fileName))
+	if (!inputRecordingData.OpenExisting(filename))
 		return false;
 
 	// Either load the savestate, or restart the game
@@ -329,39 +378,69 @@ bool InputRecording::Play(wxString fileName)
 			inputRecordingData.Close();
 			return false;
 		}
-		if (!wxFileExists(inputRecordingData.GetFilename() + "_SaveState.p2s"))
+
+		savestate = inputRecordingData.GetFilename() + "_SaveState.p2s";
+		if (!wxFileExists(savestate))
 		{
-			inputRec::consoleLog(fmt::format("Could not locate savestate file at location - {}_SaveState.p2s",
-											 inputRecordingData.GetFilename()));
-			inputRecordingData.Close();
-			return false;
+			wxFileDialog loadStateDialog(parent, _("Select the savestate that will accompany this recording"), L"", L"",
+										 L"Savestate files (*.p2s)|*.p2s", wxFD_OPEN);
+			if (loadStateDialog.ShowModal() == wxID_CANCEL)
+			{
+				inputRec::consoleLog(fmt::format("Could not locate savestate file at location - {}", savestate));
+				inputRec::log("Savestate load failed");
+				inputRecordingData.Close();
+				return false;
+			}
+
+			savestate = loadStateDialog.GetPath();
+			inputRec::consoleLog(fmt::format("Base savestate set to {}", savestate));
 		}
+		state = InputRecordingMode::Replaying;
 		initialLoad = true;
-		StateCopy_LoadFromFile(inputRecordingData.GetFilename() + "_SaveState.p2s");
+		StateCopy_LoadFromFile(savestate);
 	}
 	else
 	{
+		state = InputRecordingMode::Replaying;
 		initialLoad = true;
 		sApp.SysExecute(g_Conf->CdvdSource);
 	}
-
-	// Check if the current game matches with the one used to make the original recording
-	if (!g_Conf->CurrentIso.IsEmpty())
-		if (resolveGameName() != inputRecordingData.GetHeader().gameName)
-			inputRec::consoleLog("Input recording was possibly constructed for a different game.");
-
-	incrementUndo = true;
-	SetToReplayMode();
-	inputRec::log("Playing input recording");
-	g_InputRecordingControls.DisableFrameAdvance();
-	inputRec::consoleMultiLog({fmt::format("Replaying input recording - [{}]", std::string(inputRecordingData.GetFilename())),
-							   fmt::format("PCSX2 Version Used: {}", std::string(inputRecordingData.GetHeader().emu)),
-							   fmt::format("Recording File Version: {}", inputRecordingData.GetHeader().version),
-							   fmt::format("Associated Game Name or ISO Filename: {}", std::string(inputRecordingData.GetHeader().gameName)),
-							   fmt::format("Author: {}", inputRecordingData.GetHeader().author),
-							   fmt::format("Total Frames: {}", inputRecordingData.GetTotalFrames()),
-							   fmt::format("Undo Count: {}", inputRecordingData.GetUndoCount())});
 	return true;
+}
+
+void InputRecording::GoToFirstFrame(wxWindow* parent)
+{
+	if (inputRecordingData.FromSaveState())
+	{
+		if (!wxFileExists(savestate))
+		{
+			const bool initiallyPaused = g_InputRecordingControls.IsPaused();
+
+			if (!initiallyPaused)
+				g_InputRecordingControls.PauseImmediately();
+
+			inputRec::consoleLog(fmt::format("Could not locate savestate file at location - {}\n", savestate));
+			wxFileDialog loadStateDialog(parent, _("Select a savestate to accompany the recording with"), L"", L"",
+										 L"Savestate files (*.p2s)|*.p2s", wxFD_OPEN);
+			int result = loadStateDialog.ShowModal();
+			if (!initiallyPaused)
+				g_InputRecordingControls.Resume();
+
+			if (result == wxID_CANCEL)
+			{
+				inputRec::log("Savestate load cancelled");
+				return;
+			}
+			savestate = loadStateDialog.GetPath();
+			inputRec::consoleLog(fmt::format ("Base savestate swapped to {}", savestate));
+		}
+		StateCopy_LoadFromFile(savestate);
+	}
+	else
+		sApp.SysExecute(g_Conf->CdvdSource);
+
+	if (IsRecording())
+		SetToReplayMode();
 }
 
 wxString InputRecording::resolveGameName()
@@ -371,17 +450,17 @@ wxString InputRecording::resolveGameName()
 	const wxString gameKey(SysGetDiscID());
 	if (!gameKey.IsEmpty())
 	{
-		if (IGameDatabase* GameDB = AppHost_GetGameDatabase())
+		if (IGameDatabase* gameDB = AppHost_GetGameDatabase())
 		{
-			Game_Data game;
-			if (GameDB->findGame(game, gameKey))
+			GameDatabaseSchema::GameEntry game = gameDB->findGame(std::string(gameKey));
+			if (game.isValid)
 			{
-				gameName = game.getString("Name");
-				gameName += L" (" + game.getString("Region") + L")";
+				gameName = game.name;
+				gameName += L" (" + game.region + L")";
 			}
 		}
 	}
-	return !gameName.IsEmpty() ? gameName : Path::GetFilename(g_Conf->CurrentIso);
+	return !gameName.IsEmpty() ? gameName : (wxString)Path::GetFilename(g_Conf->CurrentIso);
 }
 
 #endif

@@ -207,6 +207,10 @@ if(Windows)
         resource.h
         targetver.h
         )
+elseif(APPLE)
+    LIST(APPEND GSdxSources
+        Window/GSLinuxDialog.cpp
+        )
 else()
     LIST(APPEND GSdxSources
         Window/GSLinuxDialog.cpp
@@ -240,6 +244,12 @@ if(USE_VTUNE)
     set(GSdxFinalLibs ${GSdxFinalLibs} ${VTUNE_LIBRARIES})
 endif()
 
+if(APPLE)
+    find_library(APPKIT_LIBRARY AppKit)
+    set(GSdxFinalFlags ${GSdxFinalFlags} -fobjc-arc)
+    set(GSdxFinalLibs ${GSdxFinalLibs} ${APPKIT_LIBRARY} -fobjc-link-runtime)
+endif()
+
 set(RESOURCE_FILES
     res/logo-ogl.bmp
     res/fxaa.fx
@@ -260,9 +270,7 @@ if(BUILTIN_GS)
 else()
     if (DISABLE_ADVANCE_SIMD)
         # Don't append -SSE2 on the first build to keep same name as SIMD build
-        add_pcsx2_plugin("${Output}" "${GSdxFinalSources}" "${GSdxFinalLibs}" "${GSdxFinalFlags}")
-        add_pcsx2_plugin("${Output}-SSE4" "${GSdxFinalSources}" "${GSdxFinalLibs}" "${GSdxFinalFlags} -mssse3 -msse4 -msse4.1")
-        target_compile_features("${Output}-SSE4" PRIVATE cxx_std_17)
+        add_pcsx2_plugin("${Output}" "${GSdxFinalSources}" "${GSdxFinalLibs}" "${GSdxFinalFlags} -msse3 -msse4 -msse4.1")
         add_pcsx2_plugin("${Output}-AVX2" "${GSdxFinalSources}" "${GSdxFinalLibs}" "${GSdxFinalFlags} -mavx -mavx2 -mbmi -mbmi2")
         target_compile_features("${Output}-AVX2" PRIVATE cxx_std_17)
     else()

@@ -37,26 +37,26 @@ class GSCapture
 	std::string m_out_dir;
 	int m_threads;
 
-	#ifdef _WIN32
+#ifdef _WIN32
 
 	CComPtr<IGraphBuilder> m_graph;
 	CComPtr<IBaseFilter> m_src;
 
-	#elif defined(__unix__)
+#elif defined(__unix__)
 
 	std::vector<std::unique_ptr<GSPng::Worker>> m_workers;
 	int m_compression_level;
 
-	#endif
+#endif
 
 public:
 	GSCapture();
 	virtual ~GSCapture();
 
-	std::wstring* BeginCapture(float fps, GSVector2i recommendedResolution, float aspect);
+	bool BeginCapture(float fps, GSVector2i recommendedResolution, float aspect, std::string& filename);
 	bool DeliverFrame(const void* bits, int pitch, bool rgba);
 	bool EndCapture();
 
-	bool IsCapturing() {return m_capturing;}
-	GSVector2i GetSize() {return m_size;}
+	bool IsCapturing() { return m_capturing; }
+	GSVector2i GetSize() { return m_size; }
 };

@@ -27,7 +27,8 @@
 
 class GSRendererDX11 final : public GSRendererHW
 {
-	enum ACC_BLEND_D3D11 {
+	enum ACC_BLEND_D3D11
+	{
 		ACC_BLEND_NONE_D3D11   = 0,
 		ACC_BLEND_BASIC_D3D11  = 1,
 		ACC_BLEND_MEDIUM_D3D11 = 2,
@@ -40,7 +41,6 @@ private:
 private:
 	inline void ResetStates();
 	inline void SetupIA(const float& sx, const float& sy);
-	inline void EmulateAtst(const int pass, const GSTextureCache::Source* tex);
 	inline void EmulateZbuffer();
 	inline void EmulateBlending();
 	inline void EmulateTextureShuffleAndFbmask();

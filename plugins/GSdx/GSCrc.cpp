@@ -27,8 +27,6 @@ CRC::Game CRC::m_games[] =
 {
 	// Note: IDs 0x7ACF7E03, 0x7D4EA48F, 0x37C53760 - shouldn't be added as it's from the multiloaders when packing games.
 	{0x00000000, NoTitle, NoRegion, 0},
-	{0xF46142D3, ArTonelico2, NoRegion, 0},
-	{0xC38067F4, ArTonelico2, NoRegion, 0}, // project metafalica 1.0
 	{0xF95F37EE, ArTonelico2, US, 0},
 	{0x68CE6801, ArTonelico2, JP, 0},
 	{0xCE2C1DBF, ArTonelico2, EU, 0},
@@ -101,9 +99,6 @@ CRC::Game CRC::m_games[] =
 	{0x71521863, SFEX3, US, 0},
 	{0x63642E9F, SFEX3, JP, 0},
 	{0xCA1F6E53, SFEX3, JP, 0}, // Taikenban Disc (Demo/Trial)
-	{0x28703748, Bully, US, 0},
-	{0x019CFA48, Bully, JP, 0},
-	{0xC78A495D, Bully, EU, 0}, // BullyCC
 	{0xC19A374E, SoTC, US, 0},
 	{0x7D8F539A, SoTC, EU, 0},
 	{0x0F0C4A9C, SoTC, EU, 0},
@@ -134,7 +129,7 @@ CRC::Game CRC::m_games[] =
 	{0xC02C653E, GT4, CH, 0},
 	{0x7ABDBB5E, GT4, CH, 0}, // cutie comment
 	{0xAEAD1CA3, GT4, JP, 0},
-	{0xE906EA37, GT4, JP, 0}, // GT4 First Preview 
+	{0xE906EA37, GT4, JP, 0}, // GT4 First Preview
 	{0xCA6243B9, GT4, JP, 0}, // GT4 Prologue
 	{0xDD764BBE, GT4, JP, 0}, // GT4 Prologue
 	{0xE1258846, GT4, JP, 0}, // GT4 Prologue
@@ -150,7 +145,6 @@ CRC::Game CRC::m_games[] =
 	{0x32A1C752, GT4, US, 0}, // GT4 Online Beta
 	{0x2A84A1E2, GT4, US, 0}, // Mazda MX-5 Edition
 	{0x0087EEC4, GT4, NoRegion, 0}, // JP and US versions have the same CRC - GT4 Online Beta
-	{0xC164550A, WildArms5, JPUNDUB, 0},
 	{0xC1640D2C, WildArms5, US, 0},
 	{0x0FCF8FE4, WildArms5, EU, 0},
 	{0x2294D322, WildArms5, JP, 0},
@@ -223,8 +217,6 @@ CRC::Game CRC::m_games[] =
 	{0xF442260C, MajokkoALaMode2, JP, 0},
 	{0xA616A6C2, TalesOfAbyss, US, 0},
 	{0x14FE77F7, TalesOfAbyss, US, 0},
-	{0x045D77E9, TalesOfAbyss, JPUNDUB, 0},
-	{0x14FD77F7, TalesOfAbyss, JPUNDUB, 0},
 	{0xAA5EC3A3, TalesOfAbyss, JP, 0},
 	{0xFB236A46, SonicUnleashed, US, 0},
 	{0x8C913264, SonicUnleashed, EU, 0},
@@ -232,7 +224,6 @@ CRC::Game CRC::m_games[] =
 	{0x23A97857, StarOcean3, US, 0},
 	{0xBEC32D49, StarOcean3, JP, 0},
 	{0x8192A241, StarOcean3, JP, 0}, // NTSC JP special directors cut limited extra sugar on top edition (the special one :p)
-	// it's the US version with speach files from JP... {0x23A97857, StarOcean3, JPUNDUB, 0},
 	{0xCC96CE93, ValkyrieProfile2, US, 0},
 	{0x774DE8E2, ValkyrieProfile2, JP, 0},
 	{0x04CCB600, ValkyrieProfile2, EU, 0},
@@ -267,22 +258,6 @@ CRC::Game CRC::m_games[] =
 	{0x7FA1510D, TenchuWoH, EU, 0}, // PAL ES, IT
 	{0xC8DADF58, TenchuWoH, EU, 0},
 	{0x13DD9957, TenchuWoH, JP, 0},
-	{0x8BC95883, Sly3, US, 0},
-	{0x3130A4D3, Sly3, US, 0}, // E3 Demo
-	{0x35CCFA60, Sly3, US, 0}, // Regular Demo
-	{0x8C146034, Sly3, EU, 0}, // Demo
-	{0x3670B6F9, Sly3, EU, 0}, // Prototype
-	{0x8164C614, Sly3, EU, 0},
-	{0xA8CC1583, Sly3, KO, 0},
-	{0x518DD841, Sly2, KO, 0},
-	{0x07652DD9, Sly2, US, 0},
-	{0x5B93397F, Sly2, US, 0}, // E3 Demo
-	{0xA480549C, Sly2, US, 0}, // Prototype
-	{0xDD0B5E6C, Sly2, US, 0}, // Internal prototype disc
-	{0x615EA2DB, Sly2, JP, 0}, // Kaitou Sly Cooper 2
-	{0xFDA1CBF6, Sly2, EU, 0},
-	{0x15DD1F6F, Sly2, NoRegion, 0},
-	{0xBF1739E2, Sly2, NoRegion, 0}, // Prototype maybe, is it official ? I don't remember, found it when testing my dumps (LT).
 	{0x506644B3, BigMuthaTruckers, EU, 0},
 	{0x90F0D852, BigMuthaTruckers, US, 0},
 	{0x92624842, BigMuthaTruckers, US, 0},
@@ -293,8 +268,6 @@ CRC::Game CRC::m_games[] =
 	{0xE169BAF8, RedDeadRevolver, US, 0},
 	{0xE2E67E23, RedDeadRevolver, EU, 0},
 	{0x87844524, RedDeadRevolver, RU, 0}, // Unofficial RU-version
-	{0x6DF62AEA, BleachBladeBattlers, JP, 0},
-	{0x6EB71AB0, BleachBladeBattlers, JP, 0}, // 2nd
 	{0xCBB87BF9, EvangelionJo, JP, 0}, // cutie comment
 	{0xC5B75C7C, Oneechanbara2Special, JP, 0}, // cutie comment
 	{0xC725CC6C, Oneechanbara2Special, JP, 0},
@@ -318,11 +291,6 @@ CRC::Game CRC::m_games[] =
 	{0xBC8B3F50, TombRaiderLegend, US, 0}, // cutie comment
 	{0x365172A0, TombRaiderLegend, JP, 0},
 	{0x05177ECE, TombRaiderLegend, EU, 0},
-	{0x879CDA5E, StarWarsForceUnleashed, US, 0},
-	{0x137C792E, StarWarsForceUnleashed, US, 0},
-	{0xCC9BFDE3, StarWarsForceUnleashed, JP, 0},
-	{0xDAF2145C, StarWarsForceUnleashed, EU, 0},
-	{0x87109051, StarWarsForceUnleashed, EU, 0},
 	{0xBEBF8793, BurnoutTakedown, US, 0},
 	{0xBB2E845F, BurnoutTakedown, JP, 0},
 	{0x5F060991, BurnoutTakedown, KO, 0},
@@ -389,7 +357,7 @@ CRC::Game CRC::m_games[] =
 	{0xEF06DBD6, SakuraWarsSoLongMyLove, JP, 0}, // cutie comment
 	{0xDD41054D, SakuraWarsSoLongMyLove, US, 0}, // cutie comment
 	{0xC2E3A7A4, SakuraWarsSoLongMyLove, KO, 0},
-	{0x4A4B623A, FightingBeautyWulong, JP,0}, // cutie comment
+	{0x4A4B623A, FightingBeautyWulong, JP, 0}, // cutie comment
 	{0x5AC7E79C, TouristTrophy, CH, 0}, // cutie comment
 	{0xFF9C0E93, TouristTrophy, US, 0},
 	{0xCA9AA903, TouristTrophy, EU, 0},
@@ -397,7 +365,7 @@ CRC::Game CRC::m_games[] =
 	{0x6FB69282, GodHand, US, 0},
 	{0x924C4AA6, GodHand, KO, 0},
 	{0xDE9722A5, GodHand, EU, 0},
-	{0x9637D496, KnightsOfTheTemple2, NoRegion, 0}, // // EU and JP versions have the same CRC 
+	{0x9637D496, KnightsOfTheTemple2, NoRegion, 0}, // // EU and JP versions have the same CRC
 	{0x4E811100, UltramanFightingEvolution, JP, 0}, // cutie comment
 	{0xF7F181C3, DeathByDegreesTekkenNinaWilliams, CH, 0}, // cutie comment
 	{0xF088FA5B, DeathByDegreesTekkenNinaWilliams, KO, 0},
@@ -410,7 +378,7 @@ CRC::Game CRC::m_games[] =
 	{0xAE4BEBD3, UrbanReign, EU, 0},
 	{0x48AC09BC, SteambotChronicles, EU, 0},
 	{0x9F391882, SteambotChronicles, US, 0},
-	{0xFEFCF9DE, SteambotChronicles, JP, 0}, // Ponkotsu Roman Daikatsugeki: Bumpy Trot 
+	{0xFEFCF9DE, SteambotChronicles, JP, 0}, // Ponkotsu Roman Daikatsugeki: Bumpy Trot
 	{0XE1BF5DCA, SuperManReturns, US, 0},
 	{0XE8F7BAB6, SuperManReturns, EU, 0},
 	{0x06A7506A, SacredBlaze, JP, 0},
@@ -473,17 +441,17 @@ CRC::Game CRC::m_games[] =
 	{0x972611BB, FIFA05, US, 0},
 	{0x972719A3, FIFA05, EU, 0},
 	{0xC5473413, HarryPotterATCOS, NoRegion, 0}, // EU and US versions have the same CRC - Chamber Of Secrets
-	{0xE1963055, HarryPotterATCOS, JP, 0 }, // Harry Potter to Himitsu no Heya
-	{0xE90BE9F8, HarryPotterATCOS, JP, 0 }, // Coca Cola original Version
-	{0xB38CC628, HarryPotterATGOF, US, 0 },
-	{0xCDE017A7, HarryPotterATGOF, KO, 0 },
-	{0xB18DC525, HarryPotterATGOF, EU, 0 },
-	{0x9C3A84F4, HarryPotterATHBP, US, 0 }, // Half-Blood Prince
-	{0xCB598BC2, HarryPotterATHBP, EU, 0 },
-	{0x51E019BC, HarryPotterATPOA, NoRegion, 0 }, // EU and US versions have the same CRC - Prisoner of Azkaban
-	{0x99A8B4FF, HarryPotterATPOA, KO, 0 },
-	{0xA8901AD6, HarryPotterATPOA, JP, 0 }, // Harry Potter to Azkaban no Shuujin
-	{0x51E417AA, HarryPotterATPOA, EU, 0 },
+	{0xE1963055, HarryPotterATCOS, JP, 0}, // Harry Potter to Himitsu no Heya
+	{0xE90BE9F8, HarryPotterATCOS, JP, 0}, // Coca Cola original Version
+	{0xB38CC628, HarryPotterATGOF, US, 0},
+	{0xCDE017A7, HarryPotterATGOF, KO, 0},
+	{0xB18DC525, HarryPotterATGOF, EU, 0},
+	{0x9C3A84F4, HarryPotterATHBP, US, 0}, // Half-Blood Prince
+	{0xCB598BC2, HarryPotterATHBP, EU, 0},
+	{0x51E019BC, HarryPotterATPOA, NoRegion, 0}, // EU and US versions have the same CRC - Prisoner of Azkaban
+	{0x99A8B4FF, HarryPotterATPOA, KO, 0},
+	{0xA8901AD6, HarryPotterATPOA, JP, 0}, // Harry Potter to Azkaban no Shuujin
+	{0x51E417AA, HarryPotterATPOA, EU, 0},
 	{0x4C01B1B0, HarryPotterOOTP, US, 0}, // Order Of The Phoenix
 	{0x01A9BF0E, HarryPotterOOTP, EU, 0},
 	{0x230CB71D, SoulReaver2, US, 0},
@@ -548,9 +516,9 @@ CRC::Game CRC::m_games[] =
 
 std::map<uint32, CRC::Game*> CRC::m_map;
 
-std::string ToLower( std::string str )
+std::string ToLower(std::string str)
 {
-	transform( str.begin(), str.end(), str.begin(), ::tolower);
+	transform(str.begin(), str.end(), str.begin(), ::tolower);
 	return str;
 }
 
@@ -568,18 +536,19 @@ bool IsCrcExcluded(std::string exclusionList, uint32 crc)
 CRC::Game CRC::Lookup(uint32 crc)
 {
 	printf("GSdx Lookup CRC:%08X\n", crc);
-	if(m_map.empty())
+	if (m_map.empty())
 	{
 		std::string exclusions = theApp.GetConfigS("CrcHacksExclusions");
 		if (exclusions.length() != 0)
- 			printf( "GSdx: CrcHacksExclusions: %s\n", exclusions.c_str() ); 
+			printf("GSdx: CrcHacksExclusions: %s\n", exclusions.c_str());
 		int crcDups = 0;
-		for(size_t i = 0; i < countof(m_games); i++)
+		for (size_t i = 0; i < countof(m_games); i++)
 		{
-			if( !IsCrcExcluded( exclusions, m_games[i].crc ) ){
-				if(m_map[m_games[i].crc]){
-					printf("[FIXME] GSdx: Duplicate CRC: 0x%08X: (game-id/region-id) %d/%d overrides %d/%d\n"
-						, m_games[i].crc, m_games[i].title, m_games[i].region, m_map[m_games[i].crc]->title, m_map[m_games[i].crc]->region);
+			if (!IsCrcExcluded(exclusions, m_games[i].crc))
+			{
+				if (m_map[m_games[i].crc])
+				{
+					printf("[FIXME] GSdx: Duplicate CRC: 0x%08X: (game-id/region-id) %d/%d overrides %d/%d\n", m_games[i].crc, m_games[i].title, m_games[i].region, m_map[m_games[i].crc]->title, m_map[m_games[i].crc]->region);
 					crcDups++;
 				}
 
@@ -588,13 +557,13 @@ CRC::Game CRC::Lookup(uint32 crc)
 			//else
 			//	printf( "GSdx: excluding CRC hack for 0x%08x\n", m_games[i].crc );
 		}
-		if(crcDups)
+		if (crcDups)
 			printf("[FIXME] GSdx: Duplicate CRC: Overall: %d\n", crcDups);
 	}
 
 	auto i = m_map.find(crc);
 
-	if(i != m_map.end())
+	if (i != m_map.end())
 	{
 		return *i->second;
 	}

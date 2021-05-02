@@ -7,7 +7,7 @@
 
 # modifications for clang-format by rene.milk@wwu.de
 # This file is part of a set of unofficial pre-commit hooks available
-# at github.
+# at GitHub.
 # Link:    https://github.com/githubbrowser/Pre-commit-hooks
 # Contact: David Martin, david.martin.mailbox@googlemail.com
 
@@ -28,7 +28,7 @@ PARSE_EXTS=true
 # file types to parse. Only effective when PARSE_EXTS is true.
  FILE_EXTS=".c .h .cpp .hpp .inl"
 
-ALLOWED_ROOT_DIR="./plugins/USBnull ./plugins/SPU2null ./plugins/FWnull ./plugins/dev9null ./plugins/GSnull ./plugins/CDVDnull ./plugins/PadNull ./plugins/LilyPad/ ./plugins/onepad/ ./plugins/spu2-x/ ./common"
+ALLOWED_ROOT_DIR="./common"
 
 ##################################################################
 # There should be no need to change anything below this line.

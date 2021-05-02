@@ -30,28 +30,31 @@ static void* s_hModule;
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
-	switch(ul_reason_for_call)
+	switch (ul_reason_for_call)
 	{
-	case DLL_PROCESS_ATTACH:
-		s_hModule = hModule;
-	case DLL_THREAD_ATTACH:
-	case DLL_THREAD_DETACH:
-	case DLL_PROCESS_DETACH:
-		break;
+		case DLL_PROCESS_ATTACH:
+			s_hModule = hModule;
+		case DLL_THREAD_ATTACH:
+		case DLL_THREAD_DETACH:
+		case DLL_PROCESS_DETACH:
+			break;
 	}
 
 	return TRUE;
 }
 
-bool GSdxApp::LoadResource(int id, std::vector<char>& buff, const char* type)
+bool GSdxApp::LoadResource(int id, std::vector<char>& buff, const wchar_t* type)
 {
 	buff.clear();
-	HRSRC hRsrc = FindResource((HMODULE)s_hModule, MAKEINTRESOURCE(id), type != NULL ? type : RT_RCDATA);
-	if(!hRsrc) return false;
+	HRSRC hRsrc = FindResource((HMODULE)s_hModule, MAKEINTRESOURCE(id), type != NULL ? type : (LPWSTR)RT_RCDATA);
+	if (!hRsrc)
+		return false;
 	HGLOBAL hGlobal = ::LoadResource((HMODULE)s_hModule, hRsrc);
-	if(!hGlobal) return false;
+	if (!hGlobal)
+		return false;
 	DWORD size = SizeofResource((HMODULE)s_hModule, hRsrc);
-	if(!size) return false;
+	if (!size)
+		return false;
 	// On Linux resources are always NULL terminated
 	// Add + 1 on size to do the same for compatibility sake (required by GSDeviceOGL)
 	buff.resize(size + 1);
@@ -66,7 +69,8 @@ bool GSdxApp::LoadResource(int id, std::vector<char>& buff, const char* type)
 bool GSdxApp::LoadResource(int id, std::vector<char>& buff, const char* type)
 {
 	std::string path;
-	switch (id) {
+	switch (id)
+	{
 		case IDR_COMMON_GLSL:
 			path = "/GSdx/res/glsl/common_header.glsl";
 			break;
@@ -99,12 +103,13 @@ bool GSdxApp::LoadResource(int id, std::vector<char>& buff, const char* type)
 			return false;
 	}
 
-	GBytes *bytes = g_resource_lookup_data(GSdx_res_get_resource(), path.c_str(), G_RESOURCE_LOOKUP_FLAGS_NONE, nullptr);
+	GBytes* bytes = g_resource_lookup_data(GSdx_res_get_resource(), path.c_str(), G_RESOURCE_LOOKUP_FLAGS_NONE, nullptr);
 
 	size_t size = 0;
 	const void* data = g_bytes_get_data(bytes, &size);
 
-	if (data == nullptr || size == 0) {
+	if (data == nullptr || size == 0)
+	{
 		printf("Failed to get data for resource: %d\n", id);
 		return false;
 	}
@@ -125,14 +130,16 @@ size_t GSdxApp::GetIniString(const char* lpAppName, const char* lpKeyName, const
 
 	std::string key(lpKeyName);
 	std::string value = m_configuration_map[key];
-	if (value.empty()) {
+	if (value.empty())
+	{
 		// save the value for futur call
 		m_configuration_map[key] = std::string(lpDefault);
 		strcpy(lpReturnedString, lpDefault);
-	} else
+	}
+	else
 		strcpy(lpReturnedString, value.c_str());
 
-    return 0;
+	return 0;
 }
 
 bool GSdxApp::WriteIniString(const char* lpAppName, const char* lpKeyName, const char* pString, const char* lpFileName)
@@ -146,16 +153,19 @@ bool GSdxApp::WriteIniString(const char* lpAppName, const char* lpKeyName, const
 	// Save config to a file
 	FILE* f = px_fopen(lpFileName, "w");
 
-	if (f == NULL) return false; // FIXME print a nice message
+	if (f == NULL)
+		return false; // FIXME print a nice message
 
 	// Maintain compatibility with GSDumpGUI/old Windows ini.
 #ifdef _WIN32
 	fprintf(f, "[Settings]\n");
 #endif
 
-	for (const auto& entry : m_configuration_map) {
+	for (const auto& entry : m_configuration_map)
+	{
 		// Do not save the inifile key which is not an option
-		if (entry.first.compare("inifile") == 0) continue;
+		if (entry.first.compare("inifile") == 0)
+			continue;
 
 		// Only keep option that have a default value (allow to purge old option of the GSdx.ini)
 		if (!entry.second.empty() && m_default_configuration.find(entry.first) != m_default_configuration.end())
@@ -171,11 +181,13 @@ int GSdxApp::GetIniInt(const char* lpAppName, const char* lpKeyName, int nDefaul
 	BuildConfigurationMap(lpFileName);
 
 	std::string value = m_configuration_map[std::string(lpKeyName)];
-	if (value.empty()) {
+	if (value.empty())
+	{
 		// save the value for futur call
 		SetConfig(lpKeyName, nDefault);
 		return nDefault;
-	} else
+	}
+	else
 		return atoi(value.c_str());
 }
 
@@ -244,8 +256,8 @@ void GSdxApp::Init()
 	m_gs_max_anisotropy.push_back(GSSetting(16, "16x", ""));
 
 	m_gs_dithering.push_back(GSSetting(0, "Off", ""));
-	m_gs_dithering.push_back(GSSetting(1, "Scaled", ""));
 	m_gs_dithering.push_back(GSSetting(2, "Unscaled", "Default"));
+	m_gs_dithering.push_back(GSSetting(1, "Scaled", ""));
 
 	m_gs_bifilter.push_back(GSSetting(static_cast<uint32>(BiFiltering::Nearest), "Nearest", ""));
 	m_gs_bifilter.push_back(GSSetting(static_cast<uint32>(BiFiltering::Forced_But_Sprite), "Bilinear", "Forced excluding sprite"));
@@ -280,14 +292,12 @@ void GSdxApp::Init()
 		GSSetting(CRCHackLevel::Automatic, "Automatic", "Default"),
 		GSSetting(CRCHackLevel::None, "None", "Debug"),
 		GSSetting(CRCHackLevel::Minimum, "Minimum", "Debug"),
+#ifdef _DEBUG
 		GSSetting(CRCHackLevel::Partial, "Partial", "OpenGL"),
 		GSSetting(CRCHackLevel::Full, "Full", "Direct3D"),
+#endif
 		GSSetting(CRCHackLevel::Aggressive, "Aggressive", ""),
 	};
-
-	m_gs_acc_date_level.push_back(GSSetting(0, "Off", ""));
-	m_gs_acc_date_level.push_back(GSSetting(1, "Basic", ""));
-	m_gs_acc_date_level.push_back(GSSetting(2, "Full", "Default"));
 
 	m_gs_acc_blend_level.push_back(GSSetting(0, "None", "Fastest"));
 	m_gs_acc_blend_level.push_back(GSSetting(1, "Basic", "Recommended"));
@@ -320,7 +330,7 @@ void GSdxApp::Init()
 	m_default_configuration["linux_replay"]                               = "1";
 #endif
 	m_default_configuration["aa1"]                                        = "0";
-	m_default_configuration["accurate_date"]                              = "2";
+	m_default_configuration["accurate_date"]                              = "1";
 	m_default_configuration["accurate_blending_unit"]                     = "1";
 	m_default_configuration["AspectRatio"]                                = "1";
 	m_default_configuration["autoflush_sw"]                               = "1";
@@ -343,7 +353,7 @@ void GSdxApp::Init()
 	m_default_configuration["force_texture_clear"]                        = "0";
 	m_default_configuration["fxaa"]                                       = "0";
 	m_default_configuration["interlace"]                                  = "7";
-	m_default_configuration["large_framebuffer"]                          = "0";
+	m_default_configuration["conservative_framebuffer"]                   = "1";
 	m_default_configuration["linear_present"]                             = "1";
 	m_default_configuration["MaxAnisotropy"]                              = "0";
 	m_default_configuration["mipmap"]                                     = "1";
@@ -427,10 +437,12 @@ void GSdxApp::Init()
 
 void GSdxApp::ReloadConfig()
 {
-	if (m_configuration_map.empty()) return;
+	if (m_configuration_map.empty())
+		return;
 
 	auto file = m_configuration_map.find("inifile");
-	if (file == m_configuration_map.end()) return;
+	if (file == m_configuration_map.end())
+		return;
 
 	// A map was built so reload it
 	std::string filename = file->second;
@@ -442,7 +454,8 @@ void GSdxApp::BuildConfigurationMap(const char* lpFileName)
 {
 	// Check if the map was already built
 	std::string inifile_value(lpFileName);
-	if ( inifile_value.compare(m_configuration_map["inifile"]) == 0 ) return;
+	if (inifile_value.compare(m_configuration_map["inifile"]) == 0)
+		return;
 	m_configuration_map["inifile"] = inifile_value;
 
 	// Load config from file
@@ -455,7 +468,8 @@ void GSdxApp::BuildConfigurationMap(const char* lpFileName)
 		return;
 
 	std::string line;
-	while (std::getline(file, line)) {
+	while (std::getline(file, line))
+	{
 		const auto separator = line.find('=');
 		if (separator == std::string::npos)
 			continue;
@@ -487,7 +501,7 @@ void* GSdxApp::GetModuleHandlePtr()
 
 void GSdxApp::SetConfigDir(const char* dir)
 {
-	if( dir == NULL )
+	if (dir == NULL)
 	{
 		m_ini = "inis/GSdx.ini";
 	}
@@ -495,7 +509,7 @@ void GSdxApp::SetConfigDir(const char* dir)
 	{
 		m_ini = dir;
 
-		if(m_ini[m_ini.length() - 1] != DIRECTORY_SEPARATOR)
+		if (m_ini[m_ini.length() - 1] != DIRECTORY_SEPARATOR)
 		{
 			m_ini += DIRECTORY_SEPARATOR;
 		}
@@ -509,9 +523,12 @@ std::string GSdxApp::GetConfigS(const char* entry)
 	char buff[4096] = {0};
 	auto def = m_default_configuration.find(entry);
 
-	if (def != m_default_configuration.end()) {
+	if (def != m_default_configuration.end())
+	{
 		GetIniString(m_section.c_str(), entry, def->second.c_str(), buff, countof(buff), m_ini.c_str());
-	} else {
+	}
+	else
+	{
 		fprintf(stderr, "Option %s doesn't have a default value\n", entry);
 		GetIniString(m_section.c_str(), entry, "", buff, countof(buff), m_ini.c_str());
 	}
@@ -528,9 +545,12 @@ int GSdxApp::GetConfigI(const char* entry)
 {
 	auto def = m_default_configuration.find(entry);
 
-	if (def != m_default_configuration.end()) {
+	if (def != m_default_configuration.end())
+	{
 		return GetIniInt(m_section.c_str(), entry, std::stoi(def->second), m_ini.c_str());
-	} else {
+	}
+	else
+	{
 		fprintf(stderr, "Option %s doesn't have a default value\n", entry);
 		return GetIniInt(m_section.c_str(), entry, 0, m_ini.c_str());
 	}

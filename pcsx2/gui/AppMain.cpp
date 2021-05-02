@@ -21,6 +21,11 @@
 #include "AppSaveStates.h"
 #include "AppGameDatabase.h"
 #include "AppAccelerators.h"
+#ifdef _WIN32
+#include "PAD/Windows/PAD.h"
+#else
+#include "PAD/Linux/PAD.h"
+#endif
 
 #include "Plugins.h"
 #include "ps2/BiosTools.h"
@@ -63,7 +68,6 @@
 #undef ECX
 #include <wx/osx/private.h>		// needed to implement the app!
 #endif
-
 wxIMPLEMENT_APP(Pcsx2App);
 
 std::unique_ptr<AppConfig> g_Conf;
@@ -417,6 +421,7 @@ wxMessageOutput* Pcsx2AppTraits::CreateMessageOutput()
 //  Pcsx2StandardPaths
 // --------------------------------------------------------------------------------------
 #ifdef wxUSE_STDPATHS
+#ifndef __APPLE__ // macOS uses wx's defaults
 class Pcsx2StandardPaths : public wxStandardPaths
 {
 public:
@@ -457,11 +462,16 @@ public:
 #endif
 
 };
+#endif // ifdef __APPLE__
 
 wxStandardPaths& Pcsx2AppTraits::GetStandardPaths()
 {
+#ifdef __APPLE__
+	return _parent::GetStandardPaths();
+#else
 	static Pcsx2StandardPaths stdPaths;
 	return stdPaths;
+#endif
 }
 #endif
 
@@ -567,7 +577,7 @@ void Pcsx2App::LogicalVsync()
 
 	// Only call PADupdate here if we're using GSopen2.  Legacy GSopen plugins have the
 	// GS window belonging to the MTGS thread.
-	if( (PADupdate != NULL) && (GSopen2 != NULL) && (wxGetApp().GetGsFramePtr() != NULL) )
+	if( (GSopen2 != NULL) && (wxGetApp().GetGsFramePtr() != NULL) )
 		PADupdate(0);
 
 	while( const keyEvent* ev = PADkeyEvent() )
@@ -657,6 +667,11 @@ void Pcsx2App::HandleEvent(wxEvtHandler* handler, wxEventFunction func, wxEvent&
 		// Saved state load failed prior to the system getting corrupted (ie, file not found
 		// or some zipfile error) -- so log it and resume emulation.
 		Console.Warning( ex.FormatDiagnosticMessage() );
+#ifndef DISABLE_RECORDING
+		if (g_InputRecording.IsInitialLoad())
+			g_InputRecording.FailedSavestate();
+#endif
+
 		CoreThread.Resume();
 	}
 	// ----------------------------------------------------------------------------
@@ -1015,7 +1030,11 @@ void Pcsx2App::OpenGsPanel()
 	gsFrame->ShowFullScreen( g_Conf->GSWindow.IsFullscreen );
 
 #ifndef DISABLE_RECORDING
-	// Disable recording controls that only make sense if the game is running
+	// Enable New & Play after the first game load of the session
+	sMainFrame.enableRecordingMenuItem(MenuId_Recording_New, !g_InputRecording.IsActive());
+	sMainFrame.enableRecordingMenuItem(MenuId_Recording_Play, true);
+
+	// Enable recording menu options as the game is now running
 	sMainFrame.enableRecordingMenuItem(MenuId_Recording_FrameAdvance, true);
 	sMainFrame.enableRecordingMenuItem(MenuId_Recording_TogglePause, true);
 	sMainFrame.enableRecordingMenuItem(MenuId_Recording_ToggleRecordingMode, g_InputRecording.IsActive());
@@ -1024,13 +1043,29 @@ void Pcsx2App::OpenGsPanel()
 
 void Pcsx2App::CloseGsPanel()
 {
-	if( AppRpc_TryInvoke( &Pcsx2App::CloseGsPanel ) ) return;
+	if (AppRpc_TryInvoke(&Pcsx2App::CloseGsPanel))
+		return;
 
 	if (CloseViewportWithPlugins)
 	{
 		if (GSFrame* gsFrame = GetGsFramePtr())
-		if (GSPanel* woot = gsFrame->GetViewport())
-			woot->Destroy();
+			if (GSPanel* woot = gsFrame->GetViewport())
+				woot->Destroy();
+	}
+}
+
+void Pcsx2App::OnGsFrameClosed(wxWindowID id)
+{
+	if ((m_id_GsFrame == wxID_ANY) || (m_id_GsFrame != id))
+		return;
+
+	CoreThread.Suspend();
+
+	if (!m_UseGUI)
+	{
+		// The user is prompted before suspending (at Sys_Suspend() ), because
+		// right now there's no way to resume from suspend without GUI.
+		PrepForExit();
 	}
 #ifndef DISABLE_RECORDING
 	// Disable recording controls that only make sense if the game is running
@@ -1038,20 +1073,6 @@ void Pcsx2App::CloseGsPanel()
 	sMainFrame.enableRecordingMenuItem(MenuId_Recording_TogglePause, false);
 	sMainFrame.enableRecordingMenuItem(MenuId_Recording_ToggleRecordingMode, false);
 #endif
-}
-
-void Pcsx2App::OnGsFrameClosed( wxWindowID id )
-{
-	if( (m_id_GsFrame == wxID_ANY) || (m_id_GsFrame != id) ) return;
-
-	CoreThread.Suspend();
-
-	if( !m_UseGUI )
-	{
-		// The user is prompted before suspending (at Sys_Suspend() ), because
-		// right now there's no way to resume from suspend without GUI.
-		PrepForExit();
-	}
 }
 
 void Pcsx2App::OnProgramLogClosed( wxWindowID id )
@@ -1131,7 +1152,8 @@ protected:
 
 		CoreThread.ResetQuick();
 		symbolMap.Clear();
-		CBreakPoints::SetSkipFirst(0);
+		CBreakPoints::SetSkipFirst(BREAKPOINT_EE, 0);
+		CBreakPoints::SetSkipFirst(BREAKPOINT_IOP, 0);
 
 		CDVDsys_SetFile(CDVD_SourceType::Iso, g_Conf->CurrentIso );
 		if( m_UseCDVDsrc )
@@ -1160,7 +1182,10 @@ void Pcsx2App::SysExecute( CDVD_SourceType cdvdsrc, const wxString& elf_override
 {
 	SysExecutorThread.PostEvent( new SysExecEvent_Execute(cdvdsrc, elf_override) );
 #ifndef DISABLE_RECORDING
-	g_InputRecording.RecordingReset();
+	if (g_Conf->EmuOptions.EnableRecordingTools)
+	{
+		g_InputRecording.RecordingReset();
+	}
 #endif
 }
 

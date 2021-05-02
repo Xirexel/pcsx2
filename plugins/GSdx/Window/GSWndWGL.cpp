@@ -24,17 +24,20 @@
 
 #ifdef _WIN32
 
-static void win_error(const char* msg, bool fatal = true)
+static void win_error(const wchar_t* msg, bool fatal = true)
 {
-    DWORD errorID = ::GetLastError();
+	DWORD errorID = ::GetLastError();
 	if (errorID)
 		fprintf(stderr, "WIN API ERROR:%ld\t", errorID);
 
-	if (fatal) {
-		MessageBox(NULL, msg, "ERROR", MB_OK | MB_ICONEXCLAMATION);
+	if (fatal)
+	{
+		MessageBox(NULL, msg, L"ERROR", MB_OK | MB_ICONEXCLAMATION);
 		throw GSDXRecoverableError();
-	} else {
-		fprintf(stderr, "ERROR:%s\n", msg);
+	}
+	else
+	{
+		fprintf(stderr, "ERROR:%ls\n", msg);
 	}
 }
 
@@ -50,13 +53,13 @@ LRESULT CALLBACK GSWndWGL::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 {
 	switch (message)
 	{
-	case WM_CLOSE:
-		// This takes place before GSClose, so don't destroy the Window so we can clean up.
-		ShowWindow(hWnd, SW_HIDE);
-		// DestroyWindow(hWnd);
-		return 0;
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
+		case WM_CLOSE:
+			// This takes place before GSClose, so don't destroy the Window so we can clean up.
+			ShowWindow(hWnd, SW_HIDE);
+			// DestroyWindow(hWnd);
+			return 0;
+		default:
+			return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 }
 
@@ -65,7 +68,7 @@ void GSWndWGL::CreateContext(int major, int minor)
 {
 	if (!m_NativeDisplay || !m_NativeWindow)
 	{
-		win_error("Wrong display/window", false);
+		win_error(L"Wrong display/window", false);
 		exit(1);
 	}
 
@@ -74,7 +77,7 @@ void GSWndWGL::CreateContext(int major, int minor)
 	// GL2 context are quite easy but we need GL3 which is another painful story...
 	m_context = wglCreateContext(m_NativeDisplay);
 	if (!m_context)
-		win_error("Failed to create a 2.0 context");
+		win_error(L"Failed to create a 2.0 context");
 
 	// FIXME test it
 	// Note: albeit every tutorial said that we need an opengl context to use the GL function wglCreateContextAttribsARB
@@ -102,13 +105,14 @@ void GSWndWGL::CreateContext(int major, int minor)
 
 	PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
 	if (!wglCreateContextAttribsARB)
-		win_error("Failed to init wglCreateContextAttribsARB function pointer");
+		win_error(L"Failed to init wglCreateContextAttribsARB function pointer");
 
 	HGLRC context30 = wglCreateContextAttribsARB(m_NativeDisplay, NULL, context_attribs);
-	if (!context30) {
-		win_error("Failed to create a 3.x context with standard flags", false);
+	if (!context30)
+	{
+		win_error(L"Failed to create a 3.x context with standard flags", false);
 		// retry with more compatible option for (Mesa on Windows, OpenGL on WINE)
-		context_attribs[2*2+1] = 0;
+		context_attribs[2 * 2 + 1] = 0;
 
 		context30 = wglCreateContextAttribsARB(m_NativeDisplay, NULL, context_attribs);
 	}
@@ -117,7 +121,7 @@ void GSWndWGL::CreateContext(int major, int minor)
 	wglDeleteContext(m_context);
 
 	if (!context30)
-		win_error("Failed to create a 3.x context with compatible flags");
+		win_error(L"Failed to create a 3.x context with compatible flags");
 
 	m_context = context30;
 	fprintf(stdout, "3.x GL context successfully created\n");
@@ -125,7 +129,8 @@ void GSWndWGL::CreateContext(int major, int minor)
 
 void GSWndWGL::AttachContext()
 {
-	if (!IsContextAttached()) {
+	if (!IsContextAttached())
+	{
 		wglMakeCurrent(m_NativeDisplay, m_context);
 		m_ctx_attached = true;
 	}
@@ -133,7 +138,8 @@ void GSWndWGL::AttachContext()
 
 void GSWndWGL::DetachContext()
 {
-	if (IsContextAttached()) {
+	if (IsContextAttached())
+	{
 		wglMakeCurrent(NULL, NULL);
 		m_ctx_attached = false;
 	}
@@ -145,10 +151,13 @@ void GSWndWGL::PopulateWndGlFunction()
 
 	// To ease the process, extension management is itself an extension. Clever isn't it!
 	PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC)wglGetProcAddress("wglGetExtensionsStringARB");
-	if (wglGetExtensionsStringARB) {
+	if (wglGetExtensionsStringARB)
+	{
 		const char* ext = wglGetExtensionsStringARB(m_NativeDisplay);
 		m_has_late_vsync = m_swapinterval && ext && strstr(ext, "WGL_EXT_swap_control_tear");
-	} else {
+	}
+	else
+	{
 		m_has_late_vsync = false;
 	}
 }
@@ -173,7 +182,8 @@ void GSWndWGL::Detach()
 	// The window still need to be closed
 	DetachContext();
 
-	if (m_context) wglDeleteContext(m_context);
+	if (m_context)
+		wglDeleteContext(m_context);
 	m_context = NULL;
 
 	CloseWGLDisplay();
@@ -184,51 +194,49 @@ void GSWndWGL::Detach()
 		DestroyWindow(m_NativeWindow);
 		m_NativeWindow = NULL;
 	}
-
 }
 
 void GSWndWGL::OpenWGLDisplay()
 {
-	GLuint	  PixelFormat;			// Holds The Results After Searching For A Match
-	PIXELFORMATDESCRIPTOR pfd =			 // pfd Tells Windows How We Want Things To Be
-
+	GLuint PixelFormat;                // Holds The Results After Searching For A Match
+	PIXELFORMATDESCRIPTOR pfd =        // pfd Tells Windows How We Want Things To Be
 	{
-		sizeof(PIXELFORMATDESCRIPTOR),			  // Size Of This Pixel Format Descriptor
-		1,										  // Version Number
-		PFD_DRAW_TO_WINDOW |						// Format Must Support Window
-		PFD_SUPPORT_OPENGL |						// Format Must Support OpenGL
-		PFD_DOUBLEBUFFER,						   // Must Support Double Buffering
-		PFD_TYPE_RGBA,							  // Request An RGBA Format
-		32,										 // Select Our Color Depth
-		0, 0, 0, 0, 0, 0,						   // Color Bits Ignored
-		0,										  // 8bit Alpha Buffer
-		0,										  // Shift Bit Ignored
-		0,										  // No Accumulation Buffer
-		0, 0, 0, 0,								 // Accumulation Bits Ignored
-		0,										 // 24Bit Z-Buffer (Depth Buffer)
-		8,										  // 8bit Stencil Buffer
-		0,										  // No Auxiliary Buffer
-		PFD_MAIN_PLANE,							 // Main Drawing Layer
-		0,										  // Reserved
-		0, 0, 0									 // Layer Masks Ignored
+		sizeof(PIXELFORMATDESCRIPTOR), // Size Of This Pixel Format Descriptor
+		1,                             // Version Number
+		PFD_DRAW_TO_WINDOW |           // Format Must Support Window
+		PFD_SUPPORT_OPENGL |           // Format Must Support OpenGL
+		PFD_DOUBLEBUFFER,              // Must Support Double Buffering
+		PFD_TYPE_RGBA,                 // Request An RGBA Format
+		32,                            // Select Our Color Depth
+		0, 0, 0, 0, 0, 0,              // Color Bits Ignored
+		0,                             // 8bit Alpha Buffer
+		0,                             // Shift Bit Ignored
+		0,                             // No Accumulation Buffer
+		0, 0, 0, 0,                    // Accumulation Bits Ignored
+		0,                             // 24Bit Z-Buffer (Depth Buffer)
+		8,                             // 8bit Stencil Buffer
+		0,                             // No Auxiliary Buffer
+		PFD_MAIN_PLANE,                // Main Drawing Layer
+		0,                             // Reserved
+		0, 0, 0                        // Layer Masks Ignored
 	};
 
 	m_NativeDisplay = GetDC(m_NativeWindow);
 	if (!m_NativeDisplay)
-		win_error("(1) Can't Create A GL Device Context.");
+		win_error(L"(1) Can't Create A GL Device Context.");
 
 	PixelFormat = ChoosePixelFormat(m_NativeDisplay, &pfd);
 	if (!PixelFormat)
-		win_error("(2) Can't Find A Suitable PixelFormat.");
+		win_error(L"(2) Can't Find A Suitable PixelFormat.");
 
 	if (!SetPixelFormat(m_NativeDisplay, PixelFormat, &pfd))
-		win_error("(3) Can't Set The PixelFormat.", false);
+		win_error(L"(3) Can't Set The PixelFormat.", false);
 }
 
 void GSWndWGL::CloseWGLDisplay()
 {
 	if (m_NativeDisplay && !ReleaseDC(m_NativeWindow, m_NativeDisplay))
-		win_error("Release Device Context Failed.");
+		win_error(L"Release Device Context Failed.");
 
 	m_NativeDisplay = NULL;
 }
@@ -239,7 +247,8 @@ void GSWndWGL::CloseWGLDisplay()
 // modifications
 bool GSWndWGL::Create(const std::string& title, int w, int h)
 {
-	if(m_NativeWindow) return false;
+	if (m_NativeWindow)
+		return false;
 
 	m_managed = true;
 
@@ -252,7 +261,7 @@ bool GSWndWGL::Create(const std::string& title, int w, int h)
 	wc.hInstance = theApp.GetModuleHandle();
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-	wc.lpszClassName = "GSWndOGL";
+	wc.lpszClassName = L"GSWndOGL";
 
 	if (!GetClassInfo(wc.hInstance, wc.lpszClassName, &wc))
 	{
@@ -290,9 +299,11 @@ bool GSWndWGL::Create(const std::string& title, int w, int h)
 
 	AdjustWindowRect(r, style, FALSE);
 
-	m_NativeWindow = CreateWindow(wc.lpszClassName, title.c_str(), style, r.left, r.top, r.width(), r.height(), NULL, NULL, wc.hInstance, (LPVOID)this);
+	std::wstring tmp = std::wstring(title.begin(), title.end());
+	m_NativeWindow = CreateWindow(wc.lpszClassName, tmp.c_str(), style, r.left, r.top, r.width(), r.height(), NULL, NULL, wc.hInstance, (LPVOID)this);
 
-	if (m_NativeWindow == NULL) return false;
+	if (m_NativeWindow == NULL)
+		return false;
 
 	OpenWGLDisplay();
 
@@ -326,7 +337,8 @@ void* GSWndWGL::GetProcAddress(const char* name, bool opt)
 		ptr = (void *)GetProcAddress(module, name);
 	}
 #endif
-	if (ptr == NULL) {
+	if (ptr == NULL)
+	{
 		if (theApp.GetConfigB("debug_opengl"))
 			fprintf(stderr, "Failed to find %s\n", name);
 
@@ -343,7 +355,8 @@ void GSWndWGL::SetSwapInterval()
 	// m_swapinterval uses an integer as parameter
 	// 0 -> disable vsync
 	// n -> wait n frame
-	if (m_swapinterval) m_swapinterval(m_vsync);
+	if (m_swapinterval)
+		m_swapinterval(m_vsync);
 }
 
 void GSWndWGL::Flip()
@@ -356,7 +369,8 @@ void GSWndWGL::Flip()
 
 void GSWndWGL::Show()
 {
-	if (!m_managed) return;
+	if (!m_managed)
+		return;
 
 	// Used by GSReplay
 	SetForegroundWindow(m_NativeWindow);
@@ -377,10 +391,14 @@ void GSWndWGL::HideFrame()
 
 bool GSWndWGL::SetWindowText(const char* title)
 {
-	if (!m_managed) return false;
+	if (!m_managed)
+		return false;
 
+	const size_t tmp_size = strlen(title) + 1;
+	std::wstring tmp(tmp_size, L'#');
+	mbstowcs(&tmp[0], title, tmp_size);
 	// Used by GSReplay.
-	::SetWindowText(m_NativeWindow, title);
+	::SetWindowText(m_NativeWindow, tmp.c_str());
 
 	return true;
 }

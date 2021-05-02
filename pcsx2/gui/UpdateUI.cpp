@@ -51,11 +51,16 @@ static void _SaveLoadStuff(bool enabled)
 	sMainFrame.EnableMenuItem(MenuId_Sys_SaveStates, enabled);
 
 #ifdef USE_NEW_SAVESLOTS_UI
+	bool crcChanged = false;
 	// Run though all the slots. Update if they need updating or the crc changed.
 	for (Saveslot &slot : saveslot_cache)
 	{
 		// We need to reload the file information if the crc or serial # changed.
-		if ((slot.crc != ElfCRC)|| (slot.serialName != DiscSerial)) slot.invalid_cache = true;
+		if ((slot.crc != ElfCRC)|| (slot.serialName != DiscSerial))
+		{
+			slot.invalid_cache = true;
+			crcChanged = true;
+		}
 
 		// Either the cache needs updating, or the menu items do, or both.
 		if (slot.menu_update || slot.invalid_cache)
@@ -81,10 +86,14 @@ static void _SaveLoadStuff(bool enabled)
 			slot.crc = ElfCRC;
 
 			sMainFrame.EnableMenuItem(slot.load_item_id, !slot.empty);
+			sMainFrame.CheckMenuItem(slot.load_item_id, slot.slot_num == States_GetCurrentSlot());
 			sMainFrame.SetMenuItemLabel(slot.load_item_id, slot.SlotName());
 			sMainFrame.SetMenuItemLabel(slot.save_item_id, slot.SlotName());
 		}
-
+	}
+	if (crcChanged)
+	{
+		States_updateLoadBackupMenuItem();
 	}
 #endif
 }

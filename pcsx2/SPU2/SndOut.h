@@ -43,7 +43,6 @@ extern float VolumeAdjustBR;
 extern float VolumeAdjustSL;
 extern float VolumeAdjustSR;
 extern float VolumeAdjustLFE;
-extern unsigned int delayCycles;
 
 struct Stereo51Out16DplII;
 struct Stereo51Out32DplII;
@@ -683,7 +682,7 @@ extern SndOutModule* mods[];
 
 extern bool WavRecordEnabled;
 
-extern void RecordStart(std::wstring* filename);
+extern bool RecordStart(const std::string* filename);
 extern void RecordStop();
 extern void RecordWrite(const StereoOut16& sample);
 

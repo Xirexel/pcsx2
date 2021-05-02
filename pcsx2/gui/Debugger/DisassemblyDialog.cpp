@@ -33,6 +33,7 @@
 wxBEGIN_EVENT_TABLE(DisassemblyDialog, wxFrame)
    EVT_COMMAND( wxID_ANY, debEVT_SETSTATUSBARTEXT, DisassemblyDialog::onDebuggerEvent )
    EVT_COMMAND( wxID_ANY, debEVT_UPDATELAYOUT, DisassemblyDialog::onDebuggerEvent )
+   EVT_COMMAND( wxID_ANY, debEVT_GOTOADDRESS, DisassemblyDialog::onDebuggerEvent )
    EVT_COMMAND( wxID_ANY, debEVT_GOTOINMEMORYVIEW, DisassemblyDialog::onDebuggerEvent )
    EVT_COMMAND( wxID_ANY, debEVT_REFERENCEMEMORYVIEW, DisassemblyDialog::onDebuggerEvent )
    EVT_COMMAND( wxID_ANY, debEVT_RUNTOPOS, DisassemblyDialog::onDebuggerEvent )
@@ -244,6 +245,7 @@ DisassemblyDialog::DisassemblyDialog(wxWindow* parent):
 
 	breakRunButton = new wxButton(panel, wxID_ANY, L"Run");
 	Bind(wxEVT_BUTTON, &DisassemblyDialog::onBreakRunClicked, this, breakRunButton->GetId());
+	breakRunButton->Enable(false);
 	topRowSizer->Add(breakRunButton);
 
 	stepIntoButton = new wxButton( panel, wxID_ANY, L"Step Into");
@@ -309,7 +311,8 @@ void DisassemblyDialog::onBreakRunClicked(wxCommandEvent& evt)
 	if (r5900Debug.isCpuPaused())
 	{
 		// If the current PC is on a breakpoint, the user doesn't want to do nothing.
-		CBreakPoints::SetSkipFirst(r5900Debug.getPC());
+		CBreakPoints::SetSkipFirst(BREAKPOINT_EE, r5900Debug.getPC());
+		CBreakPoints::SetSkipFirst(BREAKPOINT_IOP, r3000Debug.getPC());
 		r5900Debug.resumeCpu();
 	} else {
 		r5900Debug.pauseCpu();
@@ -361,19 +364,15 @@ void DisassemblyDialog::stepOver()
 {
 	if (!r5900Debug.isAlive() || !r5900Debug.isCpuPaused() || currentCpu == NULL)
 		return;
-	
-
-	// todo: breakpoints for iop
-	if (currentCpu != eeTab)
-		return;
+	DebugInterface *debug = currentCpu->getCpu();
 
 	CtrlDisassemblyView* disassembly = currentCpu->getDisassembly();
 
 	// If the current PC is on a breakpoint, the user doesn't want to do nothing.
-	CBreakPoints::SetSkipFirst(r5900Debug.getPC());
-	u32 currentPc = r5900Debug.getPC();
+	CBreakPoints::SetSkipFirst(debug->getCpuType(), debug->getPC());
+	u32 currentPc = debug->getPC();
 
-	MIPSAnalyst::MipsOpcodeInfo info = MIPSAnalyst::GetOpcodeInfo(&r5900Debug,r5900Debug.getPC());
+	MIPSAnalyst::MipsOpcodeInfo info = MIPSAnalyst::GetOpcodeInfo(debug,debug->getPC());
 	u32 breakpointAddress = currentPc+disassembly->getInstructionSizeAt(currentPc);
 	if (info.isBranch)
 	{
@@ -400,7 +399,7 @@ void DisassemblyDialog::stepOver()
 		disassembly->scrollStepping(breakpointAddress);
 	}
 
-	CBreakPoints::AddBreakPoint(breakpointAddress,true);
+	CBreakPoints::AddBreakPoint(debug->getCpuType(), breakpointAddress,true);
 	r5900Debug.resumeCpu();
 }
 
@@ -410,17 +409,14 @@ void DisassemblyDialog::stepInto()
 	if (!r5900Debug.isAlive() || !r5900Debug.isCpuPaused() || currentCpu == NULL)
 		return;
 	
-	// todo: breakpoints for iop
-	if (currentCpu != eeTab)
-		return;
-
+	DebugInterface *debug = currentCpu->getCpu();
 	CtrlDisassemblyView* disassembly = currentCpu->getDisassembly();
 
 	// If the current PC is on a breakpoint, the user doesn't want to do nothing.
-	CBreakPoints::SetSkipFirst(r5900Debug.getPC());
-	u32 currentPc = r5900Debug.getPC();
+	CBreakPoints::SetSkipFirst(debug->getCpuType(), debug->getPC());
+	u32 currentPc = debug->getPC();
 
-	MIPSAnalyst::MipsOpcodeInfo info = MIPSAnalyst::GetOpcodeInfo(&r5900Debug,r5900Debug.getPC());
+	MIPSAnalyst::MipsOpcodeInfo info = MIPSAnalyst::GetOpcodeInfo(debug,debug->getPC());
 	u32 breakpointAddress = currentPc+disassembly->getInstructionSizeAt(currentPc);
 	if (info.isBranch)
 	{
@@ -441,7 +437,7 @@ void DisassemblyDialog::stepInto()
 	if (info.isSyscall)
 		breakpointAddress = info.branchTarget;
 
-	CBreakPoints::AddBreakPoint(breakpointAddress,true);
+	CBreakPoints::AddBreakPoint(debug->getCpuType(), breakpointAddress,true);
 	r5900Debug.resumeCpu();
 }
 
@@ -449,14 +445,15 @@ void DisassemblyDialog::stepOut()
 {
 	if (!r5900Debug.isAlive() || !r5900Debug.isCpuPaused() || currentCpu == NULL)
 		return;
+	DebugInterface *debug = currentCpu->getCpu();
 	// If the current PC is on a breakpoint, the user doesn't want to do nothing.
-	CBreakPoints::SetSkipFirst(r5900Debug.getPC());
+	CBreakPoints::SetSkipFirst(debug->getCpuType(), debug->getPC());
 
 	u32 addr = currentCpu->getStepOutAddress();
 	if (addr == (u32)-1)
 		return;
 
-	CBreakPoints::AddBreakPoint(addr,true);
+	CBreakPoints::AddBreakPoint(debug->getCpuType(), addr,true);
 	r5900Debug.resumeCpu();
 }
 
@@ -488,6 +485,21 @@ void DisassemblyDialog::onDebuggerEvent(wxCommandEvent& evt)
 			currentCpu->GetSizer()->Layout();
 		topSizer->Layout();
 		update();
+	} else if (type == debEVT_GOTOADDRESS)
+	{
+		DebugInterface* cpu = reinterpret_cast<DebugInterface*>(evt.GetClientData());
+		u64 addr;
+		if (!executeExpressionWindow(this, cpu, addr))
+			return;
+
+		if (currentCpu != NULL) {
+			// GetInt() is 0 when called by the disassembly view, 1 when called by the memory view
+			if (!evt.GetInt())
+				currentCpu->getDisassembly()->gotoAddress(addr);
+			else
+				currentCpu->getMemoryView()->gotoAddress(addr);
+		}
+		update();
 	} else if (type == debEVT_GOTOINMEMORYVIEW)
 	{
 		if (currentCpu != NULL)
@@ -505,10 +517,7 @@ void DisassemblyDialog::onDebuggerEvent(wxCommandEvent& evt)
 		}
 	} else if (type == debEVT_RUNTOPOS)
 	{
-		// todo: breakpoints for iop
-		if (currentCpu != eeTab)
-			return;
-		CBreakPoints::AddBreakPoint(evt.GetInt(),true);
+		CBreakPoints::AddBreakPoint(currentCpu->getCpu()->getCpuType(), evt.GetInt(),true);
 		currentCpu->getCpu()->resumeCpu();
 	} else if (type == debEVT_GOTOINDISASM)
 	{
@@ -598,6 +607,8 @@ void DisassemblyDialog::setDebugMode(bool debugMode, bool switchPC)
 
 	if (running)
 	{
+		breakRunButton->Enable(true);
+
 		if (currentCpu == NULL)
 		{
 			wxWindow* currentPage = middleBook->GetCurrentPage();
@@ -633,7 +644,8 @@ void DisassemblyDialog::setDebugMode(bool debugMode, bool switchPC)
 				if (currentCpu != NULL)
 					currentCpu->getDisassembly()->SetFocus();
 				CBreakPoints::SetBreakpointTriggered(false);
-				CBreakPoints::SetSkipFirst(0);
+				CBreakPoints::SetSkipFirst(BREAKPOINT_EE, 0);
+				CBreakPoints::SetSkipFirst(BREAKPOINT_IOP, 0);
 			}
 
 			if (currentCpu != NULL)

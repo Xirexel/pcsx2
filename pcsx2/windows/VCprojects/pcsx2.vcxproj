@@ -62,24 +62,31 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCSX2_DEBUG;PCSX2_DEVBUILD;_SECURE_SCL_=1;SPU2X_PORTAUDIO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Devel|Win32'">PCSX2_DEVEL;PCSX2_DEVBUILD;NDEBUG;_SECURE_SCL_=1;SPU2X_PORTAUDIO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NDEBUG;_SECURE_SCL_=0;SPU2X_PORTAUDIO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NDEBUG;_SECURE_SCL_=0;SPU2X_PORTAUDIO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Devel|x64'">PCSX2_DEVEL;PCSX2_DEVBUILD;NDEBUG;_SECURE_SCL_=1;SPU2X_PORTAUDIO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PCSX2_DEBUG;PCSX2_DEVBUILD;_SECURE_SCL_=1;SPU2X_PORTAUDIO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ShowIncludes Condition="'$(Configuration)|$(Platform)'=='Devel|x64'">false</ShowIncludes>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Devel|x64'">PCSX2_DEVEL;PCSX2_DEVBUILD;NDEBUG;_SECURE_SCL_=1;WIN32_LEAN_AND_MEAN;SPU2X_PORTAUDIO;BUILD_DX=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCSX2_DEBUG;PCSX2_DEVBUILD;_SECURE_SCL_=1;WIN32_LEAN_AND_MEAN;SPU2X_PORTAUDIO;BUILD_DX=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PCSX2_DEBUG;PCSX2_DEVBUILD;_SECURE_SCL_=1;WIN32_LEAN_AND_MEAN;SPU2X_PORTAUDIO;BUILD_DX=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Devel|Win32'">PCSX2_DEVEL;PCSX2_DEVBUILD;NDEBUG;_SECURE_SCL_=1;WIN32_LEAN_AND_MEAN;SPU2X_PORTAUDIO;BUILD_DX=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NDEBUG;_SECURE_SCL_=0;WIN32_LEAN_AND_MEAN;SPU2X_PORTAUDIO;BUILD_DX=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NDEBUG;_SECURE_SCL_=0;WIN32_LEAN_AND_MEAN;SPU2X_PORTAUDIO;BUILD_DX=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(CI)'=='true'">PCSX2_CI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</MinimalRebuild>
+      <MinimalRebuild Condition="'$(Configuration)|$(Platform)'=='Devel|Win32'">false</MinimalRebuild>
+      <MinimalRebuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</MinimalRebuild>
+      <MinimalRebuild Condition="'$(Configuration)|$(Platform)'=='Devel|x64'">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <LargeAddressAware>Yes</LargeAddressAware>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;dsound.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Devel|Win32'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;dsound.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;dsound.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;dsound.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Devel|x64'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;dsound.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;dsound.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;iphlpapi.lib;dsound.lib;dxguid.lib;dinput8.lib;hid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Devel|Win32'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;iphlpapi.lib;dsound.lib;dxguid.lib;dinput8.lib;hid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;iphlpapi.lib;dsound.lib;dxguid.lib;dinput8.lib;hid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;iphlpapi.lib;dsound.lib;dxguid.lib;dinput8.lib;hid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Devel|x64'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;iphlpapi.lib;dsound.lib;dxguid.lib;dinput8.lib;hid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;iphlpapi.lib;dsound.lib;dxguid.lib;dinput8.lib;hid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="..\..\PAD\Windows\Default.ini" />
     <None Include="..\..\Utilities\folderdesc.txt" />
     <None Include="..\..\Docs\License.txt" />
     <None Include="..\..\x86\microVU_Alloc.inl" />
@@ -109,6 +116,10 @@
       <Outputs>%(RelativeDir)%(Filename).h</Outputs>
     </CustomBuild>
     <CustomBuild Include="..\..\gui\Resources\BackgroundLogo.png">
+      <Command>cmd.exe /c %(RelativeDir)bin2cpp.cmd %(Filename)%(Extension)</Command>
+      <Outputs>%(RelativeDir)%(Filename).h</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\gui\Resources\NoIcon.png">
       <Command>cmd.exe /c %(RelativeDir)bin2cpp.cmd %(Filename)%(Extension)</Command>
       <Outputs>%(RelativeDir)%(Filename).h</Outputs>
     </CustomBuild>
@@ -238,6 +249,7 @@
     <ClCompile Include="..\..\CDVD\BlockdumpFileReader.cpp" />
     <ClCompile Include="..\..\CDVD\CDVDdiscReader.cpp" />
     <ClCompile Include="..\..\CDVD\CDVDdiscThread.cpp" />
+    <ClCompile Include="..\..\CDVD\ChdFileReader.cpp" />
     <ClCompile Include="..\..\CDVD\ChunksCache.cpp" />
     <ClCompile Include="..\..\CDVD\CompressedFileReader.cpp" />
     <ClCompile Include="..\..\CDVD\CsoFileReader.cpp" />
@@ -261,6 +273,26 @@
     <ClCompile Include="..\..\DebugTools\MipsAssemblerTables.cpp" />
     <ClCompile Include="..\..\DebugTools\MipsStackWalk.cpp" />
     <ClCompile Include="..\..\DebugTools\SymbolMap.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_Command.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_CmdDMA.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_CmdExecuteDeviceDiag.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_CmdNoData.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_CmdPIOData.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_CmdSMART.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\Commands\ATA_SCE.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\ATA_Info.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\ATA_State.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\ATA_Transfer.cpp" />
+    <ClCompile Include="..\..\DEV9\ATA\HddCreate.cpp" />
+    <ClCompile Include="..\..\DEV9\DEV9.cpp" />
+    <ClCompile Include="..\..\DEV9\flash.cpp" />
+    <ClCompile Include="..\..\DEV9\pcap_io.cpp" />
+    <ClCompile Include="..\..\DEV9\Win32\pcap_io_win32.cpp" />
+    <ClCompile Include="..\..\DEV9\smap.cpp" />
+    <ClCompile Include="..\..\DEV9\Win32\DEV9WinConfig.cpp" />
+    <ClCompile Include="..\..\DEV9\net.cpp" />
+    <ClCompile Include="..\..\DEV9\Win32\tap-win32.cpp" />
+    <ClCompile Include="..\..\DEV9\Win32\Win32.cpp" />
     <ClCompile Include="..\..\GameDatabase.cpp" />
     <ClCompile Include="..\..\Gif_Logger.cpp" />
     <ClCompile Include="..\..\Gif_Unit.cpp" />
@@ -273,17 +305,36 @@
     <ClCompile Include="..\..\gui\Debugger\DebugEvents.cpp" />
     <ClCompile Include="..\..\gui\Debugger\DebuggerLists.cpp" />
     <ClCompile Include="..\..\gui\Debugger\DisassemblyDialog.cpp" />
+    <ClCompile Include="..\..\gui\Dialogs\IPCDialog.cpp" />
+    <ClCompile Include="..\..\gui\Dialogs\GSDumpDialog.cpp" />
     <ClCompile Include="..\..\gui\Dialogs\McdConfigDialog.cpp" />
     <ClCompile Include="..\..\gui\DriveList.cpp" />
     <ClCompile Include="..\..\gui\Panels\MemoryCardListView.cpp" />
     <ClCompile Include="..\..\IopGte.cpp" />
     <ClCompile Include="..\..\IPC.cpp" />
     <ClCompile Include="..\..\FW.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\PADConfig.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\DeviceEnumerator.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\Diagnostics.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\DirectInput.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\DualShock3.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\Global.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\HidDevice.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\InputManager.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\KeyboardQueue.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\PAD.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\PADRawInput.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\Tooltips.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\VKey.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\WindowsKeyboard.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\WindowsMessaging.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\WindowsMouse.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\WndProcEater.cpp" />
+    <ClCompile Include="..\..\PAD\Windows\XInputEnum.cpp" />
     <ClCompile Include="..\..\SPU2\DplIIdecoder.cpp" />
     <ClCompile Include="..\..\SPU2\debug.cpp" />
     <ClCompile Include="..\..\SPU2\RegLog.cpp" />
     <ClCompile Include="..\..\SPU2\SndOut_Portaudio.cpp" />
-    <ClCompile Include="..\..\SPU2\spu2replay.cpp" />
     <ClCompile Include="..\..\SPU2\wavedump_wav.cpp" />
     <ClCompile Include="..\..\SPU2\Lowpass.cpp" />
     <ClCompile Include="..\..\SPU2\SndOut.cpp" />
@@ -340,6 +391,51 @@
     <ClCompile Include="..\..\Recording\NewRecordingFrame.cpp" />
     <ClCompile Include="..\..\Recording\InputRecordingFile.cpp" />
     <ClCompile Include="..\..\Recording\PadData.cpp" />
+    <ClCompile Include="..\..\USB\configuration.cpp" />
+    <ClCompile Include="..\..\USB\deviceproxy.cpp" />
+    <ClCompile Include="..\..\USB\device_init.cpp" />
+    <ClCompile Include="..\..\USB\qemu-usb\bus.cpp" />
+    <ClCompile Include="..\..\USB\qemu-usb\core.cpp" />
+    <ClCompile Include="..\..\USB\qemu-usb\desc.cpp" />
+    <ClCompile Include="..\..\USB\qemu-usb\glib.cpp" />
+    <ClCompile Include="..\..\USB\qemu-usb\hid.cpp" />
+    <ClCompile Include="..\..\USB\qemu-usb\input-keymap-qcode-to-qnum.cpp" />
+    <ClCompile Include="..\..\USB\qemu-usb\input-keymap-win32-to-qcode.cpp" />
+    <ClCompile Include="..\..\USB\qemu-usb\iov.cpp" />
+    <ClCompile Include="..\..\USB\qemu-usb\usb-ohci.cpp" />
+    <ClCompile Include="..\..\USB\qemu-usb\vl.cpp" />
+    <ClCompile Include="..\..\USB\shared\hidapi.cpp" />
+    <ClCompile Include="..\..\USB\shared\inifile_usb.cpp" />
+    <ClCompile Include="..\..\USB\shared\rawinput_usb.cpp" />
+    <ClCompile Include="..\..\USB\shared\ringbuffer.cpp" />
+    <ClCompile Include="..\..\USB\shared\shared_usb.cpp" />
+    <ClCompile Include="..\..\USB\usb-eyetoy\api_init_win32_eyetoy.cpp" />
+    <ClCompile Include="..\..\USB\usb-eyetoy\cam-windows.cpp" />
+    <ClCompile Include="..\..\USB\usb-eyetoy\jo_mpeg.cpp" />
+    <ClCompile Include="..\..\USB\usb-eyetoy\jpgd\jpgd.cpp" />
+    <ClCompile Include="..\..\USB\usb-eyetoy\usb-eyetoy-webcam.cpp" />
+    <ClCompile Include="..\..\USB\usb-hid\api_init_win32_hid.cpp" />
+    <ClCompile Include="..\..\USB\usb-hid\raw\rawinput.cpp" />
+    <ClCompile Include="..\..\USB\usb-hid\usb-hid.cpp" />
+    <ClCompile Include="..\..\USB\usb-mic\api_init_win32_mic.cpp" />
+    <ClCompile Include="..\..\USB\usb-mic\audiodev-wasapi.cpp" />
+    <ClCompile Include="..\..\USB\usb-mic\usb-headset.cpp" />
+    <ClCompile Include="..\..\USB\usb-mic\usb-mic-logitech.cpp" />
+    <ClCompile Include="..\..\USB\usb-mic\usb-mic-singstar.cpp" />
+    <ClCompile Include="..\..\USB\usb-msd\usb-msd-win32.cpp" />
+    <ClCompile Include="..\..\USB\usb-msd\usb-msd.cpp" />
+    <ClCompile Include="..\..\USB\usb-pad\api_init_win32_pad.cpp" />
+    <ClCompile Include="..\..\USB\usb-pad\dx\dinput-config.cpp" />
+    <ClCompile Include="..\..\USB\usb-pad\dx\dinput.cpp" />
+    <ClCompile Include="..\..\USB\usb-pad\dx\usb-pad-dx.cpp" />
+    <ClCompile Include="..\..\USB\usb-pad\lg\lg_ff.cpp" />
+    <ClCompile Include="..\..\USB\usb-pad\raw\raw-config.cpp" />
+    <ClCompile Include="..\..\USB\usb-pad\raw\usb-pad-raw.cpp" />
+    <ClCompile Include="..\..\USB\usb-pad\usb-pad-ff.cpp" />
+    <ClCompile Include="..\..\USB\usb-pad\usb-pad.cpp" />
+    <ClCompile Include="..\..\USB\usb-pad\usb-seamic.cpp" />
+    <ClCompile Include="..\..\USB\USB.cpp" />
+    <ClCompile Include="..\..\USB\Win32\Config_usb.cpp" />
     <ClCompile Include="..\..\Utilities\FileUtils.cpp" />
     <ClCompile Include="..\..\Dump.cpp" />
     <ClCompile Include="..\..\x86\iMisc.cpp" />
@@ -480,10 +576,6 @@
     <ClCompile Include="..\..\gui\AppRes.cpp" />
     <ClCompile Include="..\..\gui\ConsoleLogger.cpp" />
     <ClCompile Include="..\..\gui\CpuUsageProvider.cpp" />
-    <ClCompile Include="..\..\gui\CpuUsageProviderLnx.cpp">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\gui\CpuUsageProviderMSW.cpp" />
     <ClCompile Include="..\..\gui\ExecutorThread.cpp" />
     <ClCompile Include="..\..\gui\FrameForGS.cpp" />
     <ClCompile Include="..\..\gui\GlobalCommands.cpp" />
@@ -551,6 +643,16 @@
     <ClInclude Include="..\..\DebugTools\MipsAssemblerTables.h" />
     <ClInclude Include="..\..\DebugTools\MipsStackWalk.h" />
     <ClInclude Include="..\..\DebugTools\SymbolMap.h" />
+    <ClInclude Include="..\..\DEV9\ATA\ATA.h" />
+    <ClInclude Include="..\..\DEV9\ATA\HddCreate.h" />
+    <ClInclude Include="..\..\DEV9\Config.h" />
+    <ClInclude Include="..\..\DEV9\DEV9.h" />
+    <ClInclude Include="..\..\DEV9\net.h" />
+    <ClInclude Include="..\..\DEV9\pcap_io.h" />
+    <ClInclude Include="..\..\DEV9\smap.h" />
+    <ClInclude Include="..\..\DEV9\Win32\pcap_io_win32_funcs.h" />
+    <ClInclude Include="..\..\DEV9\Win32\resource.h" />
+    <ClInclude Include="..\..\DEV9\Win32\tap.h" />
     <ClInclude Include="..\..\GameDatabase.h" />
     <ClInclude Include="..\..\Gif_Unit.h" />
     <ClInclude Include="..\..\gui\AppGameDatabase.h" />
@@ -567,9 +669,29 @@
     <ClInclude Include="..\..\IopGte.h" />
     <ClInclude Include="..\..\IPC.h" />
     <ClInclude Include="..\..\FW.h" />
+    <ClInclude Include="..\..\PAD\Windows\PAD.h" />
+    <ClInclude Include="..\..\PAD\Windows\PADConfig.h" />
+    <ClInclude Include="..\..\PAD\Windows\DeviceEnumerator.h" />
+    <ClInclude Include="..\..\PAD\Windows\Diagnostics.h" />
+    <ClInclude Include="..\..\PAD\Windows\DirectInput.h" />
+    <ClInclude Include="..\..\PAD\Windows\DualShock3.h" />
+    <ClInclude Include="..\..\PAD\Windows\Global.h" />
+    <ClInclude Include="..\..\PAD\Windows\HidDevice.h" />
+    <ClInclude Include="..\..\PAD\Windows\InputManager.h" />
+    <ClInclude Include="..\..\PAD\Windows\KeyboardQueue.h" />
+    <ClInclude Include="..\..\PAD\Windows\PADRawInput.h" />
+    <ClInclude Include="..\..\PAD\Windows\resource_pad.h" />
+    <ClInclude Include="..\..\PAD\Windows\Tooltips.h" />
+    <ClInclude Include="..\..\PAD\Windows\usb.h" />
+    <ClInclude Include="..\..\PAD\Windows\VKey.h" />
+    <ClInclude Include="..\..\PAD\Windows\WindowsKeyboard.h" />
+    <ClInclude Include="..\..\PAD\Windows\WindowsMessaging.h" />
+    <ClInclude Include="..\..\PAD\Windows\WindowsMouse.h" />
+    <ClInclude Include="..\..\PAD\Windows\WndProcEater.h" />
+    <ClInclude Include="..\..\PAD\Windows\XInputEnum.h" />
     <ClInclude Include="..\..\SPU2\Config.h" />
     <ClInclude Include="..\..\SPU2\Global.h" />
-    <ClInclude Include="..\..\SPU2\spu2replay.h" />
+    <ClInclude Include="..\..\SPU2\interpolate_table.h" />
     <ClInclude Include="..\..\SPU2\Lowpass.h" />
     <ClInclude Include="..\..\SPU2\SndOut.h" />
     <ClInclude Include="..\..\SPU2\Linux\Alsa.h" />
@@ -599,6 +721,58 @@
     <ClInclude Include="..\..\Recording\VirtualPad\VirtualPadData.h" />
     <ClInclude Include="..\..\Recording\VirtualPad\VirtualPadResources.h" />
     <ClInclude Include="..\..\Recording\Utilities\InputRecordingLogger.h" />
+    <ClInclude Include="..\..\USB\configuration.h" />
+    <ClInclude Include="..\..\USB\deviceproxy.h" />
+    <ClInclude Include="..\..\USB\helpers.h" />
+    <ClInclude Include="..\..\USB\platcompat.h" />
+    <ClInclude Include="..\..\USB\proxybase.h" />
+    <ClInclude Include="..\..\USB\qemu-usb\desc.h" />
+    <ClInclude Include="..\..\USB\qemu-usb\glib.h" />
+    <ClInclude Include="..\..\USB\qemu-usb\hid.h" />
+    <ClInclude Include="..\..\USB\qemu-usb\input-keymap-win32-to-qcode.h" />
+    <ClInclude Include="..\..\USB\qemu-usb\input-keymap.h" />
+    <ClInclude Include="..\..\USB\qemu-usb\iov.h" />
+    <ClInclude Include="..\..\USB\qemu-usb\queue.h" />
+    <ClInclude Include="..\..\USB\qemu-usb\qusb.h" />
+    <ClInclude Include="..\..\USB\qemu-usb\USBinternal.h" />
+    <ClInclude Include="..\..\USB\qemu-usb\vl.h" />
+    <ClInclude Include="..\..\USB\readerwriterqueue\atomicops.h" />
+    <ClInclude Include="..\..\USB\readerwriterqueue\readerwriterqueue.h" />
+    <ClInclude Include="..\..\USB\shared\hidapi.h" />
+    <ClInclude Include="..\..\USB\shared\inifile_usb.h" />
+    <ClInclude Include="..\..\USB\shared\rawinput_usb.h" />
+    <ClInclude Include="..\..\USB\shared\ringbuffer.h" />
+    <ClInclude Include="..\..\USB\shared\shared_usb.h" />
+    <ClInclude Include="..\..\USB\usb-eyetoy\cam-windows.h" />
+    <ClInclude Include="..\..\USB\usb-eyetoy\jo_mpeg.h" />
+    <ClInclude Include="..\..\USB\usb-eyetoy\jpgd\jpgd.h" />
+    <ClInclude Include="..\..\USB\usb-eyetoy\ov519.h" />
+    <ClInclude Include="..\..\USB\usb-eyetoy\usb-eyetoy-webcam.h" />
+    <ClInclude Include="..\..\USB\usb-eyetoy\videodev.h" />
+    <ClInclude Include="..\..\USB\usb-eyetoy\videodeviceproxy.h" />
+    <ClInclude Include="..\..\USB\usb-hid\hidproxy.h" />
+    <ClInclude Include="..\..\USB\usb-hid\noop.h" />
+    <ClInclude Include="..\..\USB\usb-hid\raw\rawinput.h" />
+    <ClInclude Include="..\..\USB\usb-hid\usb-hid.h" />
+    <ClInclude Include="..\..\USB\usb-mic\audio.h" />
+    <ClInclude Include="..\..\USB\usb-mic\audiodev-noop.h" />
+    <ClInclude Include="..\..\USB\usb-mic\audiodev-wasapi.h" />
+    <ClInclude Include="..\..\USB\usb-mic\audiodev.h" />
+    <ClInclude Include="..\..\USB\usb-mic\audiodeviceproxy.h" />
+    <ClInclude Include="..\..\USB\usb-mic\usb-headset.h" />
+    <ClInclude Include="..\..\USB\usb-mic\usb-mic-singstar.h" />
+    <ClInclude Include="..\..\USB\usb-msd\usb-msd.h" />
+    <ClInclude Include="..\..\USB\usb-pad\dx\dx.h" />
+    <ClInclude Include="..\..\USB\usb-pad\dx\usb-pad-dx.h" />
+    <ClInclude Include="..\..\USB\usb-pad\dx\versionproxy.h" />
+    <ClInclude Include="..\..\USB\usb-pad\lg\lg_ff.h" />
+    <ClInclude Include="..\..\USB\usb-pad\padproxy.h" />
+    <ClInclude Include="..\..\USB\usb-pad\raw\raw-config-res.h" />
+    <ClInclude Include="..\..\USB\usb-pad\raw\usb-pad-raw.h" />
+    <ClInclude Include="..\..\USB\usb-pad\usb-pad.h" />
+    <ClInclude Include="..\..\USB\USB.h" />
+    <ClInclude Include="..\..\USB\Win32\Config_usb.h" />
+    <ClInclude Include="..\..\USB\Win32\resource_usb.h" />
     <ClInclude Include="..\..\Utilities\AsciiFile.h" />
     <ClInclude Include="..\..\Elfheader.h" />
     <ClInclude Include="..\..\CDVD\IsoFileFormats.h" />
@@ -736,12 +910,20 @@
     <ResourceCompile Include="..\..\..\3rdparty\wxwidgets3.0\include\wx\msw\wx.rc">
       <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\wxwidgets3.0\$(PlatformName);$(SolutionDir)3rdparty\wxwidgets3.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <ResourceCompile Include="..\..\PAD\Windows\PAD.rc" />
     <ResourceCompile Include="..\..\SPU2\Windows\SPU2.rc" />
+    <ResourceCompile Include="..\..\DEV9\Win32\DEV9ghzdrk.rc" />
+    <ResourceCompile Include="..\..\USB\usb-pad\dx\versionproxy.rc" />
+    <ResourceCompile Include="..\..\USB\usb-pad\raw\raw-config.rc" />
+    <ResourceCompile Include="..\..\USB\Win32\USBDialog.rc" />
     <ResourceCompile Include="..\wxResources.rc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\3rdparty\fmt\fmt.vcxproj">
       <Project>{449ad25e-424a-4714-babc-68706cdcc33b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\3rdparty\libsamplerate\libsamplerate.vcxproj">
+      <Project>{47afdbef-f15f-4bc0-b436-5be443c3f80f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\3rdparty\portaudio\build\msvc\portaudio.vcxproj">
       <Project>{0a18a071-125e-442f-aff7-a3f68abecf99}</Project>
@@ -761,6 +943,12 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\3rdparty\wxwidgets3.0\build\msw\wx30_core.vcxproj">
       <Project>{6744dad8-9c70-574a-bff2-9f8dddb24a75}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\3rdparty\yaml-cpp\yaml.vcxproj">
+      <Project>{48329442-e41b-4a1f-8364-36eee1b71343}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\3rdparty\libchdr\libchdr.vcxproj">
+      <Project>{a0d2b3ad-1f72-4ee3-8b5c-f2c358da35f0}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\3rdparty\zlib\zlib.vcxproj">
       <Project>{2f6c0388-20cb-4242-9f6c-a6ebb6a83f47}</Project>

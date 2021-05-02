@@ -23,6 +23,8 @@
 #include "R5900OpcodeTables.h"
 #include "R5900Exceptions.h"
 #include "GS.h"
+#include "CDVD/CDVD.h"
+#include "ps2/BiosTools.h"
 
 GS_VideoMode gsVideoMode = GS_VideoMode::Uninitialized;
 bool gsIsInterlaced = false;
@@ -131,7 +133,7 @@ const char * const R5900::bios[256]=
 	"KSeg0",				"EnableCache",	"DisableCache",			"GetCop0",
 	"FlushCache",			"RFU101",		"CpuConfig",			"iGetCop0",
 	"iFlushCache",			"RFU105",		"iCpuConfig", 			"sceSifStopDma",
-	"SetCPUTimerHandler",	"SetCPUTimer",	"SetOsdConfigParam2",	"SetOsdConfigParam2",
+	"SetCPUTimerHandler",	"SetCPUTimer",	"SetOsdConfigParam2",	"GetOsdConfigParam2",
 //0x70
 	"GsGetIMR_iGsGetIMR",				"GsGetIMR_iGsPutIMR",	"SetPgifHandler", 				"SetVSyncFlag",
 	"RFU116",							"print", 				"sceSifDmaStat_isceSifDmaStat", "sceSifSetDma_isceSifSetDma",
@@ -942,7 +944,41 @@ void SYSCALL()
 					DevCon.Warning("Set GS CRTC configuration. %s %s (%s)",mode.c_str(), inter, field);
 				}
 				break;
+		case Syscall::GetOsdConfigParam:
+			if(!NoOSD && g_SkipBiosHack)
+			{
+				u32 memaddr = cpuRegs.GPR.n.a0.UL[0];
+				u8 params[16];
+			
+				cdvdReadLanguageParams(params);
 
+				u32 osdconf = 0;
+				u32 timezone = params[4] | ((u32)(params[3] & 0x7) << 8);
+
+				osdconf |= params[1] & 0x1F;						// SPDIF, Screen mode, RGB/Comp, Jap/Eng Switch (Early bios)
+				osdconf |= (u32)params[0] << 5;						// PS1 Mode Settings
+				osdconf |= (u32)((params[2] & 0xE0) >> 5) << 13;	// OSD Ver (Not sure but best guess)
+				osdconf |= (u32)(params[2] & 0x1F) << 16;			// Language
+				osdconf |= timezone << 21;							// Timezone
+
+				memWrite32(memaddr, osdconf);
+				return;
+			}
+			break;
+		case Syscall::GetOsdConfigParam2:
+			if (!NoOSD && g_SkipBiosHack)
+			{
+				u32 memaddr = cpuRegs.GPR.n.a0.UL[0];
+				u8 params[16];
+
+				cdvdReadLanguageParams(params);
+
+				u32 osdconf2 = (u32)((params[3] & 0x78) << 1);  // Daylight Savings, 24hr clock, Date format
+
+				memWrite32(memaddr, osdconf2);
+				return;
+			}
+			break;
 		case Syscall::SetVTLBRefillHandler:
 			DevCon.Warning("A tlb refill handler is set. New handler %x", (u32*)PSM(cpuRegs.GPR.n.a1.UL[0]));
 			break;
@@ -991,15 +1027,47 @@ void SYSCALL()
 			{
 				// TODO: Only supports 7 format arguments. Need to read from the stack for more.
 				// Is there a function which collects PS2 arguments?
-				sysConLog(
-					ShiftJIS_ConvertString((char*)PSM(cpuRegs.GPR.n.a0.UL[0])),
+				char* fmt = (char*)PSM(cpuRegs.GPR.n.a0.UL[0]);
+
+				u64 regs[7] = {
 					cpuRegs.GPR.n.a1.UL[0],
 					cpuRegs.GPR.n.a2.UL[0],
 					cpuRegs.GPR.n.a3.UL[0],
 					cpuRegs.GPR.n.t0.UL[0],
 					cpuRegs.GPR.n.t1.UL[0],
 					cpuRegs.GPR.n.t2.UL[0],
-					cpuRegs.GPR.n.t3.UL[0]
+					cpuRegs.GPR.n.t3.UL[0],
+				};
+
+				// Pretty much what this does is find instances of string arguments and remaps them.
+				// Instead of the addresse(s) being relative to the PS2 address space, make them relative to program memory.
+				// (This fixes issue #2865) 
+				int curRegArg = 0;
+				for (int i = 0; 1; i++)
+				{
+					if (fmt[i] == '\0')
+						break;
+
+					if (fmt[i] == '%')
+					{
+						// The extra check here is to be compatible with "%%s"
+						if (i == 0 || fmt[i - 1] != '%') {
+							if (fmt[i + 1] == 's') {
+								regs[curRegArg] = (u64)PSM(regs[curRegArg]); // PS2 Address -> PCSX2 Address
+							}
+							curRegArg++;
+						}
+					}
+				}
+
+				sysConLog(fmt,
+					regs[0],
+					regs[1],
+					regs[2],
+					regs[3],
+					regs[4],
+					regs[5],
+					regs[6]
 				);
 			}
 			break;

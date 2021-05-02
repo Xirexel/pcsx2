@@ -29,7 +29,11 @@
 #include "VUmicro.h"
 
 #include "ps2/HwInternal.h"
-
+#ifdef _WIN32
+#include "PAD/Windows/PAD.h"
+#else
+#include "PAD/Linux/PAD.h"
+#endif
 #include "Sio.h"
 
 #ifndef DISABLE_RECORDING
@@ -211,7 +215,7 @@ static void vSyncInfoCalc(vSyncTimingInfo* info, Fixed100 framesPerSecond, u32 s
 	// Jak II - random speedups
 	// Shadow of Rome - FMV audio issues
 	const u64 HalfFrame = Frame / 2;
-	const u64 Blank = Scanline * (gsVideoMode == GS_VideoMode::NTSC ? 26 : 22);
+	const u64 Blank = Scanline * (gsVideoMode == GS_VideoMode::NTSC ? 22 : 26);
 	const u64 Render = HalfFrame - Blank;
 	const u64 GSBlank = Scanline * 3.5; // GS VBlank/CSR Swap happens roughly 3.5 Scanlines after VBlank Start
 
@@ -278,16 +282,37 @@ const char* ReportVideoMode()
 
 Fixed100 GetVerticalFrequency()
 {
+	// Note about NTSC/PAL "double strike" modes:
+	// NTSC and PAL can be configured in such a way to produce a non-interlaced signal.
+	// This involves modifying the signal slightly by either adding or subtracting a line (526/524 instead of 525)
+	// which has the function of causing the odd and even fields to strike the same lines.
+	// Doing this modifies the vertical refresh rate slightly. Beatmania is sensitive to this and
+	// not accounting for it will cause the audio and video to become desynced.
+	//
+	// In the case of the GS, I believe it adds a halfline to the vertical back porch but more research is needed.
+	// For now I'm just going to subtract off the config setting.
+	//
+	// According to the GS:
+	// NTSC (interlaced): 59.94
+	// NTSC (non-interlaced): 59.82
+	// PAL (interlaced): 50.00
+	// PAL (non-interlaced): 49.76
+	//
+	// More Information:
+	// https://web.archive.org/web/20201031235528/https://wiki.nesdev.com/w/index.php/NTSC_video
+	// https://web.archive.org/web/20201102100937/http://forums.nesdev.com/viewtopic.php?t=7909
+	// https://web.archive.org/web/20120629231826fw_/http://ntsc-tv.com/index.html
+	// https://web.archive.org/web/20200831051302/https://www.hdretrovision.com/240p/
 	switch (gsVideoMode)
 	{
 	case GS_VideoMode::Uninitialized: // SetGsCrt hasn't executed yet, give some temporary values.
 		return 60;
 	case GS_VideoMode::PAL:
 	case GS_VideoMode::DVD_PAL:
-		return EmuConfig.GS.FrameratePAL;
+		return gsIsInterlaced ? EmuConfig.GS.FrameratePAL : EmuConfig.GS.FrameratePAL - 0.24f;
 	case GS_VideoMode::NTSC:
 	case GS_VideoMode::DVD_NTSC:
-		return EmuConfig.GS.FramerateNTSC;
+		return gsIsInterlaced ? EmuConfig.GS.FramerateNTSC : EmuConfig.GS.FramerateNTSC - 0.11f;
 	case GS_VideoMode::SDTV_480P:
 		return 59.94;
 	case GS_VideoMode::HDTV_1080P:
@@ -452,6 +477,15 @@ static __fi void frameLimit()
 
 static __fi void VSyncStart(u32 sCycle)
 {
+#ifndef DISABLE_RECORDING
+	if (g_Conf->EmuOptions.EnableRecordingTools)
+	{
+		// It is imperative that any frame locking that must happen occurs before Vsync is started
+		// Not doing so would sacrifice a frame of a savestate-based recording when loading any savestate
+		g_InputRecordingControls.HandlePausingAndLocking();
+	}
+#endif
+
 	frameLimit(); // limit FPS
 	gsPostVsyncStart(); // MUST be after framelimit; doing so before causes funk with frame times!
 
@@ -506,12 +540,17 @@ static __fi void GSVSync()
 
 static __fi void VSyncEnd(u32 sCycle)
 {
+#ifndef DISABLE_RECORDING
+	if (g_Conf->EmuOptions.EnableRecordingTools)
+	{
+		g_InputRecordingControls.CheckPauseStatus();
+	}
+#endif
+
 	if(EmuConfig.Trace.Enabled && EmuConfig.Trace.EE.m_EnableAll)
 		SysTrace.EE.Counters.Write( "    ================  EE COUNTER VSYNC END (frame: %d)  ================", g_FrameCount );
 
 	g_FrameCount++;
-
-
 
 	hwIntcIrq(INTC_VBLANK_E);  // HW Irq
 	psxVBlankEnd(); // psxCounters vBlank End
@@ -591,12 +630,6 @@ __fi void rcntUpdate_vSync()
 	}
 	else	// VSYNC end / VRENDER begin
 	{
-#ifndef DISABLE_RECORDING
-		if (g_Conf->EmuOptions.EnableRecordingTools)
-		{
-			g_InputRecordingControls.HandleFrameAdvanceAndPausing();
-		}
-#endif
 		VSyncStart(vsyncCounter.sCycle);
 
 		vsyncCounter.sCycle += vSyncInfo.Render;
@@ -1018,6 +1051,9 @@ void SaveStateBase::rcntFreeze()
 	Freeze( vsyncCounter );
 	Freeze( nextCounter );
 	Freeze( nextsCounter );
+	Freeze( vSyncInfo );
+	Freeze( gsVideoMode );
+	Freeze( gsIsInterlaced );
 
 	if( IsLoading() )
 	{

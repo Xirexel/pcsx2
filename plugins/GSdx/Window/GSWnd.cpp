@@ -26,14 +26,14 @@
 void GSWndGL::PopulateGlFunction()
 {
 	// Load mandatory function pointer
-#define GL_EXT_LOAD(ext)     *(void**)&(ext) = GetProcAddress(#ext, false)
+#define GL_EXT_LOAD(ext) *(void**)&(ext) = GetProcAddress(#ext, false)
 	// Load extra function pointer
 #define GL_EXT_LOAD_OPT(ext) *(void**)&(ext) = GetProcAddress(#ext, true)
 
 #include "PFN_WND.h"
 
 	// GL1.X mess
-#ifdef __unix__
+#if defined(__unix__) || defined(__APPLE__)
 	GL_EXT_LOAD(glBlendFuncSeparate);
 #endif
 	GL_EXT_LOAD_OPT(glTexturePageCommitmentEXT);
