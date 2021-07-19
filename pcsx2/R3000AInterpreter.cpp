@@ -1,5 +1,5 @@
 /*  PCSX2 - PS2 Emulator for PCs
- *  Copyright (C) 2002-2010  PCSX2 Dev Team
+ *  Copyright (C) 2002-2021  PCSX2 Dev Team
  *
  *  PCSX2 is free software: you can redistribute it and/or modify it under the terms
  *  of the GNU Lesser General Public License as published by the Free Software Found-
@@ -19,7 +19,7 @@
 #include "App.h" // For host irx injection hack
 
 #include "R5900OpcodeTables.h"
-#include "../DebugTools/Breakpoints.h"
+#include "DebugTools/Breakpoints.h"
 
 using namespace R3000A;
 
@@ -250,6 +250,9 @@ static __fi void execI()
 }
 
 static void doBranch(s32 tar) {
+	if (tar == 0x0)
+		DevCon.Warning("[R3000 Interpreter] Warning: Branch to 0x0!");
+
 	branch2 = iopIsDelaySlot = true;
 	branchPC = tar;
 	execI();

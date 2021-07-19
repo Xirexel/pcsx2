@@ -27,7 +27,7 @@ void USBasync(u32 cycles) {}
 void USBshutdown() {}
 void USBclose() {}
 s32 USBopen(void* pDsp) { return 0; }
-s32 USBfreeze(int mode, freezeData* data) { return 0; }
+s32 USBfreeze(FreezeAction mode, freezeData* data) { return 0; }
 
 u8 USBread8(u32 addr) { return 0; }
 u16 USBread16(u32 addr) { return 0; }
@@ -35,10 +35,6 @@ u32 USBread32(u32 addr) { return 0; }
 void USBwrite8(u32 addr, u8 value) {}
 void USBwrite16(u32 addr, u16 value) {}
 void USBwrite32(u32 addr, u32 value) {}
-
-void USBDoFreezeOut(void* dest) {}
-void USBDoFreezeIn(pxInputStream& infp) {}
-
 
 void USBsetRAM(void* mem) { ram = static_cast<u8*>(mem); }
 

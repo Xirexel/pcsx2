@@ -25,9 +25,9 @@
 // Most stuff is based on Qemu 1.7 USB soundcard passthrough code.
 
 #include "PrecompiledHeader.h"
-#include "../qemu-usb/vl.h"
-#include "../qemu-usb/desc.h"
-#include "../shared/inifile_usb.h"
+#include "USB/qemu-usb/vl.h"
+#include "USB/qemu-usb/desc.h"
+#include "USB/shared/inifile_usb.h"
 #include <assert.h>
 
 #include "audio.h"
@@ -1053,24 +1053,24 @@ namespace usb_mic
 		return RESULT_CANCELED;
 	}
 
-	int HeadsetDevice::Freeze(int mode, USBDevice* dev, void* data)
+	int HeadsetDevice::Freeze(FreezeAction mode, USBDevice* dev, void* data)
 	{
 		HeadsetState* s = (HeadsetState*)dev;
 		if (!s)
 			return 0;
 		switch (mode)
 		{
-			case FREEZE_LOAD:
+			case FreezeAction::Load:
 				s->f = *(HeadsetState::freeze*)data;
 				if (s->audsrc)
 					s->audsrc->SetResampling(s->f.in.srate);
 				if (s->audsink)
 					s->audsink->SetResampling(s->f.out.srate);
 				return sizeof(HeadsetState::freeze);
-			case FREEZE_SAVE:
+			case FreezeAction::Save:
 				*(HeadsetState::freeze*)data = s->f;
 				return sizeof(HeadsetState::freeze);
-			case FREEZE_SIZE:
+			case FreezeAction::Size:
 				return sizeof(HeadsetState::freeze);
 			default:
 				break;

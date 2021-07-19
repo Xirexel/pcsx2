@@ -2,62 +2,58 @@ include(macros/GlibCompileResourcesSupport)
 
 
 if (openSUSE)
-    # openSUSE don't install wx in a standard library system
-    # path. Let's bypass the dynamic linker and hardcode the path.
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+	# openSUSE don't install wx in a standard library system
+	# path. Let's bypass the dynamic linker and hardcode the path.
+	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 endif()
 
 # Check that people use the good file
 if(NOT TOP_CMAKE_WAS_SOURCED)
-    message(FATAL_ERROR "
-    You did not 'cmake' the good CMakeLists.txt file. Use the one in the top dir.
-    It is advice to delete all wrongly generated cmake stuff => CMakeFiles & CMakeCache.txt")
+	message(FATAL_ERROR "
+	You did not 'cmake' the good CMakeLists.txt file. Use the one in the top dir.
+	It is advice to delete all wrongly generated cmake stuff => CMakeFiles & CMakeCache.txt")
 endif()
 
+include_directories ("${CMAKE_SOURCE_DIR}/3rdparty/xbyak/")
 
 set(CommonFlags
-    -fno-strict-aliasing
-    -Wstrict-aliasing # Allow to track strict aliasing issue.
-    -Wno-parentheses
-    -Wno-missing-braces
-    -DWX_PRECOMP
+	-fno-strict-aliasing
+	-Wstrict-aliasing # Allow to track strict aliasing issue.
+	-Wno-parentheses
+	-Wno-missing-braces
+	-Wno-unknown-pragmas
+	-DWX_PRECOMP
 	)
 
-# Largely turning off because LegacyPluginAPI_Common in Plugins.h spams really badly in gcc 8 due to the memzero initialization.
-# Should probably be fixed properly, but for now this should work.
 if(GCC_VERSION VERSION_EQUAL "8.0" OR GCC_VERSION VERSION_GREATER "8.0")
-    set(CommonFlags
-	    ${CommonFlags}
-	    -Wno-class-memaccess
-    )
+	# gs is pretty bad at this
+	set(CommonFlags ${CommonFlags} -Wno-packed-not-aligned -Wno-class-memaccess)
 endif()
 
-
-
 if ("${PGO}" STREQUAL "generate")
-    set(pcsx2FinalFlags -fprofile-generate)
+	set(pcsx2FinalFlags -fprofile-generate)
 elseif("${PGO}" STREQUAL "use")
-    set(pcsx2FinalFlags -fprofile-use)
+	set(pcsx2FinalFlags -fprofile-use)
 else()
-    set(pcsx2FinalFlags "")
+	set(pcsx2FinalFlags "")
 endif()
 
 set(pcsx2FinalFlags ${pcsx2FinalFlags} ${CommonFlags})
 
 if(PORTAUDIO_FOUND)
-    set(pcsx2FinalFlags ${pcsx2FinalFlags} -DSPU2X_PORTAUDIO)
+	set(pcsx2FinalFlags ${pcsx2FinalFlags} -DSPU2X_PORTAUDIO)
 endif()
 
 if(PULSEAUDIO_FOUND)
-    set(pcsx2FinalFlags ${pcsx2FinalFlags} -DSPU2X_PULSEAUDIO)
+	set(pcsx2FinalFlags ${pcsx2FinalFlags} -DSPU2X_PULSEAUDIO)
 endif()
 
 if(XDG_STD)
-    set(pcsx2FinalFlags ${pcsx2FinalFlags} -DXDG_STD)
+	set(pcsx2FinalFlags ${pcsx2FinalFlags} -DXDG_STD)
 endif()
 
 if(SDL_FOUND OR SDL2_FOUND)
-    set(pcsx2FinalFlags ${pcsx2FinalFlags} -DSDL_BUILD)
+	set(pcsx2FinalFlags ${pcsx2FinalFlags} -DSDL_BUILD)
 endif()
 
 
@@ -103,7 +99,6 @@ set(pcsx2Sources
 	Patch.cpp
 	Patch_Memory.cpp
 	Pcsx2Config.cpp
-	PluginManager.cpp
 	PrecompiledHeader.cpp
 	R3000A.cpp
 	R3000AInterpreter.cpp
@@ -173,7 +168,6 @@ set(pcsx2Headers
 	MemoryTypes.h
 	Patch.h
 	PathDefs.h
-	Plugins.h
 	PrecompiledHeader.h
 	R3000A.h
 	R5900Exceptions.h
@@ -214,7 +208,7 @@ set(pcsx2CDVDSources
 	CDVD/IsoFS/IsoFile.cpp
 	CDVD/IsoFS/IsoFSCDVD.cpp
 	CDVD/IsoFS/IsoFS.cpp
-    )
+	)
 
 # CDVD headers
 set(pcsx2CDVDHeaders
@@ -260,17 +254,16 @@ set(pcsx2SPU2Sources
 	SPU2/Timestretcher.cpp
 	SPU2/Wavedump_wav.cpp
 	SPU2/WavFile.cpp
-	SPU2/Linux/Alsa.cpp
 	SPU2/Linux/CfgHelpers.cpp
 	SPU2/Linux/Config.cpp
 	SPU2/Linux/ConfigDebug.cpp
 	SPU2/Linux/ConfigSoundTouch.cpp
 	SPU2/Linux/Dialogs.cpp
 	SPU2/wx/wxConfig.cpp
-    )
+	)
 
 if(PORTAUDIO_FOUND)
-    set(pcsx2SPU2Sources ${pcsx2SPU2Sources} SPU2/SndOut_Portaudio.cpp)
+	set(pcsx2SPU2Sources ${pcsx2SPU2Sources} SPU2/SndOut_Portaudio.cpp)
 endif()
 
 # SPU2 headers
@@ -288,7 +281,6 @@ set(pcsx2SPU2Headers
 	SPU2/SndOut.h
 	SPU2/spdif.h
 	SPU2/WavFile.h
-	SPU2/Linux/Alsa.h
 	SPU2/Linux/Config.h
 	SPU2/Linux/Dialogs.h
 	SPU2/wx/wxConfig.h
@@ -296,22 +288,22 @@ set(pcsx2SPU2Headers
 
 # DEV9 UI sources
 compile_gresources( pcsx2DEV9UISources
-					pcsx2DEV9UIXML 
-					TYPE EMBED_C
-					RESOURCES "DEV9/Linux/dev9.ui"
-					PREFIX "/net/pcsx2/dev9"
-					COMPRESS_ALL
-					STRIPBLANKS_ALL
+                    pcsx2DEV9UIXML
+                    TYPE EMBED_C
+                    RESOURCES "DEV9/Linux/dev9.ui"
+                    PREFIX "/net/pcsx2/dev9"
+                    COMPRESS_ALL
+                    STRIPBLANKS_ALL
 )
 
 # DEV9 UI headers
 compile_gresources( pcsx2DEV9UIHeaders
-					pcsx2DEV9UIXML
-					TYPE EMBED_H
-					RESOURCES "DEV9/Linux/dev9.ui"
-					PREFIX "/net/pcsx2/dev9"
-					COMPRESS_ALL
-					STRIPBLANKS_ALL
+                    pcsx2DEV9UIXML
+                    TYPE EMBED_H
+                    RESOURCES "DEV9/Linux/dev9.ui"
+                    PREFIX "/net/pcsx2/dev9"
+                    COMPRESS_ALL
+                    STRIPBLANKS_ALL
 )
 
 # DEV9 sources
@@ -327,6 +319,16 @@ set(pcsx2DEV9Sources
 	DEV9/ATA/ATA_State.cpp
 	DEV9/ATA/ATA_Transfer.cpp
 	DEV9/ATA/HddCreate.cpp
+	DEV9/InternalServers/DHCP_Server.cpp
+	DEV9/PacketReader/IP/UDP/DHCP/DHCP_Options.cpp
+	DEV9/PacketReader/IP/UDP/DHCP/DHCP_Packet.cpp
+	DEV9/PacketReader/IP/UDP/DNS/DNS_Classes.cpp
+	DEV9/PacketReader/IP/UDP/DNS/DNS_Packet.cpp
+	DEV9/PacketReader/IP/UDP/UDP_Packet.cpp
+	DEV9/PacketReader/IP/IP_Options.cpp
+	DEV9/PacketReader/IP/IP_Packet.cpp
+	DEV9/PacketReader/EthernetFrame.cpp
+	DEV9/PacketReader/NetLib.cpp
 	DEV9/smap.cpp
 	DEV9/DEV9.cpp
 	DEV9/flash.cpp
@@ -342,8 +344,23 @@ set(pcsx2DEV9Headers
 	DEV9/ATA/ATA.h
 	DEV9/ATA/HddCreate.h
 	DEV9/DEV9.h
+	DEV9/InternalServers/DHCP_Server.cpp
 	DEV9/net.h
+	DEV9/PacketReader/IP/UDP/DHCP/DHCP_Options.h
+	DEV9/PacketReader/IP/UDP/DHCP/DHCP_Packet.h
+	DEV9/PacketReader/IP/UDP/DNS/DNS_Classes.h
+	DEV9/PacketReader/IP/UDP/DNS/DNS_Enums.h
+	DEV9/PacketReader/IP/UDP/DNS/DNS_Packet.h
+	DEV9/PacketReader/IP/UDP/UDP_Packet.h
+	DEV9/PacketReader/IP/IP_Address.h
+	DEV9/PacketReader/IP/IP_Options.h
+	DEV9/PacketReader/IP/IP_Packet.h
+	DEV9/PacketReader/IP/IP_Payload.h
+	DEV9/PacketReader/EthernetFrame.h
+	DEV9/PacketReader/NetLib.h
+	DEV9/PacketReader/Payload.h
 	DEV9/pcap_io.h
+	DEV9/SimpleQueue.h
 	DEV9/smap.h
 	${pcsx2DEV9UIHeaders}
 	)
@@ -375,7 +392,8 @@ set(pcsx2USBSources
 	USB/usb-mic/usb-mic-singstar.cpp
 	USB/usb-mic/usb-mic-logitech.cpp
 	USB/usb-mic/usb-headset.cpp
-	USB/usb-eyetoy/jpgd/jpgd.cpp
+	../3rdparty/jpgd/jpgd.cpp
+	../3rdparty/jpgd/jpge.cpp
 	USB/usb-eyetoy/jo_mpeg.cpp
 	USB/usb-eyetoy/usb-eyetoy-webcam.cpp
 	USB/usb-hid/usb-hid.cpp
@@ -384,8 +402,6 @@ set(pcsx2USBSources
 	USB/shared/ringbuffer.cpp
 	USB/icon_buzz_24.cpp
 	USB/usb-msd/usb-msd-gtk.cpp
-	USB/usb-pad/joydev/joydev.cpp
-	USB/usb-pad/joydev/joydev-gtk.cpp
 	USB/usb-pad/evdev/shared-gtk.cpp
 	USB/usb-pad/evdev/evdev-ff.cpp
 	USB/usb-pad/evdev/evdev.cpp
@@ -431,7 +447,8 @@ set(pcsx2USBHeaders
 	USB/usb-mic/usb-mic-singstar.h
 	USB/usb-mic/usb-headset.h
 	USB/usb-mic/audiodev-noop.h
-	USB/usb-eyetoy/jpgd/jpgd.h
+	../3rdparty/jpgd/jpgd.h
+	../3rdparty/jpgd/jpge.h
 	USB/usb-eyetoy/jo_mpeg.h
 	USB/usb-eyetoy/videodeviceproxy.h
 	USB/usb-eyetoy/videodev.h
@@ -449,7 +466,6 @@ set(pcsx2USBHeaders
 	USB/linux/util.h
 	USB/gtk.h
 	USB/icon_buzz_24.h
-	USB/usb-pad/joydev/joydev.h
 	USB/usb-pad/evdev/shared.h
 	USB/usb-pad/evdev/evdev.h
 	USB/usb-pad/evdev/evdev-ff.h
@@ -457,11 +473,12 @@ set(pcsx2USBHeaders
 	USB/usb-hid/evdev/evdev.cpp
 	USB/usb-eyetoy/cam-linux.h
 	USB/qemu-usb/input-keymap-linux-to-qcode.h
-    )
+	)
+include_directories ("../3rdparty/jpgd/")
 
 if(PULSEAUDIO_FOUND)
-    set(pcsx2USBSources ${pcsx2USBSources} USB/usb-mic/audiodev-pulse.cpp)
-    set(pcsx2USBHeaders ${pcsx2USBHeaders} USB/usb-mic/audiodev-pulse.h)
+	set(pcsx2USBSources ${pcsx2USBSources} USB/usb-mic/audiodev-pulse.cpp)
+	set(pcsx2USBHeaders ${pcsx2USBHeaders} USB/usb-mic/audiodev-pulse.h)
 endif()
 
 
@@ -474,84 +491,251 @@ include_directories ("${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/")
 file(MAKE_DIRECTORY ${PADImgHeader})
 
 foreach(result_file IN ITEMS
-        analog circle cross dp_bottom dp_left dp_right dp_up dualshock2
-        joystick_cursor l1 r1 l2 r2 l3 r3 select square start triangle arrow_up
-        arrow_bottom arrow_left arrow_right)
-    add_custom_command(
-        OUTPUT  "${PADImgHeader}/${result_file}.h"
-        COMMAND perl ${CMAKE_SOURCE_DIR}/linux_various/hex2h.pl "${PADImg}/${result_file}.png" "${PADImgHeader}/${result_file}" )
+		analog circle cross dp_bottom dp_left dp_right dp_up dualshock2
+		joystick_cursor l1 r1 l2 r2 l3 r3 select square start triangle arrow_up
+		arrow_bottom arrow_left arrow_right)
+	add_custom_command(
+		OUTPUT  "${PADImgHeader}/${result_file}.h"
+		COMMAND perl ${CMAKE_SOURCE_DIR}/linux_various/hex2h.pl "${PADImg}/${result_file}.png" "${PADImgHeader}/${result_file}" )
 endforeach()
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.h
-    COMMAND glib-compile-resources --sourcedir "${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res" --generate-header
-    --c-name PAD_res "${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/PAD-res.xml" --target=${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.h
-    DEPENDS ${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/PAD-res.xml ${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/game_controller_db.txt)
+	OUTPUT ${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.h
+	COMMAND glib-compile-resources --sourcedir "${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res" --generate-header
+	--c-name PAD_res "${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/PAD-res.xml" --target=${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.h
+	DEPENDS ${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/PAD-res.xml ${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/game_controller_db.txt)
 
 add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.cpp
-    COMMAND glib-compile-resources --sourcedir "${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res" --generate-source
-    --c-name PAD_res "${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/PAD-res.xml" --target=${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.cpp
-    DEPENDS ${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/PAD-res.xml ${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/game_controller_db.txt)
+	OUTPUT ${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.cpp
+	COMMAND glib-compile-resources --sourcedir "${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res" --generate-source
+	--c-name PAD_res "${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/PAD-res.xml" --target=${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.cpp
+	DEPENDS ${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/PAD-res.xml ${CMAKE_SOURCE_DIR}/pcsx2/PAD/Linux/res/game_controller_db.txt)
 
 
 # PAD/Linux sources 
 set(pcsx2PADSources
-    PAD/Linux/controller.cpp
-    PAD/Linux/GamePad.cpp
-    PAD/Linux/SDL/joystick.cpp
-    PAD/Linux/keyboard.cpp
-    PAD/Linux/KeyStatus.cpp
-    PAD/Linux/PAD.cpp
-    PAD/Linux/state_management.cpp
-    PAD/Linux/wx_dialog/dialog.cpp
-    PAD/Linux/wx_dialog/opPanel.cpp
-    PAD/Linux/wx_dialog/GamepadConfiguration.cpp
-    PAD/Linux/wx_dialog/JoystickConfiguration.cpp
-    PAD/Linux/ini.cpp
-    PAD/Linux/linux.cpp
-    ${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.cpp
-    )
+	PAD/Linux/Device.cpp
+	PAD/Linux/InputManager.cpp
+	PAD/Linux/SDL/joystick.cpp
+	PAD/Linux/keyboard.cpp
+	PAD/Linux/KeyStatus.cpp
+	PAD/Linux/PAD.cpp
+	PAD/Linux/state_management.cpp
+	PAD/Linux/wx_dialog/dialog.cpp
+	PAD/Linux/wx_dialog/opPanel.cpp
+	PAD/Linux/wx_dialog/GamepadConfiguration.cpp
+	PAD/Linux/wx_dialog/JoystickConfiguration.cpp
+	PAD/Linux/Config.cpp
+	PAD/Linux/linux.cpp
+	${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.cpp
+	)
 
 # PAD/Linux headers
 set(pcsx2PADHeaders
-    PAD/Linux/bitwise.h
-    PAD/Linux/controller.h
-    PAD/Linux/GamePad.h
-    PAD/Linux/SDL/joystick.h
-    PAD/Linux/keyboard.h
-    PAD/Linux/KeyStatus.h
-    PAD/Linux/PAD.h
-    PAD/Linux/state_management.h
-    PAD/Linux/wx_dialog/opPanel.h
-    PAD/Linux/wx_dialog/GamepadConfiguration.h
-    PAD/Linux/wx_dialog/JoystickConfiguration.h
-    ${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.h
-    # images
-    ${PADImgHeader}/analog.h
-    ${PADImgHeader}/circle.h
-    ${PADImgHeader}/cross.h
-    ${PADImgHeader}/dp_bottom.h
-    ${PADImgHeader}/dp_left.h
-    ${PADImgHeader}/dp_right.h
-    ${PADImgHeader}/dp_up.h
-    ${PADImgHeader}/dualshock2.h
-    ${PADImgHeader}/joystick_cursor.h
-    ${PADImgHeader}/l1.h
-    ${PADImgHeader}/r1.h
-    ${PADImgHeader}/l2.h
-    ${PADImgHeader}/r2.h
-    ${PADImgHeader}/l3.h
-    ${PADImgHeader}/r3.h
-    ${PADImgHeader}/select.h
-    ${PADImgHeader}/square.h
-    ${PADImgHeader}/start.h
-    ${PADImgHeader}/triangle.h
-    ${PADImgHeader}/arrow_up.h
-    ${PADImgHeader}/arrow_bottom.h
-    ${PADImgHeader}/arrow_left.h
-    ${PADImgHeader}/arrow_right.h
-    )
+	PAD/Linux/bitwise.h
+	PAD/Linux/Config.h
+	PAD/Linux/Device.h
+	PAD/Linux/Global.h
+	PAD/Linux/InputManager.h
+	PAD/Linux/SDL/joystick.h
+	PAD/Linux/keyboard.h
+	PAD/Linux/KeyStatus.h
+	PAD/Linux/PAD.h
+	PAD/Linux/state_management.h
+	PAD/Linux/wx_dialog/opPanel.h
+	PAD/Linux/wx_dialog/GamepadConfiguration.h
+	PAD/Linux/wx_dialog/JoystickConfiguration.h
+	${CMAKE_BINARY_DIR}/pcsx2/PAD/Linux/resources_pad.h
+	# images
+	${PADImgHeader}/analog.h
+	${PADImgHeader}/circle.h
+	${PADImgHeader}/cross.h
+	${PADImgHeader}/dp_bottom.h
+	${PADImgHeader}/dp_left.h
+	${PADImgHeader}/dp_right.h
+	${PADImgHeader}/dp_up.h
+	${PADImgHeader}/dualshock2.h
+	${PADImgHeader}/joystick_cursor.h
+	${PADImgHeader}/l1.h
+	${PADImgHeader}/r1.h
+	${PADImgHeader}/l2.h
+	${PADImgHeader}/r2.h
+	${PADImgHeader}/l3.h
+	${PADImgHeader}/r3.h
+	${PADImgHeader}/select.h
+	${PADImgHeader}/square.h
+	${PADImgHeader}/start.h
+	${PADImgHeader}/triangle.h
+	${PADImgHeader}/arrow_up.h
+	${PADImgHeader}/arrow_bottom.h
+	${PADImgHeader}/arrow_left.h
+	${PADImgHeader}/arrow_right.h
+	)
+
+# GS sources
+set(pcsx2GSSources
+	GS/GS.cpp
+	GS/GSAlignedClass.cpp
+	GS/GSBlock.cpp
+	GS/GSCapture.cpp
+	GS/GSClut.cpp
+	GS/GSCodeBuffer.cpp
+	GS/GSCrc.cpp
+	GS/GSDrawingContext.cpp
+	GS/GSDump.cpp
+	GS/GSLocalMemory.cpp
+	GS/GSLzma.cpp
+	GS/GSPerfMon.cpp
+	GS/GSPng.cpp
+	GS/GSState.cpp
+	GS/GSTables.cpp
+	GS/GSUtil.cpp
+	GS/GSVector.cpp
+	GS/GS_res.cpp
+	GS/Renderers/Common/GSDevice.cpp
+	GS/Renderers/Common/GSDirtyRect.cpp
+	GS/Renderers/Common/GSFunctionMap.cpp
+	GS/Renderers/Common/GSOsdManager.cpp
+	GS/Renderers/Common/GSRenderer.cpp
+	GS/Renderers/Common/GSTexture.cpp
+	GS/Renderers/Common/GSVertexTrace.cpp
+	GS/Renderers/Null/GSDeviceNull.cpp
+	GS/Renderers/Null/GSRendererNull.cpp
+	GS/Renderers/Null/GSTextureNull.cpp
+	GS/Renderers/HW/GSHwHack.cpp
+	GS/Renderers/HW/GSRendererHW.cpp
+	GS/Renderers/HW/GSTextureCache.cpp
+	GS/Renderers/SW/GSDrawScanline.cpp
+	GS/Renderers/SW/GSDrawScanlineCodeGenerator.cpp
+	GS/Renderers/SW/GSDrawScanlineCodeGenerator.x64.cpp
+	GS/Renderers/SW/GSDrawScanlineCodeGenerator.x64.avx.cpp
+	GS/Renderers/SW/GSDrawScanlineCodeGenerator.x64.avx2.cpp
+	GS/Renderers/SW/GSDrawScanlineCodeGenerator.x86.cpp
+	GS/Renderers/SW/GSDrawScanlineCodeGenerator.x86.avx.cpp
+	GS/Renderers/SW/GSDrawScanlineCodeGenerator.x86.avx2.cpp
+	GS/Renderers/SW/GSRasterizer.cpp
+	GS/Renderers/SW/GSRendererSW.cpp
+	GS/Renderers/SW/GSSetupPrimCodeGenerator.cpp
+	GS/Renderers/SW/GSSetupPrimCodeGenerator.x64.cpp
+	GS/Renderers/SW/GSSetupPrimCodeGenerator.x64.avx.cpp
+	GS/Renderers/SW/GSSetupPrimCodeGenerator.x64.avx2.cpp
+	GS/Renderers/SW/GSSetupPrimCodeGenerator.x86.cpp
+	GS/Renderers/SW/GSSetupPrimCodeGenerator.x86.avx.cpp
+	GS/Renderers/SW/GSSetupPrimCodeGenerator.x86.avx2.cpp
+	GS/Renderers/SW/GSTextureCacheSW.cpp
+	GS/Renderers/SW/GSTextureSW.cpp
+	GS/Renderers/OpenGL/GLLoader.cpp
+	GS/Renderers/OpenGL/GLState.cpp
+	GS/Renderers/OpenGL/GSDeviceOGL.cpp
+	GS/Renderers/OpenGL/GSRendererOGL.cpp
+	GS/Renderers/OpenGL/GSShaderOGL.cpp
+	GS/Renderers/OpenGL/GSTextureCacheOGL.cpp
+	GS/Renderers/OpenGL/GSTextureOGL.cpp
+	GS/Window/GSSetting.cpp
+	GS/Window/GSWnd.cpp
+	GS/Window/GSLinuxDialog.cpp
+	GS/Window/GSWndEGL.cpp
+	)
+
+# GS headers
+set(pcsx2GSHeaders
+	GS/config.h
+	GS/GSAlignedClass.h
+	GS/GSBlock.h
+	GS/GSCapture.h
+	GS/GSClut.h
+	GS/GSCodeBuffer.h
+	GS/GSCrc.h
+	GS/GSDrawingContext.h
+	GS/GSDrawingEnvironment.h
+	GS/GSDump.h
+	GS/GS_res.h
+	GS/GS_types.h
+	GS/GS_codegen.h
+	GS/GS.h
+	GS/GSLocalMemory.h
+	GS/GSLzma.h
+	GS/GSPerfMon.h
+	GS/GSPng.h
+	GS/GSState.h
+	GS/GSTables.h
+	GS/GSThread_CXX11.h
+	GS/GSThread.h
+	GS/GSUtil.h
+	GS/GSVector.h
+	GS/GSVector4.h
+	GS/GSVector4i.h
+	GS/GSVector8.h
+	GS/GSVector8i.h
+	GS/Renderers/Common/GSDevice.h
+	GS/Renderers/Common/GSDirtyRect.h
+	GS/Renderers/Common/GSFastList.h
+	GS/Renderers/Common/GSFunctionMap.h
+	GS/Renderers/Common/GSOsdManager.h
+	GS/Renderers/Common/GSRenderer.h
+	GS/Renderers/Common/GSTexture.h
+	GS/Renderers/Common/GSVertex.h
+	GS/Renderers/Common/GSVertexList.h
+	GS/Renderers/Common/GSVertexTrace.h
+	GS/Renderers/Null/GSDeviceNull.h
+	GS/Renderers/Null/GSRendererNull.h
+	GS/Renderers/Null/GSTextureNull.h
+	GS/Renderers/HW/GSRendererHW.h
+	GS/Renderers/HW/GSTextureCache.h
+	GS/Renderers/HW/GSVertexHW.h
+	GS/Renderers/SW/GSDrawScanlineCodeGenerator.h
+	GS/Renderers/SW/GSDrawScanline.h
+	GS/Renderers/SW/GSRasterizer.h
+	GS/Renderers/SW/GSRendererSW.h
+	GS/Renderers/SW/GSScanlineEnvironment.h
+	GS/Renderers/SW/GSSetupPrimCodeGenerator.h
+	GS/Renderers/SW/GSTextureCacheSW.h
+	GS/Renderers/SW/GSTextureSW.h
+	GS/Renderers/SW/GSVertexSW.h
+	GS/Renderers/OpenGL/GLLoader.h
+	GS/Renderers/OpenGL/GLState.h
+	GS/Renderers/OpenGL/GSDeviceOGL.h
+	GS/Renderers/OpenGL/GSRendererOGL.h
+	GS/Renderers/OpenGL/GSShaderOGL.h
+	GS/Renderers/OpenGL/GSTextureCacheOGL.h
+	GS/Renderers/OpenGL/GSTextureOGL.h
+	GS/Renderers/OpenGL/GSUniformBufferOGL.h
+	GS/Renderers/OpenGL/GSVertexArrayOGL.h
+	GS/Window/GSCaptureDlg.h
+	GS/Window/GSDialog.h
+	GS/Window/GSSetting.h
+	GS/Window/GSSettingsDlg.h
+	GS/Window/GSWnd.h
+	GS/Window/GSWndEGL.h
+	)
+
+# GS resources
+set(pcsx2GSResources
+	GS/res/fxaa.fx
+	GS/res/glsl/common_header.glsl
+	GS/res/glsl/convert.glsl
+	GS/res/glsl/interlace.glsl
+	GS/res/glsl/merge.glsl
+	GS/res/glsl/shadeboost.glsl
+	GS/res/glsl/tfx_fs.glsl
+	GS/res/glsl/tfx_vgs.glsl)
+
+set(GSBin "${CMAKE_BINARY_DIR}/pcsx2/GS")
+include_directories ("${GSBin}")
+file(MAKE_DIRECTORY ${GSBin})
+
+add_custom_command(
+	OUTPUT ${CMAKE_BINARY_DIR}/pcsx2/GS/GS_res.h
+	COMMAND glib-compile-resources --sourcedir "${CMAKE_SOURCE_DIR}/pcsx2/GS/res" --generate-header
+	--c-name GS_res "${CMAKE_SOURCE_DIR}/pcsx2/GS/res/GS-res.xml" --target=${CMAKE_BINARY_DIR}/pcsx2/GS/GS_res.h
+	DEPENDS ${pcsx2GSResources})
+
+add_custom_command(
+	OUTPUT ${CMAKE_BINARY_DIR}/pcsx2/GS/GS_res.cpp
+	COMMAND glib-compile-resources --sourcedir "${CMAKE_SOURCE_DIR}/pcsx2/GS/res" --generate-source
+	--c-name GS_res "${CMAKE_SOURCE_DIR}/pcsx2/GS/res/GS-res.xml" --target=${CMAKE_BINARY_DIR}/pcsx2/GS/GS_res.cpp
+	DEPENDS ${pcsx2GSResources})
+
 
 # DebugTools sources
 set(pcsx2DebugToolsSources
@@ -591,7 +775,6 @@ set(pcsx2DebugToolsHeaders
 set(pcsx2GuiSources
 	gui/AppAssert.cpp
 	gui/AppConfig.cpp
-	gui/AppCorePlugins.cpp
 	gui/AppCoreThread.cpp
 	gui/AppEventSources.cpp
 	gui/AppGameDatabase.cpp
@@ -645,7 +828,6 @@ set(pcsx2GuiSources
 	gui/Panels/MemoryCardListView.cpp
 	gui/Panels/MiscPanelStuff.cpp
 	gui/Panels/PathsPanel.cpp
-	gui/Panels/PluginSelectorPanel.cpp
 	gui/Panels/SpeedhacksPanel.cpp
 	gui/Panels/VideoPanel.cpp
 	gui/RecentIsoList.cpp
@@ -659,7 +841,6 @@ set(pcsx2GuiHeaders
 	gui/AppAccelerators.h
 	gui/AppCommon.h
 	gui/AppConfig.h
-	gui/AppCorePlugins.h
 	gui/AppCoreThread.h
 	gui/AppEventListeners.h
 	gui/AppForwardDefs.h
@@ -702,23 +883,22 @@ set(pcsx2GuiHeaders
 set(res_bin "${CMAKE_BINARY_DIR}/pcsx2/gui/Resources")
 set(res_src "${CMAKE_SOURCE_DIR}/pcsx2/gui/Resources")
 set(pcsx2GuiResources
-    ${res_bin}/AppIcon16.h
-    ${res_bin}/AppIcon32.h
-    ${res_bin}/AppIcon64.h
-    ${res_bin}/BackgroundLogo.h
-    ${res_bin}/ButtonIcon_Camera.h
-    ${res_bin}/ConfigIcon_Cpu.h
-    ${res_bin}/ConfigIcon_Gamefixes.h
-    ${res_bin}/ConfigIcon_MemoryCard.h
-    ${res_bin}/ConfigIcon_Paths.h
-    ${res_bin}/ConfigIcon_Plugins.h
-    ${res_bin}/ConfigIcon_Speedhacks.h
-    ${res_bin}/ConfigIcon_Video.h
-    ${res_bin}/Logo.h
-    ${res_bin}/NoIcon.h
-    ${res_bin}/Breakpoint_Active.h
-    ${res_bin}/Breakpoint_Inactive.h
-    )
+	${res_bin}/AppIcon16.h
+	${res_bin}/AppIcon32.h
+	${res_bin}/AppIcon64.h
+	${res_bin}/BackgroundLogo.h
+	${res_bin}/ButtonIcon_Camera.h
+	${res_bin}/ConfigIcon_Cpu.h
+	${res_bin}/ConfigIcon_Gamefixes.h
+	${res_bin}/ConfigIcon_MemoryCard.h
+	${res_bin}/ConfigIcon_Paths.h
+	${res_bin}/ConfigIcon_Speedhacks.h
+	${res_bin}/ConfigIcon_Video.h
+	${res_bin}/Logo.h
+	${res_bin}/NoIcon.h
+	${res_bin}/Breakpoint_Active.h
+	${res_bin}/Breakpoint_Inactive.h
+	)
 
 # IPU sources
 set(pcsx2IPUSources
@@ -747,7 +927,7 @@ set(pcsx2LinuxSources
 	Linux/LnxConsolePipe.cpp
 	Linux/LnxKeyCodes.cpp
 	Linux/LnxFlatFileReader.cpp
-    )
+	)
 
 set(pcsx2OSXSources
 	CDVD/Linux/DriveUtility.cpp
@@ -815,6 +995,7 @@ set(pcsx2RecordingSources
 	${rec_src}/InputRecordingFile.cpp
 	${rec_src}/NewRecordingFrame.cpp
 	${rec_src}/PadData.cpp
+	${rec_src}/Utilities/InputRecordingLogger.cpp
 	${rec_vp_src}/VirtualPad.cpp
 	${rec_vp_src}/VirtualPadData.cpp
 	${rec_vp_src}/VirtualPadResources.cpp
@@ -879,12 +1060,12 @@ set(pcsx2UtilitiesHeaders
 
 # Zip tools utilies sources
 set(pcsx2ZipToolsSources
-    ZipTools/thread_gzip.cpp
-    ZipTools/thread_lzma.cpp)
+	ZipTools/thread_gzip.cpp
+	ZipTools/thread_lzma.cpp)
 
 # Zip tools utilies headers
 set(pcsx2ZipToolsHeaders
-    ZipTools/ThreadedZipTools.h)
+	ZipTools/ThreadedZipTools.h)
 
 
 # Windows sources
@@ -988,6 +1169,8 @@ set(Common
 	${pcsx2DEV9Headers}
 	${pcsx2PADHeaders}
 	${pcsx2PADSources}
+	${pcsx2GSHeaders}
+	${pcsx2GSSources}
 	${pcsx2DebugToolsSources}
 	${pcsx2GuiSources}
 	${pcsx2GuiResources}
@@ -1017,11 +1200,18 @@ if(Linux)
 		${pcsx2USBSources}
 		${pcsx2USBHeaders}
 		)
-		
+
 	set(Platform_Libs
-		${LIBUDEV_LIBRARIES}
-		${X11_LIBRARIES}
+		PkgConfig::AIO
+		PkgConfig::EGL
+		PkgConfig::LIBUDEV
+		PkgConfig::X11_XCB
+		PkgConfig::XCB
+		X11::X11
+		ALSA::ALSA
 		)
+elseif(UNIX AND NOT APPLE)
+	set(Platform_Libs X11::X11)
 endif()
 
 # Windows
@@ -1052,66 +1242,69 @@ set(pcsx2FinalSources
 )
 
 set(pcsx2FinalLibs
-    Utilities
-    x86emitter
-    fmt::fmt
-    ${wxWidgets_LIBRARIES}
-    ${GTK2_LIBRARIES}
-    ${ZLIB_LIBRARIES}
-    ${AIO_LIBRARIES}
-    ${GCOV_LIBRARIES}
-    ${ALSA_LIBRARIES}
-    ${SOUNDTOUCH_LIBRARIES}
-    ${SDL2_LIBRARIES}
-    ${PCAP_LIBRARY}
-    ${LIBSAMPLERATE_LIBRARIES}
-    ${LIBXML2_LIBRARIES}
-    ${Platform_Libs}
+	Utilities
+	x86emitter
+	fmt::fmt
+	yaml-cpp
+	chdr-static
+	wxWidgets::all
+	GTK::gtk
+	HarfBuzz::HarfBuzz
+	ZLIB::ZLIB
+	PkgConfig::SOUNDTOUCH
+	SDL::SDL
+	PCAP::PCAP
+	PkgConfig::SAMPLERATE
+	LibXml2::LibXml2
+	OpenGL::GL
+	PNG::PNG
+	Freetype::Freetype
+	LibLZMA::LibLZMA
+	${Platform_Libs}
 )
 
 if(PORTAUDIO_FOUND)
-    set(pcsx2FinalLibs ${pcsx2FinalLibs} ${PORTAUDIO_LIBRARIES})
+	set(pcsx2FinalLibs ${pcsx2FinalLibs} PkgConfig::PORTAUDIO)
 endif()
 
 if(PULSEAUDIO_FOUND)
-    set(pcsx2FinalLibs ${pcsx2FinalLibs} ${PULSEAUDIO_LIBRARIES})
+	set(pcsx2FinalLibs ${pcsx2FinalLibs} PulseAudio::PulseAudio)
 endif()
-
-if(BUILTIN_GS)
-    set(pcsx2FinalLibs "${pcsx2FinalLibs} GSdx")
-endif()
-
-# additonal include directories
-include_directories(
-    gui
-    x86
-    ${CMAKE_BINARY_DIR}/pcsx2/gui
-)
 
 ### Generate the resources files
 file(MAKE_DIRECTORY ${res_bin})
 
 foreach(res_file IN ITEMS
-        AppIcon16 AppIcon32 AppIcon64 BackgroundLogo Logo NoIcon ButtonIcon_Camera
-        ConfigIcon_Cpu ConfigIcon_Gamefixes ConfigIcon_MemoryCard
-        ConfigIcon_Paths ConfigIcon_Plugins ConfigIcon_Speedhacks ConfigIcon_Video Breakpoint_Active Breakpoint_Inactive)
-    add_custom_command(OUTPUT  "${res_bin}/${res_file}.h" COMMAND perl ${CMAKE_SOURCE_DIR}/linux_various/hex2h.pl "${res_src}/${res_file}.png" "${res_bin}/${res_file}" )
+		AppIcon16 AppIcon32 AppIcon64 BackgroundLogo Logo NoIcon ButtonIcon_Camera
+		ConfigIcon_Cpu ConfigIcon_Gamefixes ConfigIcon_MemoryCard
+		ConfigIcon_Paths ConfigIcon_Speedhacks ConfigIcon_Video Breakpoint_Active Breakpoint_Inactive)
+	add_custom_command(OUTPUT  "${res_bin}/${res_file}.h" COMMAND perl ${CMAKE_SOURCE_DIR}/linux_various/hex2h.pl "${res_src}/${res_file}.png" "${res_bin}/${res_file}" )
 endforeach()
 
 ### Generate Recording resource files
 ### Drop them into the folder alongside the png files
 foreach(res_file IN ITEMS
-				circlePressed controllerFull controllerHalf controllerThreeQuarters crossPressed downPressed l1Pressed l2Pressed l3Pressed leftPressed
-				r1Pressed r2Pressed r3Pressed rightPressed selectPressed squarePressed startPressed trianglePressed upPressed)
-    add_custom_command(OUTPUT  "${res_rec_vp_src}/${res_file}.h" COMMAND perl ${CMAKE_SOURCE_DIR}/linux_various/hex2h.pl "${res_rec_vp_src}/${res_file}.png" "${res_rec_vp_src}/${res_file}" )
+		circlePressed controllerFull controllerHalf controllerThreeQuarters crossPressed downPressed l1Pressed l2Pressed l3Pressed leftPressed
+		r1Pressed r2Pressed r3Pressed rightPressed selectPressed squarePressed startPressed trianglePressed upPressed)
+	add_custom_command(OUTPUT  "${res_rec_vp_src}/${res_file}.h" COMMAND perl ${CMAKE_SOURCE_DIR}/linux_various/hex2h.pl "${res_rec_vp_src}/${res_file}.png" "${res_rec_vp_src}/${res_file}" )
 endforeach()
 
 if(USE_VTUNE)
-    set(pcsx2FinalLibs ${pcsx2FinalLibs} ${VTUNE_LIBRARIES})
+	set(pcsx2FinalLibs ${pcsx2FinalLibs} Vtune::Vtune)
 endif()
 
 add_pcsx2_executable(${Output} "${pcsx2FinalSources}" "${pcsx2FinalLibs}" "${pcsx2FinalFlags}")
 target_compile_features(${Output} PRIVATE cxx_std_17)
+target_compile_definitions(${Output} PUBLIC "${PCSX2_DEFS}")
+target_compile_options(${Output} PRIVATE "${PCSX2_WARNINGS}")
+
+# additonal include directories
+target_include_directories(${Output} PRIVATE
+	gui
+	x86
+	${CMAKE_BINARY_DIR}/pcsx2/gui
+	${CMAKE_BINARY_DIR}/common/include/
+)
 
 if(COMMAND target_precompile_headers)
 	message("Using precompiled headers.")
@@ -1142,7 +1335,7 @@ if (APPLE)
 	else()
 		set(postprocessBundleType ALL)
 	endif()
-	# Use custom_target and not custom_command so plugins can add themselves as dependencies
+
 	add_custom_target(pcsx2-postprocess-bundle ${postprocessBundleType}
 		COMMAND ${CMAKE_COMMAND} "-DPCSX2_BUNDLE_PATH=$<TARGET_FILE_DIR:${Output}>/../.."
 			-P ${CMAKE_SOURCE_DIR}/cmake/Pcsx2PostprocessBundle.cmake
@@ -1151,9 +1344,9 @@ if (APPLE)
 endif()
 
 if(NOT DISABLE_SETCAP)
-    if(PACKAGE_MODE)
-        install(CODE "execute_process(COMMAND /bin/bash -c \"echo 'Enabling networking capability on Linux...';set -x; [ -f '${CMAKE_INSTALL_FULL_BINDIR}/${Output}' ] && sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' '${CMAKE_INSTALL_FULL_BINDIR}/${Output}'; set +x\")")
-    else()
-        install(CODE "execute_process(COMMAND /bin/bash -c \"echo 'Enabling networking capability on Linux...';set -x; [ -f '${CMAKE_SOURCE_DIR}/bin/${Output}' ] && sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' '${CMAKE_SOURCE_DIR}/bin/${Output}'; set +x\")")
-    endif()
+	if(PACKAGE_MODE)
+		install(CODE "execute_process(COMMAND /bin/bash -c \"echo 'Enabling networking capability on Linux...';set -x; [ -f '${CMAKE_INSTALL_FULL_BINDIR}/${Output}' ] && sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' '${CMAKE_INSTALL_FULL_BINDIR}/${Output}'; set +x\")")
+	else()
+		install(CODE "execute_process(COMMAND /bin/bash -c \"echo 'Enabling networking capability on Linux...';set -x; [ -f '${CMAKE_SOURCE_DIR}/bin/${Output}' ] && sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' '${CMAKE_SOURCE_DIR}/bin/${Output}'; set +x\")")
+	endif()
 endif()

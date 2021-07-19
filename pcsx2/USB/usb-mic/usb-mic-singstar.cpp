@@ -25,10 +25,10 @@
 // Most stuff is based on Qemu 1.7 USB soundcard passthrough code.
 
 #include "PrecompiledHeader.h"
-#include "../qemu-usb/vl.h"
-#include "../qemu-usb/desc.h"
+#include "USB/qemu-usb/vl.h"
+#include "USB/qemu-usb/desc.h"
 #include "usb-mic-singstar.h"
-#include "../shared/inifile_usb.h"
+#include "USB/shared/inifile_usb.h"
 #include <assert.h>
 
 static FILE* file = NULL;
@@ -862,24 +862,24 @@ namespace usb_mic
 		return RESULT_CANCELED;
 	}
 
-	int SingstarDevice::Freeze(int mode, USBDevice* dev, void* data)
+	int SingstarDevice::Freeze(FreezeAction mode, USBDevice* dev, void* data)
 	{
 		SINGSTARMICState* s = (SINGSTARMICState*)dev;
 		if (!s)
 			return 0;
 		switch (mode)
 		{
-			case FREEZE_LOAD:
+			case FreezeAction::Load:
 				s->f = *(SINGSTARMICState::freeze*)data;
 				if (s->audsrc[0])
 					s->audsrc[0]->SetResampling(s->f.srate[0]);
 				if (s->audsrc[1])
 					s->audsrc[1]->SetResampling(s->f.srate[1]);
 				return sizeof(SINGSTARMICState::freeze);
-			case FREEZE_SAVE:
+			case FreezeAction::Save:
 				*(SINGSTARMICState::freeze*)data = s->f;
 				return sizeof(SINGSTARMICState::freeze);
-			case FREEZE_SIZE:
+			case FreezeAction::Size:
 				return sizeof(SINGSTARMICState::freeze);
 			default:
 				break;

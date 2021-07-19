@@ -15,12 +15,9 @@
 
 #pragma once
 
-#ifndef __OPPANEL_H__
-#define __OPPANEL_H__
-
 #include <wx/wx.h>
 
-#include "EmbeddedImage.h"
+#include "Utilities/EmbeddedImage.h"
 
 enum gui_img
 {
@@ -70,5 +67,3 @@ public:
 	void ShowImg(int);
 	void MoveJoystick(int, int);
 };
-
-#endif // __OPPANEL_H__

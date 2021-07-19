@@ -18,6 +18,7 @@
 #include "Common.h"
 #include "System/SysThreads.h"
 #include "Gif.h"
+#include "GS/GS.h"
 
 extern Fixed100 GetVerticalFrequency();
 extern __aligned16 u8 g_RealGSMem[Ps2MemSize::GSregs];
@@ -339,7 +340,7 @@ public:
 	int				m_CopyDataTally;
 
 	Semaphore			m_sem_OpenDone;
-	std::atomic<bool>	m_PluginOpened;
+	std::atomic<bool>	m_Opened;
 
 	// These vars maintain instance data for sending Data Packets.
 	// Only one data packet can be constructed and uploaded at a time.
@@ -365,7 +366,7 @@ public:
 	void SendDataPacket();
 	void SendGameCRC( u32 crc );
 	void WaitForOpen();
-	void Freeze( int mode, MTGS_FreezeData& data );
+	void Freeze( FreezeAction mode, MTGS_FreezeData& data );
 
 	void SendSimpleGSPacket( MTGS_RingCommand type, u32 offset, u32 size, GIF_PATH path );
 	void SendSimplePacket( MTGS_RingCommand type, int data0, int data1, int data2 );
@@ -375,11 +376,11 @@ public:
 	void SetEvent();
 	void PostVsyncStart();
 
-	bool IsPluginOpened() const { return m_PluginOpened; }
+	bool IsGSOpened() const { return m_Opened; }
 
 protected:
-	void OpenPlugin();
-	void ClosePlugin();
+	void OpenGS();
+	void CloseGS();
 
 	void OnStart();
 	void OnResumeReady();
